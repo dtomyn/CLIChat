@@ -410,6 +410,19 @@ function renderHome() {
 function demoBanner() {
   const inDemo = S.settings.demoInstalled && S.settings.workspace === S.settings.demoInstalled;
   if (S.settings.demoDismissed && !inDemo) return '';
+  if (inDemo && S.settings.demoPack === 'aidlc') {
+    return `<div class="demo-banner active">
+      <div class="demo-icon">🧬</div>
+      <div class="demo-text"><b>You're in the Online Permit Renewal AIDLC sample</b><span>Synthetic program documents (PID, BRD, Solution Blueprint, Ways of Working, data model) and a traceability workbook. Try one:</span>
+        <div class="demo-actions">
+          <button class="btn soft sm" data-recipe="aidlc-knowledge-inventory">📚 Knowledge inventory</button>
+          <button class="btn soft sm" data-recipe="aidlc-refine-requirements">🔬 Refine requirements</button>
+          <button class="btn soft sm" data-recipe="aidlc-trace-check">🔗 Traceability check</button>
+          <button class="btn soft sm" data-recipe="aidlc-change-impact">🌊 Change impact</button>
+          <button class="btn ghost sm" data-open-drawer>${icon('folder')}See the files</button>
+        </div>
+      </div></div>`;
+  }
   if (inDemo) {
     return `<div class="demo-banner active">
       <div class="demo-icon">📦</div>
@@ -425,20 +438,22 @@ function demoBanner() {
   }
   return `<div class="demo-banner">
     <div class="demo-icon">📦</div>
-    <div class="demo-text"><b>New: the project manager demo</b><span>A sample Microsoft Project plan with Excel budget, RAID log and timesheets, so you can try the Schedule Analyst and Budget Controller on realistic data.</span></div>
-    <div class="demo-cta"><button class="btn grad sm" data-install-demo>${icon('package')}Set up demo</button><button class="icon-btn" data-dismiss-demo title="Hide">${icon('x')}</button></div>
+    <div class="demo-text"><b>Try it on sample data</b><span>A project manager demo (Microsoft Project plan with Excel budget, RAID log and timesheets), or a delivery-lifecycle sample (BRD, design and a traceability workbook) for the requirements, design, story and traceability assistants.</span></div>
+    <div class="demo-cta"><button class="btn grad sm" data-install-demo="crm">${icon('package')}PM demo</button><button class="btn grad sm" data-install-demo="aidlc">${icon('package')}AIDLC sample</button><button class="icon-btn" data-dismiss-demo title="Hide">${icon('x')}</button></div>
   </div>`;
 }
 
 async function installDemo(btn) {
+  const pack = btn?.dataset.installDemo || 'crm';
+  const label = btn?.innerHTML;
   if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Setting up…'; }
   try {
-    const r = await api('/api/demo/install', { method: 'POST', body: {} });
+    const r = await api('/api/demo/install', { method: 'POST', body: { pack } });
     const st = await api('/api/status'); S.settings = st.settings;
-    S.draft.assistantId = 'schedule-analyst'; S.draft.access = 'read';
-    celebrate(); toast(`Demo ready — your project folder is now “${baseName(r.path)}”`, 'package');
+    S.draft.assistantId = pack === 'aidlc' ? 'traceability-analyst' : 'schedule-analyst'; S.draft.access = 'read';
+    celebrate(); toast(`${pack === 'aidlc' ? 'Sample' : 'Demo'} ready — your project folder is now “${baseName(r.path)}”`, 'package');
     renderHome();
-  } catch (e) { toast(e.message, 'alert'); if (btn) { btn.disabled = false; btn.innerHTML = `${icon('package')}Set up demo`; } }
+  } catch (e) { toast(e.message, 'alert'); if (btn) { btn.disabled = false; btn.innerHTML = label; } }
 }
 
 function homeClicks(e) {

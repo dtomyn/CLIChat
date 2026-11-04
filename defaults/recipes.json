@@ -432,5 +432,174 @@
       }
     ],
     "template": "Create this document and save it as a file in the current folder: {{what}}\n\nFormat: {{format}}. Choose a clear file name. When done, tell me the file name and give a short outline of what's inside."
+  },
+  {
+    "id": "aidlc-knowledge-inventory",
+    "name": "Inventory the program knowledge",
+    "emoji": "📚",
+    "category": "Delivery lifecycle",
+    "description": "List the authoritative program documents, what each one settles, and where they disagree.",
+    "assistantId": "requirements-refiner",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "focus",
+        "label": "Anything to focus on?",
+        "type": "text",
+        "placeholder": "Optional — e.g. data model, integrations, release 1 scope"
+      }
+    ],
+    "template": "Build an inventory of the program knowledge in my project folder (PID/scope, BRDs, Solution Blueprint, Ways of Working, data models and other program artifacts). Focus: {{focus}}\n\nFor each document give: name, type, version or last-modified date, what it is authoritative for, and its owner if stated. Then list the places where documents disagree or overlap (with citations), the gaps where nothing is authoritative, and the questions to settle with the program team."
+  },
+  {
+    "id": "aidlc-refine-requirements",
+    "name": "Refine business requirements",
+    "emoji": "🔬",
+    "category": "Delivery lifecycle",
+    "description": "Turn a BRD into atomic, testable requirements with IDs, acceptance criteria and sources.",
+    "assistantId": "requirements-refiner",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "brd",
+        "label": "Business requirements (BRD or workbook)",
+        "type": "file",
+        "accept": ".docx,.md,.txt,.pdf,.xlsx,.csv"
+      },
+      {
+        "key": "scope",
+        "label": "Which requirements?",
+        "type": "text",
+        "placeholder": "Optional — e.g. BR-001 to BR-005, or the eligibility section"
+      }
+    ],
+    "template": "Refine the business requirements in {{brd}}. Scope: {{scope}}\n\nCheck them against the scope document and other program knowledge in the folder. Give me a refined-requirements table (Req ID | Parent BR | Statement | Type | Acceptance criteria | Source | Status | Open questions), with Status set to Draft (AI). Then list ambiguities, conflicts between sources and missing requirements, each with a citation and who should answer it."
+  },
+  {
+    "id": "aidlc-functional-design",
+    "name": "Draft the functional design",
+    "emoji": "🧩",
+    "category": "Delivery lifecycle",
+    "description": "Behaviour, screens, business rules and data for approved requirements, traced by ID.",
+    "assistantId": "functional-designer",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "reqs",
+        "label": "Refined requirements",
+        "type": "file",
+        "accept": ".xlsx,.csv,.docx,.md"
+      },
+      {
+        "key": "scope",
+        "label": "Which requirements?",
+        "type": "text",
+        "placeholder": "Optional — e.g. only Approved ones, or BR-002.*"
+      }
+    ],
+    "template": "Draft the functional design for the requirements in {{reqs}}. Scope: {{scope}}\n\nUse only approved requirements unless I've said otherwise, and ground the design in the Solution Blueprint and data model in my folder. Give me a functional-design table (FD ID | Title | Type | Description | Business rules | Traces To | Status), then error and edge cases, then a coverage check (every requirement in scope and the FD IDs that realise it), then open questions for the requirement owners."
+  },
+  {
+    "id": "aidlc-technical-design",
+    "name": "Draft the technical design",
+    "emoji": "🛠️",
+    "category": "Delivery lifecycle",
+    "description": "Components, integrations, data changes and NFRs that realise the functional design.",
+    "assistantId": "technical-designer",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "fd",
+        "label": "Functional design",
+        "type": "file",
+        "accept": ".xlsx,.csv,.docx,.md"
+      },
+      {
+        "key": "scope",
+        "label": "Which design elements?",
+        "type": "text",
+        "placeholder": "Optional — e.g. FD-010 to FD-030"
+      }
+    ],
+    "template": "Draft the technical design for the functional design in {{fd}}. Scope: {{scope}}\n\nFollow the Solution Blueprint and data model in my folder, and cite them. Give me a technical-design table (TD ID | Component | Approach | Interfaces / data | NFRs | Traces To | Status), then the integrations and data changes needed, the main technical risks with options and trade-offs, any departures from the Blueprint, and questions for the functional designer."
+  },
+  {
+    "id": "aidlc-write-backlog",
+    "name": "Write the backlog from the design",
+    "emoji": "✍️",
+    "category": "Delivery lifecycle",
+    "description": "Epics, features and stories that implement the design, not the raw requirements.",
+    "assistantId": "story-writer",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "design",
+        "label": "Design (functional and/or technical)",
+        "type": "file",
+        "accept": ".xlsx,.csv,.docx,.md"
+      },
+      {
+        "key": "scope",
+        "label": "Which part?",
+        "type": "text",
+        "placeholder": "Optional — e.g. the online application journey"
+      }
+    ],
+    "template": "Write the delivery backlog for the design in {{design}}. Scope: {{scope}}\n\nUse the Ways of Working in my folder for Definition of Ready and backlog conventions. Give me a backlog table (Item ID | Type | Title | Parent | Description | Acceptance criteria | Implements | Status) with epics, then features, then stories. Every story implements at least one FD or TD ID and has 3-6 Given/When/Then criteria. Finish with design elements that have no story yet, and any design gaps you found."
+  },
+  {
+    "id": "aidlc-trace-check",
+    "name": "Traceability check",
+    "emoji": "🔗",
+    "category": "Delivery lifecycle",
+    "description": "Coverage, gaps, broken links and stories that skip design, from your traceability workbook.",
+    "assistantId": "traceability-analyst",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "trm",
+        "label": "Traceability workbook",
+        "type": "file",
+        "accept": ".xlsx,.xlsm"
+      }
+    ],
+    "template": "Run a traceability check on {{trm}}.\n\nGive me: overall RAG with a one-line reason; coverage per layer (table); then findings grouped by what someone must do (fix broken link, design missing, story needed, review after change, decide between conflicting items), each with IDs, cell references and a suggested owner; and the top 5 actions."
+  },
+  {
+    "id": "aidlc-change-impact",
+    "name": "Impact of a requirement change",
+    "emoji": "🌊",
+    "category": "Delivery lifecycle",
+    "description": "Everything downstream (design, stories) affected when a requirement changes.",
+    "assistantId": "traceability-analyst",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "trm",
+        "label": "Traceability workbook",
+        "type": "file",
+        "accept": ".xlsx,.xlsm"
+      },
+      {
+        "key": "ids",
+        "label": "Which requirement IDs changed?",
+        "type": "text",
+        "placeholder": "e.g. BR-004 (leave blank to use rows marked Changed)"
+      },
+      {
+        "key": "change",
+        "label": "What changed?",
+        "type": "textarea",
+        "placeholder": "Optional — e.g. eligibility age moved from 18 to 16"
+      }
+    ],
+    "template": "Analyse the downstream impact of changed requirements in {{trm}}. Changed IDs: {{ids}}. What changed: {{change}}\n\nFor each changed requirement, list every affected refined requirement, functional design element, technical design element and story (with IDs and cells), say whether each one probably needs to change or only needs a review and why, mark the ones last updated before the change, and say who should review each layer. End with a proposed change-log entry."
   }
 ]

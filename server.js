@@ -151,18 +151,20 @@ async function draftAssistant(description) {
 
 const yamlStr = (v) => JSON.stringify(String(v).replace(/\n/g, ' '));
 
-/** Write the files that make assistants + skills + the office tools work in VS Code (Claude Code and GitHub Copilot). */
+/** Write the files that make assistants + skills + the office tools work in VS Code and the CLIs (Claude Code and GitHub Copilot). */
 function writeVsCodeKit(ws, assistants) {
   const written = [];
   const put = (rel, content) => { const f = path.join(ws, rel); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, content); written.push(f); };
   const used = new Set(assistants.flatMap((a) => a.skills || []));
   for (const s of skills.all().filter((x) => used.has(x.id))) {
-    put(path.join('.claude', 'skills', s.id, 'SKILL.md'), `---\nname: ${s.id}\ndescription: ${yamlStr(s.description)}\n---\n\n${s.body}\n`);
+    const md = `---\nname: ${s.id}\ndescription: ${yamlStr(s.description)}\n---\n\n${s.body}\n`;
+    put(path.join('.claude', 'skills', s.id, 'SKILL.md'), md);
+    put(path.join('.github', 'skills', s.id, 'SKILL.md'), md);
   }
   for (const a of assistants) {
     const name = slug(a.name);
     const sk = a.skills || [];
-    const skillNote = sk.length ? `\n\nUse the ${sk.join(' and ')} skill${sk.length > 1 ? 's' : ''} and the "office" MCP tools for Excel and Microsoft Project files.` : '';
+    const skillNote = sk.length ? `\n\nUse the ${sk.join(' and ')} skill${sk.length > 1 ? 's' : ''} and the "office" MCP tools for documents, Excel workbooks, Microsoft Project plans and traceability.` : '';
     put(path.join('.claude', 'agents', `${name}.md`), `---\nname: ${name}\ndescription: ${yamlStr(a.tagline || a.name)}\n---\n\n${a.instructions}${skillNote}\n`);
     const skillText = skills.all().filter((x) => sk.includes(x.id)).map((x) => `\n\n## ${x.title}\n\n${x.body}`).join('');
     put(path.join('.github', 'agents', `${name}.agent.md`), `---\nname: ${yamlStr(a.name)}\ndescription: ${yamlStr(a.tagline || a.name)}\n---\n\n${a.instructions}${skillText}\n`);
@@ -180,17 +182,27 @@ function exportAssistant(a, workspace) {
   return { files: writeVsCodeKit(ws, [a]), workspace: ws };
 }
 
-const DEMO_DIR = path.join(__dirname, 'demo');
-function installDemo() {
-  const base = resolveWorkspace(store.settings.get().workspace);
-  const parent = /\(demo\)$/.test(base) ? path.dirname(base) : base;
-  const target = path.join(parent, 'Contoso CRM Migration (demo)');
-  fs.mkdirSync(target, { recursive: true });
-  for (const f of fs.readdirSync(DEMO_DIR)) {
-    const dest = path.join(target, f);
-    if (!fs.existsSync(dest)) fs.copyFileSync(path.join(DEMO_DIR, f), dest);
+// Sample packs offered on the home screen. Each is copied into a sibling of the user's project folder.
+const PACKS = {
+  crm: { dir: path.join(__dirname, 'demo'), folder: 'Contoso CRM Migration (demo)', assistants: ['schedule-analyst', 'budget-controller', 'project-partner'] },
+  aidlc: { dir: path.join(__dirname, 'samples', 'aidlc'), folder: 'Online Permit Renewal (AIDLC sample)', assistants: ['requirements-refiner', 'functional-designer', 'technical-designer', 'story-writer', 'traceability-analyst'] },
+};
+function copyMissing(from, to) {
+  fs.mkdirSync(to, { recursive: true });
+  for (const e of fs.readdirSync(from, { withFileTypes: true })) {
+    const src = path.join(from, e.name), dest = path.join(to, e.name);
+    if (e.isDirectory()) copyMissing(src, dest);
+    else if (!fs.existsSync(dest)) fs.copyFileSync(src, dest);
   }
-  writeVsCodeKit(target, store.assistants.all().filter((a) => ['schedule-analyst', 'budget-controller', 'project-partner'].includes(a.id)));
+}
+function installDemo(packId = 'crm') {
+  const pack = PACKS[packId];
+  if (!pack || !fs.existsSync(pack.dir)) throw new Error(`The ${packId} sample isn't available in this copy of Lumen.`);
+  const base = resolveWorkspace(store.settings.get().workspace);
+  const parent = Object.values(PACKS).some((p) => path.basename(base) === p.folder) ? path.dirname(base) : base;
+  const target = path.join(parent, pack.folder);
+  copyMissing(pack.dir, target);
+  writeVsCodeKit(target, store.assistants.all().filter((a) => pack.assistants.includes(a.id)));
   return target;
 }
 
@@ -232,9 +244,11 @@ async function api(req, res, url) {
   }
   if (resource === 'skills' && m === 'GET') return send(res, 200, skills.all().map(({ body, raw, file, ...rest }) => rest));
   if (resource === 'demo' && rid === 'install' && m === 'POST') {
-    const target = installDemo();
-    store.settings.set({ workspace: target, demoInstalled: target });
-    return send(res, 200, { path: target, files: fs.readdirSync(target).filter((f) => !f.startsWith('.')) });
+    const pack = (await json(req)).pack || 'crm';
+    let target;
+    try { target = installDemo(pack); } catch (e) { return send(res, 400, { error: e.message }); }
+    store.settings.set({ workspace: target, demoInstalled: target, demoPack: pack });
+    return send(res, 200, { path: target, pack, files: fs.readdirSync(target).filter((f) => !f.startsWith('.')) });
   }
   if (resource === 'reset' && m === 'POST') { store.assistants.reset(); store.recipes.reset(); return send(res, 200, { ok: true }); }
   if (resource === 'settings' && m === 'PUT') return send(res, 200, store.settings.set(await json(req)));

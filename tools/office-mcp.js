@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// "office" MCP server: Excel + Microsoft Project tools over stdio (JSON-RPC, newline-delimited).
+// "office" MCP server: Excel, Microsoft Project, Word/text documents and traceability tools over stdio (JSON-RPC, newline-delimited).
 // Used by Lumen, and usable directly from Claude Code / GitHub Copilot in VS Code via .mcp.json / .vscode/mcp.json.
 //
 // Paths are resolved against the working folder. Writes are confined to that folder (or OFFICE_MCP_ROOT).
@@ -8,6 +8,8 @@ const path = require('path');
 const fs = require('fs');
 const excel = require('./excel');
 const project = require('./project');
+const docx = require('./docx');
+const traceability = require('./traceability');
 
 const ROOT = path.resolve(process.env.OFFICE_MCP_ROOT || process.cwd());
 const READ_ONLY = process.env.OFFICE_MCP_READONLY === '1';
@@ -41,12 +43,24 @@ const write = (fn) => (READ_ONLY ? () => { throw Object.assign(new Error('Editin
 const TOOLS = [
   {
     name: 'list_office_files',
-    description: 'List the Excel workbooks (.xlsx/.xlsm/.csv) and Microsoft Project plans (.mpp/.xml) in the project folder.',
+    description: 'List the documents (.docx/.md/.txt/.pdf), Excel workbooks (.xlsx/.xlsm/.csv) and Microsoft Project plans (.mpp/.xml) in the project folder, with size and last-modified date.',
     inputSchema: { type: 'object', properties: {} },
     run: () => {
-      const files = walk(ROOT).filter((f) => /\.(xlsx|xlsm|csv|mpp|xml)$/i.test(f) && !/[\\/]\.?(claude|github|vscode)[\\/]/i.test(f));
-      return files.map((f) => `${path.relative(ROOT, f)}  (${Math.round(fs.statSync(f).size / 1024)} KB, modified ${new Date(fs.statSync(f).mtimeMs).toISOString().slice(0, 10)})`).join('\n') || 'No Excel or Project files found.';
+      const files = walk(ROOT).filter((f) => /\.(xlsx|xlsm|csv|mpp|xml|docx|docm|md|txt|pdf)$/i.test(f) && !/[\\/]\.?(claude|github|vscode)[\\/]/i.test(f));
+      return files.map((f) => `${path.relative(ROOT, f)}  (${Math.round(fs.statSync(f).size / 1024)} KB, modified ${new Date(fs.statSync(f).mtimeMs).toISOString().slice(0, 10)})`).join('\n') || 'No documents, workbooks or plans found.';
     },
+  },
+  {
+    name: 'read_document',
+    description: 'Read a Word document (.docx) or a text/Markdown file as Markdown-style text: headings, lists and tables are kept so you can cite sections. Use for BRDs, scope documents (PID), solution blueprints, ways of working and other program documents. Long documents come back in pages; call again with startAt to continue.',
+    inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'File path relative to the project folder' }, startAt: { type: 'number', description: 'Character offset to continue from (default 0)' } }, required: ['path'] },
+    run: (a) => docx.readDocument(resolveIn(a.path), { startAt: Number(a.startAt) || 0 }),
+  },
+  {
+    name: 'analyze_traceability',
+    description: 'Check a requirements traceability workbook (TRM/RTM). Recognises sheets for business requirements, refined requirements, functional design, technical design and the delivery backlog (epics/features/stories), or a single trace-matrix sheet. Reports item counts, coverage per layer, coverage gaps, untraced items, broken links to IDs that do not exist, duplicate IDs, stories that trace straight to requirements without a design element, withdrawn requirements still linked downstream, and the downstream impact of changed requirements. Every finding has a Sheet!Cell reference. Read-only.',
+    inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'The traceability workbook' }, changed: { type: 'array', items: { type: 'string' }, description: 'Optional requirement or design IDs that have changed, for impact analysis (e.g. ["BR-004"]). Items whose Status says Changed are always included.' } }, required: ['path'] },
+    run: (a) => traceability.analyze(resolveIn(a.path), { changed: Array.isArray(a.changed) ? a.changed : [] }),
   },
   {
     name: 'read_spreadsheet',
@@ -130,7 +144,7 @@ async function handle(msg) {
   const { id, method, params } = msg;
   if (method === 'initialize') {
     return result(id, { protocolVersion: params?.protocolVersion || '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 'office', version: '1.0.0' },
-      instructions: 'Tools for Excel workbooks and Microsoft Project plans in the project folder.' });
+      instructions: 'Tools for Excel workbooks, Microsoft Project plans, Word documents and requirements traceability in the project folder.' });
   }
   if (method === 'ping') return result(id, {});
   if (method === 'tools/list') return result(id, { tools: TOOLS.map(({ name, description, inputSchema }) => ({ name, description, inputSchema })) });

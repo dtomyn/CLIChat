@@ -518,5 +518,5 @@ details.advanced[open] summary { margin-bottom: 14px; }
 .demo-text > span { color: var(--text-2); font-size: 13.5px; line-height: 1.5; }
 .demo-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .demo-actions .btn.soft { background: var(--panel); }
-.demo-cta { display: flex; align-items: center; gap: 4px; flex: none; }
+.demo-cta { display: flex; align-items: center; gap: 6px; flex: none; flex-wrap: wrap; justify-content: flex-end; }
 @media (max-width: 640px) { .demo-banner { flex-wrap: wrap; } }

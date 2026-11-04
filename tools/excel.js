@@ -236,4 +236,4 @@ async function projectToWorkbook(planFile, outFile) {
   return { saved: outFile, sheets: ['Summary', 'Tasks', 'Gantt', 'Resources'], tasks: p.tasks.length };
 }
 
-module.exports = { read, write, update, projectToWorkbook, recalc };
+module.exports = { open, cellText, read, write, update, projectToWorkbook, recalc };

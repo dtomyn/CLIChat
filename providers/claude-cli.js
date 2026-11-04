@@ -4,8 +4,9 @@
 
 const { spawn, execFile } = require('child_process');
 const path = require('path');
-const fs = require('fs');
 const os = require('os');
+const cli = require('../lib/cli-bin');
+const { officeLabel, savedFile } = require('../lib/tool-labels');
 
 const ACCESS_TOOLS = {
   // Plain-language access levels → the Claude Code tools they unlock.
@@ -15,17 +16,10 @@ const ACCESS_TOOLS = {
   full: ['default'],
 };
 
-function findBinary() {
-  if (process.env.CLAUDE_CLI_PATH && fs.existsSync(process.env.CLAUDE_CLI_PATH)) return process.env.CLAUDE_CLI_PATH;
-  const candidates = process.platform === 'win32'
-    ? [path.join(os.homedir(), '.local', 'bin', 'claude.exe'), path.join(process.env.APPDATA || '', 'npm', 'claude.cmd')]
-    : [path.join(os.homedir(), '.local', 'bin', 'claude'), '/usr/local/bin/claude', '/opt/homebrew/bin/claude'];
-  for (const c of candidates) if (c && fs.existsSync(c)) return c;
-  return 'claude'; // rely on PATH
-}
-
-const BIN = findBinary();
-const needsShell = (bin) => /\.(cmd|bat)$/i.test(bin) || bin === 'claude';
+const BIN = cli.resolve('claude', process.platform === 'win32'
+  ? [path.join(os.homedir(), '.local', 'bin', 'claude.exe'), path.join(process.env.APPDATA || '', 'npm', 'claude.cmd')]
+  : [path.join(os.homedir(), '.local', 'bin', 'claude'), '/usr/local/bin/claude', '/opt/homebrew/bin/claude'], process.env.CLAUDE_CLI_PATH);
+const launch = (args, opts) => spawn(BIN.command, [...BIN.prefix, ...args], { shell: BIN.shell, windowsHide: true, ...opts });
 
 function friendlyTool(name, input = {}) {
   const base = (p) => (p ? path.basename(String(p)) : '');
@@ -45,16 +39,9 @@ function friendlyTool(name, input = {}) {
     case 'TodoWrite': return { icon: 'list', label: 'Planning the steps' };
     case 'Task': case 'Agent': return { icon: 'spark', label: input.description || 'Bringing in a helper' };
     case 'Skill': return { icon: 'spark', label: `Using skill ${input.skill || ''}`.trim() };
-    // Lumen's bundled Office tools
-    case 'mcp__office__list_office_files': return { icon: 'search', label: 'Looking for Excel and Project files' };
-    case 'mcp__office__read_spreadsheet': return { icon: 'sheet', label: `Reading ${base(input.path)}${input.sheet ? ` › ${input.sheet}` : ''}` };
-    case 'mcp__office__create_spreadsheet': return { icon: 'sheet', label: `Creating ${base(input.path)}` };
-    case 'mcp__office__update_spreadsheet': return { icon: 'sheet', label: `Updating ${base(input.path)}` };
-    case 'mcp__office__read_project_plan': return { icon: 'gantt', label: `Reading plan ${base(input.path)}` };
-    case 'mcp__office__analyze_project_plan': return { icon: 'gantt', label: `Analyzing schedule in ${base(input.path)}` };
-    case 'mcp__office__update_project_plan': return { icon: 'gantt', label: `Updating ${(input.updates || []).length} task${(input.updates || []).length === 1 ? '' : 's'} in ${base(input.path)}` };
-    case 'mcp__office__project_plan_to_spreadsheet': return { icon: 'sheet', label: `Building Excel tracker ${base(input.output)}` };
-    default: return { icon: 'spark', label: `Using ${name.replace(/^mcp__[^_]+__/, '').replace(/_/g, ' ')}` };
+    default:
+      if (name.startsWith('mcp__office__')) return officeLabel(name.slice('mcp__office__'.length), input); // Lumen's bundled Office tools
+      return { icon: 'spark', label: `Using ${name.replace(/^mcp__[^_]+__/, '').replace(/_/g, ' ')}` };
   }
 }
 
@@ -73,7 +60,7 @@ module.exports = {
 
   detect() {
     return new Promise((resolve) => {
-      execFile(BIN, ['--version'], { shell: needsShell(BIN), timeout: 15000, windowsHide: true }, (err, stdout) => {
+      execFile(BIN.command, [...BIN.prefix, '--version'], { shell: BIN.shell, timeout: 15000, windowsHide: true }, (err, stdout) => {
         if (err) return resolve({ available: false, message: 'Claude Code CLI not found. Install it from https://claude.com/claude-code and run `claude` once to sign in.' });
         resolve({ available: true, version: String(stdout).trim() });
       });
@@ -107,7 +94,7 @@ module.exports = {
         if (access === 'edit') args.push('--permission-mode', 'acceptEdits');
       }
 
-      const child = spawn(BIN, args, { cwd, shell: needsShell(BIN), windowsHide: true, env: { ...process.env } });
+      const child = launch(args, { cwd, env: { ...process.env } });
       child.stdin.end(prompt); // prompt via stdin: no quoting/length issues
 
       let buf = '';
@@ -143,9 +130,8 @@ module.exports = {
             emit({ type: 'tool_done', id: block.tool_use_id, ok: !block.is_error });
             // Office tools report the file they saved: surface it as a file card.
             if (!block.is_error && /^mcp__office__/.test(toolNames[block.tool_use_id] || '')) {
-              const text = Array.isArray(block.content) ? block.content.map((c) => c.text || '').join('') : String(block.content || '');
-              const m = /"saved":\s*"((?:[^"\\]|\\.)+)"/.exec(text);
-              if (m) { try { emit({ type: 'file', path: JSON.parse(`"${m[1]}"`) }); } catch {} }
+              const saved = savedFile(Array.isArray(block.content) ? block.content.map((c) => c.text || '').join('') : block.content);
+              if (saved) emit({ type: 'file', path: saved });
             }
           }
         } else if (msg.type === 'result') {
@@ -182,7 +168,7 @@ module.exports = {
   /** One-shot, tool-less completion used for small helper tasks (titles, drafting assistants). */
   complete({ prompt, cwd }) {
     return new Promise((resolve) => {
-      const child = spawn(BIN, ['-p', '--model', 'haiku', '--tools', '', '--no-session-persistence'], { cwd: cwd || os.tmpdir(), shell: needsShell(BIN), windowsHide: true });
+      const child = launch(['-p', '--model', 'haiku', '--tools', '', '--no-session-persistence'], { cwd: cwd || os.tmpdir() });
       let out = '';
       child.stdout.on('data', (c) => { out += c; });
       child.on('error', () => resolve(''));
