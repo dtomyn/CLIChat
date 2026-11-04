@@ -36,6 +36,10 @@ Requirements: Node.js 18+ and at least one engine installed and signed in:
 
 Other touches: streaming markdown with tables and code highlighting, friendly progress steps ("Reading budget.xlsx…"), auto-titled chats, pin/rename/search, drag-and-drop or paste to attach, light/dark themes, a 3-step welcome, and replies that keep running if the tab is closed.
 
+Pin frequently used files to a chat with **+ Add** above the composer or the pin action in the project folder. Pins persist with the chat and automatically enable matching file skills; missing or out-of-folder files are marked missing and not included in prompts. The project folder also lists files changed in the current chat, linked to the reply. Excel workbook cards can compare an original and an `(updated)` copy, or an in-place Office-tool update against its per-reply snapshot; choose another workbook when no pair is found. Project XML comparisons show task-field changes. Comparisons are limited to 500 changes.
+
+Use **Repeat…** in a quick start to schedule a daily, weekly, or monthly check. Schedules run only while Lumen is running; on startup, missed checks run once and are marked late. Times use the computer's local time; monthly dates absent from a month are skipped. Manage schedules and open results from **Quick starts › Scheduled**. Checks use the quick start's file access, and those that save files require explicit permission. Missing source files are reported on the schedule.
+
 ## Project managers: Microsoft Project + Excel
 
 Lumen ships two **skills** that assistants can switch on (Assistants › Customize › Skills):
@@ -80,6 +84,8 @@ These assistants follow the staged flow from the *Functional Design walk-through
 | 🔗 **Requirements traceability** | New tool: `analyze_traceability`. It reads a TRM/RTM workbook laid out either as one sheet per layer with "Traces To" columns or as a single trace-matrix sheet, and reports coverage, gaps, broken links, duplicate IDs, design bypass, withdrawn items still linked, and the downstream impact of changed requirements, with Sheet!Cell references. It's read-only. Changes go into a "(proposed)" copy for human approval |
 
 **Quick starts** (category *Delivery lifecycle*): Inventory the program knowledge, Refine business requirements, Draft the functional design, Draft the technical design, Write the backlog from the design, Traceability check, and Impact of a requirement change.
+
+**Guided lifecycle runs:** Select **Lifecycle runs**, create a named run, and choose source files from the current project folder. Each stage has its own edit-enabled chat and writes Markdown under `Lifecycle/<run name>/`. Review the output and optionally run a read-only advisory traceability check before approving it. Set your name in Settings to approve; the output records your name and time. The next stage requires approval or an explicit override, which labels downstream outputs as based on unapproved inputs. Sending an earlier stage back invalidates later approvals; revisit those stages before approving them again. If a run is interrupted, open the stage chat or run the stage again.
 
 **AIDLC sample:** the home screen's **AIDLC sample** button installs [samples/aidlc/](samples/aidlc/). It's a synthetic "Online Permit Renewal" program with a PID and a BRD (Word), a Solution Blueprint, Ways of Working, a data model and a five-layer traceability workbook. As the meeting suggested, it is generated sample data for local development, and it deliberately includes one-to-many links, a changed requirement, a withdrawn requirement, a scope conflict between the BRD and the PID, ambiguity, a broken link, a duplicate ID and a story that skips design. Regenerate it with `node scripts/make-aidlc-sample.js`. The workbook layout is a placeholder: change it to the program's real TRM Excel structure once that's agreed (the tool recognises sheets and columns by name).
 

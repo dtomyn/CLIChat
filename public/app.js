@@ -42,6 +42,12 @@ const P = {
   sheet: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>',
   gantt: '<path d="M3 3v18h18"/><rect x="7" y="6" width="8" height="3" rx="1"/><rect x="10" y="11" width="9" height="3" rx="1"/><rect x="6" y="16" width="5" height="2.5" rx="1"/>',
   package: '<path d="m7.5 4.27 9 5.15M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/>',
+  branch: '<path d="M6 3v12"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/>',
+  keyboard: '<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/>',
+  save: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>',
+  thumbUp: '<path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/>',
+  thumbDown: '<path d="M17 14V2"/><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z"/>',
+  chart: '<path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/>',
 };
 const icon = (n, cls = '') => `<span class="ico ${cls}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${P[n] || P.spark}</svg></span>`;
 const hydrateIcons = (root = document) => root.querySelectorAll('[data-icon]:not([data-icon-done])').forEach((el) => { el.insertAdjacentHTML('afterbegin', icon(el.dataset.icon)); el.dataset.iconDone = '1'; });
@@ -80,19 +86,20 @@ renderer.code = ({ text, lang }) => {
 renderer.table = function (token) {
   const head = token.header.map((c) => `<th${c.align ? ` style="text-align:${c.align}"` : ''}>${this.parser.parseInline(c.tokens)}</th>`).join('');
   const body = token.rows.map((r) => `<tr>${r.map((c) => `<td${c.align ? ` style="text-align:${c.align}"` : ''}>${this.parser.parseInline(c.tokens)}</td>`).join('')}</tr>`).join('');
-  return `<div class="table-wrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+  return `<div class="table-wrap"><div class="table-tools"><button data-copy-table title="Copy for Excel, Word or Outlook">${icon('copy')}Copy table</button></div><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
 };
 DOMPurify.addHook('afterSanitizeAttributes', (n) => { if (n.tagName === 'A') { n.setAttribute('target', '_blank'); n.setAttribute('rel', 'noopener noreferrer'); } });
-const md = (text, cursor = false) => DOMPurify.sanitize(marked.parse(String(text || ''), { renderer }) + (cursor ? '<span class="cursor"></span>' : ''), { ADD_ATTR: ['target', 'data-copy-code'] });
+const md = (text, cursor = false) => DOMPurify.sanitize(marked.parse(String(text || ''), { renderer }) + (cursor ? '<span class="cursor"></span>' : ''), { ADD_ATTR: ['target', 'data-copy-code', 'data-copy-table'] });
 const highlight = (root) => { if (window.hljs) $$('pre code[class*="language-"]:not(.hljs)', root).forEach((b) => { try { hljs.highlightElement(b); } catch {} }); };
 
 // ---------------------------------------------------------------- state
 const S = {
-  settings: {}, providers: [], assistants: [], recipes: [], convs: [],
+  settings: {}, providers: [], assistants: [], recipes: [], convs: [], pipelines: [], runs: [], schedules: [],
   view: 'home', current: null, search: '',
   live: new Map(), // conversationId -> { ac, msg }
   draft: { text: '', attachments: [], assistantId: null, access: null },
   openSteps: new Set(), recipeTab: 'All',
+  editing: null, // id of the user message being edited inline
 };
 const isLive = (conv) => !!conv && [...S.live.values()].some((l) => l.conv === conv);
 const assistantById = (id) => S.assistants.find((a) => a.id === id) || S.assistants[0] || { id: 'lumen', name: 'Lumen', emoji: '✨', color: 'violet' };
@@ -108,7 +115,9 @@ const EMOJIS = ['✨', '🧭', '📋', '🪶', '📊', '🧠', '🚀', '🎯', '
 // ---------------------------------------------------------------- boot
 async function boot() {
   hydrateIcons();
-  const [status, assistants, recipes, convs, skills] = await Promise.all([api('/api/status'), api('/api/assistants'), api('/api/recipes'), api('/api/conversations'), api('/api/skills')]);
+  const [status, assistants, recipes, convs, skills, pipelines, runs, schedules] = await Promise.all([api('/api/status'), api('/api/assistants'), api('/api/recipes'), api('/api/conversations'), api('/api/skills'), api('/api/pipelines'), api('/api/runs'), api('/api/schedules')]);
+  S.pipelines = pipelines; S.runs = runs;
+  S.schedules = schedules;
   S.skills = skills;
   S.settings = status.settings; S.providers = status.providers; S.assistants = assistants; S.recipes = recipes; S.convs = convs; S.osUser = status.user;
   applyTheme(S.settings.theme);
@@ -117,6 +126,7 @@ async function boot() {
   bindChrome();
   route();
   window.addEventListener('hashchange', route);
+  setInterval(pollSchedules, 60000);
   if (!S.settings.onboarded) openOnboarding();
 }
 
@@ -142,11 +152,15 @@ function renderUser() {
 // ---------------------------------------------------------------- routing
 function route() {
   const h = location.hash.replace(/^#\/?/, '');
+  $('#view').onclick = null;
   closeMenu();
   if (h.startsWith('c/')) return openConversation(h.slice(2));
+  if (h.startsWith('run/')) { S.current = null; return renderRun(h.slice(4)); }
   S.current = null;
+  if (h === 'runs') return renderRuns();
   if (h === 'assistants') return renderAssistantsPage();
   if (h === 'recipes') return renderRecipesPage();
+  if (h === 'insights') return renderInsightsPage();
   renderHome();
 }
 const go = (h) => { if (location.hash === `#/${h}`) route(); else location.hash = `/${h}`; };
@@ -170,12 +184,31 @@ function renderConvList() {
       <div class="conv ${S.current?.id === c.id ? 'active' : ''}" data-cid="${c.id}" title="${esc(c.title)}">
         <span class="conv-emoji">${esc(assistantById(c.assistantId).emoji)}</span>
         <span class="conv-title">${esc(c.title)}</span>
+        ${c.scheduled ? '<span title="Scheduled chat" aria-label="Scheduled chat">🕘</span>' : ''}
+        ${c.unread ? '<i class="unread-dot" title="Unread" aria-label="Unread"></i>' : ''}
         ${S.live.has(c.id) ? '<i class="live-dot"></i>' : ''}
         <span class="conv-actions"><button data-conv-menu="${c.id}" title="More">${icon('dots')}</button></span>
       </div>`).join('')}`).join('');
 }
 
 async function refreshConvs() { S.convs = await api('/api/conversations'); renderConvList(); }
+
+async function pollSchedules() {
+  if (!S.schedules.length) return;
+  try {
+    const schedules = await api('/api/schedules');
+    for (const s of schedules) {
+      const previous = S.schedules.find((p) => p.id === s.id);
+      if (previous && ['ok', 'late'].includes(s.lastStatus) && (previous.lastRunAt !== s.lastRunAt || previous.lastStatus === 'running')) {
+        const recipe = S.recipes.find((r) => r.id === s.recipeId);
+        toast(`Your ${recipe?.name || 'scheduled check'} is ready`, 'spark');
+      }
+    }
+    S.schedules = schedules;
+    await refreshConvs();
+    if (S.view === 'recipes' && S.recipeTab === 'Scheduled') renderRecipesPage();
+  } catch (e) { toast(`Couldn't refresh scheduled checks: ${e.message}`, 'alert'); }
+}
 
 function convMenu(cid, anchor) {
   const c = S.convs.find((x) => x.id === cid);
@@ -284,6 +317,7 @@ function composerHTML({ home = false, conv = null } = {}) {
   const placeholder = home ? `How can I help${firstName() ? `, ${firstName()}` : ''} today?` : `Reply to ${a.name}…`;
   return `
     <div class="composer-wrap">
+      <div class="pinned-strip" id="pinnedStrip">${pinnedHTML(conv)}</div>
       <div class="composer" id="composer">
         <div class="attach-list" id="attachList">${attachChips()}</div>
         <textarea id="input" rows="1" placeholder="${esc(placeholder)}">${esc(d.text)}</textarea>
@@ -297,18 +331,97 @@ function composerHTML({ home = false, conv = null } = {}) {
         </div>
         <input type="file" id="fileInput" multiple hidden>
       </div>
-      ${home ? '' : `<div class="composer-hint">Lumen can make mistakes — double-check important details.</div>`}
+      ${home ? '' : `<div class="composer-hint">${!live && suggestedNextStep(conv) ? `<span class="suggest-hint"><kbd>↑</kbd> fills in the suggested next step · </span>` : ''}Lumen can make mistakes — double-check important details.</div>`}
     </div>`;
 }
+
+// Pull up to 3 suggested next steps out of the latest assistant reply: a "Suggested next step(s):" line or list,
+// or a "Next steps" / "What's next" heading followed by a list or a sentence. The last such section wins.
+function suggestedNextSteps(conv) {
+  const last = conv?.messages?.[conv.messages.length - 1];
+  if (!last || last.role !== 'assistant' || !last.content) return [];
+  const text = last.content;
+  const head = /(?:suggested next steps?\b|(?:^|\n)[ \t]*(?:#{1,6}[ \t]+)?[*_]*(?:next steps?|what(?:['’]s| is)? next\??)[*_]*[ \t]*(?=[:\n]|$))[*_]*[ \t]*[:\-–—]?[*_]*[ \t]*/gi;
+  const LIST = /^\s*(?:[-*+]|\d+[.)])\s+/;
+  const clean = (s) => s.replace(LIST, '').replace(/\*\*|__|`/g, '').replace(/^\[[ x]\]\s*/i, '').replace(/^["“'‘]+|["”'’]+$/g, '').trim();
+  let m, found = [];
+  while ((m = head.exec(text))) {
+    const lines = text.slice(head.lastIndex).split('\n').map((l) => l.replace(/^\s*>\s?/, ''));
+    const items = []; let lead = '';
+    for (let i = 0; i < lines.length; i++) {
+      const l = lines[i];
+      if (/^\s*#{1,6}\s/.test(l)) break;
+      if (!l.trim()) {
+        if (!items.length && !lead) continue;
+        const next = lines.slice(i + 1).find((x) => x.trim());
+        if (items.length && next && LIST.test(next)) continue; // loose list
+        break;
+      }
+      if (LIST.test(l)) items.push(clean(l));
+      else if (items.length) { if (/^\s{2,}/.test(l)) items[items.length - 1] += ` ${clean(l)}`; else break; }
+      else lead += `${lead ? ' ' : ''}${l.trim()}`;
+    }
+    const steps = (items.length ? items : lead ? [clean(lead)] : []).filter(Boolean).slice(0, 3);
+    if (steps.length) found = steps;
+  }
+  return found;
+}
+const suggestedNextStep = (conv) => suggestedNextSteps(conv)[0] || '';
 
 function attachChips() {
   return S.draft.attachments.map((f, i) => `
     <span class="attach-chip ${f.uploading ? 'uploading' : ''}">${f.uploading ? '<span class="spinner" style="width:13px;height:13px"></span>' : icon('file')}<span class="name">${esc(f.name)}</span><button data-rm-attach="${i}" title="Remove">${icon('x')}</button></span>`).join('');
 }
 
+const pinsFor = (conv) => conv ? (conv.pinned_files || []) : (S.draft.pinned || []);
+function pinnedHTML(conv) {
+  const pins = pinsFor(conv);
+  return `<span class="pinned-label">Pinned files</span>${pins.map((p) => `<span class="attach-chip" data-pin-path="${esc(p)}" title="${esc(p)}">📌 <span class="name">${esc(baseName(p))}</span><small class="pin-missing"></small><button data-unpin="${esc(p)}" title="Unpin">${icon('x')}</button></span>`).join('')}<button class="btn ghost sm" data-pick-pin title="Pin a file">+ Add</button>`;
+}
+async function checkPinnedFiles(conv, root) {
+  const pins = pinsFor(conv).slice();
+  if (!pins.length) return;
+  try {
+    const r = await api('/api/file-status', { method: 'POST', body: { workspace: conv?.workspace || S.settings.workspace, paths: pins } });
+    $$('#pinnedStrip [data-pin-path]', root).forEach((el) => {
+      const i = pins.indexOf(el.dataset.pinPath);
+      if (i >= 0 && !r.exists[i]) { el.classList.add('missing'); $('.pin-missing', el).textContent = 'missing'; }
+    });
+  } catch (e) { toast(e.message, 'alert'); }
+}
+async function setPins(conv, pins) {
+  if (conv) {
+    if (conv.id) {
+      try { await api(`/api/conversations/${conv.id}`, { method: 'PATCH', body: { pinned_files: pins } }); }
+      catch (e) { toast(e.message, 'alert'); return; }
+    }
+    conv.pinned_files = pins;
+  } else S.draft.pinned = pins;
+  const strip = $('#pinnedStrip');
+  if (strip) { strip.innerHTML = pinnedHTML(conv); checkPinnedFiles(conv, $('#view')); }
+}
+async function chooseWorkspaceFiles(workspace, title, onChoose, multiple = true) {
+  const { files } = await api(`/api/folder/files?workspace=${encodeURIComponent(workspace)}&all=1`);
+  modal({ title, wide: true, body: files.length ? `<div class="file-picker">${files.map((f, i) => `<label><input type="${multiple ? 'checkbox' : 'radio'}" name="picked-file" value="${i}"> ${esc(f.rel)}</label>`).join('')}</div>` : '<p>No files found in this project folder.</p>',
+    actions: [{ label: 'Cancel' }, { label: 'Choose', primary: true, run: (el) => {
+      const selected = $$('input[name="picked-file"]:checked', el).map((x) => files[+x.value]);
+      if (!selected.length) { toast('Choose at least one file', 'alert'); return false; }
+      return onChoose(selected);
+    } }] });
+}
+function pickPinnedFiles(conv) {
+  chooseWorkspaceFiles(conv?.workspace || S.settings.workspace, 'Pin files to this chat', (files) => setPins(conv, [...new Set([...pinsFor(conv), ...files.map((f) => f.path)])])).catch((e) => toast(e.message, 'alert'));
+}
+
 function bindComposer(root, { conv = null } = {}) {
   const input = $('#input', root);
   const send = $('#sendBtn', root);
+  $('#pinnedStrip', root).addEventListener('click', (e) => {
+    const b = e.target.closest('[data-unpin],[data-pick-pin]'); if (!b) return;
+    if ('pickPin' in b.dataset) pickPinnedFiles(conv);
+    else setPins(conv, pinsFor(conv).filter((p) => p !== b.dataset.unpin));
+  });
+  checkPinnedFiles(conv, root);
   const autosize = () => { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 280) + 'px'; };
   const syncSend = () => {
     const live = isLive(conv);
@@ -318,7 +431,16 @@ function bindComposer(root, { conv = null } = {}) {
   };
   autosize(); syncSend();
   input.addEventListener('input', () => { S.draft.text = input.value; autosize(); syncSend(); });
-  input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); if (!isLive(conv)) submit(); } });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); if (!isLive(conv)) submit(); return; }
+    if (e.key === 'ArrowUp' && !e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey && !input.value.trim() && !isLive(conv)) {
+      const s = suggestedNextStep(conv); if (!s) return;
+      e.preventDefault();
+      input.value = S.draft.text = s;
+      autosize(); syncSend();
+      input.setSelectionRange(s.length, s.length);
+    }
+  });
   input.addEventListener('paste', (e) => { const files = [...(e.clipboardData?.files || [])]; if (files.length) { e.preventDefault(); uploadFiles(files); } });
   send.addEventListener('click', () => { if (isLive(conv)) stopConv(conv); else submit(); });
   $('#attachBtn', root).addEventListener('click', () => $('#fileInput', root).click());
@@ -386,6 +508,9 @@ function renderHome() {
         ${composerHTML({ home: true })}
 
         ${demoBanner()}
+
+        <div class="section-label"><span>Guided delivery</span><a data-go="runs">View lifecycle runs</a></div>
+        <button class="starter" data-go="runs"><span>🧬 Requirements to stories — guided stages with approval gates</span>${icon('right')}</button>
 
         <div class="section-label"><span>Who would you like to work with?</span><a data-go="assistants">Manage assistants</a></div>
         <div class="assistant-row">
@@ -489,6 +614,11 @@ async function openConversation(id) {
       catch { toast('That chat could not be found', 'alert'); return go(''); }
     }
     S.draft = { text: '', attachments: [], assistantId: null, access: null };
+    S.editing = null;
+  }
+  if (S.current.unread) {
+    try { await api(`/api/conversations/${id}`, { method: 'PATCH', body: { unread: false } }); S.current.unread = false; await refreshConvs(); }
+    catch (e) { toast(`Couldn't mark this chat as read: ${e.message}`, 'alert'); }
   }
   renderChat();
   if (S.current.running && !S.live.has(id)) waitForBackground(id);
@@ -526,7 +656,8 @@ function renderChat() {
         <button class="pill outline" id="folderPill" title="${esc(c.workspace || '')}">${icon('folder')}<span class="lbl">${esc(baseName(c.workspace) || 'Project folder')}</span></button>
         <button class="icon-btn" id="chatMenuBtn" title="More">${icon('dots')}</button>
       </div>
-      <div class="messages" id="messages"><div class="messages-inner" id="msgInner">
+      <div class="messages ${isLive(c) ? 'is-live' : ''}" id="messages"><div class="messages-inner" id="msgInner">
+        ${forkedFromHTML(c)}
         ${c.messages.length ? c.messages.map((m) => msgHTML(m, c)).join('') : emptyChatHTML(a)}
       </div></div>
       <div class="chat-foot">${composerHTML({ conv: c })}</div>
@@ -547,7 +678,18 @@ function renderChat() {
     { icon: 'trash', label: 'Delete chat', danger: true, run: () => deleteConv(c.id) },
   ], { align: 'right' }));
   root.firstElementChild.addEventListener('click', chatClicks);
+  $('#msgInner').addEventListener('keydown', (e) => {
+    if (e.target.id !== 'editInput') return;
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); saveEdit(S.editing); }
+    else if (e.key === 'Escape') { e.stopPropagation(); setEditing(null); }
+  });
   if (!$('#modalRoot').children.length) $('#input')?.focus();
+}
+
+function forkedFromHTML(c) {
+  if (!c.forkedFrom) return '';
+  const src = S.convs.find((x) => x.id === c.forkedFrom.id);
+  return `<div class="forked-from">${icon('branch')}<span>Branched from ${src ? `<a data-go-conv="${esc(src.id)}">${esc(src.title)}</a>` : `<i>${esc(c.forkedFrom.title || 'a deleted chat')}</i>`}</span></div>`;
 }
 
 function emptyChatHTML(a) {
@@ -556,9 +698,16 @@ function emptyChatHTML(a) {
 
 function msgHTML(m, c) {
   if (m.role === 'user') {
-    return `<div class="msg user" data-mid="${m.id}">
-      ${m.attachments?.length ? `<div class="attach-list">${m.attachments.map((f) => `<span class="attach-chip">${icon('file')}<span class="name">${esc(f.name)}</span></span>`).join('')}</div>` : ''}
+    const attach = m.attachments?.length ? `<div class="attach-list">${m.attachments.map((f) => `<span class="attach-chip">${icon('file')}<span class="name">${esc(f.name)}</span><button data-pin-file="${esc(f.path)}" title="Pin to this chat">📌</button></span>`).join('')}</div>` : '';
+    if (S.editing === m.id) {
+      return `<div class="msg user editing" data-mid="${m.id}">${attach}
+        <div class="edit-box"><textarea class="textarea" id="editInput" rows="3">${esc(m.content)}</textarea>
+          <div class="edit-actions"><button class="btn ghost sm" data-edit-cancel>Cancel</button><button class="btn primary sm" data-edit-save>${icon('send')}Save &amp; send</button></div></div>
+      </div>`;
+    }
+    return `<div class="msg user" data-mid="${m.id}">${attach}
       <div class="bubble">${esc(m.content)}</div>
+      <div class="msg-actions"><button data-edit-msg title="Edit and resend">${icon('pen')}Edit</button><button data-save-recipe title="Turn this request into a reusable quick start">${icon('wand')}Save as quick start</button></div>
     </div>`;
   }
   const a = assistantById(c.assistantId);
@@ -580,17 +729,36 @@ function assistantInner(m, a, live) {
       : `${icon('check')}<span>${tools.length} step${tools.length > 1 ? 's' : ''} completed</span>`;
   }
   const files = m.files || [];
+  const isLast = !live && S.current?.messages?.[S.current.messages.length - 1] === m;
+  const steps = isLast ? suggestedNextSteps(S.current) : [];
   return `
     ${tools.length ? `<div class="steps ${open ? 'open' : ''}" data-steps="${m.id}">
       <button class="steps-head" data-toggle-steps="${m.id}">${stepsHead}${icon('chevron', 'caret')}</button>
       <div class="steps-list">${tools.map((t) => `<div class="step ${t.ok === false ? 'fail' : ''}"><span class="step-state">${t.ok === undefined && live ? '<span class="spinner"></span>' : icon(t.ok === false ? 'x' : 'check')}</span>${icon(t.icon)}<span>${esc(t.label)}</span></div>`).join('')}</div>
     </div>` : ''}
     ${m.content ? `<div class="md">${md(m.content, live)}</div>` : live && !running ? `<div class="thinking"><span class="orb"></span><span class="shimmer">${esc(a.name)} is thinking…</span></div>` : ''}
-    ${files.length ? `<div class="file-cards">${files.map((f) => `<button class="file-card" data-open-file="${esc(f)}" title="Open ${esc(f)}"><span class="file-icon">${esc(extOf(f))}</span><span class="file-info"><b>${esc(baseName(f))}</b><small>Saved to your project folder · Click to open</small></span></button>`).join('')}</div>` : ''}
+    ${files.length ? `<div class="file-cards">${files.map((f) => `<div><button class="file-card" data-open-file="${esc(f)}" title="Open ${esc(f)}"><span class="file-icon">${esc(extOf(f))}</span><span class="file-info"><b>${esc(baseName(f))}</b><small>Saved to your project folder · Click to open</small></span></button>${/\.(xlsx|xml)$/i.test(f) ? `<button class="btn ghost sm" data-diff-file="${esc(f)}">See changes / Compare with…</button>` : ''}</div>`).join('')}</div>` : ''}
     ${m.error ? `<div class="error-card">${icon('alert')}<div><b>Something went wrong.</b><div style="color:var(--text-2);font-size:13.5px">${esc(friendlyError(m.error))}</div><button class="btn soft sm" data-retry="${m.id}">${icon('retry')}Try again</button></div></div>` : ''}
     ${m.stopped ? `<div class="msg-meta" style="margin:6px 0 0">Stopped</div>` : ''}
-    ${!live && (m.content || m.error) ? `<div class="msg-actions"><button data-copy-msg="${m.id}">${icon('copy')}Copy</button>${m.error ? '' : `<button data-retry="${m.id}">${icon('retry')}Retry</button>`}</div>` : ''}`;
+    ${!live && (m.content || m.error) ? `<div class="msg-actions"><button data-copy-msg="${m.id}">${icon('copy')}Copy</button>${m.error ? '' : `<button data-retry="${m.id}" title="Replace this reply with a new one">${icon('retry')}Retry</button>`}<button data-branch="${m.id}" title="Continue from here in a new chat">${icon('branch')}Branch from here</button>${m.content ? `<button data-save-as title="Save this reply as a Word or Excel file">${icon('save')}Save as…</button>${feedbackButtons(m)}` : ''}${usageMeta(m)}</div>` : ''}
+    ${steps.length ? `<div class="suggest-chips">${steps.map((s) => `<button class="suggest-chip" data-suggest="${esc(s)}" title="${esc(s)}&#10;&#10;Click to send · Shift-click to edit first">${esc(s.length > 140 ? `${s.slice(0, 139)}…` : s)}</button>`).join('')}</div>` : ''}`;
 }
+
+const feedbackButtons = (m) => {
+  const r = m.feedback?.rating;
+  const tip = r === 'down' && (m.feedback.reason || m.feedback.note) ? ` — ${[m.feedback.reason, m.feedback.note].filter(Boolean).join(': ')}` : '';
+  return `<button class="fb ${r === 'up' ? 'active' : ''}" data-rate="up" title="${r === 'up' ? 'You found this helpful · click to undo' : 'Helpful'}">${icon('thumbUp')}</button>`
+    + `<button class="fb ${r === 'down' ? 'active' : ''}" data-rate="down" title="${r === 'down' ? esc(`You said this missed the mark${tip} · click to undo`) : 'Not helpful'}">${icon('thumbDown')}</button>`;
+};
+const fmtDuration = (ms) => { const s = Math.round(ms / 1000); return s < 60 ? `${Math.max(1, s)} s` : `${Math.floor(s / 60)} min${s % 60 ? ` ${s % 60} s` : ''}`; };
+// "Most capable · 14 s" under a reply. Cost only when the user turned it on (subscription users find dollar amounts confusing).
+function usageMeta(m) {
+  const u = m.usage; if (!u?.durationMs) return '';
+  const cost = S.settings.showCost && typeof u.costUsd === 'number' ? `$${u.costUsd < 0.01 ? u.costUsd.toFixed(3) : u.costUsd.toFixed(2)}` : '';
+  return `<span class="msg-meta usage-meta">${esc([u.model, fmtDuration(u.durationMs), cost].filter(Boolean).join(' · '))}</span>`;
+}
+// A markdown pipe table: a |row| followed by a |---|---| separator row.
+const hasMdTable = (text) => /^\s*\|.*\|\s*$\n^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/m.test(text || '');
 
 function friendlyError(e) {
   if (/not found|ENOENT|spawn/i.test(e)) return 'The AI engine could not be started. Open Settings to check your connection.';
@@ -600,35 +768,200 @@ function friendlyError(e) {
 }
 
 function chatClicks(e) {
-  const t = e.target.closest('[data-toggle-steps],[data-copy-msg],[data-retry],[data-open-file],[data-copy-code],[data-starter]');
+  const t = e.target.closest('[data-toggle-steps],[data-copy-msg],[data-retry],[data-open-file],[data-pin-file],[data-diff-file],[data-copy-code],[data-copy-table],[data-starter],[data-suggest],[data-edit-msg],[data-edit-save],[data-edit-cancel],[data-branch],[data-go-conv],[data-save-as],[data-rate],[data-save-recipe]');
   if (!t) return;
   const c = S.current;
-  if (t.dataset.toggleSteps) { const id = t.dataset.toggleSteps; S.openSteps.has(id) ? S.openSteps.delete(id) : S.openSteps.add(id); t.parentElement.classList.toggle('open'); }
+  const mid = t.closest('[data-mid]')?.dataset.mid;
+  if (t.dataset.pinFile) setPins(c, [...new Set([...pinsFor(c), t.dataset.pinFile])]);
+  else if (t.dataset.diffFile) showDiff(t.dataset.diffFile, mid, c.workspace);
+  else if (t.dataset.toggleSteps) { const id = t.dataset.toggleSteps; S.openSteps.has(id) ? S.openSteps.delete(id) : S.openSteps.add(id); t.parentElement.classList.toggle('open'); }
+  else if ('saveAs' in t.dataset) saveReplyMenu(c, mid, t);
+  else if (t.dataset.rate) rateReply(c, mid, t.dataset.rate);
+  else if ('saveRecipe' in t.dataset) saveAsRecipe(c, mid);
   else if (t.dataset.copyMsg) { const m = c.messages.find((x) => x.id === t.dataset.copyMsg); navigator.clipboard.writeText(m.content); flash(t, 'Copied'); }
   else if ('copyCode' in t.dataset) { navigator.clipboard.writeText(t.closest('pre').querySelector('code').innerText); flash(t, 'Copied'); }
+  else if ('copyTable' in t.dataset) copyTable(t);
+  else if (t.dataset.suggest) {
+    if (e.shiftKey) { const i = $('#input'); if (i) { i.value = t.dataset.suggest; i.dispatchEvent(new Event('input')); i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }
+    else if (!isLive(c)) submit(t.dataset.suggest);
+  }
+  else if ('editMsg' in t.dataset) { if (!isLive(c)) setEditing(mid); }
+  else if ('editCancel' in t.dataset) setEditing(null);
+  else if ('editSave' in t.dataset) saveEdit(mid);
+  else if (t.dataset.branch) { if (!isLive(c)) branchFrom(c, t.dataset.branch); }
+  else if (t.dataset.goConv) go(`c/${t.dataset.goConv}`);
   else if (t.dataset.retry) {
+    if (isLive(c)) return;
     const idx = c.messages.findIndex((x) => x.id === t.dataset.retry);
-    const prevUser = [...c.messages.slice(0, idx)].reverse().find((x) => x.role === 'user');
-    if (prevUser) sendMessage({ text: prevUser.content, attachments: (prevUser.attachments || []).map((a) => ({ path: a.path, name: a.name })), retryNote: true });
+    const uIdx = c.messages.slice(0, idx).map((x) => x.role).lastIndexOf('user');
+    if (uIdx < 0) return;
+    const prevUser = c.messages[uIdx];
+    rewind(c, uIdx, prevUser.content, { retryNote: true });
   }
   else if (t.dataset.openFile) api('/api/folder/open', { method: 'POST', body: { path: t.dataset.openFile, workspace: c.workspace } });
 }
 function flash(btn, text) { const html = btn.innerHTML; btn.innerHTML = `${icon('check')}${text}`; setTimeout(() => { btn.innerHTML = html; }, 1400); }
 
+// Copy a rendered table as HTML (keeps the grid in Outlook/Word) and as tab-separated text (separate cells in Excel).
+async function copyTable(btn) {
+  const table = btn.closest('.table-wrap')?.querySelector('table'); if (!table) return;
+  const tsv = [...table.rows].map((r) => [...r.cells].map((cell) => cell.innerText.replace(/[\t\r\n]+/g, ' ').trim()).join('\t')).join('\n');
+  const clone = table.cloneNode(true);
+  clone.setAttribute('border', '1');
+  clone.style.cssText = 'border-collapse:collapse;font-family:Calibri,Arial,sans-serif;font-size:11pt';
+  clone.querySelectorAll('th,td').forEach((cell) => Object.assign(cell.style, { border: '1px solid #999', padding: '4px 8px', verticalAlign: 'top' }));
+  clone.querySelectorAll('th').forEach((cell) => Object.assign(cell.style, { background: '#f2f2f2', fontWeight: 'bold' }));
+  try {
+    if (window.ClipboardItem && navigator.clipboard.write) {
+      await navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([clone.outerHTML], { type: 'text/html' }), 'text/plain': new Blob([tsv], { type: 'text/plain' }) })]);
+    } else await navigator.clipboard.writeText(tsv);
+    flash(btn, 'Copied');
+  } catch { toast("Couldn't copy the table", 'alert'); }
+}
+
+function rerenderMsg(c, m) {
+  const el = $(`[data-mid="${m.id}"]`); if (!el || S.current !== c) return;
+  el.outerHTML = msgHTML(m, c);
+  highlight($(`[data-mid="${m.id}"]`));
+}
+
+// --- save a reply as Word / Excel
+function saveReplyMenu(c, mid, anchor) {
+  const m = c.messages.find((x) => x.id === mid); if (!m?.content || !c.id) return;
+  openMenu(anchor, [
+    { heading: 'Save to your project folder' },
+    { icon: 'file', label: 'Word document (.docx)', hint: 'Headings, lists and tables, ready to edit', run: () => exportReply(c, m, 'docx') },
+    ...(hasMdTable(m.content) ? [{ icon: 'sheet', label: 'Excel workbook (.xlsx)', hint: 'One sheet per table', run: () => exportReply(c, m, 'xlsx') }] : []),
+  ]);
+}
+
+async function exportReply(c, m, format) {
+  try {
+    const r = await api('/api/export', { method: 'POST', body: { conversationId: c.id, messageId: m.id, format } });
+    m.files = [...new Set([...(m.files || []), r.path])];
+    rerenderMsg(c, m);
+    toast(`Saved ${r.name} to your folder`, 'file');
+  } catch (e) { toast(e.message, 'alert'); }
+}
+
+// --- feedback (stays on this computer)
+const DOWN_REASONS = ['Wrong', 'Not what I asked', 'Too long', "Didn't use my file"];
+
+async function rateReply(c, mid, rating) {
+  const m = c.messages.find((x) => x.id === mid); if (!m || !c.id) return;
+  const save = async (feedback) => {
+    const r = await api(`/api/conversations/${c.id}/messages/${m.id}`, { method: 'PATCH', body: { feedback } });
+    if (r.feedback) m.feedback = r.feedback; else delete m.feedback;
+    rerenderMsg(c, m);
+  };
+  try {
+    if (m.feedback?.rating === rating) return await save(null); // clicking the active thumb undoes it
+    if (rating === 'up') { await save({ rating: 'up' }); return toast('Thanks for the feedback', 'thumbUp'); }
+  } catch (e) { return toast(e.message, 'alert'); }
+  let reason = '';
+  modal({
+    title: 'What went wrong?', sub: 'Optional, and it stays on this computer. It helps your team see which assistants need work.',
+    body: `<div class="chip-list" id="fbReasons" style="margin-bottom:12px">${DOWN_REASONS.map((x) => `<button class="chip" data-reason="${esc(x)}">${esc(x)}</button>`).join('')}</div>
+      <textarea class="textarea" id="fbNote" rows="3" maxlength="2000" placeholder="Anything else? (optional)"></textarea>`,
+    actions: [{ label: 'Cancel' }, { label: 'Send feedback', primary: true, run: async (el) => { await save({ rating: 'down', reason, note: $('#fbNote', el).value }); toast('Thanks — noted', 'thumbDown'); } }],
+    onOpen: (el) => $('#fbReasons', el).addEventListener('click', (e) => {
+      const b = e.target.closest('[data-reason]'); if (!b) return;
+      reason = reason === b.dataset.reason ? '' : b.dataset.reason;
+      $$('[data-reason]', el).forEach((x) => x.classList.toggle('active', x.dataset.reason === reason));
+    }),
+  });
+}
+
+// --- turn a prompt that worked into a quick start
+function saveAsRecipe(c, mid) {
+  const m = c.messages.find((x) => x.id === mid); if (!m) return;
+  const a = assistantById(c.assistantId);
+  let template = m.content || '';
+  const fields = (m.attachments || []).map((f, i) => {
+    const key = `file${i + 1}`;
+    const name = f.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    template = template.replace(new RegExp(`["“]?${name}["”]?`, 'g'), `{{${key}}}`);
+    const ext = (f.name.match(/\.[a-z0-9]+$/i) || [''])[0].toLowerCase();
+    return { key, label: `File ${i + 1}`, type: 'file', ...(ext ? { accept: ext } : {}) };
+  });
+  openRecipeBuilder(null, { name: c.title || '', emoji: a.emoji || '⚡', description: '', category: 'My quick starts', assistantId: a.id, access: c.access || '', fields, template });
+}
+
+// --- edit, retry and branch
+function setEditing(id) {
+  const c = S.current;
+  const prev = S.editing; S.editing = id;
+  for (const mid of [prev, id]) {
+    const m = mid && c.messages.find((x) => x.id === mid);
+    const el = m && $(`[data-mid="${mid}"]`);
+    if (el) el.outerHTML = msgHTML(m, c);
+  }
+  const ta = $('#editInput');
+  if (ta) { ta.style.height = `${Math.min(ta.scrollHeight + 2, 320)}px`; ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+}
+
+function saveEdit(id) {
+  const c = S.current;
+  const idx = c.messages.findIndex((x) => x.id === id);
+  const text = $('#editInput')?.value.trim();
+  if (idx < 0 || !text || isLive(c)) return;
+  rewind(c, idx, text);
+}
+
+// Resend from the user message at `idx` with new text, dropping it and everything after. If later turns would be
+// lost, offer to branch into a new chat instead.
+function rewind(c, idx, text, { retryNote } = {}) {
+  const attachments = (c.messages[idx].attachments || []).map((a) => ({ path: a.path, name: a.name }));
+  const replace = () => {
+    const truncateFrom = c.messages[idx].id;
+    S.editing = null;
+    c.messages.splice(idx);
+    sendMessage({ text, attachments, retryNote, truncateFrom });
+  };
+  const laterTurns = c.messages.slice(idx + 1).some((x) => x.role === 'user');
+  if (!laterTurns) return replace();
+  modal({
+    title: 'Replace the rest of this chat?', sub: 'Everything after this message will be replaced. Want to branch instead?',
+    actions: [{ label: 'Cancel' }, { label: 'Branch instead', icon: 'branch', run: () => branchAndSend(c, idx, text, attachments) }, { label: 'Replace', primary: true, run: replace }],
+  });
+}
+
+const forkConversation = (convId, uptoMessageId) => api(`/api/conversations/${convId}/fork`, { method: 'POST', body: { uptoMessageId } });
+
+async function openBranch(conv) {
+  await refreshConvs();
+  S.current = conv; S.view = 'chat'; S.editing = null;
+  S.draft = { text: '', attachments: [], assistantId: null, access: null };
+  go(`c/${conv.id}`);
+  toast('Branched into a new chat', 'branch');
+}
+
+async function branchFrom(c, messageId) {
+  try { await openBranch(await forkConversation(c.id, messageId)); } catch (e) { toast(e.message, 'alert'); }
+}
+
+// Branch from just before the user message at `idx`, then send the new text in the branch.
+async function branchAndSend(c, idx, text, attachments) {
+  try {
+    await openBranch(await forkConversation(c.id, c.messages[idx - 1]?.id));
+    sendMessage({ text, attachments });
+  } catch (e) { toast(e.message, 'alert'); }
+}
+
 function rerenderCurrent() { if (S.view === 'chat') renderChat(); else if (S.view === 'home') renderHome(); }
 
 // --- streaming
-async function sendMessage({ text, attachments = [], assistantId, access, retryNote }) {
+async function sendMessage({ text, attachments = [], assistantId, access, retryNote, truncateFrom, recipeId }) {
   let conv = S.view === 'chat' ? S.current : null;
   const aId = conv ? conv.assistantId : (assistantId || S.draft.assistantId || 'lumen');
   const a = assistantById(aId);
   const acc = conv ? (conv.access || S.settings.access) : (access || S.draft.access || a.access || S.settings.access);
-  const userMsg = { id: `u${Date.now()}`, role: 'user', content: text, attachments: attachments.map((f) => ({ name: f.name, path: f.path })), createdAt: Date.now() };
+  const userMsg = { id: `u${Date.now()}`, role: 'user', content: text, attachments: attachments.map((f) => ({ name: f.name, path: f.path })), createdAt: Date.now(), ...(recipeId ? { recipeId } : {}) };
   const msg = { id: `a${Date.now()}`, role: 'assistant', content: '', tools: [], files: [], createdAt: Date.now() };
   const ac = new AbortController();
 
   if (!conv) {
-    conv = { id: null, title: text.slice(0, 48), assistantId: aId, access: acc, workspace: S.settings.workspace, messages: [] };
+    conv = { id: null, title: text.slice(0, 48), assistantId: aId, access: acc, workspace: S.settings.workspace, pinned_files: [...(S.draft.pinned || [])], messages: [] };
     S.current = conv;
   }
   conv.messages.push(userMsg, msg);
@@ -636,6 +969,7 @@ async function sendMessage({ text, attachments = [], assistantId, access, retryN
   let key = tempKey;
   S.live.set(key, { ac, msg, userMsg, conv });
   S.draft = { text: '', attachments: [], assistantId: null, access: null };
+  S.editing = null;
   renderChat();
 
   let frame = 0;
@@ -654,8 +988,9 @@ async function sendMessage({ text, attachments = [], assistantId, access, retryN
   try {
     const res = await fetch('/api/chat', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: ac.signal,
-      body: JSON.stringify({ conversationId: conv.id, message: text, attachments: attachments.map((f) => f.path), assistantId: aId, access: acc, workspace: conv.workspace, providerId: S.settings.providerId, model: S.settings.model }),
+      body: JSON.stringify({ conversationId: conv.id, message: text, attachments: attachments.map((f) => f.path), pinned_files: conv.pinned_files || [], assistantId: aId, access: acc, workspace: conv.workspace, providerId: S.settings.providerId, model: S.settings.model, truncateFrom, recipeId }),
     });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `Request failed (${res.status})`);
     const reader = res.body.getReader();
     const dec = new TextDecoder();
     let buf = '';
@@ -669,6 +1004,12 @@ async function sendMessage({ text, attachments = [], assistantId, access, retryN
         if (!line.trim()) continue;
         const ev = JSON.parse(line);
         if (ev.type === 'conversation') {
+          // Adopt the server's message ids so edit / retry / branch can point at them later.
+          for (const [m, id] of [[userMsg, ev.userMessageId], [msg, ev.assistantMessageId]]) {
+            if (!id) continue;
+            const el = $(`[data-mid="${m.id}"]`); if (el) el.dataset.mid = id;
+            m.id = id;
+          }
           if (!conv.id) {
             conv.id = ev.conversation.id;
             S.live.delete(key); key = conv.id; S.live.set(key, { ac, msg, userMsg, conv });
@@ -681,7 +1022,7 @@ async function sendMessage({ text, attachments = [], assistantId, access, retryN
         else if (ev.type === 'tool_done') { const t = msg.tools.find((x) => x.id === ev.id); if (t) t.ok = ev.ok; schedule(); }
         else if (ev.type === 'file') { if (!msg.files.includes(ev.path)) msg.files.push(ev.path); schedule(); }
         else if (ev.type === 'error') { msg.error = ev.message; schedule(); }
-        else if (ev.type === 'done') { msg.files = ev.message.files || []; }
+        else if (ev.type === 'done') { msg.files = ev.message.files || []; if (ev.message.usage) msg.usage = ev.message.usage; }
         else if (ev.type === 'title') {
           conv.title = ev.title;
           const item = S.convs.find((x) => x.id === conv.id); if (item) item.title = ev.title;
@@ -697,6 +1038,7 @@ async function sendMessage({ text, attachments = [], assistantId, access, retryN
   S.live.delete(key);
   if (frame) cancelAnimationFrame(frame);
   if (S.current === conv) {
+    $('#messages')?.classList.remove('is-live');
     const el = $(`[data-mid="${msg.id}"] .msg-body`);
     if (el) { el.innerHTML = assistantInner(msg, a, false); highlight(el); }
     const foot = $('.chat-foot');
@@ -714,20 +1056,53 @@ function stopConv(conv) {
 }
 
 // ---------------------------------------------------------------- folder
-async function pickFolder() {
-  const r = await api('/api/folder/pick', { method: 'POST' });
-  if (r.path) return r.path;
-  if (r.native && r.path === '') return null; // user cancelled
+// In-app folder browser. (A native dialog started by the server can open behind the browser or on another
+// screen, which looks like a dead button, so Lumen browses folders itself.)
+function pickFolder(start = currentWorkspace()) {
   return new Promise((resolve) => {
+    let current = '';
+    let settled = false;
+    const finish = (p) => { if (!settled) { settled = true; resolve(p); } };
     modal({
-      title: 'Choose a project folder', sub: 'Paste the full path of the folder Lumen should work in.',
-      body: `<input class="input" id="folderInput" placeholder="e.g. C:\\Users\\you\\Documents\\Project X" value="${esc(currentWorkspace())}">`,
-      actions: [{ label: 'Cancel', run: () => resolve(null) }, { label: 'Use this folder', primary: true, run: async () => {
-        const p = $('#folderInput').value.trim();
-        const { ok } = await api('/api/folder/check', { method: 'POST', body: { path: p } });
-        if (!ok) { toast("That folder doesn't exist", 'alert'); return false; }
-        resolve(p);
+      title: 'Choose a project folder', sub: 'Open the folder Lumen should work in, then choose “Use this folder”.', wide: true,
+      body: `<div class="fp">
+        <div class="fp-places" id="fpPlaces"></div>
+        <div class="fp-main">
+          <div class="row" style="gap:6px;align-items:center"><button class="btn ghost sm" id="fpUp" title="Up one level">${icon('right', 'fp-up')}Up</button><input class="input" id="fpPath" spellcheck="false" placeholder="Type or paste a folder path and press Enter"></div>
+          <div class="fp-list" id="fpList"><div class="fp-empty"><span class="spinner"></span></div></div>
+          <div class="row" style="gap:6px;align-items:center"><input class="input" id="fpNew" placeholder="New folder name (optional)"><button class="btn soft sm" id="fpMk" style="flex:0 0 auto">${icon('plus')}Create folder</button></div>
+        </div></div>`,
+      actions: [{ label: 'Cancel', run: () => finish(null) }, { label: 'Use this folder', primary: true, run: () => {
+        if (!current) { toast('Open a folder first', 'alert'); return false; }
+        finish(current);
       } }],
+      onOpen: (el) => {
+        // Closing with ×, Escape or the backdrop counts as Cancel.
+        new MutationObserver((_, obs) => { if (!el.isConnected) { obs.disconnect(); finish(null); } }).observe($('#modalRoot'), { childList: true });
+        const go = async (p) => {
+          const list = $('#fpList', el);
+          let r;
+          try { r = await api(`/api/folder/browse?path=${encodeURIComponent(p || '')}`); } catch (e) { toast(e.message, 'alert'); return false; }
+          current = r.path;
+          $('#fpPath', el).value = r.path;
+          $('#fpUp', el).disabled = r.parent === null;
+          $('#fpUp', el).onclick = () => go(r.parent);
+          $('#fpPlaces', el).innerHTML = [...r.places, { name: 'Drives', path: '' }]
+            .map((x) => `<button class="fp-place ${x.path === r.path ? 'active' : ''}" data-fp="${esc(x.path)}">${icon('folder')}<span>${esc(x.name)}</span></button>`).join('');
+          list.innerHTML = r.dirs.length ? r.dirs.map((d) => `<button class="fp-item" data-fp="${esc(d.path)}">${icon('folder')}<span>${esc(d.name)}</span>${icon('right', 'fp-go')}</button>`).join('')
+            : `<div class="fp-empty">${r.path ? 'No folders inside. You can use this one, or create a new folder below.' : 'No drives found.'}</div>`;
+          list.scrollTop = 0;
+          return true;
+        };
+        el.addEventListener('click', (e) => { const b = e.target.closest('[data-fp]'); if (b) go(b.dataset.fp); });
+        $('#fpPath', el).addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); go(e.target.value.trim()); } });
+        $('#fpMk', el).addEventListener('click', async () => {
+          const name = $('#fpNew', el).value.trim();
+          if (!current) return toast('Open a folder first', 'alert');
+          try { const r = await api('/api/folder/mkdir', { method: 'POST', body: { parent: current, name } }); $('#fpNew', el).value = ''; go(r.path); } catch (e) { toast(e.message, 'alert'); }
+        });
+        go(start).then((ok) => { if (!ok) go(''); });
+      },
     });
   });
 }
@@ -758,12 +1133,113 @@ async function openDrawer() {
   $('#drawerFiles').innerHTML = '<div class="conv-empty"><span class="spinner" style="width:18px;height:18px"></span></div>';
   const r = await api(`/api/folder/files?workspace=${encodeURIComponent(currentWorkspace())}`);
   $('#drawerPath').textContent = r.workspace;
-  $('#drawerFiles').innerHTML = r.files.length ? `<div class="conv-group" style="padding-top:4px">Recently changed</div>` + r.files.map((f) => `
-    <button class="file-row" data-open-file="${esc(f.path)}" title="${esc(f.rel)}"><span class="file-icon">${esc(extOf(f.name))}</span><span class="file-info"><b>${esc(f.name)}</b><small>${esc(f.rel.includes('\\') || f.rel.includes('/') ? f.rel.replace(/[\\/][^\\/]+$/, '') + ' · ' : '')}${fmtSize(f.size)} · ${timeAgo(f.mtime)}</small></span></button>`).join('')
-    : `<div class="conv-empty">This folder is empty.<br>Files Lumen creates will appear here.</div>`;
+  const changed = new Map();
+  for (const msg of S.current?.messages || []) for (const file of msg.files || []) changed.set(file, msg.id);
+  const paths = [...changed.keys()];
+  const status = paths.length ? await api('/api/file-status', { method: 'POST', body: { workspace: r.workspace, paths } }) : { mtime: [] };
+  const section = paths.length ? `<div class="conv-group">Files changed in this chat</div>` + paths.map((p, i) => `<button class="file-row" data-jump-message="${esc(changed.get(p))}" title="Go to the reply that changed this file"><span class="file-icon">${esc(extOf(p))}</span><span class="file-info"><b>${esc(baseName(p))}</b><small>${status.mtime[i] ? esc(timeAgo(status.mtime[i])) : 'Missing'} · Go to reply</small></span></button>`).join('') : '';
+  $('#drawerFiles').innerHTML = section + (r.files.length ? `<div class="conv-group" style="padding-top:4px">Recently changed</div>` + r.files.map((f) => `
+    <div class="drawer-file"><button class="file-row" data-open-file="${esc(f.path)}" title="${esc(f.rel)}"><span class="file-icon">${esc(extOf(f.name))}</span><span class="file-info"><b>${esc(f.name)}</b><small>${esc(f.rel.includes('\\') || f.rel.includes('/') ? f.rel.replace(/[\\/][^\\/]+$/, '') + ' · ' : '')}${fmtSize(f.size)} · ${timeAgo(f.mtime)}</small></span></button><button class="btn ghost sm" data-pin-file="${esc(f.path)}" title="Pin to this chat">📌</button></div>`).join('')
+    : `<div class="conv-empty">This folder is empty.<br>Files Lumen creates will appear here.</div>`);
 }
 function closeDrawer() { const d = $('#filesDrawer'); d.classList.remove('open'); d.setAttribute('aria-hidden', 'true'); }
 
+async function renderRuns() {
+  S.view = 'runs'; setNav('runs');
+  try { S.runs = await api('/api/runs'); }
+  catch (e) { toast(e.message, 'alert'); return; }
+  if (S.view !== 'runs') return;
+  $('#view').innerHTML = `<div class="page"><div class="page-inner"><div class="section-label"><span>Lifecycle runs</span></div>
+    <p>Move from requirements to stories, reviewing each stage before the next.</p>
+    <button class="btn primary" id="newRun">🧬 Start requirements to stories</button>
+    <div class="lifecycle-list">${S.runs.length ? S.runs.map((r) => `<button class="starter" data-run="${esc(r.id)}"><span><b>${esc(r.name)}</b> · ${r.stages.filter((s) => s.status === 'approved').length}/${r.stages.length} approved</span>${icon('right')}</button>`).join('') : '<p>No runs yet.</p>'}</div></div></div>`;
+  $('#newRun').addEventListener('click', startNewRun);
+  $('#view').onclick = (e) => { const b = e.target.closest('[data-run]'); if (b) go(`run/${b.dataset.run}`); };
+}
+
+async function startNewRun() {
+  try {
+    const pipeline = S.pipelines.find((p) => p.id === 'aidlc');
+    if (!pipeline) throw new Error('The lifecycle pipeline is not available.');
+    const { files } = await api(`/api/folder/files?workspace=${encodeURIComponent(S.settings.workspace)}&all=1`);
+    modal({ title: 'Start requirements to stories', sub: 'Choose a unique run name and the source documents in your project folder.', wide: true,
+      body: `<label>Run name<input class="input" id="runName" maxlength="80"></label><div class="section-label"><span>Source files</span></div><div class="file-picker">${files.map((f, i) => `<label><input type="checkbox" name="run-source" value="${i}"> ${esc(f.rel)}</label>`).join('') || 'No files found.'}</div>`,
+      actions: [{ label: 'Cancel' }, { label: 'Create run', primary: true, run: async (el) => {
+        const name = $('#runName', el).value.trim();
+        const sources = $$('input[name="run-source"]:checked', el).map((x) => files[+x.value].path);
+        if (!name || !sources.length) { toast('Enter a name and choose source files', 'alert'); return false; }
+        const run = await api('/api/runs', { method: 'POST', body: { pipelineId: pipeline.id, name, sources, workspace: S.settings.workspace } });
+        go(`run/${run.id}`);
+      } }] });
+  } catch (e) { toast(e.message, 'alert'); }
+}
+
+let runTimer = null;
+async function renderRun(id, selected = null) {
+  clearTimeout(runTimer);
+  S.view = 'run'; setNav('runs');
+  try {
+    const run = await api(`/api/runs/${encodeURIComponent(id)}`);
+    if (location.hash.replace(/^#\/?/, '') !== `run/${id}`) return;
+    const pipeline = S.pipelines.find((p) => p.id === run.pipelineId);
+    if (!pipeline) throw new Error('The pipeline definition is missing.');
+    const stage = run.stages.find((s) => s.id === selected) || run.stages.find((s) => s.status !== 'approved') || run.stages[run.stages.length - 1];
+    const def = pipeline.stages.find((s) => s.id === stage.id);
+    const index = run.stages.indexOf(stage), prev = run.stages[index - 1];
+    $('#view').innerHTML = `<div class="page"><div class="page-inner">
+      <a data-back-runs>← Lifecycle runs</a><h1>${esc(run.name)}</h1><p>${esc(pipeline.name)} · ${esc(run.workspace)}</p>
+      <div class="run-stepper">${run.stages.map((s, i) => `<button class="run-step ${s.id === stage.id ? 'selected' : ''}" data-stage="${esc(s.id)}"><b>${i + 1}. ${esc(pipeline.stages[i].name)}</b><span>${esc(s.status)}</span></button>`).join('')}</div>
+      <h2>${esc(def.name)}</h2><p>Status: <b>${esc(stage.status)}</b>${stage.unapprovedInputs ? ' · Based on unapproved inputs' : ''}</p>
+      ${stage.error ? `<p class="run-error">${esc(stage.error)}</p>` : ''}
+      ${stage.approvedAt ? `<p>Approved by ${esc(stage.approvedBy)} on ${esc(new Date(stage.approvedAt).toLocaleString())}</p>` : ''}
+      <div class="run-actions">
+        ${['pending', 'rework'].includes(stage.status) ? `<button class="btn primary" data-run-action="start">${stage.status === 'rework' ? 'Run again' : 'Start stage'}</button>` : ''}
+        ${stage.conversationId ? `<button class="btn soft" data-open-chat="${esc(stage.conversationId)}">Open stage chat</button>` : ''}
+        ${['review', 'approved'].includes(stage.status) ? `<button class="btn soft" data-run-file="${esc(stage.outputPath)}">Open output</button>` : ''}
+        ${stage.status === 'review' ? `<button class="btn soft" data-run-action="check" ${stage.checkRunning ? 'disabled' : ''}>${stage.checkRunning ? 'Checking…' : 'Traceability check'}</button><button class="btn primary" data-run-action="approve">Approve</button>` : ''}
+        ${['review', 'approved'].includes(stage.status) ? '<button class="btn soft" data-run-action="rework">Send back</button>' : ''}
+      </div>
+      ${stage.checkSummary ? `<div class="run-findings"><h3>Traceability findings</h3><div class="md">${md(stage.checkSummary)}</div>${stage.gateConversationId ? `<button class="btn ghost sm" data-open-chat="${esc(stage.gateConversationId)}">Open check chat</button>` : ''}</div>` : ''}
+      ${prev && prev.status !== 'approved' && stage.status === 'pending' ? '<p>Previous stage is not approved. Starting requires an explicit override and the output will be labelled.</p>' : ''}
+      </div></div>`;
+    highlight($('#view'));
+    $('#view').onclick = async (e) => {
+      const b = e.target.closest('[data-back-runs],[data-stage],[data-run-action],[data-open-chat],[data-run-file]'); if (!b) return;
+      if ('backRuns' in b.dataset) return go('runs');
+      if (b.dataset.stage) return renderRun(id, b.dataset.stage);
+      if (b.dataset.openChat) return go(`c/${b.dataset.openChat}`);
+      if (b.dataset.runFile) return api('/api/folder/open', { method: 'POST', body: { path: b.dataset.runFile, workspace: run.workspace } });
+      const operation = b.dataset.runAction;
+      const act = async (override = false) => {
+        await api(`/api/runs/${id}/stages/${stage.id}/${operation}`, { method: 'POST', body: { override } });
+        if (operation === 'start' || operation === 'check') await refreshConvs();
+        if (operation === 'rework' && stage.conversationId) return go(`c/${stage.conversationId}`);
+        renderRun(id, stage.id);
+      };
+      if (operation === 'start' && prev && prev.status !== 'approved') {
+        return modal({ title: 'Use unapproved inputs?', sub: 'The output will be labelled as based on unapproved inputs.', actions: [{ label: 'Cancel' }, { label: 'Start anyway', primary: true, run: () => act(true) }] });
+      }
+      b.disabled = true;
+      try { await act(); } catch (err) { toast(err.message, 'alert'); b.disabled = false; }
+    };
+    if (run.stages.some((s) => s.status === 'running' || s.checkRunning)) runTimer = setTimeout(() => { if (S.view === 'run') renderRun(id, stage.id); }, 2000);
+  } catch (e) { toast(e.message, 'alert'); }
+}
+
+async function showDiff(file, mid, workspace) {
+  try {
+    const r = await api(`/api/file-pair?workspace=${encodeURIComponent(workspace)}&file=${encodeURIComponent(file)}&message=${encodeURIComponent(mid || '')}`);
+    const compare = async (other) => {
+      const currentIsOriginal = !/ \(updated\)\.[^.]+$/i.test(file) && / \(updated\)\.[^.]+$/i.test(other);
+      const a = currentIsOriginal ? file : other, b = currentIsOriginal ? other : file;
+      const result = await api(`/api/diff?workspace=${encodeURIComponent(workspace)}&a=${encodeURIComponent(a)}&b=${encodeURIComponent(b)}`);
+      modal({ title: 'File changes', sub: `${baseName(a)} → ${baseName(b)} · Up to 500 changes`, wide: true,
+        body: result.changes.length ? `<div class="diff-table"><table><thead><tr><th>Sheet / section</th><th>Cell / field</th><th>Before</th><th>After</th></tr></thead><tbody>${result.changes.map((c) => `<tr><td>${esc(c.sheet)}</td><td>${esc(c.cell)}</td><td>${esc(c.before)}</td><td>${esc(c.after)}</td></tr>`).join('')}</tbody></table></div>` : '<p>No cell or task changes found.</p>', actions: [{ label: 'Done', primary: true }] });
+    };
+    if (r.pair) await compare(r.pair);
+    else await chooseWorkspaceFiles(workspace, 'Compare with…', (files) => compare(files[0].path), false);
+  } catch (e) { toast(e.message, 'alert'); }
+}
 // ---------------------------------------------------------------- assistants page
 function renderAssistantsPage() {
   S.view = 'assistants'; setNav('assistants');
@@ -922,7 +1398,7 @@ function openAssistantBuilder(existing) {
 // ---------------------------------------------------------------- recipes
 function renderRecipesPage() {
   S.view = 'recipes'; setNav('recipes');
-  const cats = ['All', ...new Set(S.recipes.map((r) => r.category || 'Other'))];
+  const cats = ['All', ...new Set(S.recipes.map((r) => r.category || 'Other').filter((c) => c !== 'Scheduled')), 'Scheduled'];
   if (!cats.includes(S.recipeTab)) S.recipeTab = 'All';
   const list = S.recipes.filter((r) => S.recipeTab === 'All' || (r.category || 'Other') === S.recipeTab);
   $('#view').innerHTML = `
@@ -932,16 +1408,31 @@ function renderRecipesPage() {
         <button class="btn grad" data-new-recipe>${icon('plus')}New quick start</button>
       </div>
       <div class="tabs">${cats.map((c) => `<button class="tab ${c === S.recipeTab ? 'active' : ''}" data-tab="${esc(c)}">${esc(c)}</button>`).join('')}</div>
-      <div class="recipe-grid" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr))">
+      ${S.recipeTab === 'Scheduled' ? `<div class="help schedule-notice">Schedules run only while Lumen is running. Missed checks run once when Lumen starts again. Monthly dates that don't exist in a month are skipped.</div>
+      <div class="schedule-list">${S.schedules.length ? S.schedules.map((s) => {
+        const r = S.recipes.find((x) => x.id === s.recipeId);
+        const result = s.running ? 'Running or waiting' : s.lastStatus === 'error' ? `Error: ${s.lastError || 'The check failed.'}` : s.lastStatus === 'late' ? 'Ran late' : s.lastStatus === 'ok' ? 'Ready' : 'Not run yet';
+        return `<div class="schedule-card"><div><strong>${esc(r?.name || 'Deleted quick start')}</strong><div class="help">${s.enabled ? `Next run: ${esc(new Date(s.nextRunAt).toLocaleString())}` : 'Paused'} · ${esc(result)}</div>${s.lastConversationId ? `<button class="schedule-link" data-schedule-chat="${esc(s.lastConversationId)}">Open last chat</button>` : ''}</div>
+          <div class="schedule-actions"><button class="btn soft sm" data-schedule-toggle="${esc(s.id)}">${s.enabled ? 'Pause' : 'Resume'}</button><button class="btn soft sm" data-schedule-run="${esc(s.id)}" ${s.running ? 'disabled' : ''}>Run now</button><button class="btn soft sm" data-schedule-delete="${esc(s.id)}">Delete</button></div></div>`;
+      }).join('') : '<div class="conv-empty">No scheduled checks yet. Open a quick start and choose Repeat…</div>'}</div>` : `<div class="recipe-grid" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr))">
         ${list.map(recipeCard).join('')}
         <button class="recipe-card new-card" data-new-recipe style="min-height:170px"><span class="plus" style="width:40px;height:40px">${icon('plus')}</span><b>Create a quick start</b></button>
-      </div>
+      </div>`}
     </div></div>`;
-  $('#view').firstElementChild.addEventListener('click', (e) => {
-    const t = e.target.closest('[data-tab],[data-recipe],[data-new-recipe]'); if (!t) return;
+  $('#view').firstElementChild.addEventListener('click', async (e) => {
+    const t = e.target.closest('[data-tab],[data-recipe],[data-new-recipe],[data-schedule-toggle],[data-schedule-run],[data-schedule-delete],[data-schedule-chat]'); if (!t) return;
     if (t.dataset.tab) { S.recipeTab = t.dataset.tab; renderRecipesPage(); }
     else if (t.dataset.recipe) openRecipeRunner(t.dataset.recipe);
-    else openRecipeBuilder();
+    else if (t.dataset.scheduleChat) go(`c/${t.dataset.scheduleChat}`);
+    else if (t.dataset.scheduleDelete) modal({ title: 'Delete this schedule?', sub: 'Existing chats and files are kept.', actions: [{ label: 'Cancel' }, { label: 'Delete', danger: true, run: async () => { await api(`/api/schedules/${t.dataset.scheduleDelete}`, { method: 'DELETE' }); S.schedules = await api('/api/schedules'); renderRecipesPage(); } }] });
+    else if (t.dataset.scheduleToggle || t.dataset.scheduleRun) {
+      try {
+        const id = t.dataset.scheduleToggle || t.dataset.scheduleRun;
+        if (t.dataset.scheduleToggle) await api(`/api/schedules/${id}`, { method: 'PUT', body: { enabled: !S.schedules.find((s) => s.id === id).enabled } });
+        else await api(`/api/schedules/${id}/run-now`, { method: 'POST' });
+        S.schedules = await api('/api/schedules'); renderRecipesPage();
+      } catch (err) { toast(err.message, 'alert'); }
+    } else openRecipeBuilder();
   });
 }
 
@@ -949,22 +1440,29 @@ function openRecipeRunner(id) {
   const r = S.recipes.find((x) => x.id === id); if (!r) return;
   const a = assistantById(r.assistantId);
   const files = {};
+  const readValues = (el, filePaths = false) => {
+    const vals = {};
+    for (const f of r.fields || []) vals[f.key] = f.type === 'file' ? (files[f.key] ? (filePaths ? files[f.key].path : `"${files[f.key].name}"`) : '') : ($(`[data-field="${f.key}"]`, el)?.value || '').trim();
+    const required = (r.fields || []).filter((f) => !f.optional && !/optional/i.test(f.placeholder || '')).find((f) => !vals[f.key]);
+    if (required) { toast(`Please ${required.type === 'file' ? 'choose' : 'fill in'} “${required.label}”`, 'alert'); $(`[data-field="${required.key}"],[data-file-select="${required.key}"]`, el)?.focus(); return null; }
+    return vals;
+  };
   const m = modal({
     head: `<div class="modal-head"><span class="recipe-emoji" style="font-size:24px;width:48px;height:48px;border-radius:14px;margin:0">${esc(r.emoji)}</span><div><h2>${esc(r.name)}</h2><p>${esc(r.description || '')}</p></div><button class="icon-btn" data-x>${icon('x')}</button></div>`,
     body: `${(r.fields || []).map((f) => `<div class="field"><label>${esc(f.label)}</label>${fieldInput(f)}</div>`).join('')}
       <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-top:4px" data-color="${a.color}"><span class="a-badge sm">${esc(a.emoji)}</span>${esc(a.name)} will take it from here${r.access === 'edit' ? ' and save the result to your project folder' : ''}.</div>`,
     leftAction: { label: 'Edit', icon: 'edit', run: () => openRecipeBuilder(r) },
-    actions: [{ label: 'Cancel' }, { label: 'Start', icon: 'play', grad: true, run: (el) => {
-      const vals = {};
-      for (const f of r.fields || []) vals[f.key] = f.type === 'file' ? (files[f.key] ? `"${files[f.key].name}"` : '') : ($(`[data-field="${f.key}"]`, el)?.value || '').trim();
-      const required = (r.fields || []).filter((f) => !f.optional && !/optional/i.test(f.placeholder || '')).find((f) => !vals[f.key]);
-      if (required) { toast(`Please ${required.type === 'file' ? 'choose' : 'fill in'} “${required.label}”`, 'alert'); $(`[data-field="${required.key}"],[data-file-select="${required.key}"]`, el)?.focus(); return false; }
+    actions: [{ label: 'Cancel' }, { label: 'Repeat…', run: (el) => {
+      const values = readValues(el, true); if (!values) return false;
+      openScheduleForm(r, values, () => m.close()); return false;
+    } }, { label: 'Start', icon: 'play', grad: true, run: (el) => {
+      const vals = readValues(el); if (!vals) return false;
       const text = r.template.replace(/\{\{(\w+)\}\}/g, (_, k) => vals[k] || '(not specified)');
       const attachments = Object.values(files).filter(Boolean);
       const order = ['chat', 'read', 'edit'];
       const access = order[Math.max(order.indexOf(r.access || 'chat'), order.indexOf(S.settings.access), attachments.length ? 1 : 0)];
       S.current = null; S.view = 'home';
-      sendMessage({ text, attachments, assistantId: r.assistantId, access });
+      sendMessage({ text, attachments, assistantId: r.assistantId, access, recipeId: r.id });
     } }],
   });
   // File fields: offer matching files from the project folder (best guess pre-selected), or upload one.
@@ -1005,6 +1503,26 @@ function openRecipeRunner(id) {
   setTimeout(() => $('[data-field]', m.el)?.focus(), 60);
 }
 
+function openScheduleForm(recipe, values, onSaved) {
+  const m = modal({
+    title: `Repeat ${recipe.name}`, sub: 'Schedules run only while Lumen is running. Missed checks run once when Lumen starts again.',
+    body: `<div class="field"><label>Repeat</label><select class="select" id="scheduleKind"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></div>
+      <div class="field" id="scheduleDays" hidden><label>Days</label><div class="schedule-days">${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => `<label><input type="checkbox" value="${i}" ${i === 1 ? 'checked' : ''}> ${d}</label>`).join('')}</div></div>
+      <div class="field" id="scheduleMonth" hidden><label>Day of month</label><input class="input" type="number" min="1" max="31" value="1" id="scheduleDay"><div class="help">Months without this date are skipped.</div></div>
+      <div class="field"><label>Time (local)</label><input class="input" type="time" value="09:00" id="scheduleTime"></div>
+      ${recipe.access === 'edit' ? '<label class="schedule-permission"><input type="checkbox" id="scheduleAllow"> Allow this schedule to save files</label>' : ''}`,
+    actions: [{ label: 'Cancel' }, { label: 'Save schedule', primary: true, run: async (el) => {
+      const kind = $('#scheduleKind', el).value, time = $('#scheduleTime', el).value;
+      const when = { kind, time };
+      if (kind === 'weekly') when.days = $$('#scheduleDays input:checked', el).map((x) => Number(x.value));
+      if (kind === 'monthly') when.day = Number($('#scheduleDay', el).value);
+      await api('/api/schedules', { method: 'POST', body: { recipeId: recipe.id, values, workspace: S.settings.workspace, when, allowEdit: !!$('#scheduleAllow', el)?.checked } });
+      S.schedules = await api('/api/schedules'); onSaved(); toast('Schedule saved');
+    } }],
+  });
+  $('#scheduleKind', m.el).addEventListener('change', (e) => { $('#scheduleDays', m.el).hidden = e.target.value !== 'weekly'; $('#scheduleMonth', m.el).hidden = e.target.value !== 'monthly'; });
+}
+
 function fieldInput(f) {
   if (f.type === 'textarea') return `<textarea class="textarea" data-field="${f.key}" placeholder="${esc(f.placeholder || '')}" rows="4"></textarea>`;
   if (f.type === 'select') return `<div class="seg" data-seg="${f.key}">${(f.options || []).map((o) => `<button type="button" class="${o === (f.default || f.options[0]) ? 'active' : ''}" onclick="this.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('active'));this.classList.add('active');this.parentElement.nextElementSibling.value=this.textContent">${esc(o)}</button>`).join('')}</div><input type="hidden" data-field="${f.key}" value="${esc(f.default || f.options?.[0] || '')}">`;
@@ -1012,8 +1530,8 @@ function fieldInput(f) {
   return `<input class="input" data-field="${f.key}" placeholder="${esc(f.placeholder || '')}">`;
 }
 
-function openRecipeBuilder(existing) {
-  const r = existing ? JSON.parse(JSON.stringify(existing)) : { name: '', emoji: '⚡', description: '', category: 'My quick starts', assistantId: S.assistants[0]?.id || 'lumen', access: '', fields: [{ key: 'topic', label: 'What is it about?', type: 'textarea' }], template: '' };
+function openRecipeBuilder(existing, prefill) {
+  const r = existing || prefill ? JSON.parse(JSON.stringify(existing || prefill)) : { name: '', emoji: '⚡', description: '', category: 'My quick starts', assistantId: S.assistants[0]?.id || 'lumen', access: '', fields: [{ key: 'topic', label: 'What is it about?', type: 'textarea' }], template: '' };
   const TYPES = { text: 'Short answer', textarea: 'Long answer', select: 'Pick one', file: 'A file' };
   const keyOf = (label, i) => (label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 24) || `field${i + 1}`);
   const fieldsHTML = () => r.fields.map((f, i) => `
@@ -1076,6 +1594,31 @@ function openRecipeBuilder(existing) {
 }
 function rerenderPage() { if (S.view === 'recipes') renderRecipesPage(); else rerenderCurrent(); }
 
+// ---------------------------------------------------------------- insights
+async function renderInsightsPage() {
+  S.view = 'insights'; setNav('insights');
+  $('#view').innerHTML = `<div class="page"><div class="page-inner"><div class="page-head"><div><h1>Insights</h1><p>Which assistants and quick starts are working, from the 👍 and 👎 people give replies. Everything here comes from chats on this computer and isn't sent anywhere.</p></div></div><div id="insightsBody"><div class="conv-empty"><span class="spinner" style="width:18px;height:18px"></span></div></div></div></div>`;
+  let d;
+  try { d = await api('/api/insights'); } catch (e) { $('#insightsBody').innerHTML = `<div class="conv-empty">${esc(e.message)}</div>`; return; }
+  if (S.view !== 'insights') return;
+  const thumbs = (x) => `<td class="num">${x.up || ''}</td><td class="num">${x.down || ''}</td>`;
+  const table = (head, rows, empty) => rows.length ? `<div class="table-wrap"><table class="insights-table"><thead><tr>${head}</tr></thead><tbody>${rows.join('')}</tbody></table></div>` : `<p class="insights-empty">${empty}</p>`;
+  $('#insightsBody').innerHTML = `
+    <div class="section-label"><span>Assistants</span></div>
+    ${table('<th>Assistant</th><th class="num">Chats</th><th class="num">Replies</th><th class="num">👍</th><th class="num">👎</th><th class="num">Typical reply time</th>',
+      d.assistants.map((a) => `<tr><td>${esc(a.emoji)} ${esc(a.name)}</td><td class="num">${a.chats}</td><td class="num">${a.replies}</td>${thumbs(a)}<td class="num">${a.medianMs ? fmtDuration(a.medianMs) : '—'}</td></tr>`),
+      'No chats yet.')}
+    <div class="section-label"><span>Quick starts</span></div>
+    ${table('<th>Quick start</th><th class="num">Runs</th><th class="num">👍</th><th class="num">👎</th>',
+      d.recipes.map((r) => `<tr><td>${esc(r.emoji)} ${esc(r.name)}</td><td class="num">${r.runs}</td>${thumbs(r)}</tr>`),
+      'No quick starts have been run yet.')}
+    <div class="section-label"><span>Recent 👎 replies</span></div>
+    ${table('<th>Chat</th><th>Reason</th><th>Note</th><th>When</th>',
+      d.recentDown.map((x) => `<tr><td><a data-go-conv="${esc(x.conversationId)}" title="${esc(x.excerpt)}">${esc(assistantById(x.assistantId).emoji)} ${esc(x.title)}</a></td><td>${esc(x.reason) || '—'}</td><td>${esc(x.note) || '—'}</td><td class="nowrap">${timeAgo(x.at)}</td></tr>`),
+      "No 👎 yet. When someone marks a reply as not helpful, it shows up here with their note.")}`;
+  $('#insightsBody').addEventListener('click', (e) => { const a = e.target.closest('[data-go-conv]'); if (a) go(`c/${a.dataset.goConv}`); });
+}
+
 // ---------------------------------------------------------------- settings
 function providerCards(selected) {
   return S.providers.map((p) => `
@@ -1099,19 +1642,22 @@ function openSettings(focus) {
       <div class="field"><label>Default project folder</label><div class="row" style="align-items:center"><input class="input" id="sFolder" value="${esc(s.workspace)}" readonly style="flex:1"><button class="btn soft" id="sFolderBtn" style="flex:0 0 auto">${icon('folder')}Change</button></div><div class="help">Where Lumen reads and saves documents unless a chat uses a different folder.</div></div>
       <div class="field"><label>Appearance</label><div class="seg" id="sTheme">${[['system', 'Match system'], ['light', 'Light'], ['dark', 'Dark']].map(([k, l]) => `<button data-v="${k}" class="${(s.theme || 'system') === k ? 'active' : ''}">${l}</button>`).join('')}</div></div>
       <details class="advanced"><summary>${icon('settings')} Advanced</summary>
+        <div class="field"><label>Reply details</label><button type="button" class="option-card skill-toggle ${s.showCost ? 'active' : ''}" id="sShowCost"><span class="oc-icon">💲</span><span class="oc-text"><span class="oc-title">Show the cost of each reply</span><span class="oc-desc">When the AI engine reports it. Leave off if you're on a subscription.</span></span><span class="switch"></span></button></div>
         <div class="field"><label>Reset built-in content</label><div class="help" style="margin:0 0 8px">Restores the original assistants and quick starts. Your chats are not affected.</div><button class="btn soft sm" id="sReset">${icon('refresh')}Restore defaults</button></div>
       </details>`,
+    leftAction: { label: 'Keyboard shortcuts', icon: 'keyboard', run: () => { openShortcuts(); return false; } },
     actions: [{ label: 'Close' }, { label: 'Save', primary: true, run: async (el) => {
-      await saveSettings({ userName: $('#sName', el).value.trim(), providerId: s.providerId, access: s.access, workspace: s.workspace, theme: s.theme, model: s.providerId !== S.settings.providerId ? 'default' : S.settings.model });
+      await saveSettings({ userName: $('#sName', el).value.trim(), providerId: s.providerId, access: s.access, workspace: s.workspace, theme: s.theme, showCost: !!s.showCost, model: s.providerId !== S.settings.providerId ? 'default' : S.settings.model });
       applyTheme(s.theme); rerenderCurrent(); toast('Settings saved');
     } }],
   });
   const el = m.el;
   const seg = (id, key, after) => $(`#${id}`, el).addEventListener('click', (e) => { const b = e.target.closest('[data-v]'); if (!b) return; s[key] = b.dataset.v; $$(`#${id} button`, el).forEach((x) => x.classList.toggle('active', x === b)); after?.(); });
   seg('sAccess', 'access'); seg('sTheme', 'theme', () => applyTheme(s.theme));
+  $('#sShowCost', el).addEventListener('click', (e) => { s.showCost = !s.showCost; e.currentTarget.classList.toggle('active', s.showCost); });
   $('#providerCards', el).addEventListener('click', (e) => { const b = e.target.closest('[data-provider]'); if (!b) return; s.providerId = b.dataset.provider; $('#providerCards', el).innerHTML = providerCards(s.providerId); });
   $('#refreshEngines', el).addEventListener('click', async () => { $('#providerCards', el).style.opacity = .5; const st = await api('/api/status?refresh=1'); S.providers = st.providers; $('#providerCards', el).innerHTML = providerCards(s.providerId); $('#providerCards', el).style.opacity = 1; renderUser(); });
-  $('#sFolderBtn', el).addEventListener('click', async () => { const p = await pickFolder(); if (p) { s.workspace = p; $('#sFolder', el).value = p; } });
+  $('#sFolderBtn', el).addEventListener('click', async () => { const p = await pickFolder(s.workspace); if (p) { s.workspace = p; $('#sFolder', el).value = p; } });
   $('#sReset', el).addEventListener('click', () => modal({ title: 'Restore defaults?', sub: 'Built-in assistants and quick starts go back to how they shipped. Ones you created are removed.', actions: [{ label: 'Cancel' }, { label: 'Restore', danger: true, run: async () => { await api('/api/reset', { method: 'POST' }).catch(() => {}); toast('Defaults restored'); location.reload(); } }] }));
   if (focus === 'engine') setTimeout(() => $('#engineField', el).scrollIntoView({ block: 'center' }), 50);
 }
@@ -1143,7 +1689,7 @@ function openOnboarding() {
     const nameInput = $('#obName', m.el);
     if (nameInput) { nameInput.focus(); nameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') foot.querySelector('[data-next]').click(); }); }
     $('#obProviders', m.el)?.addEventListener('click', (e) => { const b = e.target.closest('[data-provider]'); if (b) { draft.providerId = b.dataset.provider; $('#obProviders', m.el).innerHTML = providerCards(draft.providerId); } });
-    $('#obFolderBtn', m.el)?.addEventListener('click', async () => { const p = await pickFolder(); if (p) { draft.workspace = p; $('#obFolder', m.el).textContent = p; $('#obFolderName', m.el).textContent = baseName(p); } });
+    $('#obFolderBtn', m.el)?.addEventListener('click', async () => { const p = await pickFolder(draft.workspace); if (p) { draft.workspace = p; $('#obFolder', m.el).textContent = p; $('#obFolderName', m.el).textContent = baseName(p); } });
   };
   foot.addEventListener('click', async (e) => {
     if (e.target.closest('[data-back]')) { step--; draw(); return; }
@@ -1171,6 +1717,25 @@ function celebrate() {
 // ---------------------------------------------------------------- chrome bindings
 function newChat() { S.draft = { text: '', attachments: [], assistantId: null, access: null }; S.current = null; go(''); }
 
+function openShortcuts() {
+  const MOD = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl';
+  const rows = [
+    ['Start a new chat', [MOD, 'K']],
+    ['Send your message', ['Enter']],
+    ['New line in your message', ['Shift', 'Enter']],
+    ['Fill in the suggested next step (empty message box)', ['↑']],
+    ['Jump to the message box', ['/']],
+    ['Stop the reply', ['Esc']],
+    ['Copy the last reply', [MOD, 'Shift', 'C']],
+    ['Show this list', [MOD, '/']],
+  ];
+  modal({
+    title: 'Keyboard shortcuts', sub: 'Handy keys for working faster. Clicking works just as well.',
+    body: `<div class="kbd-list">${rows.map(([label, keys]) => `<span>${esc(label)}</span><span class="kbd-keys">${keys.map((k) => `<kbd>${esc(k)}</kbd>`).join('')}</span>`).join('')}</div>`,
+    actions: [{ label: 'Done', primary: true }],
+  });
+}
+
 function bindChrome() {
   $('#newChatBtn').addEventListener('click', newChat);
   $$('[data-nav]').forEach((n) => n.addEventListener('click', () => go(n.dataset.nav === 'home' ? '' : n.dataset.nav)));
@@ -1187,11 +1752,30 @@ function bindChrome() {
   $('[data-close-drawer]').addEventListener('click', closeDrawer);
   $('#drawerOpenFolder').addEventListener('click', () => api('/api/folder/open', { method: 'POST', body: { workspace: currentWorkspace() } }));
   $('#drawerChangeFolder').addEventListener('click', changeFolder);
-  $('#drawerFiles').addEventListener('click', (e) => { const f = e.target.closest('[data-open-file]'); if (f) api('/api/folder/open', { method: 'POST', body: { path: f.dataset.openFile, workspace: currentWorkspace() } }); });
+  $('#drawerFiles').addEventListener('click', (e) => {
+    const pin = e.target.closest('[data-pin-file]'); if (pin) return setPins(S.current, [...new Set([...pinsFor(S.current), pin.dataset.pinFile])]);
+    const jump = e.target.closest('[data-jump-message]'); if (jump) { closeDrawer(); const el = $$('[data-mid]').find((x) => x.dataset.mid === jump.dataset.jumpMessage); el?.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+    const f = e.target.closest('[data-open-file]'); if (f) api('/api/folder/open', { method: 'POST', body: { path: f.dataset.openFile, workspace: currentWorkspace() } });
+  });
 
   document.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); newChat(); }
-    if (e.key === 'Escape') { closeMenu(); closeDrawer(); }
+    const mod = e.ctrlKey || e.metaKey;
+    const typing = e.target.closest?.('input,textarea,select,[contenteditable="true"]');
+    const modalOpen = $('#modalRoot').children.length > 0;
+    if (mod && e.key.toLowerCase() === 'k') { e.preventDefault(); newChat(); }
+    else if (e.key === 'Escape') {
+      const open = menuEl || modalOpen || $('#filesDrawer').classList.contains('open');
+      closeMenu(); closeDrawer();
+      if (!open && S.view === 'chat' && isLive(S.current)) { e.preventDefault(); stopConv(S.current); }
+    }
+    else if (mod && e.shiftKey && e.code === 'KeyC') {
+      e.preventDefault();
+      const m = S.view === 'chat' && [...(S.current?.messages || [])].reverse().find((x) => x.role === 'assistant' && x.content);
+      if (!m) return toast('No reply to copy yet', 'alert');
+      navigator.clipboard.writeText(m.content).then(() => toast('Last reply copied'), () => toast("Couldn't copy the reply", 'alert'));
+    }
+    else if (mod && e.key === '/') { e.preventDefault(); if (!modalOpen) openShortcuts(); }
+    else if (e.key === '/' && !mod && !e.altKey && !typing && !modalOpen) { const i = $('#input'); if (i) { e.preventDefault(); i.focus(); } }
   });
 
   // drag & drop anywhere
