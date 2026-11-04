@@ -1,0 +1,9134 @@
+{
+ "runs": {
+  "89dcdf8fb7148803": [
+   {
+    "prompt": "Write user stories for a self-service password reset",
+    "events": [
+     {
+      "type": "session",
+      "id": "3127f6e1-5820-4f57-9caa-408077e5e16e",
+      "t": 3862
+     },
+     {
+      "type": "text",
+      "text": "#",
+      "t": 7078
+     },
+     {
+      "type": "text",
+      "text": " Self-Service Password",
+      "t": 7115
+     },
+     {
+      "type": "text",
+      "text": " Reset: User Stories",
+      "t": 7167
+     },
+     {
+      "type": "text",
+      "text": "\n\n**",
+      "t": 7219
+     },
+     {
+      "type": "text",
+      "text": "Assumptions**",
+      "t": 7271
+     },
+     {
+      "type": "text",
+      "text": " (t",
+      "t": 7310
+     },
+     {
+      "type": "text",
+      "text": "ell me if any",
+      "t": 7362
+     },
+     {
+      "type": "text",
+      "text": " are",
+      "t": 7411
+     },
+     {
+      "type": "text",
+      "text": " wrong):\n- Users",
+      "t": 7464
+     },
+     {
+      "type": "text",
+      "text": " sign in with an",
+      "t": 7510
+     },
+     {
+      "type": "text",
+      "text": " email address and",
+      "t": 7562
+     },
+     {
+      "type": "text",
+      "text": " password",
+      "t": 7615
+     },
+     {
+      "type": "text",
+      "text": ".\n- We",
+      "t": 7659
+     },
+     {
+      "type": "text",
+      "text": " verify who",
+      "t": 7711
+     },
+     {
+      "type": "text",
+      "text": " they",
+      "t": 7760
+     },
+     {
+      "type": "text",
+      "text": " are with a one-time link",
+      "t": 7809
+     },
+     {
+      "type": "text",
+      "text": " sent to their regist",
+      "t": 7862
+     },
+     {
+      "type": "text",
+      "text": "ered email.",
+      "t": 7907
+     },
+     {
+      "type": "text",
+      "text": " SMS is list",
+      "t": 7959
+     },
+     {
+      "type": "text",
+      "text": "ed as an open",
+      "t": 8009
+     },
+     {
+      "type": "text",
+      "text": " question below.\n- Your",
+      "t": 8061
+     },
+     {
+      "type": "text",
+      "text": " organization already",
+      "t": 8114
+     },
+     {
+      "type": "text",
+      "text": " has a password policy.\n\n---",
+      "t": 8157
+     },
+     {
+      "type": "text",
+      "text": "\n\n##",
+      "t": 8209
+     },
+     {
+      "type": "text",
+      "text": " Epic:",
+      "t": 8262
+     },
+     {
+      "type": "text",
+      "text": " Self-Service Password",
+      "t": 8310
+     },
+     {
+      "type": "text",
+      "text": " Reset",
+      "t": 8358
+     },
+     {
+      "type": "text",
+      "text": "\n**Goal:** Users",
+      "t": 8409
+     },
+     {
+      "type": "text",
+      "text": " who",
+      "t": 8458
+     },
+     {
+      "type": "text",
+      "text": " forget their password can get",
+      "t": 8511
+     },
+     {
+      "type": "text",
+      "text": " back into their account without",
+      "t": 8564
+     },
+     {
+      "type": "text",
+      "text": " contacting the help",
+      "t": 8625
+     },
+     {
+      "type": "text",
+      "text": " desk, and the account",
+      "t": 8707
+     },
+     {
+      "type": "text",
+      "text": " stays secure.\n\n---",
+      "t": 8732
+     },
+     {
+      "type": "text",
+      "text": "\n\n###",
+      "t": 8787
+     },
+     {
+      "type": "text",
+      "text": " Story 1:",
+      "t": 8837
+     },
+     {
+      "type": "text",
+      "text": " Start a password",
+      "t": 8885
+     },
+     {
+      "type": "text",
+      "text": " reset\n**As a** regist",
+      "t": 8924
+     },
+     {
+      "type": "text",
+      "text": "ered user who has forgotten",
+      "t": 8969
+     },
+     {
+      "type": "text",
+      "text": " my password,",
+      "t": 9020
+     },
+     {
+      "type": "text",
+      "text": "\n**I want** to request",
+      "t": 9064
+     },
+     {
+      "type": "text",
+      "text": " a reset from the sign-",
+      "t": 9114
+     },
+     {
+      "type": "text",
+      "text": "in page\n**so that** I",
+      "t": 9163
+     },
+     {
+      "type": "text",
+      "text": " can get back into my account without cal",
+      "t": 9214
+     },
+     {
+      "type": "text",
+      "text": "ling the help desk.\n\n**",
+      "t": 9278
+     },
+     {
+      "type": "text",
+      "text": "Acceptance criteria",
+      "t": 9320
+     },
+     {
+      "type": "text",
+      "text": "**\n- **Given** I",
+      "t": 9370
+     },
+     {
+      "type": "text",
+      "text": " am on the sign-in page",
+      "t": 9436
+     },
+     {
+      "type": "text",
+      "text": ", **when",
+      "t": 9472
+     },
+     {
+      "type": "text",
+      "text": "** I click \"Forgot",
+      "t": 9520
+     },
+     {
+      "type": "text",
+      "text": " password?\", **then** I see",
+      "t": 9567
+     },
+     {
+      "type": "text",
+      "text": " a form asking for my email address",
+      "t": 9620
+     },
+     {
+      "type": "text",
+      "text": ".\n- **Given** I",
+      "t": 9671
+     },
+     {
+      "type": "text",
+      "text": " enter an",
+      "t": 9721
+     },
+     {
+      "type": "text",
+      "text": " email address and submit, **when",
+      "t": 9778
+     },
+     {
+      "type": "text",
+      "text": "** the request",
+      "t": 9826
+     },
+     {
+      "type": "text",
+      "text": " is processed, **then** I",
+      "t": 9872
+     },
+     {
+      "type": "text",
+      "text": " see the same message wh",
+      "t": 9919
+     },
+     {
+      "type": "text",
+      "text": "ether or not an",
+      "t": 9976
+     },
+     {
+      "type": "text",
+      "text": " account exists: *\"If an",
+      "t": 10022
+     },
+     {
+      "type": "text",
+      "text": " account exists for",
+      "t": 10073
+     },
+     {
+      "type": "text",
+      "text": " this email, we've sent re",
+      "t": 10119
+     },
+     {
+      "type": "text",
+      "text": "set instructions.\"*\n-",
+      "t": 10177
+     },
+     {
+      "type": "text",
+      "text": " **Given** I enter an",
+      "t": 10222
+     },
+     {
+      "type": "text",
+      "text": " email address in",
+      "t": 10276
+     },
+     {
+      "type": "text",
+      "text": " an",
+      "t": 10325
+     },
+     {
+      "type": "text",
+      "text": " invalid format, **when**",
+      "t": 10370
+     },
+     {
+      "type": "text",
+      "text": " I submit, **then** I",
+      "t": 10418
+     },
+     {
+      "type": "text",
+      "text": " see an inline error and",
+      "t": 10475
+     },
+     {
+      "type": "text",
+      "text": " no request",
+      "t": 10533
+     },
+     {
+      "type": "text",
+      "text": " is sent.\n\n---\n\n###",
+      "t": 10571
+     },
+     {
+      "type": "text",
+      "text": " Story 2: Get",
+      "t": 10623
+     },
+     {
+      "type": "text",
+      "text": " a secure reset link\n**",
+      "t": 10675
+     },
+     {
+      "type": "text",
+      "text": "As a** user",
+      "t": 10731
+     },
+     {
+      "type": "text",
+      "text": " who requ",
+      "t": 10783
+     },
+     {
+      "type": "text",
+      "text": "ested a reset,\n**I",
+      "t": 10823
+     },
+     {
+      "type": "text",
+      "text": " want** to",
+      "t": 10869
+     },
+     {
+      "type": "text",
+      "text": " receive a re",
+      "t": 10921
+     },
+     {
+      "type": "text",
+      "text": "set link by email\n**so that",
+      "t": 10977
+     },
+     {
+      "type": "text",
+      "text": "** I can prove I own",
+      "t": 11022
+     },
+     {
+      "type": "text",
+      "text": " the account.\n\n**Acce",
+      "t": 11070
+     },
+     {
+      "type": "text",
+      "text": "ptance criteria**\n-",
+      "t": 11125
+     },
+     {
+      "type": "text",
+      "text": " **Given** an account exists",
+      "t": 11175
+     },
+     {
+      "type": "text",
+      "text": " for the email",
+      "t": 11230
+     },
+     {
+      "type": "text",
+      "text": " I entered, **when** I",
+      "t": 11278
+     },
+     {
+      "type": "text",
+      "text": " request a reset, **then**",
+      "t": 11328
+     },
+     {
+      "type": "text",
+      "text": " I get",
+      "t": 11376
+     },
+     {
+      "type": "text",
+      "text": " an email with",
+      "t": 11428
+     },
+     {
+      "type": "text",
+      "text": " a single",
+      "t": 11476
+     },
+     {
+      "type": "text",
+      "text": "-use reset link within 2",
+      "t": 11521
+     },
+     {
+      "type": "text",
+      "text": " minutes.\n- **",
+      "t": 11572
+     },
+     {
+      "type": "text",
+      "text": "Given** I",
+      "t": 11624
+     },
+     {
+      "type": "text",
+      "text": " have a reset link, **when",
+      "t": 11673
+     },
+     {
+      "type": "text",
+      "text": "** 30",
+      "t": 11727
+     },
+     {
+      "type": "text",
+      "text": " minutes have passed since",
+      "t": 11770
+     },
+     {
+      "type": "text",
+      "text": " it",
+      "t": 11823
+     },
+     {
+      "type": "text",
+      "text": " was sent, **then** the",
+      "t": 11875
+     },
+     {
+      "type": "text",
+      "text": " link no longer works.",
+      "t": 11922
+     },
+     {
+      "type": "text",
+      "text": "\n- **Given** I request",
+      "t": 11977
+     },
+     {
+      "type": "text",
+      "text": " more",
+      "t": 12026
+     },
+     {
+      "type": "text",
+      "text": " than one reset,",
+      "t": 12077
+     },
+     {
+      "type": "text",
+      "text": " **when** a",
+      "t": 12122
+     },
+     {
+      "type": "text",
+      "text": " new",
+      "t": 12176
+     },
+     {
+      "type": "text",
+      "text": " link is sent, **then**",
+      "t": 12233
+     },
+     {
+      "type": "text",
+      "text": " all earlier links stop working",
+      "t": 12295
+     },
+     {
+      "type": "text",
+      "text": ".\n- **Given** I",
+      "t": 12335
+     },
+     {
+      "type": "text",
+      "text": " have already used a link",
+      "t": 12388
+     },
+     {
+      "type": "text",
+      "text": " to reset my password, **when",
+      "t": 12440
+     },
+     {
+      "type": "text",
+      "text": "** I click",
+      "t": 12495
+     },
+     {
+      "type": "text",
+      "text": " it again, **then** I see",
+      "t": 12538
+     },
+     {
+      "type": "text",
+      "text": " \"",
+      "t": 12577
+     },
+     {
+      "type": "text",
+      "text": "This link has expired or",
+      "t": 12623
+     },
+     {
+      "type": "text",
+      "text": " already",
+      "t": 12677
+     },
+     {
+      "type": "text",
+      "text": " been used\" and an",
+      "t": 12729
+     },
+     {
+      "type": "text",
+      "text": " option to request a new one.",
+      "t": 12774
+     },
+     {
+      "type": "text",
+      "text": "\n\n---\n\n### Story 3:",
+      "t": 12825
+     },
+     {
+      "type": "text",
+      "text": " Set a new password\n**As",
+      "t": 12876
+     },
+     {
+      "type": "text",
+      "text": " a** user who clicked a",
+      "t": 12922
+     },
+     {
+      "type": "text",
+      "text": " valid reset link,\n**",
+      "t": 12974
+     },
+     {
+      "type": "text",
+      "text": "I want** to create",
+      "t": 13023
+     },
+     {
+      "type": "text",
+      "text": " a new password that",
+      "t": 13074
+     },
+     {
+      "type": "text",
+      "text": " meets the",
+      "t": 13122
+     },
+     {
+      "type": "text",
+      "text": " security",
+      "t": 13175
+     },
+     {
+      "type": "text",
+      "text": " rules\n**so that** I",
+      "t": 13223
+     },
+     {
+      "type": "text",
+      "text": " can sign in again with conf",
+      "t": 13283
+     },
+     {
+      "type": "text",
+      "text": "idence.\n\n**Acce",
+      "t": 13331
+     },
+     {
+      "type": "text",
+      "text": "ptance criteria**\n-",
+      "t": 13376
+     },
+     {
+      "type": "text",
+      "text": " **Given** I open a val",
+      "t": 13429
+     },
+     {
+      "type": "text",
+      "text": "id reset link, **when**",
+      "t": 13474
+     },
+     {
+      "type": "text",
+      "text": " the page loads, **then**",
+      "t": 13526
+     },
+     {
+      "type": "text",
+      "text": " I see \"",
+      "t": 13574
+     },
+     {
+      "type": "text",
+      "text": "New password\" and \"Confir",
+      "t": 13627
+     },
+     {
+      "type": "text",
+      "text": "m password\" fields, with the",
+      "t": 13680
+     },
+     {
+      "type": "text",
+      "text": " password rules shown up",
+      "t": 13729
+     },
+     {
+      "type": "text",
+      "text": " front.\n- **Given**",
+      "t": 13775
+     },
+     {
+      "type": "text",
+      "text": " my",
+      "t": 13826
+     },
+     {
+      "type": "text",
+      "text": " new password doesn't meet",
+      "t": 13878
+     },
+     {
+      "type": "text",
+      "text": " the policy, **when** I",
+      "t": 13924
+     },
+     {
+      "type": "text",
+      "text": " submit, **then** I see",
+      "t": 13975
+     },
+     {
+      "type": "text",
+      "text": " which spec",
+      "t": 14027
+     },
+     {
+      "type": "text",
+      "text": "ific rules",
+      "t": 14076
+     },
+     {
+      "type": "text",
+      "text": " it fails and the",
+      "t": 14126
+     },
+     {
+      "type": "text",
+      "text": " password is",
+      "t": 14173
+     },
+     {
+      "type": "text",
+      "text": " not saved.\n- **",
+      "t": 14221
+     },
+     {
+      "type": "text",
+      "text": "Given** the two password",
+      "t": 14273
+     },
+     {
+      "type": "text",
+      "text": " fields don't match, **when",
+      "t": 14321
+     },
+     {
+      "type": "text",
+      "text": "** I submit, **then**",
+      "t": 14374
+     },
+     {
+      "type": "text",
+      "text": " I see a \"",
+      "t": 14426
+     },
+     {
+      "type": "text",
+      "text": "Passwords do not match\" error",
+      "t": 14475
+     },
+     {
+      "type": "text",
+      "text": ".\n- **Given** my",
+      "t": 14525
+     },
+     {
+      "type": "text",
+      "text": " new password is",
+      "t": 14574
+     },
+     {
+      "type": "text",
+      "text": " the same as one of my last *",
+      "t": 14627
+     },
+     {
+      "type": "text",
+      "text": "N* pass",
+      "t": 14681
+     },
+     {
+      "type": "text",
+      "text": "words, **when** I subm",
+      "t": 14728
+     },
+     {
+      "type": "text",
+      "text": "it, **then** it",
+      "t": 14781
+     },
+     {
+      "type": "text",
+      "text": " is rejected and",
+      "t": 14826
+     },
+     {
+      "type": "text",
+      "text": " I'",
+      "t": 14873
+     },
+     {
+      "type": "text",
+      "text": "m told why.\n- **",
+      "t": 14927
+     },
+     {
+      "type": "text",
+      "text": "Given** my new password is valid",
+      "t": 14984
+     },
+     {
+      "type": "text",
+      "text": ", **when** I submit,",
+      "t": 15032
+     },
+     {
+      "type": "text",
+      "text": " **then** it",
+      "t": 15076
+     },
+     {
+      "type": "text",
+      "text": " is saved, the re",
+      "t": 15141
+     },
+     {
+      "type": "text",
+      "text": "set link st",
+      "t": 15175
+     },
+     {
+      "type": "text",
+      "text": "ops working, and I'm ta",
+      "t": 15228
+     },
+     {
+      "type": "text",
+      "text": "ken to s",
+      "t": 15274
+     },
+     {
+      "type": "text",
+      "text": "ign-in with",
+      "t": 15327
+     },
+     {
+      "type": "text",
+      "text": " a success message.\n\n---\n\n###",
+      "t": 15374
+     },
+     {
+      "type": "text",
+      "text": " Story 4: Get",
+      "t": 15428
+     },
+     {
+      "type": "text",
+      "text": " notified of a password change\n**",
+      "t": 15475
+     },
+     {
+      "type": "text",
+      "text": "As an",
+      "t": 15534
+     },
+     {
+      "type": "text",
+      "text": "** account ow",
+      "t": 15576
+     },
+     {
+      "type": "text",
+      "text": "ner,\n**I want** an",
+      "t": 15628
+     },
+     {
+      "type": "text",
+      "text": " email wh",
+      "t": 15677
+     },
+     {
+      "type": "text",
+      "text": "enever my password is changed",
+      "t": 15727
+     },
+     {
+      "type": "text",
+      "text": "\n**so that** I can act",
+      "t": 15777
+     },
+     {
+      "type": "text",
+      "text": " quickly if I",
+      "t": 15855
+     },
+     {
+      "type": "text",
+      "text": " didn't make the change.",
+      "t": 15880
+     },
+     {
+      "type": "text",
+      "text": "\n\n**Acceptance crite",
+      "t": 15926
+     },
+     {
+      "type": "text",
+      "text": "ria**\n- **Given**",
+      "t": 15981
+     },
+     {
+      "type": "text",
+      "text": " my password was",
+      "t": 16032
+     },
+     {
+      "type": "text",
+      "text": " reset,",
+      "t": 16085
+     },
+     {
+      "type": "text",
+      "text": " **when** the",
+      "t": 16137
+     },
+     {
+      "type": "text",
+      "text": " re",
+      "t": 16180
+     },
+     {
+      "type": "text",
+      "text": "set completes, **then** I",
+      "t": 16228
+     },
+     {
+      "type": "text",
+      "text": " get a",
+      "t": 16275
+     },
+     {
+      "type": "text",
+      "text": " confirmation email show",
+      "t": 16346
+     },
+     {
+      "type": "text",
+      "text": "ing the date,",
+      "t": 16377
+     },
+     {
+      "type": "text",
+      "text": " time and",
+      "t": 16430
+     },
+     {
+      "type": "text",
+      "text": " approximate location or",
+      "t": 16475
+     },
+     {
+      "type": "text",
+      "text": " device.\n- **Given**",
+      "t": 16524
+     },
+     {
+      "type": "text",
+      "text": " I did",
+      "t": 16585
+     },
+     {
+      "type": "text",
+      "text": "n't make the change, **when",
+      "t": 16625
+     },
+     {
+      "type": "text",
+      "text": "** I read the email, **then",
+      "t": 16676
+     },
+     {
+      "type": "text",
+      "text": "** it",
+      "t": 16730
+     },
+     {
+      "type": "text",
+      "text": " includes a clear \"",
+      "t": 16781
+     },
+     {
+      "type": "text",
+      "text": "This wasn't me\" link",
+      "t": 16828
+     },
+     {
+      "type": "text",
+      "text": " or a",
+      "t": 16875
+     },
+     {
+      "type": "text",
+      "text": " help desk contact.\n\n---",
+      "t": 16923
+     },
+     {
+      "type": "text",
+      "text": "\n\n### Story 5:",
+      "t": 16975
+     },
+     {
+      "type": "text",
+      "text": " Sign out other",
+      "t": 17031
+     },
+     {
+      "type": "text",
+      "text": " sessions after a reset",
+      "t": 17115
+     },
+     {
+      "type": "text",
+      "text": "\n**As an",
+      "t": 17180
+     },
+     {
+      "type": "text",
+      "text": "** account owner,\n**I",
+      "t": 17181
+     },
+     {
+      "type": "text",
+      "text": " want** all",
+      "t": 17227
+     },
+     {
+      "type": "text",
+      "text": " my",
+      "t": 17275
+     },
+     {
+      "type": "text",
+      "text": " other active",
+      "t": 17322
+     },
+     {
+      "type": "text",
+      "text": " sessions sign",
+      "t": 17372
+     },
+     {
+      "type": "text",
+      "text": "ed out when",
+      "t": 17423
+     },
+     {
+      "type": "text",
+      "text": " I reset my password\n**so",
+      "t": 17478
+     },
+     {
+      "type": "text",
+      "text": " that** anyone with",
+      "t": 17524
+     },
+     {
+      "type": "text",
+      "text": " unauthorized access is",
+      "t": 17573
+     },
+     {
+      "type": "text",
+      "text": " loc",
+      "t": 17626
+     },
+     {
+      "type": "text",
+      "text": "ked out.\n\n**Acce",
+      "t": 17677
+     },
+     {
+      "type": "text",
+      "text": "ptance criteria**\n-",
+      "t": 17727
+     },
+     {
+      "type": "text",
+      "text": " **Given** I",
+      "t": 17789
+     },
+     {
+      "type": "text",
+      "text": "'m signed in on other dev",
+      "t": 17831
+     },
+     {
+      "type": "text",
+      "text": "ices, **when** I",
+      "t": 17891
+     },
+     {
+      "type": "text",
+      "text": " fin",
+      "t": 17946
+     },
+     {
+      "type": "text",
+      "text": "ish a",
+      "t": 17980
+     },
+     {
+      "type": "text",
+      "text": " password reset, **then** all",
+      "t": 18033
+     },
+     {
+      "type": "text",
+      "text": " exist",
+      "t": 18082
+     },
+     {
+      "type": "text",
+      "text": "ing sessions and \"",
+      "t": 18127
+     },
+     {
+      "type": "text",
+      "text": "remember me\" tokens are",
+      "t": 18191
+     },
+     {
+      "type": "text",
+      "text": " ",
+      "t": 18232
+     },
+     {
+      "type": "text",
+      "text": "ended.\n- **Given**",
+      "t": 18287
+     },
+     {
+      "type": "text",
+      "text": " my other",
+      "t": 18333
+     },
+     {
+      "type": "text",
+      "text": " sessions have been",
+      "t": 18382
+     },
+     {
+      "type": "text",
+      "text": " ended, **when** I return",
+      "t": 18442
+     },
+     {
+      "type": "text",
+      "text": " to one of those devices, **",
+      "t": 18476
+     },
+     {
+      "type": "text",
+      "text": "then** I'm as",
+      "t": 18524
+     },
+     {
+      "type": "text",
+      "text": "ked to sign in again.",
+      "t": 18585
+     },
+     {
+      "type": "text",
+      "text": "\n\n---\n\n### Story 6:",
+      "t": 18629
+     },
+     {
+      "type": "text",
+      "text": " Limit rep",
+      "t": 18677
+     },
+     {
+      "type": "text",
+      "text": "eated reset requ",
+      "t": 18724
+     },
+     {
+      "type": "text",
+      "text": "ests\n**As a** security administ",
+      "t": 18774
+     },
+     {
+      "type": "text",
+      "text": "rator,\n**I want**",
+      "t": 18826
+     },
+     {
+      "type": "text",
+      "text": " lim",
+      "t": 18876
+     },
+     {
+      "type": "text",
+      "text": "its on how often",
+      "t": 18935
+     },
+     {
+      "type": "text",
+      "text": " res",
+      "t": 18976
+     },
+     {
+      "type": "text",
+      "text": "ets can be requested\n**so",
+      "t": 19030
+     },
+     {
+      "type": "text",
+      "text": " that** attackers can't fl",
+      "t": 19079
+     },
+     {
+      "type": "text",
+      "text": "ood users with emails or guess",
+      "t": 19128
+     },
+     {
+      "type": "text",
+      "text": " re",
+      "t": 19174
+     },
+     {
+      "type": "text",
+      "text": "set links.\n\n**Acce",
+      "t": 19227
+     },
+     {
+      "type": "text",
+      "text": "ptance criteria**\n-",
+      "t": 19278
+     },
+     {
+      "type": "text",
+      "text": " **Given** someone has",
+      "t": 19327
+     },
+     {
+      "type": "text",
+      "text": " requested ",
+      "t": 19376
+     },
+     {
+      "type": "text",
+      "text": "5",
+      "t": 19424
+     },
+     {
+      "type": "text",
+      "text": " resets for the",
+      "t": 19477
+     },
+     {
+      "type": "text",
+      "text": " same email within",
+      "t": 19525
+     },
+     {
+      "type": "text",
+      "text": " 1 hour, **when",
+      "t": 19573
+     },
+     {
+      "type": "text",
+      "text": "** they request another,",
+      "t": 19632
+     },
+     {
+      "type": "text",
+      "text": " **then** no email",
+      "t": 19676
+     },
+     {
+      "type": "text",
+      "text": " is sent and",
+      "t": 19723
+     },
+     {
+      "type": "text",
+      "text": " the on",
+      "t": 19781
+     },
+     {
+      "type": "text",
+      "text": "-screen message stays the",
+      "t": 19824
+     },
+     {
+      "type": "text",
+      "text": " same as",
+      "t": 19872
+     },
+     {
+      "type": "text",
+      "text": " us",
+      "t": 19930
+     },
+     {
+      "type": "text",
+      "text": "ual.\n- **Given**",
+      "t": 19973
+     },
+     {
+      "type": "text",
+      "text": " a",
+      "t": 20023
+     },
+     {
+      "type": "text",
+      "text": " single source",
+      "t": 20077
+     },
+     {
+      "type": "text",
+      "text": " mak",
+      "t": 20127
+     },
+     {
+      "type": "text",
+      "text": "es too",
+      "t": 20171
+     },
+     {
+      "type": "text",
+      "text": " many reset requests across",
+      "t": 20223
+     },
+     {
+      "type": "text",
+      "text": " many accounts, **when**",
+      "t": 20271
+     },
+     {
+      "type": "text",
+      "text": " the limit is re",
+      "t": 20328
+     },
+     {
+      "type": "text",
+      "text": "ached, **then** further",
+      "t": 20372
+     },
+     {
+      "type": "text",
+      "text": " requests from that source are tem",
+      "t": 20424
+     },
+     {
+      "type": "text",
+      "text": "porarily blocked.",
+      "t": 20474
+     },
+     {
+      "type": "text",
+      "text": "\n\n---\n\n### Story 7:",
+      "t": 20527
+     },
+     {
+      "type": "text",
+      "text": " Audit trail for",
+      "t": 20572
+     },
+     {
+      "type": "text",
+      "text": " support",
+      "t": 20624
+     },
+     {
+      "type": "text",
+      "text": " and",
+      "t": 20676
+     },
+     {
+      "type": "text",
+      "text": " security\n**As a** help des",
+      "t": 20724
+     },
+     {
+      "type": "text",
+      "text": "k ag",
+      "t": 20777
+     },
+     {
+      "type": "text",
+      "text": "ent,",
+      "t": 20823
+     },
+     {
+      "type": "text",
+      "text": "\n**I want** to see a",
+      "t": 20871
+     },
+     {
+      "type": "text",
+      "text": " log of password reset activ",
+      "t": 20922
+     },
+     {
+      "type": "text",
+      "text": "ity on a",
+      "t": 20974
+     },
+     {
+      "type": "text",
+      "text": " user's account\n**so that**",
+      "t": 21023
+     },
+     {
+      "type": "text",
+      "text": " I can tro",
+      "t": 21074
+     },
+     {
+      "type": "text",
+      "text": "ubleshoot probl",
+      "t": 21122
+     },
+     {
+      "type": "text",
+      "text": "ems and investigate su",
+      "t": 21175
+     },
+     {
+      "type": "text",
+      "text": "spic",
+      "t": 21225
+     },
+     {
+      "type": "text",
+      "text": "ious activity.\n\n**Ac",
+      "t": 21272
+     },
+     {
+      "type": "text",
+      "text": "ceptance criteria**",
+      "t": 21324
+     },
+     {
+      "type": "text",
+      "text": "\n- **Given** I look",
+      "t": 21372
+     },
+     {
+      "type": "text",
+      "text": " up a user in",
+      "t": 21429
+     },
+     {
+      "type": "text",
+      "text": " the admin console, **when**",
+      "t": 21476
+     },
+     {
+      "type": "text",
+      "text": " I open their security",
+      "t": 21524
+     },
+     {
+      "type": "text",
+      "text": " history, **then** I see each",
+      "t": 21576
+     },
+     {
+      "type": "text",
+      "text": " reset request, email",
+      "t": 21625
+     },
+     {
+      "type": "text",
+      "text": " sent, link used or",
+      "t": 21677
+     },
+     {
+      "type": "text",
+      "text": " expired, and password chang",
+      "t": 21722
+     },
+     {
+      "type": "text",
+      "text": "ed, with a",
+      "t": 21771
+     },
+     {
+      "type": "text",
+      "text": " timestamp and IP address",
+      "t": 21828
+     },
+     {
+      "type": "text",
+      "text": ".\n- **Given** I",
+      "t": 21877
+     },
+     {
+      "type": "text",
+      "text": "'m viewing the log,",
+      "t": 21931
+     },
+     {
+      "type": "text",
+      "text": " **when** I look",
+      "t": 21973
+     },
+     {
+      "type": "text",
+      "text": " at any",
+      "t": 22025
+     },
+     {
+      "type": "text",
+      "text": " entry, **then** pass",
+      "t": 22071
+     },
+     {
+      "type": "text",
+      "text": "words and reset links",
+      "t": 22125
+     },
+     {
+      "type": "text",
+      "text": " are never shown.\n\n---",
+      "t": 22171
+     },
+     {
+      "type": "text",
+      "text": "\n\n## Process flow\n\n1",
+      "t": 22224
+     },
+     {
+      "type": "text",
+      "text": ". User",
+      "t": 22276
+     },
+     {
+      "type": "text",
+      "text": " clicks **",
+      "t": 22324
+     },
+     {
+      "type": "text",
+      "text": "Forgot password?** on the",
+      "t": 22424
+     },
+     {
+      "type": "text",
+      "text": " sign-in page.\n2",
+      "t": 22482
+     },
+     {
+      "type": "text",
+      "text": ". User enters their email and",
+      "t": 22527
+     },
+     {
+      "type": "text",
+      "text": " submits.\n3. System sh",
+      "t": 22579
+     },
+     {
+      "type": "text",
+      "text": "ows the same",
+      "t": 22632
+     },
+     {
+      "type": "text",
+      "text": " conf",
+      "t": 22675
+     },
+     {
+      "type": "text",
+      "text": "irmation message every time.",
+      "t": 22737
+     },
+     {
+      "type": "text",
+      "text": "\n4. If the account exists and",
+      "t": 22783
+     },
+     {
+      "type": "text",
+      "text": " the request is",
+      "t": 22825
+     },
+     {
+      "type": "text",
+      "text": " within the lim",
+      "t": 22871
+     },
+     {
+      "type": "text",
+      "text": "its, the",
+      "t": 22924
+     },
+     {
+      "type": "text",
+      "text": " system em",
+      "t": 22973
+     },
+     {
+      "type": "text",
+      "text": "ails a single-use link",
+      "t": 23024
+     },
+     {
+      "type": "text",
+      "text": " that expires in 30 min",
+      "t": 23078
+     },
+     {
+      "type": "text",
+      "text": "utes.\n5. User cl",
+      "t": 23126
+     },
+     {
+      "type": "text",
+      "text": "icks the link.\n6.",
+      "t": 23172
+     },
+     {
+      "type": "text",
+      "text": " System",
+      "t": 23226
+     },
+     {
+      "type": "text",
+      "text": " checks that",
+      "t": 23272
+     },
+     {
+      "type": "text",
+      "text": " the link is val",
+      "t": 23329
+     },
+     {
+      "type": "text",
+      "text": "id and un",
+      "t": 23376
+     },
+     {
+      "type": "text",
+      "text": "used. If not, it",
+      "t": 23424
+     },
+     {
+      "type": "text",
+      "text": " shows an \"",
+      "t": 23471
+     },
+     {
+      "type": "text",
+      "text": "expired\" page",
+      "t": 23527
+     },
+     {
+      "type": "text",
+      "text": " with an",
+      "t": 23572
+     },
+     {
+      "type": "text",
+      "text": " option to request a new link.",
+      "t": 23630
+     },
+     {
+      "type": "text",
+      "text": "\n7. User enters and",
+      "t": 23674
+     },
+     {
+      "type": "text",
+      "text": " confirms a new password.",
+      "t": 23725
+     },
+     {
+      "type": "text",
+      "text": "\n8. System checks the password against",
+      "t": 23771
+     },
+     {
+      "type": "text",
+      "text": " the policy. If it fails",
+      "t": 23823
+     },
+     {
+      "type": "text",
+      "text": ", the user sees the errors",
+      "t": 23886
+     },
+     {
+      "type": "text",
+      "text": " and tries again.\n9.",
+      "t": 23928
+     },
+     {
+      "type": "text",
+      "text": " System saves the password, c",
+      "t": 23975
+     },
+     {
+      "type": "text",
+      "text": "ancels the link and",
+      "t": 24028
+     },
+     {
+      "type": "text",
+      "text": " sign",
+      "t": 24072
+     },
+     {
+      "type": "text",
+      "text": "s out all other sessions.",
+      "t": 24125
+     },
+     {
+      "type": "text",
+      "text": "\n10. System sends a conf",
+      "t": 24177
+     },
+     {
+      "type": "text",
+      "text": "irmation email and",
+      "t": 24225
+     },
+     {
+      "type": "text",
+      "text": " records",
+      "t": 24277
+     },
+     {
+      "type": "text",
+      "text": " the event",
+      "t": 24323
+     },
+     {
+      "type": "text",
+      "text": " in the audit log.\n11",
+      "t": 24388
+     },
+     {
+      "type": "text",
+      "text": ". User is ta",
+      "t": 24428
+     },
+     {
+      "type": "text",
+      "text": "ken to the sign-in page",
+      "t": 24474
+     },
+     {
+      "type": "text",
+      "text": " with a success message.\n\n```m",
+      "t": 24525
+     },
+     {
+      "type": "text",
+      "text": "ermaid\nflowchart",
+      "t": 24578
+     },
+     {
+      "type": "text",
+      "text": " TD\n    A[Click",
+      "t": 24625
+     },
+     {
+      "type": "text",
+      "text": " ",
+      "t": 24676
+     },
+     {
+      "type": "text",
+      "text": "'Forgot password?'",
+      "t": 24725
+     },
+     {
+      "type": "text",
+      "text": "] --> B[Enter",
+      "t": 24771
+     },
+     {
+      "type": "text",
+      "text": " email]\n    B --> C",
+      "t": 24824
+     },
+     {
+      "type": "text",
+      "text": "[Show generic confirm",
+      "t": 24876
+     },
+     {
+      "type": "text",
+      "text": "ation]",
+      "t": 24924
+     },
+     {
+      "type": "text",
+      "text": "\n    C --> D{",
+      "t": 24976
+     },
+     {
+      "type": "text",
+      "text": "Account exists and",
+      "t": 25023
+     },
+     {
+      "type": "text",
+      "text": " within limits?}\n    D",
+      "t": 25071
+     },
+     {
+      "type": "text",
+      "text": " --",
+      "t": 25127
+     },
+     {
+      "type": "text",
+      "text": " No -->",
+      "t": 25179
+     },
+     {
+      "type": "text",
+      "text": " Z[No email sent]",
+      "t": 25223
+     },
+     {
+      "type": "text",
+      "text": "\n    D -- Yes --",
+      "t": 25271
+     },
+     {
+      "type": "text",
+      "text": "> E[Email single-use",
+      "t": 25322
+     },
+     {
+      "type": "text",
+      "text": " link, exp",
+      "t": 25375
+     },
+     {
+      "type": "text",
+      "text": "ires in 30 min]",
+      "t": 25423
+     },
+     {
+      "type": "text",
+      "text": "\n    E --> F[User cl",
+      "t": 25478
+     },
+     {
+      "type": "text",
+      "text": "icks link]\n    F --",
+      "t": 25532
+     },
+     {
+      "type": "text",
+      "text": "> G{Link valid?",
+      "t": 25592
+     },
+     {
+      "type": "text",
+      "text": "}\n    G -- No --",
+      "t": 25641
+     },
+     {
+      "type": "text",
+      "text": "> H[Expired page:",
+      "t": 25682
+     },
+     {
+      "type": "text",
+      "text": " request new link]\n    H",
+      "t": 25727
+     },
+     {
+      "type": "text",
+      "text": " --> B\n    G --",
+      "t": 25775
+     },
+     {
+      "type": "text",
+      "text": " Yes --> I[",
+      "t": 25825
+     },
+     {
+      "type": "text",
+      "text": "Enter new password]\n    I",
+      "t": 25898
+     },
+     {
+      "type": "text",
+      "text": " --> J{Meets polic",
+      "t": 25933
+     },
+     {
+      "type": "text",
+      "text": "y?}\n    J --",
+      "t": 25982
+     },
+     {
+      "type": "text",
+      "text": " No --> I\n    J -",
+      "t": 26026
+     },
+     {
+      "type": "text",
+      "text": "- Yes --> K[",
+      "t": 26076
+     },
+     {
+      "type": "text",
+      "text": "Save password, cancel link",
+      "t": 26141
+     },
+     {
+      "type": "text",
+      "text": ", end",
+      "t": 26178
+     },
+     {
+      "type": "text",
+      "text": " sessions]\n    K --",
+      "t": 26226
+     },
+     {
+      "type": "text",
+      "text": "> L[Send confirm",
+      "t": 26278
+     },
+     {
+      "type": "text",
+      "text": "ation email and",
+      "t": 26328
+     },
+     {
+      "type": "text",
+      "text": " log event]\n    L -->",
+      "t": 26375
+     },
+     {
+      "type": "text",
+      "text": " M[Redirect to s",
+      "t": 26432
+     },
+     {
+      "type": "text",
+      "text": "ign-in with success message",
+      "t": 26477
+     },
+     {
+      "type": "text",
+      "text": "]\n```\n\n---\n\n##",
+      "t": 26528
+     },
+     {
+      "type": "text",
+      "text": " Gaps and open questions",
+      "t": 26577
+     },
+     {
+      "type": "text",
+      "text": "\n1. **Verification method:",
+      "t": 26625
+     },
+     {
+      "type": "text",
+      "text": "** Is an",
+      "t": 26696
+     },
+     {
+      "type": "text",
+      "text": " email link enough, or do we",
+      "t": 26725
+     },
+     {
+      "type": "text",
+      "text": " need S",
+      "t": 26776
+     },
+     {
+      "type": "text",
+      "text": "MS or auth",
+      "t": 26872
+     },
+     {
+      "type": "text",
+      "text": "enticator cod",
+      "t": 26880
+     },
+     {
+      "type": "text",
+      "text": "es too, espec",
+      "t": 26925
+     },
+     {
+      "type": "text",
+      "text": "ially for priv",
+      "t": 26984
+     },
+     {
+      "type": "text",
+      "text": "ileged accounts?\n2",
+      "t": 27024
+     },
+     {
+      "type": "text",
+      "text": ". **L",
+      "t": 27076
+     },
+     {
+      "type": "text",
+      "text": "ost access",
+      "t": 27126
+     },
+     {
+      "type": "text",
+      "text": " to email",
+      "t": 27176
+     },
+     {
+      "type": "text",
+      "text": ":** What can",
+      "t": 27224
+     },
+     {
+      "type": "text",
+      "text": " users do if they can no longer",
+      "t": 27277
+     },
+     {
+      "type": "text",
+      "text": " get",
+      "t": 27325
+     },
+     {
+      "type": "text",
+      "text": " into their",
+      "t": 27376
+     },
+     {
+      "type": "text",
+      "text": " registered email? Help",
+      "t": 27422
+     },
+     {
+      "type": "text",
+      "text": " desk only",
+      "t": 27475
+     },
+     {
+      "type": "text",
+      "text": ", or security",
+      "t": 27522
+     },
+     {
+      "type": "text",
+      "text": " questions?\n3. **",
+      "t": 27575
+     },
+     {
+      "type": "text",
+      "text": "Multi-factor auth",
+      "t": 27624
+     },
+     {
+      "type": "text",
+      "text": "entication (MFA):**",
+      "t": 27675
+     },
+     {
+      "type": "text",
+      "text": " If a",
+      "t": 27724
+     },
+     {
+      "type": "text",
+      "text": " user has MFA tur",
+      "t": 27786
+     },
+     {
+      "type": "text",
+      "text": "ned on, should they",
+      "t": 27825
+     },
+     {
+      "type": "text",
+      "text": " have to p",
+      "t": 27877
+     },
+     {
+      "type": "text",
+      "text": "ass it before res",
+      "t": 27941
+     },
+     {
+      "type": "text",
+      "text": "etting?\n4. **",
+      "t": 27987
+     },
+     {
+      "type": "text",
+      "text": "Password policy details",
+      "t": 28025
+     },
+     {
+      "type": "text",
+      "text": ":** What",
+      "t": 28082
+     },
+     {
+      "type": "text",
+      "text": " are",
+      "t": 28128
+     },
+     {
+      "type": "text",
+      "text": " the exact rules (length,",
+      "t": 28176
+     },
+     {
+      "type": "text",
+      "text": " complexity, how",
+      "t": 28224
+     },
+     {
+      "type": "text",
+      "text": " many past passwords are",
+      "t": 28275
+     },
+     {
+      "type": "text",
+      "text": " blocked)?",
+      "t": 28326
+     },
+     {
+      "type": "text",
+      "text": " Should we check new",
+      "t": 28379
+     },
+     {
+      "type": "text",
+      "text": " passwords against known bre",
+      "t": 28424
+     },
+     {
+      "type": "text",
+      "text": "ached-",
+      "t": 28475
+     },
+     {
+      "type": "text",
+      "text": "password lists?\n5. **",
+      "t": 28522
+     },
+     {
+      "type": "text",
+      "text": "Single",
+      "t": 28575
+     },
+     {
+      "type": "text",
+      "text": " sign-on (SSO",
+      "t": 28626
+     },
+     {
+      "type": "text",
+      "text": ")",
+      "t": 28675
+     },
+     {
+      "type": "text",
+      "text": " users:** If some",
+      "t": 28722
+     },
+     {
+      "type": "text",
+      "text": " users",
+      "t": 28777
+     },
+     {
+      "type": "text",
+      "text": " sign in through a company ident",
+      "t": 28825
+     },
+     {
+      "type": "text",
+      "text": "ity provider, should they",
+      "t": 28873
+     },
+     {
+      "type": "text",
+      "text": " be sent there",
+      "t": 28924
+     },
+     {
+      "type": "text",
+      "text": " instead?\n6. **",
+      "t": 28977
+     },
+     {
+      "type": "text",
+      "text": "Locked accounts:**",
+      "t": 29033
+     },
+     {
+      "type": "text",
+      "text": " Should a successful reset unl",
+      "t": 29080
+     },
+     {
+      "type": "text",
+      "text": "ock an account that was",
+      "t": 29124
+     },
+     {
+      "type": "text",
+      "text": " locked after",
+      "t": 29177
+     },
+     {
+      "type": "text",
+      "text": " too many failed sign-",
+      "t": 29223
+     },
+     {
+      "type": "text",
+      "text": "ins?\n7. **Lim",
+      "t": 29276
+     },
+     {
+      "type": "text",
+      "text": "its and tim",
+      "t": 29324
+     },
+     {
+      "type": "text",
+      "text": "ings:** Are 30 ",
+      "t": 29377
+     },
+     {
+      "type": "text",
+      "text": "minutes,",
+      "t": 29425
+     },
+     {
+      "type": "text",
+      "text": " 5 requests per hour",
+      "t": 29476
+     },
+     {
+      "type": "text",
+      "text": " and 2",
+      "t": 29523
+     },
+     {
+      "type": "text",
+      "text": "-",
+      "t": 29571
+     },
+     {
+      "type": "text",
+      "text": "minute email delivery acce",
+      "t": 29623
+     },
+     {
+      "type": "text",
+      "text": "ptable to",
+      "t": 29676
+     },
+     {
+      "type": "text",
+      "text": " Security",
+      "t": 29724
+     },
+     {
+      "type": "text",
+      "text": "?\n8. **Access",
+      "t": 29779
+     },
+     {
+      "type": "text",
+      "text": "ibility and languages:**",
+      "t": 29830
+     },
+     {
+      "type": "text",
+      "text": " Do we need to meet a",
+      "t": 29886
+     },
+     {
+      "type": "text",
+      "text": " specific accessibility standard",
+      "t": 29929
+     },
+     {
+      "type": "text",
+      "text": " (such as WCAG ",
+      "t": 29984
+     },
+     {
+      "type": "text",
+      "text": "2.2",
+      "t": 30039
+     },
+     {
+      "type": "text",
+      "text": " AA) or support mult",
+      "t": 30102
+     },
+     {
+      "type": "text",
+      "text": "iple languages?",
+      "t": 30154
+     },
+     {
+      "type": "usage",
+      "costUsd": 0.13634400000000002,
+      "durationMs": 26767,
+      "t": 30336
+     }
+    ],
+    "files": {}
+   }
+  ],
+  "54b3831d58111760": [
+   {
+    "prompt": "Run a health check on the project plan \"Contoso CRM Migration.xml\". Focus: (not specified)\n\nGive me: overall RAG with a one-line reason; a 3-bullet summary; late or behind-schedule tasks (table); the critical path and how much float is left before go-live; the biggest slips vs. baseline; over-alloca",
+    "events": [
+     {
+      "type": "session",
+      "id": "67ea0cbc-54a7-450a-9efe-d90e22878428",
+      "t": 8995
+     },
+     {
+      "type": "tool",
+      "id": "toolu_01CFi6Z674gEEt2ZPn4rkkhs",
+      "icon": "gantt",
+      "label": "Analyzing schedule in Contoso CRM Migration.xml",
+      "t": 10772
+     },
+     {
+      "type": "tool",
+      "id": "toolu_01Lt2yzFviWC3JHrNazhbpJR",
+      "icon": "gantt",
+      "label": "Reading plan Contoso CRM Migration.xml",
+      "t": 11007
+     },
+     {
+      "type": "tool_done",
+      "id": "toolu_01CFi6Z674gEEt2ZPn4rkkhs",
+      "ok": true,
+      "t": 11613
+     },
+     {
+      "type": "tool_done",
+      "id": "toolu_01Lt2yzFviWC3JHrNazhbpJR",
+      "ok": true,
+      "t": 11874
+     },
+     {
+      "type": "text",
+      "text": "#",
+      "t": 48964
+     },
+     {
+      "type": "text",
+      "text": " Contoso CRM",
+      "t": 48966
+     },
+     {
+      "type": "text",
+      "text": " Migration:",
+      "t": 48966
+     },
+     {
+      "type": "text",
+      "text": " Schedule Health Check",
+      "t": 48967
+     },
+     {
+      "type": "text",
+      "text": "\n\n*Prog",
+      "t": 48967
+     },
+     {
+      "type": "text",
+      "text": "ress is rec",
+      "t": 48967
+     },
+     {
+      "type": "text",
+      "text": "orded up to **F",
+      "t": 48968
+     },
+     {
+      "type": "text",
+      "text": "ri 23 Oct ",
+      "t": 48968
+     },
+     {
+      "type": "text",
+      "text": "2026**, which is 7",
+      "t": 48969
+     },
+     {
+      "type": "text",
+      "text": " working days before today (T",
+      "t": 48969
+     },
+     {
+      "type": "text",
+      "text": "ue 3 Nov).",
+      "t": 48970
+     },
+     {
+      "type": "text",
+      "text": " Anything that",
+      "t": 48970
+     },
+     {
+      "type": "text",
+      "text": " happened since then is",
+      "t": 48970
+     },
+     {
+      "type": "text",
+      "text": "n't in the plan.*",
+      "t": 48971
+     },
+     {
+      "type": "text",
+      "text": "\n\n## Overall RAG",
+      "t": 48973
+     },
+     {
+      "type": "text",
+      "text": ": ",
+      "t": 48973
+     },
+     {
+      "type": "text",
+      "text": "🔴 Red (",
+      "t": 48973
+     },
+     {
+      "type": "text",
+      "text": "the tool's score is Am",
+      "t": 48973
+     },
+     {
+      "type": "text",
+      "text": "ber;",
+      "t": 48973
+     },
+     {
+      "type": "text",
+      "text": " I'd ra",
+      "t": 48973
+     },
+     {
+      "type": "text",
+      "text": "ise it)\n\n**",
+      "t": 48973
+     },
+     {
+      "type": "text",
+      "text": "Re",
+      "t": 48974
+     },
+     {
+      "type": "text",
+      "text": "ason:** Go-live has",
+      "t": 48974
+     },
+     {
+      "type": "text",
+      "text": " moved **",
+      "t": 48974
+     },
+     {
+      "type": "text",
+      "text": "10 working days** to",
+      "t": 48974
+     },
+     {
+      "type": "text",
+      "text": " *",
+      "t": 48974
+     },
+     {
+      "type": "text",
+      "text": "Tue 5 J",
+      "t": 48974
+     },
+     {
+      "type": "text",
+      "text": "an 2027*, there",
+      "t": 48975
+     },
+     {
+      "type": "text",
+      "text": "'s no spare time left on the",
+      "t": 48975
+     },
+     {
+      "type": "text",
+      "text": " critical path, and the task dri",
+      "t": 48976
+     },
+     {
+      "type": "text",
+      "text": "ving go",
+      "t": 48976
+     },
+     {
+      "type": "text",
+      "text": "-live (#18)",
+      "t": 48976
+     },
+     {
+      "type": "text",
+      "text": " is already beh",
+      "t": 48976
+     },
+     {
+      "type": "text",
+      "text": "ind its new",
+      "t": 48976
+     },
+     {
+      "type": "text",
+      "text": " d",
+      "t": 48976
+     },
+     {
+      "type": "text",
+      "text": "ates.\n\n##",
+      "t": 48976
+     },
+     {
+      "type": "text",
+      "text": " Summary",
+      "t": 48976
+     },
+     {
+      "type": "text",
+      "text": "\n- **Beh",
+      "t": 48977
+     },
+     {
+      "type": "text",
+      "text": "ind schedule and",
+      "t": 48977
+     },
+     {
+      "type": "text",
+      "text": " over budget:** 47%",
+      "t": 48977
+     },
+     {
+      "type": "text",
+      "text": " complete against",
+      "t": 48977
+     },
+     {
+      "type": "text",
+      "text": " 53% expected. For",
+      "t": 48978
+     },
+     {
+      "type": "text",
+      "text": "ecast finish is *",
+      "t": 48978
+     },
+     {
+      "type": "text",
+      "text": "Fri 29 J",
+      "t": 48978
+     },
+     {
+      "type": "text",
+      "text": "an 2027* inst",
+      "t": 48978
+     },
+     {
+      "type": "text",
+      "text": "ead of *Fri 15",
+      "t": 48979
+     },
+     {
+      "type": "text",
+      "text": " Jan*",
+      "t": 48979
+     },
+     {
+      "type": "text",
+      "text": " (+",
+      "t": 48979
+     },
+     {
+      "type": "text",
+      "text": "10 working",
+      "t": 48979
+     },
+     {
+      "type": "text",
+      "text": " days). For",
+      "t": 48979
+     },
+     {
+      "type": "text",
+      "text": "ecast cost is **$239",
+      "t": 48979
+     },
+     {
+      "type": "text",
+      "text": ".5k against",
+      "t": 48980
+     },
+     {
+      "type": "text",
+      "text": " a",
+      "t": 48980
+     },
+     {
+      "type": "text",
+      "text": " $223.0k baseline",
+      "t": 48980
+     },
+     {
+      "type": "text",
+      "text": " (+$16.6k,",
+      "t": 48980
+     },
+     {
+      "type": "text",
+      "text": " +7%)**.\n-",
+      "t": 48980
+     },
+     {
+      "type": "text",
+      "text": " **One",
+      "t": 48980
+     },
+     {
+      "type": "text",
+      "text": " person is the b",
+      "t": 48980
+     },
+     {
+      "type": "text",
+      "text": "ottleneck:** A",
+      "t": 48980
+     },
+     {
+      "type": "text",
+      "text": "isha Khan does",
+      "t": 48982
+     },
+     {
+      "type": "text",
+      "text": " every integration task on the critical",
+      "t": 48982
+     },
+     {
+      "type": "text",
+      "text": " path (#18 →",
+      "t": 48982
+     },
+     {
+      "type": "text",
+      "text": " #19 ",
+      "t": 48982
+     },
+     {
+      "type": "text",
+      "text": "→ SIT). Any",
+      "t": 48983
+     },
+     {
+      "type": "text",
+      "text": " slip in her work mo",
+      "t": 48983
+     },
+     {
+      "type": "text",
+      "text": "ves go",
+      "t": 48983
+     },
+     {
+      "type": "text",
+      "text": "-live day",
+      "t": 48984
+     },
+     {
+      "type": "text",
+      "text": " for day.\n- **The new",
+      "t": 48984
+     },
+     {
+      "type": "text",
+      "text": " d",
+      "t": 48984
+     },
+     {
+      "type": "text",
+      "text": "ates run into the holidays:",
+      "t": 48985
+     },
+     {
+      "type": "text",
+      "text": "** end",
+      "t": 48986
+     },
+     {
+      "type": "text",
+      "text": "-user training is",
+      "t": 48991
+     },
+     {
+      "type": "text",
+      "text": " scheduled ",
+      "t": 48992
+     },
+     {
+      "type": "text",
+      "text": "23 Dec–1 ",
+      "t": 48992
+     },
+     {
+      "type": "text",
+      "text": "Jan and",
+      "t": 48993
+     },
+     {
+      "type": "text",
+      "text": " the go/no-go decision",
+      "t": 48993
+     },
+     {
+      "type": "text",
+      "text": " falls on *F",
+      "t": 48994
+     },
+     {
+      "type": "text",
+      "text": "ri 1 Jan*",
+      "t": 48995
+     },
+     {
+      "type": "text",
+      "text": " (New Year's Day).",
+      "t": 48995
+     },
+     {
+      "type": "text",
+      "text": " The plan has no holiday",
+      "t": 48995
+     },
+     {
+      "type": "text",
+      "text": " calendar, so the ",
+      "t": 48995
+     },
+     {
+      "type": "text",
+      "text": "5",
+      "t": 48995
+     },
+     {
+      "type": "text",
+      "text": " Jan go",
+      "t": 48996
+     },
+     {
+      "type": "text",
+      "text": "-live is probably opt",
+      "t": 48996
+     },
+     {
+      "type": "text",
+      "text": "imistic.\n\n## Late",
+      "t": 48996
+     },
+     {
+      "type": "text",
+      "text": " or behind-schedule t",
+      "t": 48996
+     },
+     {
+      "type": "text",
+      "text": "asks (",
+      "t": 48996
+     },
+     {
+      "type": "text",
+      "text": "as of 23 Oct",
+      "t": 48996
+     },
+     {
+      "type": "text",
+      "text": ")\n\n| ID | Task",
+      "t": 48996
+     },
+     {
+      "type": "text",
+      "text": " | Finish | Base",
+      "t": 48996
+     },
+     {
+      "type": "text",
+      "text": "line | Slip | % done",
+      "t": 48998
+     },
+     {
+      "type": "text",
+      "text": " | Iss",
+      "t": 48999
+     },
+     {
+      "type": "text",
+      "text": "ue | Owner |\n|",
+      "t": 48999
+     },
+     {
+      "type": "text",
+      "text": "---|---|---|---|",
+      "t": 48999
+     },
+     {
+      "type": "text",
+      "text": "---|---|---|---|",
+      "t": 48999
+     },
+     {
+      "type": "text",
+      "text": "\n| #21 |",
+      "t": 48999
+     },
+     {
+      "type": "text",
+      "text": " Data cleansing |",
+      "t": 48999
+     },
+     {
+      "type": "text",
+      "text": " *W",
+      "t": 49000
+     },
+     {
+      "type": "text",
+      "text": "ed 14 Oct*",
+      "t": 49000
+     },
+     {
+      "type": "text",
+      "text": " | *Th",
+      "t": 49000
+     },
+     {
+      "type": "text",
+      "text": "u 1 Oct*",
+      "t": 49000
+     },
+     {
+      "type": "text",
+      "text": " | 9 wd | ",
+      "t": 49000
+     },
+     {
+      "type": "text",
+      "text": "80% | **",
+      "t": 49001
+     },
+     {
+      "type": "text",
+      "text": "Overdue ",
+      "t": 49001
+     },
+     {
+      "type": "text",
+      "text": "7 wd** (14 ",
+      "t": 49001
+     },
+     {
+      "type": "text",
+      "text": "wd as of today) |",
+      "t": 49001
+     },
+     {
+      "type": "text",
+      "text": " Ben Carter, S",
+      "t": 49001
+     },
+     {
+      "type": "text",
+      "text": "ales Ops SMEs",
+      "t": 49001
+     },
+     {
+      "type": "text",
+      "text": " |\n| #22 |",
+      "t": 49001
+     },
+     {
+      "type": "text",
+      "text": " Data mapping & transformation",
+      "t": 49002
+     },
+     {
+      "type": "text",
+      "text": " scripts | *W",
+      "t": 49002
+     },
+     {
+      "type": "text",
+      "text": "ed 28 Oct*",
+      "t": 49002
+     },
+     {
+      "type": "text",
+      "text": " | *Th",
+      "t": 49002
+     },
+     {
+      "type": "text",
+      "text": "u 15 Oct*",
+      "t": 49002
+     },
+     {
+      "type": "text",
+      "text": " | 9 wd | ",
+      "t": 49002
+     },
+     {
+      "type": "text",
+      "text": "0% | Should be",
+      "t": 49002
+     },
+     {
+      "type": "text",
+      "text": " 70% done",
+      "t": 49003
+     },
+     {
+      "type": "text",
+      "text": "; can't start until #21 ",
+      "t": 49003
+     },
+     {
+      "type": "text",
+      "text": "finishes | Ben",
+      "t": 49003
+     },
+     {
+      "type": "text",
+      "text": " Carter, Tom Bec",
+      "t": 49003
+     },
+     {
+      "type": "text",
+      "text": "ker (50%) |\n|",
+      "t": 49003
+     },
+     {
+      "type": "text",
+      "text": " #27 | Trial data",
+      "t": 49003
+     },
+     {
+      "type": "text",
+      "text": " migration (dry run) |",
+      "t": 49003
+     },
+     {
+      "type": "text",
+      "text": " *Wed 4 ",
+      "t": 49003
+     },
+     {
+      "type": "text",
+      "text": "Nov* | *Th",
+      "t": 49006
+     },
+     {
+      "type": "text",
+      "text": "u 22 Oct*",
+      "t": 49006
+     },
+     {
+      "type": "text",
+      "text": " | 9 wd | ",
+      "t": 49006
+     },
+     {
+      "type": "text",
+      "text": "0% | Waits on #",
+      "t": 49006
+     },
+     {
+      "type": "text",
+      "text": "22, so it will sl",
+      "t": 49006
+     },
+     {
+      "type": "text",
+      "text": "ip further | Ben Car",
+      "t": 49006
+     },
+     {
+      "type": "text",
+      "text": "ter, Tom Becker",
+      "t": 49007
+     },
+     {
+      "type": "text",
+      "text": " |\n| #18 |",
+      "t": 49008
+     },
+     {
+      "type": "text",
+      "text": " Build ERP integration ",
+      "t": 49009
+     },
+     {
+      "type": "text",
+      "text": "⚠️ critical |",
+      "t": 49009
+     },
+     {
+      "type": "text",
+      "text": " *T",
+      "t": 49009
+     },
+     {
+      "type": "text",
+      "text": "ue 10 Nov*",
+      "t": 49009
+     },
+     {
+      "type": "text",
+      "text": " | *T",
+      "t": 49009
+     },
+     {
+      "type": "text",
+      "text": "ue 27 Oct*",
+      "t": 49010
+     },
+     {
+      "type": "text",
+      "text": " | 10 wd | ",
+      "t": 49010
+     },
+     {
+      "type": "text",
+      "text": "35% | My",
+      "t": 49010
+     },
+     {
+      "type": "text",
+      "text": " calculation: should be about",
+      "t": 49010
+     },
+     {
+      "type": "text",
+      "text": " 48% done.",
+      "t": 49010
+     },
+     {
+      "type": "text",
+      "text": " At",
+      "t": 49010
+     },
+     {
+      "type": "text",
+      "text": " its",
+      "t": 49011
+     },
+     {
+      "type": "text",
+      "text": " current pace it finishes *",
+      "t": 49011
+     },
+     {
+      "type": "text",
+      "text": "Fri 13 N",
+      "t": 49011
+     },
+     {
+      "type": "text",
+      "text": "ov*, which ad",
+      "t": 49011
+     },
+     {
+      "type": "text",
+      "text": "ds **3 more wd**",
+      "t": 49011
+     },
+     {
+      "type": "text",
+      "text": " to go-live | Ais",
+      "t": 49011
+     },
+     {
+      "type": "text",
+      "text": "ha Khan |\n| #",
+      "t": 49012
+     },
+     {
+      "type": "text",
+      "text": "17 | Configure sales",
+      "t": 49012
+     },
+     {
+      "type": "text",
+      "text": " pipeline | *Th",
+      "t": 49012
+     },
+     {
+      "type": "text",
+      "text": "u 29 Oct*",
+      "t": 49013
+     },
+     {
+      "type": "text",
+      "text": " | *Th",
+      "t": 49014
+     },
+     {
+      "type": "text",
+      "text": "u 22 Oct*",
+      "t": 49014
+     },
+     {
+      "type": "text",
+      "text": " | 5 wd | ",
+      "t": 49014
+     },
+     {
+      "type": "text",
+      "text": "70% | Roughly on",
+      "t": 49014
+     },
+     {
+      "type": "text",
+      "text": " its",
+      "t": 49014
+     },
+     {
+      "type": "text",
+      "text": " new d",
+      "t": 49076
+     },
+     {
+      "type": "text",
+      "text": "ates (exp",
+      "t": 49112
+     },
+     {
+      "type": "text",
+      "text": "ected about 73%) |",
+      "t": 49172
+     },
+     {
+      "type": "text",
+      "text": " Tom Becker |\n\n##",
+      "t": 49212
+     },
+     {
+      "type": "text",
+      "text": " Critical path and float to",
+      "t": 49263
+     },
+     {
+      "type": "text",
+      "text": " go-live\n\n**",
+      "t": 49321
+     },
+     {
+      "type": "text",
+      "text": "Float before",
+      "t": 49360
+     },
+     {
+      "type": "text",
+      "text": " go-live: ",
+      "t": 49407
+     },
+     {
+      "type": "text",
+      "text": "0 days",
+      "t": 49469
+     },
+     {
+      "type": "text",
+      "text": ".** A",
+      "t": 49524
+     },
+     {
+      "type": "text",
+      "text": " one-day sl",
+      "t": 49565
+     },
+     {
+      "type": "text",
+      "text": "ip on any of",
+      "t": 49614
+     },
+     {
+      "type": "text",
+      "text": " these tasks moves go-",
+      "t": 49668
+     },
+     {
+      "type": "text",
+      "text": "live by",
+      "t": 49719
+     },
+     {
+      "type": "text",
+      "text": " one day.\n\n| ",
+      "t": 49760
+     },
+     {
+      "type": "text",
+      "text": "ID | Task | Finish",
+      "t": 49814
+     },
+     {
+      "type": "text",
+      "text": " | Baseline | Sl",
+      "t": 49863
+     },
+     {
+      "type": "text",
+      "text": "ip |\n|---|---|",
+      "t": 49925
+     },
+     {
+      "type": "text",
+      "text": "---|---|---|\n|",
+      "t": 49965
+     },
+     {
+      "type": "text",
+      "text": " #18 | Build ER",
+      "t": 50015
+     },
+     {
+      "type": "text",
+      "text": "P integration | *Tue",
+      "t": 50064
+     },
+     {
+      "type": "text",
+      "text": " 10 Nov* |",
+      "t": 50107
+     },
+     {
+      "type": "text",
+      "text": " *Tue 27 ",
+      "t": 50164
+     },
+     {
+      "type": "text",
+      "text": "Oct* | 10 w",
+      "t": 50213
+     },
+     {
+      "type": "text",
+      "text": "d |\n| #19 |",
+      "t": 50267
+     },
+     {
+      "type": "text",
+      "text": " Build marketing automation integ",
+      "t": 50311
+     },
+     {
+      "type": "text",
+      "text": "ration | *Tue 24",
+      "t": 50405
+     },
+     {
+      "type": "text",
+      "text": " Nov* | *",
+      "t": 50433
+     },
+     {
+      "type": "text",
+      "text": "Tue 10 Nov",
+      "t": 50473
+     },
+     {
+      "type": "text",
+      "text": "* | 10 wd |",
+      "t": 50516
+     },
+     {
+      "type": "text",
+      "text": "\n| #23 | ",
+      "t": 50574
+     },
+     {
+      "type": "text",
+      "text": "◆ Build complete |",
+      "t": 50616
+     },
+     {
+      "type": "text",
+      "text": " *Tue 24 ",
+      "t": 50660
+     },
+     {
+      "type": "text",
+      "text": "Nov* | *Tue",
+      "t": 50715
+     },
+     {
+      "type": "text",
+      "text": " 10 Nov* |",
+      "t": 50760
+     },
+     {
+      "type": "text",
+      "text": " 10 wd |\n|",
+      "t": 50825
+     },
+     {
+      "type": "text",
+      "text": " #26 | System integration test",
+      "t": 50868
+     },
+     {
+      "type": "text",
+      "text": "ing (SIT) | *",
+      "t": 50928
+     },
+     {
+      "type": "text",
+      "text": "Tue 8 D",
+      "t": 50959
+     },
+     {
+      "type": "text",
+      "text": "ec* | *Tue ",
+      "t": 51024
+     },
+     {
+      "type": "text",
+      "text": "24 Nov* | ",
+      "t": 51060
+     },
+     {
+      "type": "text",
+      "text": "10 wd |\n| #",
+      "t": 51112
+     },
+     {
+      "type": "text",
+      "text": "28 | User acceptance",
+      "t": 51164
+     },
+     {
+      "type": "text",
+      "text": " testing (UAT) |",
+      "t": 51212
+     },
+     {
+      "type": "text",
+      "text": " *Tue 22 ",
+      "t": 51268
+     },
+     {
+      "type": "text",
+      "text": "Dec* | *Tue",
+      "t": 51316
+     },
+     {
+      "type": "text",
+      "text": " 8 Dec* |",
+      "t": 51364
+     },
+     {
+      "type": "text",
+      "text": " 10 wd |\n|",
+      "t": 51408
+     },
+     {
+      "type": "text",
+      "text": " #30 | ◆",
+      "t": 51470
+     },
+     {
+      "type": "text",
+      "text": " UAT sign-off |",
+      "t": 51513
+     },
+     {
+      "type": "text",
+      "text": " *Tue 22 ",
+      "t": 51568
+     },
+     {
+      "type": "text",
+      "text": "Dec* | *Tue",
+      "t": 51612
+     },
+     {
+      "type": "text",
+      "text": " 8 Dec* |",
+      "t": 51663
+     },
+     {
+      "type": "text",
+      "text": " 10 wd |\n|",
+      "t": 51713
+     },
+     {
+      "type": "text",
+      "text": " #35 | End-user training",
+      "t": 51761
+     },
+     {
+      "type": "text",
+      "text": " (120 reps) | *",
+      "t": 51816
+     },
+     {
+      "type": "text",
+      "text": "Fri 1 J",
+      "t": 51860
+     },
+     {
+      "type": "text",
+      "text": "an* | *Fri ",
+      "t": 51916
+     },
+     {
+      "type": "text",
+      "text": "18 Dec* | ",
+      "t": 51964
+     },
+     {
+      "type": "text",
+      "text": "10 wd |\n| #",
+      "t": 52013
+     },
+     {
+      "type": "text",
+      "text": "37 | ◆",
+      "t": 52061
+     },
+     {
+      "type": "text",
+      "text": " Go / no-go |",
+      "t": 52109
+     },
+     {
+      "type": "text",
+      "text": " *Fri 1 ",
+      "t": 52160
+     },
+     {
+      "type": "text",
+      "text": "Jan* | *Fri",
+      "t": 52212
+     },
+     {
+      "type": "text",
+      "text": " 18 Dec* |",
+      "t": 52275
+     },
+     {
+      "type": "text",
+      "text": " 10 wd |\n|",
+      "t": 52309
+     },
+     {
+      "type": "text",
+      "text": " #38 | Production data mig",
+      "t": 52362
+     },
+     {
+      "type": "text",
+      "text": "ration | *T",
+      "t": 52420
+     },
+     {
+      "type": "text",
+      "text": "ue 5 Jan*",
+      "t": 52460
+     },
+     {
+      "type": "text",
+      "text": " | *Tue 22 ",
+      "t": 52513
+     },
+     {
+      "type": "text",
+      "text": "Dec* | 10 ",
+      "t": 52564
+     },
+     {
+      "type": "text",
+      "text": "wd |\n| #39 ",
+      "t": 52612
+     },
+     {
+      "type": "text",
+      "text": "| ◆ **Go",
+      "t": 52668
+     },
+     {
+      "type": "text",
+      "text": "-live** | ",
+      "t": 52712
+     },
+     {
+      "type": "text",
+      "text": "***Tue 5 ",
+      "t": 52761
+     },
+     {
+      "type": "text",
+      "text": "Jan*** | *",
+      "t": 52816
+     },
+     {
+      "type": "text",
+      "text": "Tue 22 D",
+      "t": 52866
+     },
+     {
+      "type": "text",
+      "text": "ec* | **10 wd",
+      "t": 52915
+     },
+     {
+      "type": "text",
+      "text": "** |\n| #40–",
+      "t": 52970
+     },
+     {
+      "type": "text",
+      "text": "42",
+      "t": 53023
+     },
+     {
+      "type": "text",
+      "text": " | Hypercare →",
+      "t": 53081
+     },
+     {
+      "type": "text",
+      "text": " closure →",
+      "t": 53120
+     },
+     {
+      "type": "text",
+      "text": " ",
+      "t": 53166
+     },
+     {
+      "type": "text",
+      "text": "◆ Project complete |",
+      "t": 53212
+     },
+     {
+      "type": "text",
+      "text": " *Fri 29 ",
+      "t": 53264
+     },
+     {
+      "type": "text",
+      "text": "Jan* | *Fri",
+      "t": 53316
+     },
+     {
+      "type": "text",
+      "text": " 15 Jan* |",
+      "t": 53362
+     },
+     {
+      "type": "text",
+      "text": " 10 wd |\n\n**",
+      "t": 53417
+     },
+     {
+      "type": "text",
+      "text": "Two",
+      "t": 53464
+     },
+     {
+      "type": "text",
+      "text": " gaps in the plan's",
+      "t": 53516
+     },
+     {
+      "type": "text",
+      "text": " task",
+      "t": 53568
+     },
+     {
+      "type": "text",
+      "text": " links:**\n-",
+      "t": 53612
+     },
+     {
+      "type": "text",
+      "text": " **",
+      "t": 53660
+     },
+     {
+      "type": "text",
+      "text": "#27 ",
+      "t": 53713
+     },
+     {
+      "type": "text",
+      "text": "Trial data migration isn't",
+      "t": 53760
+     },
+     {
+      "type": "text",
+      "text": " linked to anything after",
+      "t": 53812
+     },
+     {
+      "type": "text",
+      "text": " it.** The pl",
+      "t": 53864
+     },
+     {
+      "type": "text",
+      "text": "an ther",
+      "t": 53908
+     },
+     {
+      "type": "text",
+      "text": "efore shows it as",
+      "t": 53960
+     },
+     {
+      "type": "text",
+      "text": " having lots of spare time,",
+      "t": 54017
+     },
+     {
+      "type": "text",
+      "text": " even though a success",
+      "t": 54060
+     },
+     {
+      "type": "text",
+      "text": "ful dry run should be",
+      "t": 54118
+     },
+     {
+      "type": "text",
+      "text": " a condition for go/",
+      "t": 54168
+     },
+     {
+      "type": "text",
+      "text": "no-go. As a",
+      "t": 54212
+     },
+     {
+      "type": "text",
+      "text": " result, the late",
+      "t": 54268
+     },
+     {
+      "type": "text",
+      "text": " data t",
+      "t": 54312
+     },
+     {
+      "type": "text",
+      "text": "asks (#21, #22",
+      "t": 54360
+     },
+     {
+      "type": "text",
+      "text": ", #27) don't show up",
+      "t": 54413
+     },
+     {
+      "type": "text",
+      "text": " as a risk to go-live",
+      "t": 54468
+     },
+     {
+      "type": "text",
+      "text": ".\n- **",
+      "t": 54516
+     },
+     {
+      "type": "text",
+      "text": "#29",
+      "t": 54560
+     },
+     {
+      "type": "text",
+      "text": " Performance testing**",
+      "t": 54625
+     },
+     {
+      "type": "text",
+      "text": " has about 6 wd of",
+      "t": 54660
+     },
+     {
+      "type": "text",
+      "text": " spare time and **#34 ",
+      "t": 54716
+     },
+     {
+      "type": "text",
+      "text": "Train the trainer** about",
+      "t": 54782
+     },
+     {
+      "type": "text",
+      "text": " 9 wd, so ne",
+      "t": 54812
+     },
+     {
+      "type": "text",
+      "text": "ither is ur",
+      "t": 54861
+     },
+     {
+      "type": "text",
+      "text": "gent.\n\n## Bigg",
+      "t": 54912
+     },
+     {
+      "type": "text",
+      "text": "est slips against",
+      "t": 54961
+     },
+     {
+      "type": "text",
+      "text": " baseline",
+      "t": 55012
+     },
+     {
+      "type": "text",
+      "text": "\n- **10 working days:",
+      "t": 55065
+     },
+     {
+      "type": "text",
+      "text": "** #18, #19, #",
+      "t": 55121
+     },
+     {
+      "type": "text",
+      "text": "26",
+      "t": 55162
+     },
+     {
+      "type": "text",
+      "text": ", #28, #29, #",
+      "t": 55223
+     },
+     {
+      "type": "text",
+      "text": "33, #34, #35,",
+      "t": 55268
+     },
+     {
+      "type": "text",
+      "text": " and every milestone from Build",
+      "t": 55313
+     },
+     {
+      "type": "text",
+      "text": " complete to Project",
+      "t": 55368
+     },
+     {
+      "type": "text",
+      "text": " complete.\n- **9 ",
+      "t": 55421
+     },
+     {
+      "type": "text",
+      "text": "working days:** the",
+      "t": 55460
+     },
+     {
+      "type": "text",
+      "text": " data work (",
+      "t": 55512
+     },
+     {
+      "type": "text",
+      "text": "#21, #22, #27",
+      "t": 55565
+     },
+     {
+      "type": "text",
+      "text": "). It is",
+      "t": 55629
+     },
+     {
+      "type": "text",
+      "text": "n't on the critical path y",
+      "t": 55672
+     },
+     {
+      "type": "text",
+      "text": "et, but it's slipping",
+      "t": 55712
+     },
+     {
+      "type": "text",
+      "text": " in re",
+      "t": 55760
+     },
+     {
+      "type": "text",
+      "text": "ality.\n- **",
+      "t": 55816
+     },
+     {
+      "type": "text",
+      "text": "Fin",
+      "t": 55860
+     },
+     {
+      "type": "text",
+      "text": "ished ph",
+      "t": 55917
+     },
+     {
+      "type": "text",
+      "text": "ases that came",
+      "t": 55960
+     },
+     {
+      "type": "text",
+      "text": " in",
+      "t": 56032
+     },
+     {
+      "type": "text",
+      "text": " late:** Requirements s",
+      "t": 56064
+     },
+     {
+      "type": "text",
+      "text": "ign-off +",
+      "t": 56108
+     },
+     {
+      "type": "text",
+      "text": "3 wd, Design appro",
+      "t": 56160
+     },
+     {
+      "type": "text",
+      "text": "val +5 wd.",
+      "t": 56216
+     },
+     {
+      "type": "text",
+      "text": " Each",
+      "t": 56272
+     },
+     {
+      "type": "text",
+      "text": " phase has fin",
+      "t": 56320
+     },
+     {
+      "type": "text",
+      "text": "ished later than plan",
+      "t": 56366
+     },
+     {
+      "type": "text",
+      "text": "ned.",
+      "t": 56419
+     },
+     {
+      "type": "text",
+      "text": "\n\n## Over-allocated",
+      "t": 56464
+     },
+     {
+      "type": "text",
+      "text": " people\n\n| Person | Pe",
+      "t": 56516
+     },
+     {
+      "type": "text",
+      "text": "ak | Dates | Cl",
+      "t": 56569
+     },
+     {
+      "type": "text",
+      "text": "ashing tasks |\n|",
+      "t": 56623
+     },
+     {
+      "type": "text",
+      "text": "---|---|---|---|",
+      "t": 56671
+     },
+     {
+      "type": "text",
+      "text": "\n| **",
+      "t": 56724
+     },
+     {
+      "type": "text",
+      "text": "Tom Becker** |",
+      "t": 56760
+     },
+     {
+      "type": "text",
+      "text": " **200%** | *",
+      "t": 56812
+     },
+     {
+      "type": "text",
+      "text": "Fri 23 O",
+      "t": 56864
+     },
+     {
+      "type": "text",
+      "text": "ct –",
+      "t": 56912
+     },
+     {
+      "type": "text",
+      "text": " Wed 4 N",
+      "t": 56964
+     },
+     {
+      "type": "text",
+      "text": "ov* (9 days",
+      "t": 57010
+     },
+     {
+      "type": "text",
+      "text": ") | #17 P",
+      "t": 57060
+     },
+     {
+      "type": "text",
+      "text": "ipeline config",
+      "t": 57113
+     },
+     {
+      "type": "text",
+      "text": " + #22 Data",
+      "t": 57161
+     },
+     {
+      "type": "text",
+      "text": " mapping (150",
+      "t": 57217
+     },
+     {
+      "type": "text",
+      "text": "%),",
+      "t": 57261
+     },
+     {
+      "type": "text",
+      "text": " then #27 Dry run",
+      "t": 57313
+     },
+     {
+      "type": "text",
+      "text": " + #20 Reports &",
+      "t": 57369
+     },
+     {
+      "type": "text",
+      "text": " dashboards (200%)",
+      "t": 57415
+     },
+     {
+      "type": "text",
+      "text": " |\n\n**Suggested f",
+      "t": 57466
+     },
+     {
+      "type": "text",
+      "text": "ixes:**\n1",
+      "t": 57522
+     },
+     {
+      "type": "text",
+      "text": ". **Start #20 ",
+      "t": 57561
+     },
+     {
+      "type": "text",
+      "text": "Reports & dashboards later",
+      "t": 57613
+     },
+     {
+      "type": "text",
+      "text": ",",
+      "t": 57664
+     },
+     {
+      "type": "text",
+      "text": " on *Thu 5",
+      "t": 57713
+     },
+     {
+      "type": "text",
+      "text": " Nov*.** It",
+      "t": 57761
+     },
+     {
+      "type": "text",
+      "text": " would finish around",
+      "t": 57812
+     },
+     {
+      "type": "text",
+      "text": " *M",
+      "t": 57862
+     },
+     {
+      "type": "text",
+      "text": "on 16 Nov*",
+      "t": 57913
+     },
+     {
+      "type": "text",
+      "text": ", still before",
+      "t": 57977
+     },
+     {
+      "type": "text",
+      "text": " Build complete (*24",
+      "t": 58018
+     },
+     {
+      "type": "text",
+      "text": " Nov*). It has",
+      "t": 58077
+     },
+     {
+      "type": "text",
+      "text": " about 10",
+      "t": 58112
+     },
+     {
+      "type": "text",
+      "text": " w",
+      "t": 58165
+     },
+     {
+      "type": "text",
+      "text": "d of spare time, so this",
+      "t": 58212
+     },
+     {
+      "type": "text",
+      "text": " costs nothing in",
+      "t": 58265
+     },
+     {
+      "type": "text",
+      "text": " sch",
+      "t": 58317
+     },
+     {
+      "type": "text",
+      "text": "edule. *Trade-",
+      "t": 58372
+     },
+     {
+      "type": "text",
+      "text": "off:* alm",
+      "t": 58427
+     },
+     {
+      "type": "text",
+      "text": "ost none",
+      "t": 58464
+     },
+     {
+      "type": "text",
+      "text": ".\n2. If",
+      "t": 58517
+     },
+     {
+      "type": "text",
+      "text": " #22 and #27 sl",
+      "t": 58562
+     },
+     {
+      "type": "text",
+      "text": "ip again",
+      "t": 58612
+     },
+     {
+      "type": "text",
+      "text": ",",
+      "t": 58661
+     },
+     {
+      "type": "text",
+      "text": " which is",
+      "t": 58715
+     },
+     {
+      "type": "text",
+      "text": " likely, **take T",
+      "t": 58761
+     },
+     {
+      "type": "text",
+      "text": "om off #22** so",
+      "t": 58820
+     },
+     {
+      "type": "text",
+      "text": " Ben Carter does it",
+      "t": 58865
+     },
+     {
+      "type": "text",
+      "text": " alone. *Trade-",
+      "t": 58921
+     },
+     {
+      "type": "text",
+      "text": "off:* #22 tak",
+      "t": 58965
+     },
+     {
+      "type": "text",
+      "text": "es about",
+      "t": 59017
+     },
+     {
+      "type": "text",
+      "text": " 2",
+      "t": 59060
+     },
+     {
+      "type": "text",
+      "text": "–",
+      "t": 59116
+     },
+     {
+      "type": "text",
+      "text": "3 more days, but that path",
+      "t": 59169
+     },
+     {
+      "type": "text",
+      "text": " has spare time.\n3.",
+      "t": 59222
+     },
+     {
+      "type": "text",
+      "text": " **Watch Aisha",
+      "t": 59271
+     },
+     {
+      "type": "text",
+      "text": " Khan.",
+      "t": 59321
+     },
+     {
+      "type": "text",
+      "text": "** She is",
+      "t": 59366
+     },
+     {
+      "type": "text",
+      "text": "n't over-allocated,",
+      "t": 59413
+     },
+     {
+      "type": "text",
+      "text": " but she owns every critical integ",
+      "t": 59465
+     },
+     {
+      "type": "text",
+      "text": "ration task and also",
+      "t": 59516
+     },
+     {
+      "type": "text",
+      "text": " S",
+      "t": 59565
+     },
+     {
+      "type": "text",
+      "text": "IT and hypercare.",
+      "t": 59627
+     },
+     {
+      "type": "text",
+      "text": "\n\n## Top 3 act",
+      "t": 59666
+     },
+     {
+      "type": "text",
+      "text": "ions for this week\n\n1. **",
+      "t": 59718
+     },
+     {
+      "type": "text",
+      "text": "Recover the",
+      "t": 59761
+     },
+     {
+      "type": "text",
+      "text": " critical path at",
+      "t": 59808
+     },
+     {
+      "type": "text",
+      "text": " #18/",
+      "t": 59876
+     },
+     {
+      "type": "text",
+      "text": "#19 (Aisha",
+      "t": 59912
+     },
+     {
+      "type": "text",
+      "text": ").** Get",
+      "t": 59960
+     },
+     {
+      "type": "text",
+      "text": " #",
+      "t": 60016
+     },
+     {
+      "type": "text",
+      "text": "18's real",
+      "t": 60065
+     },
+     {
+      "type": "text",
+      "text": " progress as of today",
+      "t": 60113
+     },
+     {
+      "type": "text",
+      "text": ". Then cons",
+      "t": 60165
+     },
+     {
+      "type": "text",
+      "text": "ider bringing in a second integ",
+      "t": 60216
+     },
+     {
+      "type": "text",
+      "text": "ration developer to start #19 ",
+      "t": 60265
+     },
+     {
+      "type": "text",
+      "text": "Marketing automation al",
+      "t": 60360
+     },
+     {
+      "type": "text",
+      "text": "ongside #18 inst",
+      "t": 60417
+     },
+     {
+      "type": "text",
+      "text": "ead of after it. The link between",
+      "t": 60461
+     },
+     {
+      "type": "text",
+      "text": " them looks like it",
+      "t": 60512
+     },
+     {
+      "type": "text",
+      "text": "'s there",
+      "t": 60569
+     },
+     {
+      "type": "text",
+      "text": " only because Aisha does",
+      "t": 60639
+     },
+     {
+      "type": "text",
+      "text": " both, not because of a techn",
+      "t": 60664
+     },
+     {
+      "type": "text",
+      "text": "ical dependency.",
+      "t": 60712
+     },
+     {
+      "type": "text",
+      "text": " That would",
+      "t": 60760
+     },
+     {
+      "type": "text",
+      "text": " recover **",
+      "t": 60818
+     },
+     {
+      "type": "text",
+      "text": "up to 10 wd**",
+      "t": 60864
+     },
+     {
+      "type": "text",
+      "text": ", poss",
+      "t": 60918
+     },
+     {
+      "type": "text",
+      "text": "ibly bringing go-live",
+      "t": 60964
+     },
+     {
+      "type": "text",
+      "text": " back to about",
+      "t": 61013
+     },
+     {
+      "type": "text",
+      "text": " 22 Dec.",
+      "t": 61065
+     },
+     {
+      "type": "text",
+      "text": "\n   *Trade-off:",
+      "t": 61122
+     },
+     {
+      "type": "text",
+      "text": "* roughly $7–",
+      "t": 61168
+     },
+     {
+      "type": "text",
+      "text": "10k for",
+      "t": 61220
+     },
+     {
+      "type": "text",
+      "text": " a contractor,",
+      "t": 61264
+     },
+     {
+      "type": "text",
+      "text": " plus time to b",
+      "t": 61321
+     },
+     {
+      "type": "text",
+      "text": "ring them up to",
+      "t": 61365
+     },
+     {
+      "type": "text",
+      "text": " speed and co",
+      "t": 61413
+     },
+     {
+      "type": "text",
+      "text": "ordinate.",
+      "t": 61465
+     },
+     {
+      "type": "text",
+      "text": "\n2",
+      "t": 61518
+     },
+     {
+      "type": "text",
+      "text": ". **Fix the data st",
+      "t": 61565
+     },
+     {
+      "type": "text",
+      "text": "ream and",
+      "t": 61617
+     },
+     {
+      "type": "text",
+      "text": " Tom's workload.**",
+      "t": 61661
+     },
+     {
+      "type": "text",
+      "text": " Get #21 ",
+      "t": 61717
+     },
+     {
+      "type": "text",
+      "text": "Data cleansing signed off",
+      "t": 61761
+     },
+     {
+      "type": "text",
+      "text": " and #",
+      "t": 61814
+     },
+     {
+      "type": "text",
+      "text": "22 started this week. Move",
+      "t": 61870
+     },
+     {
+      "type": "text",
+      "text": " #20 to start",
+      "t": 61913
+     },
+     {
+      "type": "text",
+      "text": " on ",
+      "t": 61964
+     },
+     {
+      "type": "text",
+      "text": "5 Nov. Link",
+      "t": 62013
+     },
+     {
+      "type": "text",
+      "text": " #27 ",
+      "t": 62065
+     },
+     {
+      "type": "text",
+      "text": "Dry run to #37 ",
+      "t": 62120
+     },
+     {
+      "type": "text",
+      "text": "Go/",
+      "t": 62166
+     },
+     {
+      "type": "text",
+      "text": "no-go so",
+      "t": 62212
+     },
+     {
+      "type": "text",
+      "text": " the plan shows the real",
+      "t": 62262
+     },
+     {
+      "type": "text",
+      "text": " risk.\n   *Tr",
+      "t": 62317
+     },
+     {
+      "type": "text",
+      "text": "ade-off:* the",
+      "t": 62361
+     },
+     {
+      "type": "text",
+      "text": " crit",
+      "t": 62416
+     },
+     {
+      "type": "text",
+      "text": "ical path may",
+      "t": 62468
+     },
+     {
+      "type": "text",
+      "text": " get",
+      "t": 62516
+     },
+     {
+      "type": "text",
+      "text": " longer on",
+      "t": 62564
+     },
+     {
+      "type": "text",
+      "text": " paper, but the",
+      "t": 62612
+     },
+     {
+      "type": "text",
+      "text": " schedule will be",
+      "t": 62661
+     },
+     {
+      "type": "text",
+      "text": " honest.\n3. **",
+      "t": 62718
+     },
+     {
+      "type": "text",
+      "text": "Decide the go-live window with",
+      "t": 62762
+     },
+     {
+      "type": "text",
+      "text": " the sponsor.**",
+      "t": 62817
+     },
+     {
+      "type": "text",
+      "text": " Hol",
+      "t": 62866
+     },
+     {
+      "type": "text",
+      "text": "ding",
+      "t": 62924
+     },
+     {
+      "type": "text",
+      "text": " the ",
+      "t": 62976
+     },
+     {
+      "type": "text",
+      "text": "5 Jan for",
+      "t": 63012
+     },
+     {
+      "type": "text",
+      "text": "ecast means training 120 re",
+      "t": 63061
+     },
+     {
+      "type": "text",
+      "text": "ps over Christmas and making",
+      "t": 63113
+     },
+     {
+      "type": "text",
+      "text": " the",
+      "t": 63161
+     },
+     {
+      "type": "text",
+      "text": " go/no-go call on New",
+      "t": 63224
+     },
+     {
+      "type": "text",
+      "text": " Year's Day. Either",
+      "t": 63262
+     },
+     {
+      "type": "text",
+      "text": " comm",
+      "t": 63313
+     },
+     {
+      "type": "text",
+      "text": "it to the rec",
+      "t": 63361
+     },
+     {
+      "type": "text",
+      "text": "overy in action",
+      "t": 63413
+     },
+     {
+      "type": "text",
+      "text": " 1, or form",
+      "t": 63461
+     },
+     {
+      "type": "text",
+      "text": "ally move",
+      "t": 63517
+     },
+     {
+      "type": "text",
+      "text": " go-live to m",
+      "t": 63568
+     },
+     {
+      "type": "text",
+      "text": "id-January (around",
+      "t": 63613
+     },
+     {
+      "type": "text",
+      "text": " *Tue 12 ",
+      "t": 63660
+     },
+     {
+      "type": "text",
+      "text": "Jan*) and re-ba",
+      "t": 63712
+     },
+     {
+      "type": "text",
+      "text": "seline.",
+      "t": 63760
+     },
+     {
+      "type": "text",
+      "text": "\n   *Trade-off",
+      "t": 63817
+     },
+     {
+      "type": "text",
+      "text": ":* staying \"",
+      "t": 63861
+     },
+     {
+      "type": "text",
+      "text": "on time\" against",
+      "t": 63918
+     },
+     {
+      "type": "text",
+      "text": " a realistic,",
+      "t": 63966
+     },
+     {
+      "type": "text",
+      "text": " ag",
+      "t": 64012
+     },
+     {
+      "type": "text",
+      "text": "reed del",
+      "t": 64078
+     },
+     {
+      "type": "text",
+      "text": "ay.",
+      "t": 64113
+     },
+     {
+      "type": "text",
+      "text": "\n   ",
+      "t": 64169
+     },
+     {
+      "type": "text",
+      "text": "Also add a holiday calend",
+      "t": 64216
+     },
+     {
+      "type": "text",
+      "text": "ar and move the status date to *",
+      "t": 64261
+     },
+     {
+      "type": "text",
+      "text": "3",
+      "t": 64313
+     },
+     {
+      "type": "text",
+      "text": " Nov*",
+      "t": 64361
+     },
+     {
+      "type": "text",
+      "text": " so the next",
+      "t": 64412
+     },
+     {
+      "type": "text",
+      "text": " report",
+      "t": 64461
+     },
+     {
+      "type": "text",
+      "text": " re",
+      "t": 64521
+     },
+     {
+      "type": "text",
+      "text": "flects re",
+      "t": 64573
+     },
+     {
+      "type": "text",
+      "text": "ality.\n\n---",
+      "t": 64613
+     },
+     {
+      "type": "text",
+      "text": "\n*Facts above",
+      "t": 64713
+     },
+     {
+      "type": "text",
+      "text": " come from the plan file",
+      "t": 64761
+     },
+     {
+      "type": "text",
+      "text": ". The #",
+      "t": 64812
+     },
+     {
+      "type": "text",
+      "text": "18 p",
+      "t": 64861
+     },
+     {
+      "type": "text",
+      "text": "ace estimate, the holi",
+      "t": 64913
+     },
+     {
+      "type": "text",
+      "text": "day-",
+      "t": 64965
+     },
+     {
+      "type": "text",
+      "text": "clash fin",
+      "t": 65012
+     },
+     {
+      "type": "text",
+      "text": "ding and all",
+      "t": 65061
+     },
+     {
+      "type": "text",
+      "text": " recovery options are my recomm",
+      "t": 65116
+     },
+     {
+      "type": "text",
+      "text": "endations.*",
+      "t": 65164
+     },
+     {
+      "type": "text",
+      "text": " If",
+      "t": 65212
+     },
+     {
+      "type": "text",
+      "text": " you want me",
+      "t": 65265
+     },
+     {
+      "type": "text",
+      "text": " to record this",
+      "t": 65308
+     },
+     {
+      "type": "text",
+      "text": " week's progress or produce an",
+      "t": 65364
+     },
+     {
+      "type": "text",
+      "text": " Excel t",
+      "t": 65413
+     },
+     {
+      "type": "text",
+      "text": "racker,",
+      "t": 65461
+     },
+     {
+      "type": "text",
+      "text": " switch **",
+      "t": 65516
+     },
+     {
+      "type": "text",
+      "text": "\"",
+      "t": 65561
+     },
+     {
+      "type": "text",
+      "text": "What can Lumen do?",
+      "t": 65612
+     },
+     {
+      "type": "text",
+      "text": "\"** to **\"Create &",
+      "t": 65663
+     },
+     {
+      "type": "text",
+      "text": " edit files\"**.",
+      "t": 65714
+     },
+     {
+      "type": "usage",
+      "costUsd": 0.2993944,
+      "durationMs": 59559,
+      "t": 68301
+     }
+    ],
+    "files": {}
+   }
+  ],
+  "e38d0af80c7c31fa": [
+   {
+    "prompt": "Update the project plan \"Contoso CRM Migration.xml\" with the progress in \"Weekly Progress Update - 30 Oct 2026.xlsx\" and set the status date to 2026-10-30. Apply the changes (save as an updated copy), then give me a before/after table and tell me how the health of the plan changed: % complete, late ",
+    "events": [
+     {
+      "type": "session",
+      "id": "be5ca766-a986-482a-895a-af6426c15f3c",
+      "t": 3614
+     },
+     {
+      "type": "tool",
+      "id": "toolu_01JywPTL7bBLkQpk9dsV2qt5",
+      "icon": "sheet",
+      "label": "Reading Weekly Progress Update - 30 Oct 2026.xlsx",
+      "t": 5632
+     },
+     {
+      "type": "tool_done",
+      "id": "toolu_01JywPTL7bBLkQpk9dsV2qt5",
+      "ok": true,
+      "t": 5769
+     },
+     {
+      "type": "tool",
+      "id": "toolu_01KrQSVzXqqxe1eEZ4DXAjep",
+      "icon": "gantt",
+      "label": "Reading plan Contoso CRM Migration.xml",
+      "t": 6036
+     },
+     {
+      "type": "tool_done",
+      "id": "toolu_01KrQSVzXqqxe1eEZ4DXAjep",
+      "ok": true,
+      "t": 6116
+     },
+     {
+      "type": "tool",
+      "id": "toolu_013BYp5Jz4PjHwFpSfsD73nR",
+      "icon": "gantt",
+      "label": "Analyzing schedule in Contoso CRM Migration.xml",
+      "t": 6450
+     },
+     {
+      "type": "tool_done",
+      "id": "toolu_013BYp5Jz4PjHwFpSfsD73nR",
+      "ok": true,
+      "t": 6515
+     },
+     {
+      "type": "tool",
+      "id": "toolu_016FZFXgCZGGQhvpDfFpfsHu",
+      "icon": "gantt",
+      "label": "Updating 6 tasks in Contoso CRM Migration.xml",
+      "t": 17608
+     },
+     {
+      "type": "tool_done",
+      "id": "toolu_016FZFXgCZGGQhvpDfFpfsHu",
+      "ok": true,
+      "t": 17688
+     },
+     {
+      "type": "file",
+      "path": "C:\\DevSource\\CLIChat\\film\\.work\\Lumen\\Contoso CRM Migration (demo)\\Contoso CRM Migration (updated).xml",
+      "t": 17689
+     },
+     {
+      "type": "tool",
+      "id": "toolu_015XuP2mw9jwQA8m1vEXff7M",
+      "icon": "gantt",
+      "label": "Analyzing schedule in Contoso CRM Migration (updated).xml",
+      "t": 19173
+     },
+     {
+      "type": "tool_done",
+      "id": "toolu_015XuP2mw9jwQA8m1vEXff7M",
+      "ok": true,
+      "t": 19257
+     },
+     {
+      "type": "text",
+      "text": "I",
+      "t": 35109
+     },
+     {
+      "type": "text",
+      "text": "'ve applied the weekly prog",
+      "t": 35111
+     },
+     {
+      "type": "text",
+      "text": "ress update",
+      "t": 35112
+     },
+     {
+      "type": "text",
+      "text": " and saved it as an",
+      "t": 35113
+     },
+     {
+      "type": "text",
+      "text": " updated copy. The t",
+      "t": 35115
+     },
+     {
+      "type": "text",
+      "text": "ool's health",
+      "t": 35117
+     },
+     {
+      "type": "text",
+      "text": " check still",
+      "t": 35117
+     },
+     {
+      "type": "text",
+      "text": " shows **Amber**",
+      "t": 35118
+     },
+     {
+      "type": "text",
+      "text": " with",
+      "t": 35119
+     },
+     {
+      "type": "text",
+      "text": " the fin",
+      "t": 35120
+     },
+     {
+      "type": "text",
+      "text": "ish on Fri 29",
+      "t": 35122
+     },
+     {
+      "type": "text",
+      "text": " Jan 2027,",
+      "t": 35126
+     },
+     {
+      "type": "text",
+      "text": " but that's too optimistic",
+      "t": 35127
+     },
+     {
+      "type": "text",
+      "text": ". The ERP integration's",
+      "t": 35128
+     },
+     {
+      "type": "text",
+      "text": " new finish date h",
+      "t": 35128
+     },
+     {
+      "type": "text",
+      "text": "asn't fl",
+      "t": 35129
+     },
+     {
+      "type": "text",
+      "text": "owed through to the t",
+      "t": 35129
+     },
+     {
+      "type": "text",
+      "text": "asks that depend on it y",
+      "t": 35131
+     },
+     {
+      "type": "text",
+      "text": "et.",
+      "t": 35131
+     },
+     {
+      "type": "text",
+      "text": " Once",
+      "t": 35132
+     },
+     {
+      "type": "text",
+      "text": " Microsoft Project recal",
+      "t": 35133
+     },
+     {
+      "type": "text",
+      "text": "culates, go-live and the",
+      "t": 35134
+     },
+     {
+      "type": "text",
+      "text": " finish should each",
+      "t": 35135
+     },
+     {
+      "type": "text",
+      "text": " move about ",
+      "t": 35135
+     },
+     {
+      "type": "text",
+      "text": "3 more working days, to",
+      "t": 35137
+     },
+     {
+      "type": "text",
+      "text": " around",
+      "t": 35138
+     },
+     {
+      "type": "text",
+      "text": " Fri 8 J",
+      "t": 35139
+     },
+     {
+      "type": "text",
+      "text": "an and Wed 3 ",
+      "t": 35139
+     },
+     {
+      "type": "text",
+      "text": "Feb 2027.",
+      "t": 35142
+     },
+     {
+      "type": "text",
+      "text": "\n\n## What I",
+      "t": 35143
+     },
+     {
+      "type": "text",
+      "text": " changed\n\nThe",
+      "t": 35144
+     },
+     {
+      "type": "text",
+      "text": " status",
+      "t": 35145
+     },
+     {
+      "type": "text",
+      "text": " date is now",
+      "t": 35145
+     },
+     {
+      "type": "text",
+      "text": " **",
+      "t": 35146
+     },
+     {
+      "type": "text",
+      "text": "Fri 30 O",
+      "t": 35146
+     },
+     {
+      "type": "text",
+      "text": "ct 2026** (it",
+      "t": 35147
+     },
+     {
+      "type": "text",
+      "text": " was F",
+      "t": 35147
+     },
+     {
+      "type": "text",
+      "text": "ri 23 Oct).",
+      "t": 35147
+     },
+     {
+      "type": "text",
+      "text": " Your original pl",
+      "t": 35148
+     },
+     {
+      "type": "text",
+      "text": "an is untouched.",
+      "t": 35148
+     },
+     {
+      "type": "text",
+      "text": " I",
+      "t": 35149
+     },
+     {
+      "type": "text",
+      "text": " added each person",
+      "t": 35149
+     },
+     {
+      "type": "text",
+      "text": "'s com",
+      "t": 35149
+     },
+     {
+      "type": "text",
+      "text": "ment from the s",
+      "t": 35149
+     },
+     {
+      "type": "text",
+      "text": "heet to their",
+      "t": 35149
+     },
+     {
+      "type": "text",
+      "text": " task's",
+      "t": 35151
+     },
+     {
+      "type": "text",
+      "text": " notes.\n\n| ",
+      "t": 35152
+     },
+     {
+      "type": "text",
+      "text": "ID ·",
+      "t": 35152
+     },
+     {
+      "type": "text",
+      "text": " Task | % complete before",
+      "t": 35153
+     },
+     {
+      "type": "text",
+      "text": " →",
+      "t": 35154
+     },
+     {
+      "type": "text",
+      "text": " after | Finish before → after",
+      "t": 35157
+     },
+     {
+      "type": "text",
+      "text": " | Note",
+      "t": 35158
+     },
+     {
+      "type": "text",
+      "text": " added",
+      "t": 35161
+     },
+     {
+      "type": "text",
+      "text": " |\n|---|---|---",
+      "t": 35161
+     },
+     {
+      "type": "text",
+      "text": "|---|\n| #17 ",
+      "t": 35161
+     },
+     {
+      "type": "text",
+      "text": "Configure sales pipe",
+      "t": 35161
+     },
+     {
+      "type": "text",
+      "text": "line & custom objects | ",
+      "t": 35161
+     },
+     {
+      "type": "text",
+      "text": "70% → **95%** |",
+      "t": 35162
+     },
+     {
+      "type": "text",
+      "text": " Thu 29 O",
+      "t": 35162
+     },
+     {
+      "type": "text",
+      "text": "ct (unchanged,",
+      "t": 35162
+     },
+     {
+      "type": "text",
+      "text": " no new",
+      "t": 35162
+     },
+     {
+      "type": "text",
+      "text": " date re",
+      "t": 35162
+     },
+     {
+      "type": "text",
+      "text": "ported) | Custom objects",
+      "t": 35163
+     },
+     {
+      "type": "text",
+      "text": " in review |\n| #18 ",
+      "t": 35164
+     },
+     {
+      "type": "text",
+      "text": "Build ERP integration |",
+      "t": 35164
+     },
+     {
+      "type": "text",
+      "text": " 35% → **55%**",
+      "t": 35165
+     },
+     {
+      "type": "text",
+      "text": " | Tue 10 ",
+      "t": 35165
+     },
+     {
+      "type": "text",
+      "text": "Nov → **Fri ",
+      "t": 35166
+     },
+     {
+      "type": "text",
+      "text": "13 Nov** |",
+      "t": 35166
+     },
+     {
+      "type": "text",
+      "text": " Write-back blocked by",
+      "t": 35168
+     },
+     {
+      "type": "text",
+      "text": " vendor ",
+      "t": 35169
+     },
+     {
+      "type": "text",
+      "text": "ticket ERP-3321",
+      "t": 35169
+     },
+     {
+      "type": "text",
+      "text": " |\n| #21 ",
+      "t": 35169
+     },
+     {
+      "type": "text",
+      "text": "Data cleansing | 80",
+      "t": 35169
+     },
+     {
+      "type": "text",
+      "text": "% → **100%** |",
+      "t": 35169
+     },
+     {
+      "type": "text",
+      "text": " Wed 14 Oct",
+      "t": 35169
+     },
+     {
+      "type": "text",
+      "text": " → **Thu 29 ",
+      "t": 35170
+     },
+     {
+      "type": "text",
+      "text": "Oct** | Ded",
+      "t": 35170
+     },
+     {
+      "type": "text",
+      "text": "upe r",
+      "t": 35171
+     },
+     {
+      "type": "text",
+      "text": "ules signed off by",
+      "t": 35171
+     },
+     {
+      "type": "text",
+      "text": " Sales Ops |",
+      "t": 35171
+     },
+     {
+      "type": "text",
+      "text": "\n| #22 Data map",
+      "t": 35172
+     },
+     {
+      "type": "text",
+      "text": "ping & transformation scripts",
+      "t": 35172
+     },
+     {
+      "type": "text",
+      "text": " | 0% → **10%",
+      "t": 35173
+     },
+     {
+      "type": "text",
+      "text": "** | Wed 28 ",
+      "t": 35173
+     },
+     {
+      "type": "text",
+      "text": "Oct (unchanged",
+      "t": 35174
+     },
+     {
+      "type": "text",
+      "text": ") | Mapping of",
+      "t": 35174
+     },
+     {
+      "type": "text",
+      "text": " accounts and contacts started",
+      "t": 35175
+     },
+     {
+      "type": "text",
+      "text": " |\n| #20 Re",
+      "t": 35176
+     },
+     {
+      "type": "text",
+      "text": "ports & dashboards | ",
+      "t": 35176
+     },
+     {
+      "type": "text",
+      "text": "0% (",
+      "t": 35177
+     },
+     {
+      "type": "text",
+      "text": "no change) | – | Wa",
+      "t": 35177
+     },
+     {
+      "type": "text",
+      "text": "iting on #17 |",
+      "t": 35177
+     },
+     {
+      "type": "text",
+      "text": "\n| #26 System",
+      "t": 35178
+     },
+     {
+      "type": "text",
+      "text": " integration testing (SIT",
+      "t": 35178
+     },
+     {
+      "type": "text",
+      "text": ") | 0% (no change",
+      "t": 35179
+     },
+     {
+      "type": "text",
+      "text": ") | – | Test environment",
+      "t": 35179
+     },
+     {
+      "type": "text",
+      "text": " ready |\n\n## How",
+      "t": 35179
+     },
+     {
+      "type": "text",
+      "text": " the pl",
+      "t": 35179
+     },
+     {
+      "type": "text",
+      "text": "an's health changed (",
+      "t": 35179
+     },
+     {
+      "type": "text",
+      "text": "both checks as of 30 ",
+      "t": 35180
+     },
+     {
+      "type": "text",
+      "text": "Oct)\n\n| Meas",
+      "t": 35180
+     },
+     {
+      "type": "text",
+      "text": "ure | Before | After |",
+      "t": 35180
+     },
+     {
+      "type": "text",
+      "text": "\n|---|---|---|",
+      "t": 35180
+     },
+     {
+      "type": "text",
+      "text": "\n| Overall R",
+      "t": 35180
+     },
+     {
+      "type": "text",
+      "text": "AG |",
+      "t": 35180
+     },
+     {
+      "type": "text",
+      "text": " Amber | Amber |",
+      "t": 35181
+     },
+     {
+      "type": "text",
+      "text": "\n| % complete v",
+      "t": 35181
+     },
+     {
+      "type": "text",
+      "text": "s. expected by",
+      "t": 35181
+     },
+     {
+      "type": "text",
+      "text": " now | 47% vs.",
+      "t": 35181
+     },
+     {
+      "type": "text",
+      "text": " 60% (13",
+      "t": 35182
+     },
+     {
+      "type": "text",
+      "text": " p",
+      "t": 35182
+     },
+     {
+      "type": "text",
+      "text": "ts behind) | **53%",
+      "t": 35182
+     },
+     {
+      "type": "text",
+      "text": " vs. 59% (6",
+      "t": 35182
+     },
+     {
+      "type": "text",
+      "text": " pts behind)** |",
+      "t": 35183
+     },
+     {
+      "type": "text",
+      "text": "\n| Tasks complete",
+      "t": 35183
+     },
+     {
+      "type": "text",
+      "text": " | 14 of",
+      "t": 35183
+     },
+     {
+      "type": "text",
+      "text": " 35 | **15 of",
+      "t": 35183
+     },
+     {
+      "type": "text",
+      "text": " 35** |\n| Late",
+      "t": 35183
+     },
+     {
+      "type": "text",
+      "text": " tasks |",
+      "t": 35184
+     },
+     {
+      "type": "text",
+      "text": " 3 (#17, #",
+      "t": 35185
+     },
+     {
+      "type": "text",
+      "text": "21, #22) | **2",
+      "t": 35186
+     },
+     {
+      "type": "text",
+      "text": " (#17, #22)",
+      "t": 35186
+     },
+     {
+      "type": "text",
+      "text": "** |\n| Beh",
+      "t": 35187
+     },
+     {
+      "type": "text",
+      "text": "ind schedule | #",
+      "t": 35188
+     },
+     {
+      "type": "text",
+      "text": "18, #27 | #",
+      "t": 35188
+     },
+     {
+      "type": "text",
+      "text": "27 |\n| Forec",
+      "t": 35189
+     },
+     {
+      "type": "text",
+      "text": "ast finish (as the tool",
+      "t": 35189
+     },
+     {
+      "type": "text",
+      "text": " reports it) | Fri",
+      "t": 35189
+     },
+     {
+      "type": "text",
+      "text": " 29 Jan 2",
+      "t": 35190
+     },
+     {
+      "type": "text",
+      "text": "027 (+",
+      "t": 35190
+     },
+     {
+      "type": "text",
+      "text": "10 days",
+      "t": 35190
+     },
+     {
+      "type": "text",
+      "text": " vs. baseline) |",
+      "t": 35190
+     },
+     {
+      "type": "text",
+      "text": " Fri 29 J",
+      "t": 35190
+     },
+     {
+      "type": "text",
+      "text": "an 2027 (+10",
+      "t": 35192
+     },
+     {
+      "type": "text",
+      "text": " days) |\n| **",
+      "t": 35193
+     },
+     {
+      "type": "text",
+      "text": "Likely fin",
+      "t": 35194
+     },
+     {
+      "type": "text",
+      "text": "ish once Project recalculates",
+      "t": 35195
+     },
+     {
+      "type": "text",
+      "text": "** | –",
+      "t": 35197
+     },
+     {
+      "type": "text",
+      "text": " | **About",
+      "t": 35197
+     },
+     {
+      "type": "text",
+      "text": " Wed 3 Fe",
+      "t": 35197
+     },
+     {
+      "type": "text",
+      "text": "b 2027 (+13",
+      "t": 35197
+     },
+     {
+      "type": "text",
+      "text": " days)** |\n|",
+      "t": 35197
+     },
+     {
+      "type": "text",
+      "text": " Go-live | T",
+      "t": 35198
+     },
+     {
+      "type": "text",
+      "text": "ue 5 Jan ",
+      "t": 35198
+     },
+     {
+      "type": "text",
+      "text": "2027 (+",
+      "t": 35198
+     },
+     {
+      "type": "text",
+      "text": "10 ",
+      "t": 35198
+     },
+     {
+      "type": "text",
+      "text": "days) | **About Fri",
+      "t": 35199
+     },
+     {
+      "type": "text",
+      "text": " 8 Jan 2",
+      "t": 35199
+     },
+     {
+      "type": "text",
+      "text": "027 (+13 days)",
+      "t": 35200
+     },
+     {
+      "type": "text",
+      "text": "** |\n| Cost for",
+      "t": 35211
+     },
+     {
+      "type": "text",
+      "text": "ecast vs. baseline",
+      "t": 35262
+     },
+     {
+      "type": "text",
+      "text": " | $239.5k vs",
+      "t": 35313
+     },
+     {
+      "type": "text",
+      "text": ". $223.0k (+",
+      "t": 35363
+     },
+     {
+      "type": "text",
+      "text": "$16.6k) | No",
+      "t": 35412
+     },
+     {
+      "type": "text",
+      "text": " change |",
+      "t": 35463
+     },
+     {
+      "type": "text",
+      "text": "\n| Over",
+      "t": 35528
+     },
+     {
+      "type": "text",
+      "text": "loaded people |",
+      "t": 35569
+     },
+     {
+      "type": "text",
+      "text": " Tom,",
+      "t": 35614
+     },
+     {
+      "type": "text",
+      "text": " Marcus |",
+      "t": 35668
+     },
+     {
+      "type": "text",
+      "text": " Tom, Marcus,",
+      "t": 35720
+     },
+     {
+      "type": "text",
+      "text": " **Aisha (",
+      "t": 35770
+     },
+     {
+      "type": "text",
+      "text": "new)** |\n\nAll sl",
+      "t": 35816
+     },
+     {
+      "type": "text",
+      "text": "ips are in working days.\n\n**",
+      "t": 35867
+     },
+     {
+      "type": "text",
+      "text": "What improved:** data",
+      "t": 35917
+     },
+     {
+      "type": "text",
+      "text": " cleansing (#21)",
+      "t": 35964
+     },
+     {
+      "type": "text",
+      "text": " is finished, and the team made",
+      "t": 36014
+     },
+     {
+      "type": "text",
+      "text": " a good",
+      "t": 36064
+     },
+     {
+      "type": "text",
+      "text": " week",
+      "t": 36112
+     },
+     {
+      "type": "text",
+      "text": "'s progress over",
+      "t": 36165
+     },
+     {
+      "type": "text",
+      "text": "all. The",
+      "t": 36214
+     },
+     {
+      "type": "text",
+      "text": " gap to",
+      "t": 36263
+     },
+     {
+      "type": "text",
+      "text": " pl",
+      "t": 36312
+     },
+     {
+      "type": "text",
+      "text": "an hal",
+      "t": 36359
+     },
+     {
+      "type": "text",
+      "text": "ved,",
+      "t": 36415
+     },
+     {
+      "type": "text",
+      "text": " from 13 to 6 ",
+      "t": 36460
+     },
+     {
+      "type": "text",
+      "text": "points.\n\n## What new",
+      "t": 36513
+     },
+     {
+      "type": "text",
+      "text": "ly needs attention\n\n1.",
+      "t": 36568
+     },
+     {
+      "type": "text",
+      "text": " **The ERP integration (",
+      "t": 36614
+     },
+     {
+      "type": "text",
+      "text": "#18) now",
+      "t": 36660
+     },
+     {
+      "type": "text",
+      "text": " fin",
+      "t": 36713
+     },
+     {
+      "type": "text",
+      "text": "ishes Fri 13 ",
+      "t": 36760
+     },
+     {
+      "type": "text",
+      "text": "Nov,",
+      "t": 36812
+     },
+     {
+      "type": "text",
+      "text": " and it's on the critical path",
+      "t": 36865
+     },
+     {
+      "type": "text",
+      "text": ".",
+      "t": 36918
+     },
+     {
+      "type": "text",
+      "text": "** That",
+      "t": 36977
+     },
+     {
+      "type": "text",
+      "text": "'s the chain of tasks",
+      "t": 37010
+     },
+     {
+      "type": "text",
+      "text": " with no slack, so any del",
+      "t": 37063
+     },
+     {
+      "type": "text",
+      "text": "ay there",
+      "t": 37110
+     },
+     {
+      "type": "text",
+      "text": " moves the end",
+      "t": 37161
+     },
+     {
+      "type": "text",
+      "text": " date. Its next task, #",
+      "t": 37210
+     },
+     {
+      "type": "text",
+      "text": "19 Build marketing autom",
+      "t": 37261
+     },
+     {
+      "type": "text",
+      "text": "ation integration, is still set",
+      "t": 37323
+     },
+     {
+      "type": "text",
+      "text": " to start Wed 11 ",
+      "t": 37365
+     },
+     {
+      "type": "text",
+      "text": "Nov. When Project rec",
+      "t": 37409
+     },
+     {
+      "type": "text",
+      "text": "alculates, #19 ",
+      "t": 37467
+     },
+     {
+      "type": "text",
+      "text": "will move to around",
+      "t": 37510
+     },
+     {
+      "type": "text",
+      "text": " Mon 16 N",
+      "t": 37561
+     },
+     {
+      "type": "text",
+      "text": "ov, and",
+      "t": 37609
+     },
+     {
+      "type": "text",
+      "text": " Build complete (",
+      "t": 37668
+     },
+     {
+      "type": "text",
+      "text": "#23), SIT, U",
+      "t": 37719
+     },
+     {
+      "type": "text",
+      "text": "AT, go-live and the",
+      "t": 37766
+     },
+     {
+      "type": "text",
+      "text": " fin",
+      "t": 37815
+     },
+     {
+      "type": "text",
+      "text": "ish will",
+      "t": 37861
+     },
+     {
+      "type": "text",
+      "text": " all",
+      "t": 37922
+     },
+     {
+      "type": "text",
+      "text": " move about 3 working",
+      "t": 37968
+     },
+     {
+      "type": "text",
+      "text": " days. The vendor tic",
+      "t": 38013
+     },
+     {
+      "type": "text",
+      "text": "ket (ERP-3321",
+      "t": 38075
+     },
+     {
+      "type": "text",
+      "text": ") could push it further.\n   ",
+      "t": 38118
+     },
+     {
+      "type": "text",
+      "text": "- *Option",
+      "t": 38167
+     },
+     {
+      "type": "text",
+      "text": " A (start",
+      "t": 38218
+     },
+     {
+      "type": "text",
+      "text": " in",
+      "t": 38262
+     },
+     {
+      "type": "text",
+      "text": " parallel):* let A",
+      "t": 38318
+     },
+     {
+      "type": "text",
+      "text": "isha start #19 before #",
+      "t": 38364
+     },
+     {
+      "type": "text",
+      "text": "18 is finished. This",
+      "t": 38414
+     },
+     {
+      "type": "text",
+      "text": " could",
+      "t": 38463
+     },
+     {
+      "type": "text",
+      "text": " recover the 3 days,",
+      "t": 38538
+     },
+     {
+      "type": "text",
+      "text": " but it means",
+      "t": 38567
+     },
+     {
+      "type": "text",
+      "text": " r",
+      "t": 38614
+     },
+     {
+      "type": "text",
+      "text": "ework if the vendor fix",
+      "t": 38667
+     },
+     {
+      "type": "text",
+      "text": " changes the design",
+      "t": 38715
+     },
+     {
+      "type": "text",
+      "text": ".\n   - *Option B",
+      "t": 38765
+     },
+     {
+      "type": "text",
+      "text": " (add help):* put a second",
+      "t": 38818
+     },
+     {
+      "type": "text",
+      "text": " integration developer on the write-",
+      "t": 38865
+     },
+     {
+      "type": "text",
+      "text": "back work",
+      "t": 38910
+     },
+     {
+      "type": "text",
+      "text": ". That",
+      "t": 38964
+     },
+     {
+      "type": "text",
+      "text": " cost",
+      "t": 39010
+     },
+     {
+      "type": "text",
+      "text": "s more",
+      "t": 39062
+     },
+     {
+      "type": "text",
+      "text": ", but",
+      "t": 39114
+     },
+     {
+      "type": "text",
+      "text": " it prot",
+      "t": 39166
+     },
+     {
+      "type": "text",
+      "text": "ects the date",
+      "t": 39214
+     },
+     {
+      "type": "text",
+      "text": ".\n   -",
+      "t": 39266
+     },
+     {
+      "type": "text",
+      "text": " Either way, ",
+      "t": 39315
+     },
+     {
+      "type": "text",
+      "text": "ask the vendor for a committ",
+      "t": 39362
+     },
+     {
+      "type": "text",
+      "text": "ed fix date for ERP",
+      "t": 39414
+     },
+     {
+      "type": "text",
+      "text": "-3321 ",
+      "t": 39464
+     },
+     {
+      "type": "text",
+      "text": "this week.\n2. **",
+      "t": 39510
+     },
+     {
+      "type": "text",
+      "text": "Aisha",
+      "t": 39571
+     },
+     {
+      "type": "text",
+      "text": " Khan is new",
+      "t": 39611
+     },
+     {
+      "type": "text",
+      "text": "ly overloaded: 200",
+      "t": 39666
+     },
+     {
+      "type": "text",
+      "text": "% on Wed 11 ",
+      "t": 39715
+     },
+     {
+      "type": "text",
+      "text": "to",
+      "t": 39762
+     },
+     {
+      "type": "text",
+      "text": " Fri 13 N",
+      "t": 39814
+     },
+     {
+      "type": "text",
+      "text": "ov**, with",
+      "t": 39867
+     },
+     {
+      "type": "text",
+      "text": " #18 and #19 over",
+      "t": 39917
+     },
+     {
+      "type": "text",
+      "text": "lapping. Rec",
+      "t": 39966
+     },
+     {
+      "type": "text",
+      "text": "alculating will",
+      "t": 40021
+     },
+     {
+      "type": "text",
+      "text": " remove the overlap,",
+      "t": 40066
+     },
+     {
+      "type": "text",
+      "text": " but that",
+      "t": 40110
+     },
+     {
+      "type": "text",
+      "text": "'s ex",
+      "t": 40162
+     },
+     {
+      "type": "text",
+      "text": "actly what caus",
+      "t": 40211
+     },
+     {
+      "type": "text",
+      "text": "es the 3-day slip",
+      "t": 40262
+     },
+     {
+      "type": "text",
+      "text": " above. Option B",
+      "t": 40315
+     },
+     {
+      "type": "text",
+      "text": " fixes both",
+      "t": 40363
+     },
+     {
+      "type": "text",
+      "text": " probl",
+      "t": 40413
+     },
+     {
+      "type": "text",
+      "text": "ems.\n3. **#",
+      "t": 40469
+     },
+     {
+      "type": "text",
+      "text": "17 ",
+      "t": 40514
+     },
+     {
+      "type": "text",
+      "text": "Configure sales pipeline",
+      "t": 40566
+     },
+     {
+      "type": "text",
+      "text": " is",
+      "t": 40610
+     },
+     {
+      "type": "text",
+      "text": " ",
+      "t": 40668
+     },
+     {
+      "type": "text",
+      "text": "95% done, but its",
+      "t": 40709
+     },
+     {
+      "type": "text",
+      "text": " finish date (Thu ",
+      "t": 40772
+     },
+     {
+      "type": "text",
+      "text": "29 Oct) has",
+      "t": 40810
+     },
+     {
+      "type": "text",
+      "text": " already passed.** Re",
+      "t": 40870
+     },
+     {
+      "type": "text",
+      "text": "ports & dashboards (#",
+      "t": 40917
+     },
+     {
+      "type": "text",
+      "text": "20) can't start until it's",
+      "t": 40962
+     },
+     {
+      "type": "text",
+      "text": " done, and",
+      "t": 41014
+     },
+     {
+      "type": "text",
+      "text": " Tom Becker is already",
+      "t": 41066
+     },
+     {
+      "type": "text",
+      "text": " at 200% from Fri",
+      "t": 41118
+     },
+     {
+      "type": "text",
+      "text": " 30 Oct to",
+      "t": 41166
+     },
+     {
+      "type": "text",
+      "text": " Wed 4 Nov",
+      "t": 41220
+     },
+     {
+      "type": "text",
+      "text": " (#20 over",
+      "t": 41265
+     },
+     {
+      "type": "text",
+      "text": "la",
+      "t": 41314
+     },
+     {
+      "type": "text",
+      "text": "ps the dry run,",
+      "t": 41362
+     },
+     {
+      "type": "text",
+      "text": " #27). Get a fir",
+      "t": 41413
+     },
+     {
+      "type": "text",
+      "text": "m finish date from Tom",
+      "t": 41462
+     },
+     {
+      "type": "text",
+      "text": ",",
+      "t": 41510
+     },
+     {
+      "type": "text",
+      "text": " and consider p",
+      "t": 41562
+     },
+     {
+      "type": "text",
+      "text": "ushing the dry run back",
+      "t": 41618
+     },
+     {
+      "type": "text",
+      "text": " a",
+      "t": 41663
+     },
+     {
+      "type": "text",
+      "text": " few days or handing the",
+      "t": 41711
+     },
+     {
+      "type": "text",
+      "text": " reports to some",
+      "t": 41763
+     },
+     {
+      "type": "text",
+      "text": "one else.\n4. **The",
+      "t": 41810
+     },
+     {
+      "type": "text",
+      "text": " data mapping and dry run",
+      "t": 41895
+     },
+     {
+      "type": "text",
+      "text": " dates no",
+      "t": 41928
+     },
+     {
+      "type": "text",
+      "text": " longer add",
+      "t": 41970
+     },
+     {
+      "type": "text",
+      "text": " up.** Ben started",
+      "t": 42018
+     },
+     {
+      "type": "text",
+      "text": " #22 ",
+      "t": 42062
+     },
+     {
+      "type": "text",
+      "text": "Data mapping before cleans",
+      "t": 42110
+     },
+     {
+      "type": "text",
+      "text": "ing (",
+      "t": 42193
+     },
+     {
+      "type": "text",
+      "text": "#21) was",
+      "t": 42210
+     },
+     {
+      "type": "text",
+      "text": " finished, but the plan says",
+      "t": 42270
+     },
+     {
+      "type": "text",
+      "text": " m",
+      "t": 42310
+     },
+     {
+      "type": "text",
+      "text": "apping can",
+      "t": 42366
+     },
+     {
+      "type": "text",
+      "text": "'t start until cleansing ",
+      "t": 42410
+     },
+     {
+      "type": "text",
+      "text": "ends. Because c",
+      "t": 42462
+     },
+     {
+      "type": "text",
+      "text": "leansing now ",
+      "t": 42510
+     },
+     {
+      "type": "text",
+      "text": "ends Thu 29 ",
+      "t": 42575
+     },
+     {
+      "type": "text",
+      "text": "Oct, Project will push",
+      "t": 42613
+     },
+     {
+      "type": "text",
+      "text": " #22 to about Fri",
+      "t": 42659
+     },
+     {
+      "type": "text",
+      "text": " 30 Oct –",
+      "t": 42711
+     },
+     {
+      "type": "text",
+      "text": " Thu 12 N",
+      "t": 42762
+     },
+     {
+      "type": "text",
+      "text": "ov, and the trial data",
+      "t": 42814
+     },
+     {
+      "type": "text",
+      "text": " migration (d",
+      "t": 42862
+     },
+     {
+      "type": "text",
+      "text": "ry run, #27) to about",
+      "t": 42914
+     },
+     {
+      "type": "text",
+      "text": " F",
+      "t": 42962
+     },
+     {
+      "type": "text",
+      "text": "ri 13 –",
+      "t": 43011
+     },
+     {
+      "type": "text",
+      "text": " Thu 19 N",
+      "t": 43066
+     },
+     {
+      "type": "text",
+      "text": "ov. There's still slack before",
+      "t": 43114
+     },
+     {
+      "type": "text",
+      "text": " Build complete, so the",
+      "t": 43166
+     },
+     {
+      "type": "text",
+      "text": " end",
+      "t": 43211
+     },
+     {
+      "type": "text",
+      "text": " date isn't at",
+      "t": 43260
+     },
+     {
+      "type": "text",
+      "text": " risk. I'd still",
+      "t": 43312
+     },
+     {
+      "type": "text",
+      "text": " en",
+      "t": 43365
+     },
+     {
+      "type": "text",
+      "text": "ter #",
+      "t": 43411
+     },
+     {
+      "type": "text",
+      "text": "22's real start date and change that",
+      "t": 43466
+     },
+     {
+      "type": "text",
+      "text": " link so",
+      "t": 43514
+     },
+     {
+      "type": "text",
+      "text": " it all",
+      "t": 43569
+     },
+     {
+      "type": "text",
+      "text": "ows over",
+      "t": 43616
+     },
+     {
+      "type": "text",
+      "text": "lap.",
+      "t": 43663
+     },
+     {
+      "type": "text",
+      "text": "\n\n## Your",
+      "t": 43710
+     },
+     {
+      "type": "text",
+      "text": " next",
+      "t": 43768
+     },
+     {
+      "type": "text",
+      "text": " steps",
+      "t": 43819
+     },
+     {
+      "type": "text",
+      "text": "\n\n- Open",
+      "t": 43866
+     },
+     {
+      "type": "text",
+      "text": " **\"",
+      "t": 43914
+     },
+     {
+      "type": "text",
+      "text": "Contoso CRM",
+      "t": 43959
+     },
+     {
+      "type": "text",
+      "text": " Migration (updated).xml",
+      "t": 44014
+     },
+     {
+      "type": "text",
+      "text": "\"** in your project folder in",
+      "t": 44062
+     },
+     {
+      "type": "text",
+      "text": " Microsoft Project.",
+      "t": 44116
+     },
+     {
+      "type": "text",
+      "text": " It will",
+      "t": 44163
+     },
+     {
+      "type": "text",
+      "text": " recalculate the dependent",
+      "t": 44214
+     },
+     {
+      "type": "text",
+      "text": " dates when the",
+      "t": 44268
+     },
+     {
+      "type": "text",
+      "text": " file opens.\n- Then",
+      "t": 44316
+     },
+     {
+      "type": "text",
+      "text": " check that",
+      "t": 44367
+     },
+     {
+      "type": "text",
+      "text": " #19 and the mil",
+      "t": 44412
+     },
+     {
+      "type": "text",
+      "text": "estones mo",
+      "t": 44470
+     },
+     {
+      "type": "text",
+      "text": "ved as",
+      "t": 44518
+     },
+     {
+      "type": "text",
+      "text": " expected, and give",
+      "t": 44567
+     },
+     {
+      "type": "text",
+      "text": " #17 a",
+      "t": 44618
+     },
+     {
+      "type": "text",
+      "text": " new finish date.",
+      "t": 44662
+     },
+     {
+      "type": "text",
+      "text": "\n\nOnce",
+      "t": 44718
+     },
+     {
+      "type": "text",
+      "text": " you",
+      "t": 44767
+     },
+     {
+      "type": "text",
+      "text": "'ve dec",
+      "t": 44815
+     },
+     {
+      "type": "text",
+      "text": "ided between",
+      "t": 44862
+     },
+     {
+      "type": "text",
+      "text": " Option A and",
+      "t": 44915
+     },
+     {
+      "type": "text",
+      "text": " Option B, I can add #",
+      "t": 44966
+     },
+     {
+      "type": "text",
+      "text": "17's new date",
+      "t": 45010
+     },
+     {
+      "type": "text",
+      "text": ", #",
+      "t": 45068
+     },
+     {
+      "type": "text",
+      "text": "22's start date",
+      "t": 45110
+     },
+     {
+      "type": "text",
+      "text": " and the change",
+      "t": 45158
+     },
+     {
+      "type": "text",
+      "text": " you",
+      "t": 45210
+     },
+     {
+      "type": "text",
+      "text": " choose to the plan.",
+      "t": 45262
+     },
+     {
+      "type": "usage",
+      "costUsd": 0.288445,
+      "durationMs": 46072,
+      "t": 49527
+     }
+    ],
+    "files": {
+     "C:\\DevSource\\CLIChat\\film\\.work\\Lumen\\Contoso CRM Migration (demo)\\Contoso CRM Migration (updated).xml": "b5b8917039076e09-Contoso CRM Migration (updated).xml"
+    }
+   }
+  ],
+  "60900a5e2ed4cbea": [
+   {
+    "prompt": "Which budget categories are heading over, and by how much?",
+    "events": [
+     {
+      "type": "session",
+      "id": "5a04c5a2-037a-4258-84dd-556697c00a31",
+      "t": 3737
+     },
+     {
+      "type": "tool",
+      "id": "toolu_01LEx8ZC5Q4o1PwACp2D3Ha4",
+      "icon": "search",
+      "label": "Looking for Excel and Project files",
+      "t": 5841
+     },
+     {
+      "type": "tool_done",
+      "id": "toolu_01LEx8ZC5Q4o1PwACp2D3Ha4",
+      "ok": true,
+      "t": 5897
+     },
+     {
+      "type": "tool",
+      "id": "toolu_01TVo2YSQqQv9zddHXJLMLXf",
+      "icon": "sheet",
+      "label": "Reading CRM Migration - Budget Tracker.xlsx",
+      "t": 7591
+     },
+     {
+      "type": "tool_done",
+      "id": "toolu_01TVo2YSQqQv9zddHXJLMLXf",
+      "ok": true,
+      "t": 7725
+     },
+     {
+      "type": "text",
+      "text": "#",
+      "t": 25839
+     },
+     {
+      "type": "text",
+      "text": " Three categories are for",
+      "t": 25839
+     },
+     {
+      "type": "text",
+      "text": "ecast to go over budget,",
+      "t": 25839
+     },
+     {
+      "type": "text",
+      "text": " by $",
+      "t": 25840
+     },
+     {
+      "type": "text",
+      "text": "78.8k in total",
+      "t": 25840
+     },
+     {
+      "type": "text",
+      "text": "\n\nInternal labour, the",
+      "t": 25841
+     },
+     {
+      "type": "text",
+      "text": " Northwind partner and integ",
+      "t": 25841
+     },
+     {
+      "type": "text",
+      "text": "ration middleware are all forec",
+      "t": 25842
+     },
+     {
+      "type": "text",
+      "text": "ast over. The remaining cont",
+      "t": 25843
+     },
+     {
+      "type": "text",
+      "text": "ingency cov",
+      "t": 25844
+     },
+     {
+      "type": "text",
+      "text": "ers almost all of it",
+      "t": 25844
+     },
+     {
+      "type": "text",
+      "text": ":",
+      "t": 25844
+     },
+     {
+      "type": "text",
+      "text": " the project as",
+      "t": 25845
+     },
+     {
+      "type": "text",
+      "text": " a whole is forecast just",
+      "t": 25848
+     },
+     {
+      "type": "text",
+      "text": " **",
+      "t": 25848
+     },
+     {
+      "type": "text",
+      "text": "$700 over** its $",
+      "t": 25849
+     },
+     {
+      "type": "text",
+      "text": "1.09M budget (`",
+      "t": 25849
+     },
+     {
+      "type": "text",
+      "text": "Budget Summary!G",
+      "t": 25850
+     },
+     {
+      "type": "text",
+      "text": "10`).",
+      "t": 25850
+     },
+     {
+      "type": "text",
+      "text": " That le",
+      "t": 25850
+     },
+     {
+      "type": "text",
+      "text": "aves no",
+      "t": 25850
+     },
+     {
+      "type": "text",
+      "text": " headroom for",
+      "t": 25851
+     },
+     {
+      "type": "text",
+      "text": " an",
+      "t": 25851
+     },
+     {
+      "type": "text",
+      "text": "ything else that",
+      "t": 25851
+     },
+     {
+      "type": "text",
+      "text": " goes wrong.\n\n##",
+      "t": 25851
+     },
+     {
+      "type": "text",
+      "text": " Categories for",
+      "t": 25851
+     },
+     {
+      "type": "text",
+      "text": "ecast over bud",
+      "t": 25851
+     },
+     {
+      "type": "text",
+      "text": "get\n\n|",
+      "t": 25851
+     },
+     {
+      "type": "text",
+      "text": " Category | Budget |",
+      "t": 25852
+     },
+     {
+      "type": "text",
+      "text": " Actual to date | Committ",
+      "t": 25852
+     },
+     {
+      "type": "text",
+      "text": "ed (",
+      "t": 25852
+     },
+     {
+      "type": "text",
+      "text": "POs) | Still",
+      "t": 25852
+     },
+     {
+      "type": "text",
+      "text": " to sp",
+      "t": 25853
+     },
+     {
+      "type": "text",
+      "text": "end | Forecast at complet",
+      "t": 25853
+     },
+     {
+      "type": "text",
+      "text": "ion | Over by | %",
+      "t": 25853
+     },
+     {
+      "type": "text",
+      "text": " over |\n|---|---|",
+      "t": 25853
+     },
+     {
+      "type": "text",
+      "text": "---|---|---|---|",
+      "t": 25854
+     },
+     {
+      "type": "text",
+      "text": "---|---|\n| Impl",
+      "t": 25854
+     },
+     {
+      "type": "text",
+      "text": "ementation partner (Northw",
+      "t": 25855
+     },
+     {
+      "type": "text",
+      "text": "ind) | $285.",
+      "t": 25855
+     },
+     {
+      "type": "text",
+      "text": "0k | $171.0k",
+      "t": 25855
+     },
+     {
+      "type": "text",
+      "text": " | $85.5k | $",
+      "t": 25856
+     },
+     {
+      "type": "text",
+      "text": "64.0k | $320.",
+      "t": 25856
+     },
+     {
+      "type": "text",
+      "text": "5k | **–",
+      "t": 25857
+     },
+     {
+      "type": "text",
+      "text": "$35.5k** | ",
+      "t": 25857
+     },
+     {
+      "type": "text",
+      "text": "12.5% |\n|",
+      "t": 25857
+     },
+     {
+      "type": "text",
+      "text": " Internal labour | $412.",
+      "t": 25858
+     },
+     {
+      "type": "text",
+      "text": "0k | $238.6k",
+      "t": 25858
+     },
+     {
+      "type": "text",
+      "text": " | $0 | $205.",
+      "t": 25858
+     },
+     {
+      "type": "text",
+      "text": "0k | $443.6k",
+      "t": 25858
+     },
+     {
+      "type": "text",
+      "text": " | **–$31.6k",
+      "t": 25858
+     },
+     {
+      "type": "text",
+      "text": "** | 7.7% |",
+      "t": 25859
+     },
+     {
+      "type": "text",
+      "text": "\n| Integration middleware",
+      "t": 25859
+     },
+     {
+      "type": "text",
+      "text": " | $54.0k | $",
+      "t": 25859
+     },
+     {
+      "type": "text",
+      "text": "41.2k | $6.",
+      "t": 25859
+     },
+     {
+      "type": "text",
+      "text": "0k | $18.5k",
+      "t": 25860
+     },
+     {
+      "type": "text",
+      "text": " | $65.7k | **",
+      "t": 25860
+     },
+     {
+      "type": "text",
+      "text": "–$11.7k** |",
+      "t": 25860
+     },
+     {
+      "type": "text",
+      "text": " 21.7% |\n|",
+      "t": 25860
+     },
+     {
+      "type": "text",
+      "text": " **Total over** | |",
+      "t": 25861
+     },
+     {
+      "type": "text",
+      "text": " | | | |",
+      "t": 25861
+     },
+     {
+      "type": "text",
+      "text": " **–$78.8k**",
+      "t": 25861
+     },
+     {
+      "type": "text",
+      "text": " | |",
+      "t": 25861
+     },
+     {
+      "type": "text",
+      "text": "\n\n*",
+      "t": 25862
+     },
+     {
+      "type": "text",
+      "text": "Source:",
+      "t": 25862
+     },
+     {
+      "type": "text",
+      "text": " Budget Summary, rows",
+      "t": 25862
+     },
+     {
+      "type": "text",
+      "text": " 2,",
+      "t": 25863
+     },
+     {
+      "type": "text",
+      "text": " 3 and 5*",
+      "t": 25864
+     },
+     {
+      "type": "text",
+      "text": "\n\n## Close",
+      "t": 25865
+     },
+     {
+      "type": "text",
+      "text": " to the limit (mar",
+      "t": 25866
+     },
+     {
+      "type": "text",
+      "text": "ked \"Watch\")\n\n|",
+      "t": 25867
+     },
+     {
+      "type": "text",
+      "text": " Category | Head",
+      "t": 25867
+     },
+     {
+      "type": "text",
+      "text": "room | Why",
+      "t": 25867
+     },
+     {
+      "type": "text",
+      "text": " it matters |\n|---|",
+      "t": 25867
+     },
+     {
+      "type": "text",
+      "text": "---|---|\n|",
+      "t": 25868
+     },
+     {
+      "type": "text",
+      "text": " Training & change management | $1",
+      "t": 25868
+     },
+     {
+      "type": "text",
+      "text": ".6k (4%) |",
+      "t": 25869
+     },
+     {
+      "type": "text",
+      "text": " Only 6% spent so",
+      "t": 25869
+     },
+     {
+      "type": "text",
+      "text": " far. Most of the spending",
+      "t": 25870
+     },
+     {
+      "type": "text",
+      "text": " ",
+      "t": 25870
+     },
+     {
+      "type": "text",
+      "text": "($31",
+      "t": 25870
+     },
+     {
+      "type": "text",
+      "text": "k)",
+      "t": 25870
+     },
+     {
+      "type": "text",
+      "text": " comes D",
+      "t": 25870
+     },
+     {
+      "type": "text",
+      "text": "ec–Feb, so the",
+      "t": 25870
+     },
+     {
+      "type": "text",
+      "text": " risk is still",
+      "t": 25870
+     },
+     {
+      "type": "text",
+      "text": " ahead. |\n|",
+      "t": 25870
+     },
+     {
+      "type": "text",
+      "text": " Travel & expenses | $",
+      "t": 25870
+     },
+     {
+      "type": "text",
+      "text": "300 (2.5%)",
+      "t": 25871
+     },
+     {
+      "type": "text",
+      "text": " | Alm",
+      "t": 25871
+     },
+     {
+      "type": "text",
+      "text": "ost no room",
+      "t": 25872
+     },
+     {
+      "type": "text",
+      "text": " left. |\n| CRM",
+      "t": 25872
+     },
+     {
+      "type": "text",
+      "text": " licences (Year 1)",
+      "t": 25872
+     },
+     {
+      "type": "text",
+      "text": " | $0 |",
+      "t": 25872
+     },
+     {
+      "type": "text",
+      "text": " Fully paid ",
+      "t": 25873
+     },
+     {
+      "type": "text",
+      "text": "($168k). Any ext",
+      "t": 25873
+     },
+     {
+      "type": "text",
+      "text": "ra licences would",
+      "t": 25873
+     },
+     {
+      "type": "text",
+      "text": " push",
+      "t": 25873
+     },
+     {
+      "type": "text",
+      "text": " it over. |\n\n## Cont",
+      "t": 25874
+     },
+     {
+      "type": "text",
+      "text": "ingency",
+      "t": 25874
+     },
+     {
+      "type": "text",
+      "text": "\n- Cont",
+      "t": 25874
+     },
+     {
+      "type": "text",
+      "text": "ingency bud",
+      "t": 25874
+     },
+     {
+      "type": "text",
+      "text": "get: **$99k**",
+      "t": 25874
+     },
+     {
+      "type": "text",
+      "text": ".",
+      "t": 25875
+     },
+     {
+      "type": "text",
+      "text": " $25k of",
+      "t": 25875
+     },
+     {
+      "type": "text",
+      "text": " it",
+      "t": 25875
+     },
+     {
+      "type": "text",
+      "text": " is already earmarked,",
+      "t": 25876
+     },
+     {
+      "type": "text",
+      "text": " so **$74k is un",
+      "t": 25876
+     },
+     {
+      "type": "text",
+      "text": "allocated**",
+      "t": 25879
+     },
+     {
+      "type": "text",
+      "text": " (`Budget Summary",
+      "t": 25880
+     },
+     {
+      "type": "text",
+      "text": "!G9`).\n- The",
+      "t": 25881
+     },
+     {
+      "type": "text",
+      "text": " overruns total **$78.",
+      "t": 25881
+     },
+     {
+      "type": "text",
+      "text": "8k**. That's",
+      "t": 25882
+     },
+     {
+      "type": "text",
+      "text": " **$4.8k more than",
+      "t": 25883
+     },
+     {
+      "type": "text",
+      "text": " the unallocated contingency",
+      "t": 25883
+     },
+     {
+      "type": "text",
+      "text": "**. Under",
+      "t": 25884
+     },
+     {
+      "type": "text",
+      "text": "spends el",
+      "t": 25885
+     },
+     {
+      "type": "text",
+      "text": "sewhere ",
+      "t": 25885
+     },
+     {
+      "type": "text",
+      "text": "($2.2k on",
+      "t": 25885
+     },
+     {
+      "type": "text",
+      "text": " data t",
+      "t": 25885
+     },
+     {
+      "type": "text",
+      "text": "ooling, pl",
+      "t": 25885
+     },
+     {
+      "type": "text",
+      "text": "us the small headroom above",
+      "t": 25886
+     },
+     {
+      "type": "text",
+      "text": ") close most",
+      "t": 25886
+     },
+     {
+      "type": "text",
+      "text": " of that",
+      "t": 25886
+     },
+     {
+      "type": "text",
+      "text": " gap, leaving the net",
+      "t": 25886
+     },
+     {
+      "type": "text",
+      "text": " –",
+      "t": 25886
+     },
+     {
+      "type": "text",
+      "text": "$700.\n\n## What this means",
+      "t": 25887
+     },
+     {
+      "type": "text",
+      "text": "\n- **",
+      "t": 25887
+     },
+     {
+      "type": "text",
+      "text": "Northwind is the bi",
+      "t": 25887
+     },
+     {
+      "type": "text",
+      "text": "ggest risk,",
+      "t": 25887
+     },
+     {
+      "type": "text",
+      "text": " and its",
+      "t": 25887
+     },
+     {
+      "type": "text",
+      "text": " num",
+      "t": 25888
+     },
+     {
+      "type": "text",
+      "text": "bers don't add up across",
+      "t": 25888
+     },
+     {
+      "type": "text",
+      "text": " the work",
+      "t": 25888
+     },
+     {
+      "type": "text",
+      "text": "book.** The Bud",
+      "t": 25888
+     },
+     {
+      "type": "text",
+      "text": "get Summary for",
+      "t": 25888
+     },
+     {
+      "type": "text",
+      "text": "ecasts $320.5k",
+      "t": 25889
+     },
+     {
+      "type": "text",
+      "text": ", but the Monthly",
+      "t": 25889
+     },
+     {
+      "type": "text",
+      "text": " Spend sheet shows only",
+      "t": 25889
+     },
+     {
+      "type": "text",
+      "text": " $290.5k (`",
+      "t": 25889
+     },
+     {
+      "type": "text",
+      "text": "Monthly Spend!J",
+      "t": 25889
+     },
+     {
+      "type": "text",
+      "text": "3`). That's a $30",
+      "t": 25890
+     },
+     {
+      "type": "text",
+      "text": "k gap. Either the summ",
+      "t": 25890
+     },
+     {
+      "type": "text",
+      "text": "ary is coun",
+      "t": 25890
+     },
+     {
+      "type": "text",
+      "text": "ting the rem",
+      "t": 25890
+     },
+     {
+      "type": "text",
+      "text": "aining pur",
+      "t": 25891
+     },
+     {
+      "type": "text",
+      "text": "chase order *",
+      "t": 25891
+     },
+     {
+      "type": "text",
+      "text": "and* the est",
+      "t": 25892
+     },
+     {
+      "type": "text",
+      "text": "imate to",
+      "t": 25892
+     },
+     {
+      "type": "text",
+      "text": " complete for",
+      "t": 25895
+     },
+     {
+      "type": "text",
+      "text": " the same work,",
+      "t": 25896
+     },
+     {
+      "type": "text",
+      "text": " or the monthly forecast",
+      "t": 25897
+     },
+     {
+      "type": "text",
+      "text": " is missing about",
+      "t": 25933
+     },
+     {
+      "type": "text",
+      "text": " $30k.",
+      "t": 25981
+     },
+     {
+      "type": "text",
+      "text": " Until this is sorted out",
+      "t": 26039
+     },
+     {
+      "type": "text",
+      "text": ", you don't know whether the",
+      "t": 26079
+     },
+     {
+      "type": "text",
+      "text": " project is ro",
+      "t": 26128
+     },
+     {
+      "type": "text",
+      "text": "ughly on",
+      "t": 26179
+     },
+     {
+      "type": "text",
+      "text": " budget or about",
+      "t": 26233
+     },
+     {
+      "type": "text",
+      "text": " $30k better",
+      "t": 26282
+     },
+     {
+      "type": "text",
+      "text": " off",
+      "t": 26333
+     },
+     {
+      "type": "text",
+      "text": ".\n- **Middleware",
+      "t": 26380
+     },
+     {
+      "type": "text",
+      "text": " is the biggest over",
+      "t": 26433
+     },
+     {
+      "type": "text",
+      "text": "run rel",
+      "t": 26480
+     },
+     {
+      "type": "text",
+      "text": "ative to its size",
+      "t": 26534
+     },
+     {
+      "type": "text",
+      "text": "** (22",
+      "t": 26579
+     },
+     {
+      "type": "text",
+      "text": "%",
+      "t": 26640
+     },
+     {
+      "type": "text",
+      "text": "). Its forecast mat",
+      "t": 26679
+     },
+     {
+      "type": "text",
+      "text": "ches across",
+      "t": 26728
+     },
+     {
+      "type": "text",
+      "text": " both sheets, so this",
+      "t": 26797
+     },
+     {
+      "type": "text",
+      "text": " overrun looks real.",
+      "t": 26825
+     },
+     {
+      "type": "text",
+      "text": "\n- **Internal labour run",
+      "t": 26876
+     },
+     {
+      "type": "text",
+      "text": "s at about",
+      "t": 26933
+     },
+     {
+      "type": "text",
+      "text": " $93–",
+      "t": 26976
+     },
+     {
+      "type": "text",
+      "text": "98k a month through November",
+      "t": 27024
+     },
+     {
+      "type": "text",
+      "text": ".**",
+      "t": 27080
+     },
+     {
+      "type": "text",
+      "text": " Every ext",
+      "t": 27133
+     },
+     {
+      "type": "text",
+      "text": "ra week",
+      "t": 27176
+     },
+     {
+      "type": "text",
+      "text": " of slip",
+      "t": 27224
+     },
+     {
+      "type": "text",
+      "text": " costs lab",
+      "t": 27276
+     },
+     {
+      "type": "text",
+      "text": "our bud",
+      "t": 27331
+     },
+     {
+      "type": "text",
+      "text": "get stra",
+      "t": 27380
+     },
+     {
+      "type": "text",
+      "text": "ight away.\n- **Act",
+      "t": 27438
+     },
+     {
+      "type": "text",
+      "text": "uals include invoices that ha",
+      "t": 27480
+     },
+     {
+      "type": "text",
+      "text": "ven't been approved yet**",
+      "t": 27532
+     },
+     {
+      "type": "text",
+      "text": ": Northwind N",
+      "t": 27586
+     },
+     {
+      "type": "text",
+      "text": "W-2026-107 ",
+      "t": 27635
+     },
+     {
+      "type": "text",
+      "text": "($68k) and Adat",
+      "t": 27681
+     },
+     {
+      "type": "text",
+      "text": "um AL-0093 ",
+      "t": 27728
+     },
+     {
+      "type": "text",
+      "text": "($2.4k). North",
+      "t": 27776
+     },
+     {
+      "type": "text",
+      "text": "wind's act",
+      "t": 27825
+     },
+     {
+      "type": "text",
+      "text": "uals would",
+      "t": 27876
+     },
+     {
+      "type": "text",
+      "text": " only f",
+      "t": 27928
+     },
+     {
+      "type": "text",
+      "text": "all if that invoice were dis",
+      "t": 27977
+     },
+     {
+      "type": "text",
+      "text": "puted.\n\n## Sugg",
+      "t": 28028
+     },
+     {
+      "type": "text",
+      "text": "ested actions\n1. **",
+      "t": 28080
+     },
+     {
+      "type": "text",
+      "text": "Reconcile Northwind",
+      "t": 28136
+     },
+     {
+      "type": "text",
+      "text": " this",
+      "t": 28188
+     },
+     {
+      "type": "text",
+      "text": " week.** Comp",
+      "t": 28232
+     },
+     {
+      "type": "text",
+      "text": "are the rem",
+      "t": 28280
+     },
+     {
+      "type": "text",
+      "text": "aining value",
+      "t": 28332
+     },
+     {
+      "type": "text",
+      "text": " on PO-4402 with",
+      "t": 28376
+     },
+     {
+      "type": "text",
+      "text": " the $",
+      "t": 28425
+     },
+     {
+      "type": "text",
+      "text": "64k estimate to complete",
+      "t": 28479
+     },
+     {
+      "type": "text",
+      "text": " and",
+      "t": 28539
+     },
+     {
+      "type": "text",
+      "text": " confirm whether they overl",
+      "t": 28576
+     },
+     {
+      "type": "text",
+      "text": "ap. H",
+      "t": 28624
+     },
+     {
+      "type": "text",
+      "text": "old inv",
+      "t": 28680
+     },
+     {
+      "type": "text",
+      "text": "oice NW-2026-",
+      "t": 28728
+     },
+     {
+      "type": "text",
+      "text": "107 ",
+      "t": 28784
+     },
+     {
+      "type": "text",
+      "text": "($68k,",
+      "t": 28824
+     },
+     {
+      "type": "text",
+      "text": " pending approval) until the fig",
+      "t": 28880
+     },
+     {
+      "type": "text",
+      "text": "ures ag",
+      "t": 28928
+     },
+     {
+      "type": "text",
+      "text": "ree.\n2. **Form",
+      "t": 28980
+     },
+     {
+      "type": "text",
+      "text": "ally allocate contingency,",
+      "t": 29035
+     },
+     {
+      "type": "text",
+      "text": " or",
+      "t": 29084
+     },
+     {
+      "type": "text",
+      "text": " find",
+      "t": 29129
+     },
+     {
+      "type": "text",
+      "text": " sav",
+      "t": 29178
+     },
+     {
+      "type": "text",
+      "text": "ings.** Take",
+      "t": 29228
+     },
+     {
+      "type": "text",
+      "text": " a",
+      "t": 29277
+     },
+     {
+      "type": "text",
+      "text": " cont",
+      "t": 29330
+     },
+     {
+      "type": "text",
+      "text": "ingency dr",
+      "t": 29380
+     },
+     {
+      "type": "text",
+      "text": "awdown of about",
+      "t": 29428
+     },
+     {
+      "type": "text",
+      "text": " $78.8k to D",
+      "t": 29480
+     },
+     {
+      "type": "text",
+      "text": "ana Whitfield, cov",
+      "t": 29529
+     },
+     {
+      "type": "text",
+      "text": "ering the three overruns.",
+      "t": 29580
+     },
+     {
+      "type": "text",
+      "text": " Flag that this",
+      "t": 29630
+     },
+     {
+      "type": "text",
+      "text": " leaves less than $1",
+      "t": 29676
+     },
+     {
+      "type": "text",
+      "text": "k of",
+      "t": 29725
+     },
+     {
+      "type": "text",
+      "text": " buffer, and",
+      "t": 29775
+     },
+     {
+      "type": "text",
+      "text": " ask",
+      "t": 29828
+     },
+     {
+      "type": "text",
+      "text": " Fabrikam to",
+      "t": 29895
+     },
+     {
+      "type": "text",
+      "text": " explain the $11.7k",
+      "t": 29950
+     },
+     {
+      "type": "text",
+      "text": " middleware overrun before",
+      "t": 30000
+     },
+     {
+      "type": "text",
+      "text": " agreeing to more",
+      "t": 30040
+     },
+     {
+      "type": "text",
+      "text": " sp",
+      "t": 30098
+     },
+     {
+      "type": "text",
+      "text": "end.\n3. **Prot",
+      "t": 30128
+     },
+     {
+      "type": "text",
+      "text": "ect training and trav",
+      "t": 30202
+     },
+     {
+      "type": "text",
+      "text": "el.** ",
+      "t": 30230
+     },
+     {
+      "type": "text",
+      "text": "Ask Adatum for",
+      "t": 30276
+     },
+     {
+      "type": "text",
+      "text": " a fixed price",
+      "t": 30329
+     },
+     {
+      "type": "text",
+      "text": " on",
+      "t": 30378
+     },
+     {
+      "type": "text",
+      "text": " the Dec–Feb",
+      "t": 30425
+     },
+     {
+      "type": "text",
+      "text": " training work, and freeze any",
+      "t": 30476
+     },
+     {
+      "type": "text",
+      "text": " trav",
+      "t": 30525
+     },
+     {
+      "type": "text",
+      "text": "el that isn't ess",
+      "t": 30576
+     },
+     {
+      "type": "text",
+      "text": "ential.\n\nOne",
+      "t": 30629
+     },
+     {
+      "type": "text",
+      "text": " more thing: the t",
+      "t": 30683
+     },
+     {
+      "type": "text",
+      "text": "racker says it was last updated",
+      "t": 30729
+     },
+     {
+      "type": "text",
+      "text": " 23 Oct, but",
+      "t": 30781
+     },
+     {
+      "type": "text",
+      "text": " it already",
+      "t": 30830
+     },
+     {
+      "type": "text",
+      "text": " includes a 31 O",
+      "t": 30881
+     },
+     {
+      "type": "text",
+      "text": "ct invoice, so it's",
+      "t": 30932
+     },
+     {
+      "type": "text",
+      "text": " worth updating that",
+      "t": 30978
+     },
+     {
+      "type": "text",
+      "text": " date when",
+      "t": 31025
+     },
+     {
+      "type": "text",
+      "text": " you next",
+      "t": 31078
+     },
+     {
+      "type": "text",
+      "text": " ed",
+      "t": 31128
+     },
+     {
+      "type": "text",
+      "text": "it it.",
+      "t": 31168
+     },
+     {
+      "type": "usage",
+      "costUsd": 0.11516159999999999,
+      "durationMs": 29950,
+      "t": 33588
+     }
+    ],
+    "files": {}
+   }
+  ],
+  "5f4d8ab6aae6cea9": [
+   {
+    "prompt": "Now turn the project plan into an Excel tracker with a Gantt chart.",
+    "events": [
+     {
+      "type": "session",
+      "id": "5a04c5a2-037a-4258-84dd-556697c00a31",
+      "t": 2644
+     },
+     {
+      "type": "tool",
+      "id": "toolu_01Wss1U5KgWoZMtvqSgxyHCg",
+      "icon": "gantt",
+      "label": "Analyzing schedule in Contoso CRM Migration.xml",
+      "t": 6488
+     },
+     {
+      "type": "tool_done",
+      "id": "toolu_01Wss1U5KgWoZMtvqSgxyHCg",
+      "ok": true,
+      "t": 6596
+     },
+     {
+      "type": "tool",
+      "id": "toolu_01CV8ZrjWcbRtFkGq94a2dFX",
+      "icon": "gantt",
+      "label": "Analyzing schedule in Contoso CRM Migration (updated).xml",
+      "t": 6755
+     },
+     {
+      "type": "tool_done",
+      "id": "toolu_01CV8ZrjWcbRtFkGq94a2dFX",
+      "ok": true,
+      "t": 6832
+     },
+     {
+      "type": "text",
+      "text": "The",
+      "t": 9223
+     },
+     {
+      "type": "text",
+      "text": " updated plan has",
+      "t": 9224
+     },
+     {
+      "type": "text",
+      "text": " the latest progress (status date",
+      "t": 9225
+     },
+     {
+      "type": "text",
+      "text": " 30 Oct), so",
+      "t": 9225
+     },
+     {
+      "type": "text",
+      "text": " I'll build the tracker",
+      "t": 9226
+     },
+     {
+      "type": "text",
+      "text": " from that",
+      "t": 9227
+     },
+     {
+      "type": "text",
+      "text": " one.",
+      "t": 9227
+     },
+     {
+      "type": "tool",
+      "id": "toolu_01D95ev849ibpEXWoQxgS2Sr",
+      "icon": "sheet",
+      "label": "Building Excel tracker Contoso CRM Migration - Tracker.xlsx",
+      "t": 9738
+     },
+     {
+      "type": "tool_done",
+      "id": "toolu_01D95ev849ibpEXWoQxgS2Sr",
+      "ok": true,
+      "t": 12869
+     },
+     {
+      "type": "file",
+      "path": "C:\\DevSource\\CLIChat\\film\\.work\\Lumen\\Contoso CRM Migration (demo)\\Contoso CRM Migration - Tracker.xlsx",
+      "t": 12869
+     },
+     {
+      "type": "tool",
+      "id": "toolu_01K64Na5SunXu63UnqJbwQD7",
+      "icon": "sheet",
+      "label": "Reading Contoso CRM Migration - Tracker.xlsx",
+      "t": 14945
+     },
+     {
+      "type": "tool_done",
+      "id": "toolu_01K64Na5SunXu63UnqJbwQD7",
+      "ok": true,
+      "t": 15114
+     },
+     {
+      "type": "text",
+      "text": "\n\n",
+      "t": 24094
+     },
+     {
+      "type": "text",
+      "text": "I",
+      "t": 24095
+     },
+     {
+      "type": "text",
+      "text": "'ve built the",
+      "t": 24096
+     },
+     {
+      "type": "text",
+      "text": " tracker from the lat",
+      "t": 24096
+     },
+     {
+      "type": "text",
+      "text": "est version",
+      "t": 24097
+     },
+     {
+      "type": "text",
+      "text": " of the plan, **",
+      "t": 24097
+     },
+     {
+      "type": "text",
+      "text": "Contoso CRM",
+      "t": 24098
+     },
+     {
+      "type": "text",
+      "text": " Migration (updated).xml",
+      "t": 24099
+     },
+     {
+      "type": "text",
+      "text": "**, which has progress up",
+      "t": 24099
+     },
+     {
+      "type": "text",
+      "text": " to 30 Oct.",
+      "t": 24102
+     },
+     {
+      "type": "text",
+      "text": " The older",
+      "t": 24103
+     },
+     {
+      "type": "text",
+      "text": " version only",
+      "t": 24104
+     },
+     {
+      "type": "text",
+      "text": " goes to",
+      "t": 24104
+     },
+     {
+      "type": "text",
+      "text": " 23 Oct.",
+      "t": 24105
+     },
+     {
+      "type": "text",
+      "text": "\n\n**Saved as: `",
+      "t": 24106
+     },
+     {
+      "type": "text",
+      "text": "Contoso CRM",
+      "t": 24106
+     },
+     {
+      "type": "text",
+      "text": " Migration - Tracker.",
+      "t": 24107
+     },
+     {
+      "type": "text",
+      "text": "xlsx`** in your",
+      "t": 24107
+     },
+     {
+      "type": "text",
+      "text": " project folder.\n\n## What's",
+      "t": 24108
+     },
+     {
+      "type": "text",
+      "text": " in the workbook\n\n|",
+      "t": 24109
+     },
+     {
+      "type": "text",
+      "text": " Sheet |",
+      "t": 24110
+     },
+     {
+      "type": "text",
+      "text": " Contents |\n|---|---",
+      "t": 24110
+     },
+     {
+      "type": "text",
+      "text": "|\n| **Summary**",
+      "t": 24112
+     },
+     {
+      "type": "text",
+      "text": " | Head",
+      "t": 24112
+     },
+     {
+      "type": "text",
+      "text": "line status",
+      "t": 24113
+     },
+     {
+      "type": "text",
+      "text": ": Amber, 53%",
+      "t": 24114
+     },
+     {
+      "type": "text",
+      "text": " complete against",
+      "t": 24114
+     },
+     {
+      "type": "text",
+      "text": " 59% plan",
+      "t": 24114
+     },
+     {
+      "type": "text",
+      "text": "ned, and",
+      "t": 24115
+     },
+     {
+      "type": "text",
+      "text": " a for",
+      "t": 24116
+     },
+     {
+      "type": "text",
+      "text": "ecast finish of *F",
+      "t": 24118
+     },
+     {
+      "type": "text",
+      "text": "ri 29 Jan ",
+      "t": 24119
+     },
+     {
+      "type": "text",
+      "text": "2027* against",
+      "t": 24119
+     },
+     {
+      "type": "text",
+      "text": " a baseline of *F",
+      "t": 24120
+     },
+     {
+      "type": "text",
+      "text": "ri 15 Jan*",
+      "t": 24121
+     },
+     {
+      "type": "text",
+      "text": ". That's a",
+      "t": 24121
+     },
+     {
+      "type": "text",
+      "text": " sl",
+      "t": 24122
+     },
+     {
+      "type": "text",
+      "text": "ip of 10 working days.",
+      "t": 24122
+     },
+     {
+      "type": "text",
+      "text": " |\n| **Tasks",
+      "t": 24122
+     },
+     {
+      "type": "text",
+      "text": "** | All 42 tas",
+      "t": 24123
+     },
+     {
+      "type": "text",
+      "text": "ks with WBS, dates",
+      "t": 24123
+     },
+     {
+      "type": "text",
+      "text": ", du",
+      "t": 24124
+     },
+     {
+      "type": "text",
+      "text": "ration, % complete, base",
+      "t": 24124
+     },
+     {
+      "type": "text",
+      "text": "line finish, slip in days",
+      "t": 24124
+     },
+     {
+      "type": "text",
+      "text": " and owners",
+      "t": 24125
+     },
+     {
+      "type": "text",
+      "text": ". Each row is",
+      "t": 24125
+     },
+     {
+      "type": "text",
+      "text": " colour-coded by status.",
+      "t": 24125
+     },
+     {
+      "type": "text",
+      "text": " |\n| **Gantt",
+      "t": 24126
+     },
+     {
+      "type": "text",
+      "text": "** | A",
+      "t": 24126
+     },
+     {
+      "type": "text",
+      "text": " weekly timeline from *",
+      "t": 24127
+     },
+     {
+      "type": "text",
+      "text": "Mon 3 A",
+      "t": 24128
+     },
+     {
+      "type": "text",
+      "text": "ug* to the week",
+      "t": 24129
+     },
+     {
+      "type": "text",
+      "text": " of *Mon 25 ",
+      "t": 24129
+     },
+     {
+      "type": "text",
+      "text": "Jan*. Task b",
+      "t": 24130
+     },
+     {
+      "type": "text",
+      "text": "ars are sh",
+      "t": 24130
+     },
+     {
+      "type": "text",
+      "text": "aded cells and milestones",
+      "t": 24131
+     },
+     {
+      "type": "text",
+      "text": " show",
+      "t": 24132
+     },
+     {
+      "type": "text",
+      "text": " as ◆. |\n|",
+      "t": 24133
+     },
+     {
+      "type": "text",
+      "text": " **Resources** | The ",
+      "t": 24135
+     },
+     {
+      "type": "text",
+      "text": "8 res",
+      "t": 24135
+     },
+     {
+      "type": "text",
+      "text": "ources with",
+      "t": 24136
+     },
+     {
+      "type": "text",
+      "text": " their rates, how",
+      "t": 24136
+     },
+     {
+      "type": "text",
+      "text": " many tasks each has, and",
+      "t": 24136
+     },
+     {
+      "type": "text",
+      "text": " who is over-allocated.",
+      "t": 24137
+     },
+     {
+      "type": "text",
+      "text": " |\n\n## What the t",
+      "t": 24137
+     },
+     {
+      "type": "text",
+      "text": "racker shows\n- **",
+      "t": 24138
+     },
+     {
+      "type": "text",
+      "text": "Late",
+      "t": 24138
+     },
+     {
+      "type": "text",
+      "text": ":",
+      "t": 24138
+     },
+     {
+      "type": "text",
+      "text": "** #17 ",
+      "t": 24139
+     },
+     {
+      "type": "text",
+      "text": "Configure sales pipeline",
+      "t": 24139
+     },
+     {
+      "type": "text",
+      "text": " & custom objects (95%",
+      "t": 24140
+     },
+     {
+      "type": "text",
+      "text": " done, 1 day overd",
+      "t": 24140
+     },
+     {
+      "type": "text",
+      "text": "ue) and #22 Data",
+      "t": 24141
+     },
+     {
+      "type": "text",
+      "text": " mapping & transformation sc",
+      "t": 24141
+     },
+     {
+      "type": "text",
+      "text": "ripts (only",
+      "t": 24141
+     },
+     {
+      "type": "text",
+      "text": " 10% done, 2 ",
+      "t": 24142
+     },
+     {
+      "type": "text",
+      "text": "days overdue).\n- **",
+      "t": 24142
+     },
+     {
+      "type": "text",
+      "text": "Should have started but",
+      "t": 24143
+     },
+     {
+      "type": "text",
+      "text": " hasn't:** #27",
+      "t": 24143
+     },
+     {
+      "type": "text",
+      "text": " Trial data migration (",
+      "t": 24143
+     },
+     {
+      "type": "text",
+      "text": "dry run). It's",
+      "t": 24143
+     },
+     {
+      "type": "text",
+      "text": " due *",
+      "t": 24144
+     },
+     {
+      "type": "text",
+      "text": "Wed 4 N",
+      "t": 24144
+     },
+     {
+      "type": "text",
+      "text": "ov*",
+      "t": 24144
+     },
+     {
+      "type": "text",
+      "text": " and is still",
+      "t": 24144
+     },
+     {
+      "type": "text",
+      "text": " at 0%.\n- **",
+      "t": 24145
+     },
+     {
+      "type": "text",
+      "text": "The critical path is dri",
+      "t": 24146
+     },
+     {
+      "type": "text",
+      "text": "ving the del",
+      "t": 24146
+     },
+     {
+      "type": "text",
+      "text": "ay.",
+      "t": 24147
+     },
+     {
+      "type": "text",
+      "text": "** #18 Build ER",
+      "t": 24147
+     },
+     {
+      "type": "text",
+      "text": "P integration is now for",
+      "t": 24147
+     },
+     {
+      "type": "text",
+      "text": "ecast to finish *F",
+      "t": 24148
+     },
+     {
+      "type": "text",
+      "text": "ri 13 Nov*",
+      "t": 24148
+     },
+     {
+      "type": "text",
+      "text": ", 13 working days past its",
+      "t": 24149
+     },
+     {
+      "type": "text",
+      "text": " baseline. That pushes",
+      "t": 24149
+     },
+     {
+      "type": "text",
+      "text": " Build complete (*T",
+      "t": 24150
+     },
+     {
+      "type": "text",
+      "text": "ue 24 Nov*",
+      "t": 24151
+     },
+     {
+      "type": "text",
+      "text": "), UAT sign-off",
+      "t": 24152
+     },
+     {
+      "type": "text",
+      "text": " (*Tue 22 ",
+      "t": 24152
+     },
+     {
+      "type": "text",
+      "text": "Dec*) and Go",
+      "t": 24153
+     },
+     {
+      "type": "text",
+      "text": "-live (*Tue ",
+      "t": 24154
+     },
+     {
+      "type": "text",
+      "text": "5 Jan*) each",
+      "t": 24154
+     },
+     {
+      "type": "text",
+      "text": " 10 working days late",
+      "t": 24154
+     },
+     {
+      "type": "text",
+      "text": ".\n- **Three",
+      "t": 24155
+     },
+     {
+      "type": "text",
+      "text": " people are",
+      "t": 24155
+     },
+     {
+      "type": "text",
+      "text": " over-allocated in the next",
+      "t": 24156
+     },
+     {
+      "type": "text",
+      "text": " 6 weeks:**",
+      "t": 24156
+     },
+     {
+      "type": "text",
+      "text": "\n  - **",
+      "t": 24156
+     },
+     {
+      "type": "text",
+      "text": "Tom Becker:**",
+      "t": 24157
+     },
+     {
+      "type": "text",
+      "text": " 200% load",
+      "t": 24157
+     },
+     {
+      "type": "text",
+      "text": ", ",
+      "t": 24158
+     },
+     {
+      "type": "text",
+      "text": "30 Oct–4 ",
+      "t": 24158
+     },
+     {
+      "type": "text",
+      "text": "Nov, on",
+      "t": 24158
+     },
+     {
+      "type": "text",
+      "text": " Reports & dashboards pl",
+      "t": 24159
+     },
+     {
+      "type": "text",
+      "text": "us the tr",
+      "t": 24159
+     },
+     {
+      "type": "text",
+      "text": "ial migration.",
+      "t": 24159
+     },
+     {
+      "type": "text",
+      "text": "\n  - **Aisha",
+      "t": 24160
+     },
+     {
+      "type": "text",
+      "text": " Khan:** 200%",
+      "t": 24160
+     },
+     {
+      "type": "text",
+      "text": " load, 11–13 ",
+      "t": 24160
+     },
+     {
+      "type": "text",
+      "text": "Nov, on the",
+      "t": 24161
+     },
+     {
+      "type": "text",
+      "text": " ERP and marketing integ",
+      "t": 24161
+     },
+     {
+      "type": "text",
+      "text": "rations.\n  - **",
+      "t": 24161
+     },
+     {
+      "type": "text",
+      "text": "Marcus Lee:**",
+      "t": 24162
+     },
+     {
+      "type": "text",
+      "text": " 150% load on",
+      "t": 24162
+     },
+     {
+      "type": "text",
+      "text": " 9 Dec, on",
+      "t": 24162
+     },
+     {
+      "type": "text",
+      "text": " UAT pl",
+      "t": 24163
+     },
+     {
+      "type": "text",
+      "text": "us Train the trainer.",
+      "t": 24163
+     },
+     {
+      "type": "text",
+      "text": "\n\n**Good",
+      "t": 24163
+     },
+     {
+      "type": "text",
+      "text": " to know:",
+      "t": 24164
+     },
+     {
+      "type": "text",
+      "text": "** the t",
+      "t": 24164
+     },
+     {
+      "type": "text",
+      "text": "racker is a snapshot",
+      "t": 24164
+     },
+     {
+      "type": "text",
+      "text": " of the plan as",
+      "t": 24165
+     },
+     {
+      "type": "text",
+      "text": " of 30 Oct,",
+      "t": 24165
+     },
+     {
+      "type": "text",
+      "text": " not a live link",
+      "t": 24166
+     },
+     {
+      "type": "text",
+      "text": ". If d",
+      "t": 24168
+     },
+     {
+      "type": "text",
+      "text": "ates change in Microsoft",
+      "t": 24168
+     },
+     {
+      "type": "text",
+      "text": " Project, create the",
+      "t": 24168
+     },
+     {
+      "type": "text",
+      "text": " tracker again r",
+      "t": 24169
+     },
+     {
+      "type": "text",
+      "text": "ather than editing it",
+      "t": 24169
+     },
+     {
+      "type": "text",
+      "text": " by hand.\n\n## Su",
+      "t": 24170
+     },
+     {
+      "type": "text",
+      "text": "ggested actions\n1. **",
+      "t": 24171
+     },
+     {
+      "type": "text",
+      "text": "Un",
+      "t": 24171
+     },
+     {
+      "type": "text",
+      "text": "block the",
+      "t": 24172
+     },
+     {
+      "type": "text",
+      "text": " trial migration this week.**",
+      "t": 24172
+     },
+     {
+      "type": "text",
+      "text": " Move",
+      "t": 24172
+     },
+     {
+      "type": "text",
+      "text": " Reports & dashboards off",
+      "t": 24194
+     },
+     {
+      "type": "text",
+      "text": " Tom Becker until",
+      "t": 24262
+     },
+     {
+      "type": "text",
+      "text": " the dry run (",
+      "t": 24297
+     },
+     {
+      "type": "text",
+      "text": "#27) is finished, because",
+      "t": 24338
+     },
+     {
+      "type": "text",
+      "text": " his",
+      "t": 24396
+     },
+     {
+      "type": "text",
+      "text": " 200% load is the re",
+      "t": 24445
+     },
+     {
+      "type": "text",
+      "text": "ason it h",
+      "t": 24489
+     },
+     {
+      "type": "text",
+      "text": "asn't started.\n2.",
+      "t": 24545
+     },
+     {
+      "type": "text",
+      "text": " **Prot",
+      "t": 24588
+     },
+     {
+      "type": "text",
+      "text": "ect the ERP integration.",
+      "t": 24637
+     },
+     {
+      "type": "text",
+      "text": "** Push",
+      "t": 24687
+     },
+     {
+      "type": "text",
+      "text": " the start",
+      "t": 24744
+     },
+     {
+      "type": "text",
+      "text": " of #19 Build market",
+      "t": 24787
+     },
+     {
+      "type": "text",
+      "text": "ing automation integ",
+      "t": 24834
+     },
+     {
+      "type": "text",
+      "text": "ration back",
+      "t": 24888
+     },
+     {
+      "type": "text",
+      "text": " until",
+      "t": 24941
+     },
+     {
+      "type": "text",
+      "text": " #18 is",
+      "t": 24994
+     },
+     {
+      "type": "text",
+      "text": " finished, or b",
+      "t": 25038
+     },
+     {
+      "type": "text",
+      "text": "ring in a second integ",
+      "t": 25084
+     },
+     {
+      "type": "text",
+      "text": "rator.",
+      "t": 25139
+     },
+     {
+      "type": "text",
+      "text": " Otherwise Aisha",
+      "t": 25186
+     },
+     {
+      "type": "text",
+      "text": " Khan's over",
+      "t": 25289
+     },
+     {
+      "type": "text",
+      "text": "lap on",
+      "t": 25335
+     },
+     {
+      "type": "text",
+      "text": " 11–13 Nov",
+      "t": 25390
+     },
+     {
+      "type": "text",
+      "text": " will add",
+      "t": 25438
+     },
+     {
+      "type": "text",
+      "text": " more slip to the critical path",
+      "t": 25488
+     },
+     {
+      "type": "text",
+      "text": ".\n3. **Link",
+      "t": 25538
+     },
+     {
+      "type": "text",
+      "text": " sch",
+      "t": 25589
+     },
+     {
+      "type": "text",
+      "text": "edule and budget in",
+      "t": 25634
+     },
+     {
+      "type": "text",
+      "text": " your next sponsor update",
+      "t": 25688
+     },
+     {
+      "type": "text",
+      "text": ".**",
+      "t": 25735
+     },
+     {
+      "type": "text",
+      "text": " Every week",
+      "t": 25790
+     },
+     {
+      "type": "text",
+      "text": " of sl",
+      "t": 25837
+     },
+     {
+      "type": "text",
+      "text": "ip ad",
+      "t": 25885
+     },
+     {
+      "type": "text",
+      "text": "ds about $93–98k of",
+      "t": 25949
+     },
+     {
+      "type": "text",
+      "text": " internal labour burn, based",
+      "t": 25987
+     },
+     {
+      "type": "text",
+      "text": " on Monthly Spend",
+      "t": 26034
+     },
+     {
+      "type": "text",
+      "text": " O",
+      "t": 26135
+     },
+     {
+      "type": "text",
+      "text": "ct/Nov. Your",
+      "t": 26189
+     },
+     {
+      "type": "text",
+      "text": " contingency is",
+      "t": 26240
+     },
+     {
+      "type": "text",
+      "text": " already almost used",
+      "t": 26290
+     },
+     {
+      "type": "text",
+      "text": " up, so a",
+      "t": 26339
+     },
+     {
+      "type": "text",
+      "text": " dec",
+      "t": 26386
+     },
+     {
+      "type": "text",
+      "text": "ision on rec",
+      "t": 26434
+     },
+     {
+      "type": "text",
+      "text": "overing the 10 days",
+      "t": 26487
+     },
+     {
+      "type": "text",
+      "text": " (or appro",
+      "t": 26536
+     },
+     {
+      "type": "text",
+      "text": "ving a new go-live date)",
+      "t": 26589
+     },
+     {
+      "type": "text",
+      "text": " also",
+      "t": 26636
+     },
+     {
+      "type": "text",
+      "text": " dec",
+      "t": 26684
+     },
+     {
+      "type": "text",
+      "text": "ides whether you",
+      "t": 26749
+     },
+     {
+      "type": "text",
+      "text": " have",
+      "t": 26786
+     },
+     {
+      "type": "text",
+      "text": " enough budget.",
+      "t": 26829
+     },
+     {
+      "type": "usage",
+      "costUsd": 0.2950666,
+      "durationMs": 27956,
+      "t": 30488
+     }
+    ],
+    "files": {
+     "C:\\DevSource\\CLIChat\\film\\.work\\Lumen\\Contoso CRM Migration (demo)\\Contoso CRM Migration - Tracker.xlsx": "8f33c9ce56dc069b-Contoso CRM Migration - Tracker.xlsx"
+    }
+   }
+  ]
+ },
+ "completes": {
+  "4ae3f917dc513e0e": [
+   {
+    "prompt": "Write a 2-5 word title (no quotes, no punctuation at the end) for a chat that starts with:\n\nWrite user stories for a self-service password reset",
+    "result": "Password Reset User Stories"
+   }
+  ],
+  "d86ba58ce260570e": [
+   {
+    "prompt": "Design a helpful AI assistant persona for business users based on this description:\n\n\"Helps me write clear UAT test scripts for our CRM rollout\"\n\nReturn ONLY minified JSON with keys: name (2-3 words),",
+    "result": "{\"name\":\"UAT Script Writer\",\"emoji\":\"🧪\",\"tagline\":\"Turns CRM rollout requirements into clear test scripts\",\"instructions\":\"You are a UAT test script specialist helping business users prepare clear, repeatable acceptance tests for a CRM rollout. Take the requirements, process flows, or user stories the user shares and convert them into structured test scripts with an ID, purpose, preconditions, numbered steps, test data, expected results, and pass/fail criteria. Write in plain language that end users and business analysts can follow without technical training, and avoid jargon unless the user's system uses it. Where information is missing, such as user roles, data values, or edge cases, ask a focused question rather than guessing, and flag any ambiguity you notice. Group scripts logically by module or business process, and include coverage for happy paths, common exceptions, and permission boundaries. Keep each script self-contained so a tester can run it without reading the others.\",\"starters\":[\"Write UAT scripts for creating and qualifying a new lead\",\"Turn this requirement into test cases: sales reps can only edit their own accounts\",\"Make a regression checklist for our opportunity-to-invoice process\"],\"skills\":[\"excel\"]}"
+   }
+  ],
+  "f319cf21a8a56826": [
+   {
+    "prompt": "Write a 2-5 word title (no quotes, no punctuation at the end) for a chat that starts with:\n\nRun a health check on the project plan \"Contoso CRM Migration.xml\". Focus: (not specified)\n\nGive me: overall",
+    "result": "Contoso CRM Migration Health Check"
+   }
+  ],
+  "8e6334c26bd4c708": [
+   {
+    "prompt": "Write a 2-5 word title (no quotes, no punctuation at the end) for a chat that starts with:\n\nUpdate the project plan \"Contoso CRM Migration.xml\" with the progress in \"Weekly Progress Update - 30 Oct 20",
+    "result": "Updating Contoso CRM Migration Plan"
+   }
+  ],
+  "e1235b648a647f40": [
+   {
+    "prompt": "Write a 2-5 word title (no quotes, no punctuation at the end) for a chat that starts with:\n\nWhich budget categories are heading over, and by how much?",
+    "result": "Budget Categories Over Limit"
+   }
+  ]
+ }
+}

@@ -1,0 +1,42 @@
+# ── Dependencies ────────────────────────────────────────────
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# ── App runtime data (lib/store.js → ./data, or $LUMEN_DATA) ─
+/data/
+
+# ── Film / explainer-video pipeline ─────────────────────────
+# Scratch workspace, generated voice-over and large renders.
+# Scripts, recordings, thumbnail, subtitles and YouTube notes stay tracked.
+film/.work/
+film/vo/
+film/out/*.mp4
+film/out/*.wav
+
+# ── Logs ────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+
+# ── Secrets / local config ──────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ── Claude Code local-only settings ─────────────────────────
+.claude/settings.local.json
+
+# ── Office lock / temp files (demo/*.xlsx open in Excel) ────
+~$*
+
+# ── Editors & OS ────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini

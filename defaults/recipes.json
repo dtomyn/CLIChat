@@ -1,0 +1,436 @@
+[
+  {
+    "id": "plan-health-check",
+    "name": "Project health check",
+    "emoji": "🩺",
+    "category": "Project plans",
+    "description": "RAG status, late tasks, critical path, slips and over-allocated people — from your MS Project plan.",
+    "assistantId": "schedule-analyst",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "plan",
+        "label": "Project plan",
+        "type": "file",
+        "accept": ".mpp,.xml"
+      },
+      {
+        "key": "focus",
+        "label": "Anything to focus on?",
+        "type": "text",
+        "placeholder": "Optional — e.g. go-live date, the build phase"
+      }
+    ],
+    "template": "Run a health check on the project plan {{plan}}. Focus: {{focus}}\n\nGive me: overall RAG with a one-line reason; a 3-bullet summary; late or behind-schedule tasks (table); the critical path and how much float is left before go-live; the biggest slips vs. baseline; over-allocated people with suggested fixes; and the top 3 actions for this week."
+  },
+  {
+    "id": "plan-status-report",
+    "name": "Status report from my files",
+    "emoji": "📣",
+    "category": "Project plans",
+    "description": "A send-ready status report built from your plan, budget tracker and RAID log.",
+    "assistantId": "project-partner",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "plan",
+        "label": "Project plan",
+        "type": "file",
+        "accept": ".mpp,.xml"
+      },
+      {
+        "key": "budget",
+        "label": "Budget tracker",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv",
+        "optional": true
+      },
+      {
+        "key": "raid",
+        "label": "RAID log",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv",
+        "optional": true
+      },
+      {
+        "key": "audience",
+        "label": "Who is it for?",
+        "type": "select",
+        "options": [
+          "Steering committee",
+          "Executives",
+          "Project team"
+        ],
+        "default": "Steering committee"
+      }
+    ],
+    "template": "Write a status report for the {{audience}} using the project plan {{plan}}, the budget tracker {{budget}} and the RAID log {{raid}}.\n\nInclude: overall RAG plus schedule, budget, scope and resourcing RAGs; a 3-bullet executive summary; progress since last period; milestones (baseline vs. forecast); budget position (budget, actuals, forecast, variance, contingency left); top risks and issues with owners; decisions or help needed from the {{audience}}. Keep it to one page."
+  },
+  {
+    "id": "plan-update-progress",
+    "name": "Update plan from progress sheet",
+    "emoji": "🔄",
+    "category": "Project plans",
+    "description": "Apply your team's % complete updates from Excel to the MS Project plan, then see what changed.",
+    "assistantId": "schedule-analyst",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "plan",
+        "label": "Project plan",
+        "type": "file",
+        "accept": ".mpp,.xml"
+      },
+      {
+        "key": "progress",
+        "label": "Progress update workbook",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv"
+      },
+      {
+        "key": "status",
+        "label": "New status date",
+        "type": "text",
+        "placeholder": "e.g. 2026-10-30"
+      }
+    ],
+    "template": "Update the project plan {{plan}} with the progress in {{progress}} and set the status date to {{status}}. Apply the changes (save as an updated copy), then give me a before/after table and tell me how the health of the plan changed: % complete, late tasks, forecast finish and anything that newly needs attention."
+  },
+  {
+    "id": "plan-to-excel",
+    "name": "Plan → Excel tracker",
+    "emoji": "📗",
+    "category": "Project plans",
+    "description": "Turn an MS Project plan into a colour-coded Excel tracker with a weekly Gantt chart.",
+    "assistantId": "schedule-analyst",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "plan",
+        "label": "Project plan",
+        "type": "file",
+        "accept": ".mpp,.xml"
+      }
+    ],
+    "template": "Export the project plan {{plan}} to an Excel tracker with a Gantt chart. Name it after the project, ending in ' - Tracker.xlsx'. Then summarise what is in each sheet."
+  },
+  {
+    "id": "resource-load",
+    "name": "Who's overloaded?",
+    "emoji": "👥",
+    "category": "Project plans",
+    "description": "Find over-allocated people in the next 6 weeks and get options to fix it.",
+    "assistantId": "schedule-analyst",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "plan",
+        "label": "Project plan",
+        "type": "file",
+        "accept": ".mpp,.xml"
+      }
+    ],
+    "template": "Check resource loading in {{plan}} for the next six weeks. For each over-allocated person, show the peak load, the dates and the clashing tasks, then give two or three options to resolve it, with the schedule impact of each."
+  },
+  {
+    "id": "budget-variance",
+    "name": "Budget variance review",
+    "emoji": "💰",
+    "category": "Budgets & Excel",
+    "description": "Where you're over or under, contingency left, and invoices that need attention.",
+    "assistantId": "budget-controller",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "budget",
+        "label": "Budget workbook",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv"
+      }
+    ],
+    "template": "Review the budget workbook {{budget}}. Show total budget vs. forecast at completion, each category's variance (worst first), how much contingency is left, the monthly burn trend, and any invoices that are pending or unusual. End with three recommended actions."
+  },
+  {
+    "id": "effort-vs-plan",
+    "name": "Timesheets vs. plan",
+    "emoji": "⏱️",
+    "category": "Budgets & Excel",
+    "description": "Compare hours booked in Excel with the work planned in MS Project.",
+    "assistantId": "budget-controller",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "timesheets",
+        "label": "Timesheet workbook",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv"
+      },
+      {
+        "key": "plan",
+        "label": "Project plan",
+        "type": "file",
+        "accept": ".mpp,.xml"
+      }
+    ],
+    "template": "Compare the hours in {{timesheets}} with the planned work and progress in {{plan}}. For each task, show the hours booked, the % complete in the plan, and whether effort looks higher than planned for the progress made. Highlight the top three effort overruns and what they mean for cost and schedule."
+  },
+  {
+    "id": "raid-review",
+    "name": "RAID log review",
+    "emoji": "🛡️",
+    "category": "Budgets & Excel",
+    "description": "Top risks, overdue reviews and issues without a clear action — from your RAID workbook.",
+    "assistantId": "project-partner",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "raid",
+        "label": "RAID log workbook",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv"
+      },
+      {
+        "key": "asof",
+        "label": "As-of date",
+        "type": "text",
+        "placeholder": "Optional — e.g. 2026-11-03"
+      }
+    ],
+    "template": "Review the RAID log {{raid}} as of {{asof}}. List the highest-scoring open risks, any risk or issue whose review or due date has passed, open issues without a clear action, and dependencies at risk. Suggest which ones to escalate to the steering committee."
+  },
+  {
+    "id": "user-stories",
+    "name": "Write user stories",
+    "emoji": "🧩",
+    "category": "Analysis",
+    "description": "Turn a feature idea into user stories with acceptance criteria.",
+    "assistantId": "requirements-coach",
+    "builtin": true,
+    "fields": [
+      {
+        "key": "feature",
+        "label": "What's the feature or idea?",
+        "type": "textarea",
+        "placeholder": "e.g. Customers can track their order status without calling support"
+      },
+      {
+        "key": "users",
+        "label": "Who will use it?",
+        "type": "text",
+        "placeholder": "e.g. Customers, support agents"
+      },
+      {
+        "key": "count",
+        "label": "How many stories?",
+        "type": "select",
+        "options": [
+          "3",
+          "5",
+          "8"
+        ],
+        "default": "5"
+      }
+    ],
+    "template": "Write {{count}} user stories for this feature: {{feature}}\n\nUsers: {{users}}\n\nFor each story include 3-5 Given/When/Then acceptance criteria. Finish with a short list of open questions."
+  },
+  {
+    "id": "status-report",
+    "name": "Weekly status report",
+    "emoji": "🚦",
+    "category": "Projects",
+    "description": "A crisp RAG status update ready to send.",
+    "assistantId": "project-partner",
+    "builtin": true,
+    "fields": [
+      {
+        "key": "project",
+        "label": "Project name",
+        "type": "text",
+        "placeholder": "e.g. Payroll modernization"
+      },
+      {
+        "key": "done",
+        "label": "What got done this week?",
+        "type": "textarea",
+        "placeholder": "Bullet points are fine"
+      },
+      {
+        "key": "next",
+        "label": "What's next?",
+        "type": "textarea"
+      },
+      {
+        "key": "risks",
+        "label": "Any risks or blockers?",
+        "type": "textarea",
+        "placeholder": "Optional"
+      },
+      {
+        "key": "audience",
+        "label": "Who is it for?",
+        "type": "select",
+        "options": [
+          "Executives",
+          "Project team",
+          "Steering committee",
+          "Clients"
+        ],
+        "default": "Executives"
+      }
+    ],
+    "template": "Create a weekly status report for the project \"{{project}}\" aimed at {{audience}}.\n\nDone this week:\n{{done}}\n\nNext:\n{{next}}\n\nRisks/blockers:\n{{risks}}\n\nInclude an overall RAG status with a one-line reason, a 3-bullet executive summary, and a risks table."
+  },
+  {
+    "id": "meeting-actions",
+    "name": "Meeting notes → actions",
+    "emoji": "📝",
+    "category": "Everyday",
+    "description": "Paste messy notes, get decisions, owners and next steps.",
+    "assistantId": "lumen",
+    "builtin": true,
+    "fields": [
+      {
+        "key": "notes",
+        "label": "Paste your meeting notes or transcript",
+        "type": "textarea",
+        "placeholder": "Raw notes are fine — typos and all"
+      }
+    ],
+    "template": "Here are meeting notes:\n\n{{notes}}\n\nGive me: 1) a 3-sentence summary, 2) decisions made, 3) an action items table with owner and due date (write 'TBD' if unknown), 4) open questions."
+  },
+  {
+    "id": "draft-email",
+    "name": "Draft an email",
+    "emoji": "✉️",
+    "category": "Writing",
+    "description": "Describe what you need to say — get a polished email.",
+    "assistantId": "writing-polisher",
+    "builtin": true,
+    "fields": [
+      {
+        "key": "to",
+        "label": "Who is it to?",
+        "type": "text",
+        "placeholder": "e.g. My director, a vendor, the whole team"
+      },
+      {
+        "key": "purpose",
+        "label": "What do you need to say?",
+        "type": "textarea",
+        "placeholder": "e.g. The launch is slipping two weeks because of testing delays"
+      },
+      {
+        "key": "tone",
+        "label": "Tone",
+        "type": "select",
+        "options": [
+          "Friendly",
+          "Professional",
+          "Direct",
+          "Diplomatic"
+        ],
+        "default": "Professional"
+      }
+    ],
+    "template": "Draft an email to {{to}}. Tone: {{tone}}.\n\nWhat it needs to say: {{purpose}}\n\nGive me a subject line and the email body. Keep it concise."
+  },
+  {
+    "id": "summarize-doc",
+    "name": "Summarize a document",
+    "emoji": "📄",
+    "category": "Everyday",
+    "description": "Attach a file and get the key points in seconds.",
+    "assistantId": "lumen",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "file",
+        "label": "Which document?",
+        "type": "file"
+      },
+      {
+        "key": "focus",
+        "label": "Anything to focus on?",
+        "type": "text",
+        "placeholder": "Optional — e.g. costs, deadlines, risks"
+      }
+    ],
+    "template": "Summarize the attached document {{file}}. Focus on: {{focus}}\n\nStart with a one-line TL;DR, then key points, then anything that needs a decision or action."
+  },
+  {
+    "id": "risk-register",
+    "name": "Build a risk register",
+    "emoji": "🛡️",
+    "category": "Projects",
+    "description": "Identify likely risks with impact, likelihood and mitigations.",
+    "assistantId": "project-partner",
+    "builtin": true,
+    "fields": [
+      {
+        "key": "project",
+        "label": "Describe the project",
+        "type": "textarea",
+        "placeholder": "Goal, timeline, teams involved..."
+      }
+    ],
+    "template": "Build a risk register for this project:\n\n{{project}}\n\nUse a table with: Risk, Impact (H/M/L), Likelihood (H/M/L), Owner, Mitigation. Include 8-10 realistic risks, sorted by severity."
+  },
+  {
+    "id": "explain-simply",
+    "name": "Explain it simply",
+    "emoji": "💡",
+    "category": "Everyday",
+    "description": "Understand any technical term or concept in plain words.",
+    "assistantId": "lumen",
+    "builtin": true,
+    "fields": [
+      {
+        "key": "topic",
+        "label": "What would you like explained?",
+        "type": "text",
+        "placeholder": "e.g. microservices, data lake, OAuth"
+      }
+    ],
+    "template": "Explain \"{{topic}}\" to a smart business professional with no technical background. Use an everyday analogy, then explain why it matters at work, then list 3 good questions I could ask an engineer about it."
+  },
+  {
+    "id": "save-as-doc",
+    "name": "Create a document",
+    "emoji": "🗂️",
+    "category": "Writing",
+    "description": "Have Lumen write a file into your project folder.",
+    "assistantId": "lumen",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "what",
+        "label": "What document do you need?",
+        "type": "textarea",
+        "placeholder": "e.g. A one-page project charter for the new intranet"
+      },
+      {
+        "key": "format",
+        "label": "File format",
+        "type": "select",
+        "options": [
+          "Markdown (.md)",
+          "Word-friendly HTML (.html)",
+          "CSV spreadsheet (.csv)",
+          "Plain text (.txt)"
+        ],
+        "default": "Markdown (.md)"
+      }
+    ],
+    "template": "Create this document and save it as a file in the current folder: {{what}}\n\nFormat: {{format}}. Choose a clear file name. When done, tell me the file name and give a short outline of what's inside."
+  }
+]

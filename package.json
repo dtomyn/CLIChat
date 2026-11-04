@@ -1,0 +1,17 @@
+{
+  "name": "clichat",
+  "version": "1.0.0",
+  "description": "A friendly, Claude-style chat workspace for everyone — powered by pluggable AI CLIs (Claude Code, GitHub Copilot).",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@highlightjs/cdn-assets": "11.11.1",
+    "dompurify": "3.2.6",
+    "exceljs": "4.4.0",
+    "fast-xml-parser": "4.5.3",
+    "marked": "15.0.12"
+  }
+}

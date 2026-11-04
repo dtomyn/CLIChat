@@ -1,0 +1,187 @@
+1
+00:00:01,179 --> 00:00:06,538
+Everyone on the team now has VS Code, GitHub Copilot, and the Claude command line.
+
+2
+00:00:06,538 --> 00:00:07,518
+Powerful tools.
+
+3
+00:00:07,518 --> 00:00:10,459
+But not everyone wants to live in a terminal.
+
+4
+00:00:10,710 --> 00:00:11,414
+Meet Lumen.
+
+5
+00:00:11,414 --> 00:00:17,302
+The same AI agents and skills, behind a friendly chat window that runs on your own computer.
+
+6
+00:00:18,760 --> 00:00:20,224
+Lumen greets you by name.
+
+7
+00:00:20,224 --> 00:00:27,016
+Instead of agents and prompts, you pick an assistant, a specialist with its own skills, or start from a quick start.
+
+8
+00:00:27,274 --> 00:00:30,991
+Marcus is a business analyst on the Contoso CRM project.
+
+9
+00:00:30,991 --> 00:00:36,234
+He needs user stories by Friday, and he has never written a prompt in his life.
+
+10
+00:00:37,456 --> 00:00:41,083
+So he picks the Requirements Coach, and clicks one of its suggestions.
+
+11
+00:00:42,278 --> 00:00:46,779
+The answer streams in, like chatting with a colleague who has done this a hundred times.
+
+12
+00:00:52,927 --> 00:00:59,753
+User stories, Given, When, Then acceptance criteria, and the open questions to take back to the business.
+
+13
+00:01:02,951 --> 00:01:05,732
+Next, Marcus wants a helper for test scripts.
+
+14
+00:01:05,732 --> 00:01:07,153
+One sentence is enough.
+
+15
+00:01:12,542 --> 00:01:17,335
+Lumen drafts the name, the icon, the instructions, and example requests.
+
+16
+00:01:17,335 --> 00:01:19,732
+It even switches on the Excel skill.
+
+17
+00:01:26,065 --> 00:01:27,704
+No configuration files.
+
+18
+00:01:27,704 --> 00:01:28,416
+No jargon.
+
+19
+00:01:28,416 --> 00:01:29,841
+Just a new teammate.
+
+20
+00:01:31,021 --> 00:01:33,315
+Now meet Priya, the project manager.
+
+21
+00:01:33,315 --> 00:01:40,450
+Her world is a Microsoft Project plan and a stack of Excel workbooks, and the steering committee is on Thursday.
+
+22
+00:01:44,594 --> 00:01:46,749
+One click sets up the project folder.
+
+23
+00:01:51,264 --> 00:02:01,632
+Here is the plan from Microsoft Project, forty two tasks with a baseline, plus a budget tracker, a RAID log, timesheets, and this week's progress update in Excel.
+
+24
+00:02:07,166 --> 00:02:08,666
+She asks for a health check.
+
+25
+00:02:08,666 --> 00:02:11,667
+Lumen has already picked the right plan from her folder.
+
+26
+00:02:15,918 --> 00:02:18,695
+The Schedule Analyst reads the actual plan.
+
+27
+00:02:18,695 --> 00:02:23,086
+Critical path, slippage against baseline, and who is over allocated.
+
+28
+00:02:25,372 --> 00:02:27,863
+It even overrules the tool's own score.
+
+29
+00:02:27,863 --> 00:02:28,821
+Red, not amber.
+
+30
+00:02:28,821 --> 00:02:35,847
+Go-live has slipped ten working days, there is no float left, and one integration developer is the bottleneck.
+
+31
+00:02:42,351 --> 00:02:45,021
+Friday's progress arrived as a spreadsheet.
+
+32
+00:02:45,021 --> 00:02:48,559
+Instead of retyping it into Project, Priya hands it over.
+
+33
+00:02:50,045 --> 00:02:57,149
+Lumen reads the workbook, updates the plan, saves a new version without touching the original, and checks the schedule again.
+
+34
+00:03:01,755 --> 00:03:04,379
+Every change is listed, before and after.
+
+35
+00:03:04,379 --> 00:03:12,827
+Progress is up from forty seven to fifty three percent, and it warns that the E R P delay will push go-live back another three days.
+
+36
+00:03:21,781 --> 00:03:22,734
+Then, the money.
+
+37
+00:03:22,734 --> 00:03:26,368
+The Budget Controller reads the budget tracker, cell by cell.
+
+38
+00:03:31,983 --> 00:03:36,651
+Three categories are heading over, seventy eight thousand dollars in total.
+
+39
+00:03:36,651 --> 00:03:38,332
+Contingency is almost gone.
+
+40
+00:03:38,332 --> 00:03:42,564
+And it spotted a thirty thousand dollar mismatch between two sheets.
+
+41
+00:03:43,733 --> 00:03:46,869
+When she wants a file, she lets Lumen edit, with one click.
+
+42
+00:03:52,913 --> 00:03:58,012
+And gets a colour coded Excel tracker, with a Gantt chart, ready for the steering committee.
+
+43
+00:04:04,828 --> 00:04:09,694
+Under the hood, Lumen drives the Claude command line, and it is pluggable.
+
+44
+00:04:09,694 --> 00:04:11,996
+GitHub Copilot is one setting away.
+
+45
+00:04:15,294 --> 00:04:20,798
+And every assistant and skill exports straight into VS Code, for the day you are ready for more.
+
+46
+00:04:22,290 --> 00:04:22,670
+Lumen.
+
+47
+00:04:22,670 --> 00:04:26,663
+The power of AI agents, made friendly for everyone on the team.

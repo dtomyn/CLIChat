@@ -1,0 +1,38 @@
+TITLE
+AI Agents for Everyone: Microsoft Project & Excel Without the Terminal | Lumen Demo
+
+DESCRIPTION
+Your whole team has VS Code, GitHub Copilot and the Claude command line. Powerful tools, but most business analysts and project managers don't want to live in a terminal. Lumen puts the same AI agents and skills behind a friendly chat window that runs on your own computer.
+
+In this demo, two people on a (fictional) CRM migration project use Lumen to get real work done:
+
+🧭 Marcus, Business Analyst
+• Picks the Requirements Coach and gets user stories with Given/When/Then acceptance criteria in seconds
+• Describes a new assistant in one sentence, and Lumen drafts its name, instructions and example requests, and switches on the right skills
+
+📋 Priya, Project Manager
+• Runs a health check on a Microsoft Project plan: RAG status, critical path, slippage against baseline and over-allocated people
+• Updates the plan straight from an Excel progress sheet, saved as a new version so the original is never overwritten
+• Has the budget tracker reviewed cell by cell: categories going over, contingency left, and a mismatch between two sheets
+• Turns the plan into a colour-coded Excel tracker with a Gantt chart
+
+Also shown: Lumen's AI engine is pluggable (Claude Code CLI today, GitHub Copilot CLI one setting away), and every assistant and skill exports straight into VS Code.
+
+CHAPTERS
+0:00 Why Lumen
+0:18 A tour of the home screen
+0:27 Marcus: user stories in seconds
+1:02 Marcus: build your own assistant
+1:31 Priya: the project plan and Excel files
+2:07 Microsoft Project health check
+2:42 Update the plan from an Excel progress sheet
+3:21 Budget review in Excel
+3:43 Excel tracker with a Gantt chart
+4:04 Pluggable AI engines and VS Code
+4:22 Wrap-up
+
+ABOUT THIS VIDEO
+Everything on screen is the real Lumen app, and every AI answer is a genuine response from Claude, sped up for the video. The project, people, plan and budget figures are fictional demo data. Narration uses a synthetic voice (Kokoro, generated locally).
+
+TAGS
+AI agents, Claude, Claude Code, GitHub Copilot, Microsoft Project, Excel, project management, business analysis, user stories, Gantt chart, RAID log, AI for business, no-code AI, VS Code, productivity
