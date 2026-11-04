@@ -339,7 +339,7 @@ def run_film(d):
     d.uncard()
     d.third(third_html(*PRIYA, "Priya", "Project Manager"))
     d.say("priya2")
-    d.click("[data-install-demo]")
+    d.click("[data-install-demo=\"crm\"]")
     d.wait(2.2)
     d.click("[data-open-drawer]")
     d.wait(1.0)

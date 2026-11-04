@@ -27,10 +27,10 @@ function recalc(file) {
     return true;
   } catch { return false; }
 }
-async function save(wb, file) {
+async function save(wb, file, { recalculate = true } = {}) {
   wb.calcProperties = { ...(wb.calcProperties || {}), fullCalcOnLoad: true };
   if (path.extname(file).toLowerCase() === '.csv') await wb.csv.writeFile(file);
-  else { await wb.xlsx.writeFile(file); recalc(file); }
+  else { await wb.xlsx.writeFile(file); if (recalculate) recalc(file); }
 }
 
 const colLetter = (n) => { let s = ''; while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; };
@@ -89,7 +89,7 @@ async function read(file, { sheet, maxRows = 300, showFormulas = true } = {}) {
   return out.join('\n');
 }
 
-const FORMATS = { currency: '"$"#,##0', currency2: '"$"#,##0.00', percent: '0%', number: '#,##0', decimal: '#,##0.00', date: 'yyyy-mm-dd', text: '@' };
+const FORMATS = { currency: '"$"#,##0', currency2: '"$"#,##0.00', percent: '0%', percent1: '0.0%', number: '#,##0', decimal: '#,##0.00', date: 'yyyy-mm-dd', text: '@' };
 const HEADER_FILL = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF5B3FD9' } };
 
 function coerce(v, fmt) {
@@ -116,7 +116,7 @@ function styleSheet(ws, columns, rowCount) {
 }
 
 /** Create (or replace) a workbook. sheets: [{ name, columns: [{header, format?, width?}] | ["A","B"], rows: [[...]], totals?: ["sum"|"average"|null,...] }] */
-async function write(file, sheets) {
+async function write(file, sheets, { recalculate = true } = {}) {
   const wb = new ExcelJS.Workbook();
   wb.creator = 'Lumen';
   for (const s of sheets) {
@@ -137,7 +137,7 @@ async function write(file, sheets) {
     styleSheet(ws, columns, (s.rows || []).length);
   }
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  await save(wb, file);
+  await save(wb, file, { recalculate }); // recalculate: false skips the Excel round trip when there are no formulas
   return { saved: file, sheets: sheets.map((s) => `${s.name} (${(s.rows || []).length} rows)`) };
 }
 
@@ -160,6 +160,22 @@ async function update(file, { updates = [], appendRows = [], saveAs } = {}) {
     for (const r of a.rows || []) { const row = ws.addRow(r.map((v) => coerce(v))); done.push(`${ws.name}: added row ${row.number}`); }
   }
   const out = saveAs ? path.resolve(path.dirname(file), saveAs) : file;
+  if (path.resolve(out) === path.resolve(file) && process.env.LUMEN_SNAPSHOT_DIR && process.env.OFFICE_MCP_ROOT) {
+    const root = path.resolve(process.env.OFFICE_MCP_ROOT);
+    const rel = path.relative(root, path.resolve(file));
+    const snapshot = path.resolve(process.env.LUMEN_SNAPSHOT_DIR, rel);
+    const snapshotRel = path.relative(root, snapshot);
+    if (!rel || rel.startsWith('..') || path.isAbsolute(rel) || !snapshotRel || snapshotRel.startsWith('..') || path.isAbsolute(snapshotRel)) throw new Error('Cannot snapshot a file outside the project folder.');
+    const realRoot = fs.realpathSync(root);
+    let dir = root;
+    for (const part of path.dirname(snapshotRel).split(path.sep)) {
+      dir = path.join(dir, part);
+      fs.mkdirSync(dir, { recursive: true });
+      const actual = path.relative(realRoot, fs.realpathSync(dir));
+      if (!actual || actual.startsWith('..') || path.isAbsolute(actual)) throw new Error('Snapshot folder must stay inside the project folder.');
+    }
+    if (!fs.existsSync(snapshot)) fs.copyFileSync(file, snapshot, fs.constants.COPYFILE_EXCL);
+  }
   await save(wb, out);
   return { saved: out, changes: done };
 }
@@ -236,4 +252,4 @@ async function projectToWorkbook(planFile, outFile) {
   return { saved: outFile, sheets: ['Summary', 'Tasks', 'Gantt', 'Resources'], tasks: p.tasks.length };
 }
 
-module.exports = { read, write, update, projectToWorkbook, recalc };
+module.exports = { open, cellText, read, write, update, projectToWorkbook, recalc };
