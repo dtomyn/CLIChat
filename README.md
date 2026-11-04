@@ -4,6 +4,8 @@ A friendly, Claude-style AI workspace that runs on your own computer. It's built
 
 Lumen sits on top of the AI command-line tools your organization already deploys (Claude Code today, GitHub Copilot CLI as a pluggable alternative), so there are no API keys to manage and no new accounts to create.
 
+see: https://youtu.be/6uLWQEaM1PM
+
 ## Start it
 
 **Windows:** double-click **`Start Lumen.cmd`**. The first run installs dependencies, and then your browser opens at <http://localhost:4317>.
