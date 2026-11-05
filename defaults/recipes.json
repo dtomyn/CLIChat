@@ -69,6 +69,32 @@
     "template": "Write a status report for the {{audience}} using the project plan {{plan}}, the budget tracker {{budget}} and the RAID log {{raid}}.\n\nInclude: overall RAG plus schedule, budget, scope and resourcing RAGs; a 3-bullet executive summary; progress since last period; milestones (baseline vs. forecast); budget position (budget, actuals, forecast, variance, contingency left); top risks and issues with owners; decisions or help needed from the {{audience}}. Keep it to one page."
   },
   {
+    "id": "exec-status-pack",
+    "name": "Weekly executive status",
+    "emoji": "🧭",
+    "category": "Project plans",
+    "description": "A draft status report and a one-page executive dashboard from your plan and RAID log, with every fact traced to its source.",
+    "assistantId": "project-partner",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "plan",
+        "label": "Project plan",
+        "type": "file",
+        "accept": ".mpp,.xml"
+      },
+      {
+        "key": "raid",
+        "label": "RAID log",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv",
+        "optional": true
+      }
+    ],
+    "template": "Build this week's executive status pack for the project plan {{plan}} with the RAID log {{raid}} (if no RAID log is given, leave it out).\n\n1. Call get_status_facts first and base everything on it.\n2. Write a 3 to 5 sentence narrative for executives: the overall rating and why, what moved since last time, the biggest threat to the next milestone, and what is being done. Use the calculated rating; if you think it should be different, say so as a recommendation, not as the rating.\n3. List up to 3 decisions or support needed from leadership, each citing the task or RAID ID.\n4. Call build_status_report with the narrative and decisions.\n\nThen reply with the overall rating, the top 3 points, any warnings the tool returned, and links to the saved files. Remind me that the pack is a draft for PMO review."
+  },
+  {
     "id": "plan-update-progress",
     "name": "Update plan from progress sheet",
     "emoji": "🔄",
