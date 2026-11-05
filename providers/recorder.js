@@ -17,7 +17,11 @@ function record(provider, file) {
   const save = (mutate) => { const db = load(file); mutate(db); fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, JSON.stringify(db, null, 1)); };
   const run = provider.run.bind(provider);
   const complete = provider.complete.bind(provider);
+  // LUMEN_RECORD_RESUME=1: requests already in the recording are replayed instead of re-run, so a failed pass can pick up where it stopped.
+  const resume = process.env.LUMEN_RECORD_RESUME ? (() => { const shadow = {}; replay(shadow, file); return shadow; })() : null;
+  const known = (bucket, prompt) => resume && (load(file)[bucket][keyOf(prompt)] || []).length > 0;
   provider.run = async (opts, emit) => {
+    if (known('runs', opts.prompt)) return resume.run(opts, emit);
     const events = []; const t0 = Date.now(); const written = new Set();
     await run(opts, (ev) => {
       events.push({ ...ev, t: Date.now() - t0 });
@@ -38,6 +42,7 @@ function record(provider, file) {
     console.log(`[record] run ${key} (${events.length} events, ${Object.keys(files).length} files)`);
   };
   provider.complete = async (opts) => {
+    if (known('completes', opts.prompt)) return resume.complete(opts);
     const result = await complete(opts);
     const key = keyOf(opts.prompt);
     save((db) => { (db.completes[key] ||= []).push({ prompt: opts.prompt.slice(0, 200), result }); });
