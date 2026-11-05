@@ -203,15 +203,18 @@ async function runTurn(body, out = () => {}) {
   return { conversation: fresh, message: asstMsg };
 }
 
+// Called on every GET of a run (the run page polls it), so it only writes when a stage was actually interrupted.
 function reconcileRun(run) {
+  let changed = false;
   for (const stage of run.stages) {
     if (stage.status === 'running' && !running.has(stage.conversationId)) {
       stage.status = 'rework';
       stage.error = 'The stage was interrupted. Open its chat to continue or start it again.';
+      changed = true;
     }
-    if (stage.checkRunning && !running.has(stage.gateConversationId)) stage.checkRunning = false;
+    if (stage.checkRunning && !running.has(stage.gateConversationId)) { stage.checkRunning = false; changed = true; }
   }
-  return store.runs.save(run);
+  return changed ? store.runs.save(run) : run;
 }
 
 function stampOutput(stage, approvedBy, approvedAt) {
