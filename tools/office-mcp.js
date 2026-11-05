@@ -11,6 +11,7 @@ const project = require('./project');
 const docx = require('./docx');
 const traceability = require('./traceability');
 const status = require('./status');
+const raid = require('./raid');
 
 const ROOT = path.resolve(process.env.OFFICE_MCP_ROOT || process.cwd());
 const READ_ONLY = process.env.OFFICE_MCP_READONLY === '1';
@@ -47,7 +48,7 @@ const TOOLS = [
     description: 'List the documents (.docx/.md/.txt/.pdf), Excel workbooks (.xlsx/.xlsm/.csv) and Microsoft Project plans (.mpp/.xml) in the project folder, with size and last-modified date.',
     inputSchema: { type: 'object', properties: {} },
     run: () => {
-      const files = walk(ROOT).filter((f) => /\.(xlsx|xlsm|csv|mpp|xml|docx|docm|md|txt|pdf)$/i.test(f) && !/[\\/]\.?(claude|github|vscode)[\\/]/i.test(f));
+      const files = walk(ROOT).filter((f) => /\.(xlsx|xlsm|csv|mpp|xml|docx|docm|md|txt|pdf|vtt)$/i.test(f) && !/[\\/]\.?(claude|github|vscode)[\\/]/i.test(f));
       return files.map((f) => `${path.relative(ROOT, f)}  (${Math.round(fs.statSync(f).size / 1024)} KB, modified ${new Date(fs.statSync(f).mtimeMs).toISOString().slice(0, 10)})`).join('\n') || 'No documents, workbooks or plans found.';
     },
   },
@@ -153,6 +154,47 @@ const TOOLS = [
     description: 'Write the weekly status pack into "Status reports/<status date>/": status.json (the status model), a detailed status report (Markdown, which can be saved as Word) and a one-page executive dashboard (HTML, with milestones you can open to see the work they depend on). All facts are calculated from the files. Your narrative and decisionsNeeded are shown separately and labelled as AI-written; if the narrative names a different RAG rating from the calculated one, the pack flags it. Everything is saved as a Draft for PMO review.',
     inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'The project plan' }, raid: { type: 'string', description: 'Optional RAID log workbook' }, statusDate: { type: 'string' }, narrative: { type: 'string', description: '3 to 5 sentences for executives, based only on get_status_facts' }, decisionsNeeded: { type: 'array', items: { type: 'string' }, description: 'Decisions or support needed from leadership, each citing the task or RAID ID' } }, required: ['path'] },
     run: write((a) => status.buildReport(resolveIn(a.path), { raid: a.raid ? resolveIn(a.raid) : null, root: ROOT, statusDate: a.statusDate, narrative: a.narrative, decisionsNeeded: a.decisionsNeeded })),
+  },
+  {
+    name: 'read_transcript',
+    description: 'Read a meeting transcript (Teams .vtt, a Teams transcript saved as Word .docx, or a .txt/.md file) as numbered turns with time, speaker and text. Use it before proposing RAID log updates, and quote from it word for word.',
+    inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'The transcript file' } }, required: ['path'] },
+    run: (a) => { const segs = raid.readTranscript(resolveIn(a.path)); return { file: path.basename(a.path), turns: segs.length, speakers: [...new Set(segs.map((s) => s.speaker).filter(Boolean))], transcript: segs.map((s) => `[${s.n}] ${s.time ? s.time + ' ' : ''}${s.speaker ? s.speaker + ': ' : ''}${s.text}`).join('\n') }; },
+  },
+  {
+    name: 'propose_raid_updates',
+    description: 'Propose RAID log changes from a meeting transcript, for a person to approve. Saves "<RAID log> (proposed).xlsx" with the changes highlighted (green = new row, yellow = changed cell) and a "Proposed changes" sheet listing each change with its transcript evidence and an "Approve? (Yes/No)" column. The original RAID log is not changed. Each proposal must include evidence.quote copied word for word from the transcript (at least 4 words); proposals whose quote cannot be found are rejected. Also returns meeting checks such as new actions with no owner or due date.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        raid: { type: 'string', description: 'The RAID log workbook' },
+        transcript: { type: 'string', description: 'The meeting transcript' },
+        meetingDate: { type: 'string', description: 'YYYY-MM-DD; used as the Raised date for new items' },
+        proposals: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              change: { type: 'string', enum: ['add', 'update', 'close'] },
+              kind: { type: 'string', enum: ['risk', 'issue', 'action', 'decision', 'dependency', 'assumption'] },
+              id: { type: 'string', description: 'Existing ID, for update or close' },
+              fields: { type: 'object', description: 'Only what the meeting supports', properties: { title: { type: 'string' }, owner: { type: 'string' }, due: { type: 'string', description: 'YYYY-MM-DD (due, next review or needed-by date)' }, status: { type: 'string' }, action: { type: 'string', description: 'Mitigation or action; added to any existing text' }, priority: { type: 'string' }, probability: { type: 'string', description: 'H/M/L' }, impact: { type: 'string', description: 'H/M/L' }, category: { type: 'string' }, date: { type: 'string' } } },
+              evidence: { type: 'object', properties: { quote: { type: 'string', description: 'At least 4 words copied exactly from the transcript' } }, required: ['quote'] },
+              reason: { type: 'string', description: 'One line on why, especially when linking to an existing item' },
+            },
+            required: ['change', 'kind', 'evidence'],
+          },
+        },
+      },
+      required: ['raid', 'transcript', 'proposals'],
+    },
+    run: write((a) => raid.propose(resolveIn(a.raid), resolveIn(a.transcript), a.proposals || [], { meetingDate: a.meetingDate })),
+  },
+  {
+    name: 'apply_raid_updates',
+    description: 'Apply only the approved changes from a reviewed "<RAID log> (proposed).xlsx" (rows marked Yes in "Approve?") to "<RAID log> (updated).xlsx". Refuses if any row is not marked Yes or No. Only call this after the person says they have reviewed the proposed workbook. The original RAID log is never overwritten.',
+    inputSchema: { type: 'object', properties: { proposed: { type: 'string', description: 'The reviewed "(proposed)" workbook' } }, required: ['proposed'] },
+    run: write((a) => raid.applyApproved(resolveIn(a.proposed))),
   },
   {
     name: 'update_project_plan',

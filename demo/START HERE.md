@@ -9,6 +9,7 @@ A fictional project used to try Lumen's project-management assistants.
 | **CRM Migration - RAID Log.xlsx** | Risks, issues, assumptions, dependencies, decisions |
 | **Team Timesheets - October 2026.xlsx** | Hours booked per person per task |
 | **Weekly Progress Update - 30 Oct 2026.xlsx** | Team leads' latest % complete — use it to update the plan |
+| **Huddle 10-30 - 30 Oct 2026.vtt** | Teams transcript of the daily 10:30 huddle — use it to update the RAID log |
 
 ## Things to try
 - *"Give me a health check of the project plan."*
@@ -17,3 +18,4 @@ A fictional project used to try Lumen's project-management assistants.
 - *"Are any budget categories heading over? Which invoices need attention?"*
 - *"Compare timesheet hours with the plan — where are we burning more effort than planned?"*
 - *"Turn the plan into an Excel tracker with a Gantt chart."*
+- *"Update the RAID log from this morning's huddle transcript."*

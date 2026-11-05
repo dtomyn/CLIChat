@@ -240,6 +240,31 @@
     "template": "Review the RAID log {{raid}} as of {{asof}}. List the highest-scoring open risks, any risk or issue whose review or due date has passed, open issues without a clear action, and dependencies at risk. Suggest which ones to escalate to the steering committee."
   },
   {
+    "id": "huddle-to-raid",
+    "name": "Huddle → RAID log",
+    "emoji": "🗣️",
+    "category": "Project plans",
+    "description": "Propose RAID log updates from a meeting transcript, each with the quote it came from, for you to approve before anything changes.",
+    "assistantId": "project-partner",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "transcript",
+        "label": "Meeting transcript",
+        "type": "file",
+        "accept": ".vtt,.docx,.txt,.md"
+      },
+      {
+        "key": "raid",
+        "label": "RAID log",
+        "type": "file",
+        "accept": ".xlsx,.xlsm"
+      }
+    ],
+    "template": "Read the RAID log {{raid}} and the meeting transcript {{transcript}}. Take the meeting date from the transcript file name, or use today. Propose RAID updates with propose_raid_updates: updates and closures to existing items first, then new risks, issues, actions, decisions and dependencies. Quote the transcript word for word for each one, and do not invent owners or dates.\n\nThen show me a table of the proposed changes with who said each one and when, anything that was not proposed and why, and the meeting checks. Tell me how to approve them."
+  },
+  {
     "id": "user-stories",
     "name": "Write user stories",
     "emoji": "🧩",

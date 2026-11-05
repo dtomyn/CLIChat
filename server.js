@@ -138,7 +138,9 @@ async function runTurn(body, out = () => {}) {
   const pinned = (conv.pinned_files || []).filter((p) => workspaceFile(p, conv.workspace));
   let access = conv.access || 'read';
   if ((attachments.length || pinned.length) && access === 'chat') access = 'read';
-  const activeSkills = skills.resolve(assistant?.skills || [], [...attachments, ...pinned]);
+  // Files attached earlier in the chat keep their skills on, so follow-ups ("apply the approved changes") have the same tools.
+  const earlier = (conv.messages || []).flatMap((m) => (m.attachments || []).map((a) => a.path)).filter(Boolean);
+  const activeSkills = skills.resolve(assistant?.skills || [], [...attachments, ...pinned, ...earlier]);
   const tools = skills.toolConfig(activeSkills, access, conv.workspace);
 
   const userMsg = { id: store.id(), role: 'user', content: String(body.message || '').trim(), attachments: attachments.map((p) => ({ path: p, name: path.basename(p) })), createdAt: Date.now() };
@@ -343,7 +345,7 @@ function exportAssistant(a, workspace) {
 
 // Sample packs offered on the home screen. Each is copied into a sibling of the user's project folder.
 const PACKS = {
-  crm: { dir: path.join(__dirname, 'demo'), folder: 'Contoso CRM Migration (demo)', assistants: ['schedule-analyst', 'budget-controller', 'project-partner'] },
+  crm: { dir: path.join(__dirname, 'demo'), folder: 'Contoso CRM Migration (demo)', assistants: ['schedule-analyst', 'ask-the-plan', 'budget-controller', 'project-partner'] },
   aidlc: { dir: path.join(__dirname, 'samples', 'aidlc'), folder: 'Online Permit Renewal (AIDLC sample)', assistants: ['requirements-refiner', 'functional-designer', 'technical-designer', 'story-writer', 'traceability-analyst'] },
 };
 function copyMissing(from, to) {
