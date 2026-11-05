@@ -124,7 +124,7 @@ Start Lumen.cmd      Double-click launcher for Windows
 
 ## The explainer video
 
-[film/make_video.py](film/make_video.py) films a narrated demo of the real app with two personas: Marcus, a business analyst, and Priya, a project manager using the Microsoft Project plan and Excel workbooks. It drives Lumen in Microsoft Edge the way a person would. A cursor moves and clicks, the camera zooms in on what matters, and text is typed key by key. The narration is read by **Kokoro** (`af_heart`), running locally the same way as in IRISIdeas, over click and keyboard sounds and a soft generated music bed.
+[film/make_video.py](film/make_video.py) films a narrated demo of the real app with three personas: Marcus, a business analyst (user stories, reply actions, Save as Word, building an assistant); Priya, a project manager using the Microsoft Project plan and Excel workbooks (health check, scheduled checks, See changes, Gantt tracker); and Dana, a delivery lead (traceability check and a guided lifecycle run with an approval gate). It drives Lumen in Microsoft Edge the way a person would. A cursor moves and clicks, the camera zooms in on what matters, and text is typed key by key. The narration is read by **Kokoro** (`af_heart`), running locally the same way as in IRISIdeas, over click and keyboard sounds and a soft generated music bed.
 
 ```bash
 .venv/Scripts/python.exe film/make_video.py --record
@@ -136,6 +136,8 @@ Start Lumen.cmd      Double-click launcher for Windows
 
 1. `--record` runs every conversation once against the real AI engine and saves the streamed answers and any files created to `film/recordings/`.
 2. Without flags, the script films the app while Lumen **replays** that recording at a brisk pace (`providers/recorder.js`, active only when `LUMEN_REPLAY` is set). Every answer on screen is a genuine AI answer, without the waiting.
-3. The output is `film/out/lumen-explainer.mp4` (1080p, 30 fps, about −14 LUFS), plus captions (`.srt`) and a thumbnail.
+3. The output is `film/out/lumen-explainer-v2.mp4` (1080p, 30 fps, about −14 LUFS), plus captions (`.srt`) and a thumbnail. Any stretch where the screen froze for more than 3 seconds without narration is trimmed in the edit.
+
+If a recording pass fails partway, `--record --resume` replays what was already recorded and only sends the missing requests to the engine. `--refinish` re-runs just the edit and encode from the last film's kept frames (`--keep-frames`).
 
 Setup: `pip install playwright imageio-ffmpeg kokoro-onnx soundfile numpy` into `.venv`, then copy `kokoro-v1.0.onnx` and `voices-v1.0.bin` into `.venv/kokoro`. Narration lines live at the top of `make_video.py` and are re-voiced only when they change.
