@@ -104,7 +104,7 @@
     "name": "Plan → Excel tracker",
     "emoji": "📗",
     "category": "Project plans",
-    "description": "Turn an MS Project plan into a colour-coded Excel tracker with a weekly Gantt chart.",
+    "description": "Turn an MS Project plan into a colour-coded Excel tracker with a weekly Gantt chart that shows slips against the baseline.",
     "assistantId": "schedule-analyst",
     "builtin": true,
     "access": "edit",
@@ -114,9 +114,16 @@
         "label": "Project plan",
         "type": "file",
         "accept": ".mpp,.xml"
+      },
+      {
+        "key": "previous",
+        "label": "Earlier version of the plan, to show week-over-week change",
+        "type": "file",
+        "accept": ".mpp,.xml",
+        "optional": true
       }
     ],
-    "template": "Export the project plan {{plan}} to an Excel tracker with a Gantt chart. Name it after the project, ending in ' - Tracker.xlsx'. Then summarise what is in each sheet."
+    "template": "Export the project plan {{plan}} to an Excel tracker with a variance Gantt chart. Earlier version to compare against: {{previous}} (if one is given, pass it as history; otherwise leave history out and Lumen compares with the versions it saved earlier). Name it after the project, ending in ' - Tracker.xlsx'. Then summarise what is in each sheet, and lead with the schedule variance: how many working days the forecast finish is behind the baseline, which milestones have slipped the most, and (if the tracker was compared with an earlier version) which milestones moved since then."
   },
   {
     "id": "resource-load",

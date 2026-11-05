@@ -4,7 +4,7 @@ title: Microsoft Project plans
 emoji: 📅
 description: Read, analyze and update Microsoft Project plans (.mpp and Project XML) — schedule health, critical path, slippage, resource over-allocation, and progress updates.
 extensions: .mpp, .xml
-readTools: list_office_files, read_project_plan, analyze_project_plan
+readTools: list_office_files, read_project_plan, analyze_project_plan, query_plan
 writeTools: update_project_plan, project_plan_to_spreadsheet
 ---
 
@@ -16,9 +16,10 @@ You have tools for Microsoft Project plans in the user's project folder. **Alway
 |---|---|
 | `list_office_files` | Find plans and workbooks when the user doesn't name a file |
 | `analyze_project_plan` | Health checks, status reports, "what's late / slipping / at risk", critical path, over-allocation. **Start here for any question about schedule health.** |
+| `query_plan` | Questions about **part** of a plan: a workstream (`under`), a person (`owner`), late/behind tasks, the critical path, slips over N days, a date window, what a task depends on or what depends on it (`relatedTo`), and what changed since last week (`changedSince: "last"`). Returns exact rows; combine filters rather than reading the whole plan. Report the filters it applied, and any warnings |
 | `read_project_plan` | Full task list (IDs, WBS, dates, % complete, predecessors, resources) when you need details |
 | `update_project_plan` | Record progress (% complete, dates, durations, notes) and move the status date. Saves a new "(updated)" copy, so the original is never overwritten |
-| `project_plan_to_spreadsheet` | Produce an Excel tracker with a colour-coded task list and a weekly Gantt chart |
+| `project_plan_to_spreadsheet` | Produce an Excel tracker with a colour-coded task list, a weekly **variance Gantt** (baseline under each bar, slip weeks hatched red, variance in working days, status-date line) and a Milestone variance sheet. Lumen keeps a dated version of the plan (in .lumen/plan-history) each time a tracker is built or progress is recorded, and the Milestone variance sheet compares against those automatically. Pass `history` only to compare with specific files |
 
 ## How to report on a plan
 - Lead with the answer: an overall **RAG status** with a one-line reason, then the 3–5 things a project manager must act on.

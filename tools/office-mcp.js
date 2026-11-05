@@ -114,6 +114,34 @@ const TOOLS = [
     run: (a) => project.analyze(resolveIn(a.path), a.statusDate),
   },
   {
+    name: 'query_plan',
+    description: 'Answer a question about a Microsoft Project plan with exact task rows, calculated by code. Combine any filters (AND): a WBS branch or summary task ("under"), a person ("owner"), words in the name or notes, status (late, behind, not_started, in_progress, complete, should_have_started), critical path only, milestones only, slipped more than N working days vs. baseline, a date window (tasks active, starting or finishing in it), what a task depends on or what depends on it (relatedTo, any number of links away), and what changed since the last saved version or a date. Use it for questions like "what\'s late in Testing?", "what does Go-live depend on that is at risk?", "what is Priya doing in the next 2 weeks?" or "what moved since last week?". Prefer it over read_project_plan for questions about part of a plan.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'The project plan' },
+        under: { type: 'string', description: 'WBS number (e.g. "5") or summary task name; includes everything beneath it' },
+        owner: { type: 'string', description: 'Part of a resource name' },
+        text: { type: 'string', description: 'Words in the task name or notes' },
+        status: { type: 'array', items: { type: 'string', enum: ['late', 'behind', 'not_started', 'in_progress', 'complete', 'should_have_started'] } },
+        critical: { type: 'boolean', description: 'Only incomplete tasks with zero float' },
+        milestones: { type: 'boolean' },
+        slippedMoreThan: { type: 'number', description: 'Working days later than baseline finish' },
+        from: { type: 'string', description: 'YYYY-MM-DD' },
+        to: { type: 'string', description: 'YYYY-MM-DD' },
+        dateMode: { type: 'string', enum: ['active', 'starting', 'finishing'], description: 'How from/to apply (default active)' },
+        relatedTo: { type: 'object', properties: { task: { type: 'string', description: 'Task ID or name' }, direction: { type: 'string', enum: ['upstream', 'downstream'], description: 'upstream = what it depends on; downstream = what depends on it' }, depth: { type: 'number', description: 'Max links away (default all)' } }, required: ['task'] },
+        changedSince: { type: 'string', description: '"last" for the previous saved version, or YYYY-MM-DD for the version saved on or before that date' },
+        includeSummaries: { type: 'boolean', description: 'Include summary rows (default false)' },
+        statusDate: { type: 'string', description: 'YYYY-MM-DD; defaults to the plan\'s status date' },
+        sort: { type: 'string', enum: ['id', 'start', 'finish', 'slip', 'float'] },
+        limit: { type: 'number', description: 'Max rows (default 50)' },
+      },
+      required: ['path'],
+    },
+    run: (a) => project.queryPlan(resolveIn(a.path), a, ROOT),
+  },
+  {
     name: 'update_project_plan',
     description: 'Update tasks in a Microsoft Project plan (percent complete, start, finish, duration, name, notes) and optionally the status date. Identify tasks by taskId (the ID column) or exact taskName. Never overwrites the original: saves "<name> (updated).xml" (or saveAs). Microsoft Project recalculates dependent dates when the file is opened.',
     inputSchema: {
@@ -130,9 +158,9 @@ const TOOLS = [
   },
   {
     name: 'project_plan_to_spreadsheet',
-    description: 'Export a Microsoft Project plan to a formatted Excel tracker with Summary, Tasks (status colour-coded), a weekly Gantt chart, and Resources sheets.',
-    inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'The project plan' }, output: { type: 'string', description: 'Output .xlsx path' } }, required: ['path', 'output'] },
-    run: write((a) => excel.projectToWorkbook(resolveIn(a.path), resolveIn(a.output, { mustExist: false }))),
+    description: 'Export a Microsoft Project plan to a formatted Excel tracker: Summary, Tasks (status colour-coded), a weekly variance Gantt (baseline drawn under each bar, weeks past the baseline finish hatched red, a variance column, a status-date line, baseline vs. forecast milestones), Milestone variance, and Resources. Lumen keeps a dated version of the plan each time a tracker is built or progress is recorded, and compares against the most recent earlier versions automatically; pass history only to compare against specific files.',
+    inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'The project plan' }, output: { type: 'string', description: 'Output .xlsx path' }, history: { type: 'array', items: { type: 'string' }, description: "Optional earlier versions of the same plan (.mpp/.xml), e.g. last week's copy, for the milestone slip trend" } }, required: ['path', 'output'] },
+    run: write((a) => excel.projectToWorkbook(resolveIn(a.path), resolveIn(a.output, { mustExist: false }), { history: (a.history || []).map((h) => resolveIn(h)), historyRoot: ROOT })),
   },
 ];
 
