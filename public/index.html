@@ -7,7 +7,8 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Segoe UI comes with Windows; Inter is only the fallback on other systems. -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/app.css">
   <script>
     // Apply theme before paint to avoid a flash.
@@ -16,25 +17,32 @@
 </head>
 <body>
   <div class="app" id="app">
+    <!-- App rail: the same top-level places as Microsoft 365 Copilot (Chat, Agents, Prompts, Notebook). -->
+    <nav class="rail" aria-label="Main">
+      <button class="rail-brand" data-nav="home" title="Lumen home">
+        <svg viewBox="0 0 32 32"><defs><linearGradient id="bg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7c5cff"/><stop offset=".55" stop-color="#c757d6"/><stop offset="1" stop-color="#ff8a5b"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#bg1)"/><path d="M16 6.5l2.2 6.3 6.3 2.2-6.3 2.2L16 23.5l-2.2-6.3L7.5 15l6.3-2.2z" fill="#fff"/></svg>
+      </button>
+      <button class="rail-item nav-item" data-nav="home" title="Chat"><span data-icon="chat"></span><span class="rail-label">Chat</span></button>
+      <button class="rail-item nav-item" data-nav="assistants" title="Agents"><span data-icon="users"></span><span class="rail-label">Agents</span></button>
+      <button class="rail-item nav-item" data-nav="recipes" title="Prompt gallery"><span data-icon="wand"></span><span class="rail-label">Prompts</span></button>
+      <button class="rail-item nav-item" id="filesNavBtn" title="Notebook: your project folder"><span data-icon="book"></span><span class="rail-label">Notebook</span></button>
+      <button class="rail-item nav-item" data-nav="runs" title="Lifecycle runs (Lumen only)"><span data-icon="branch"></span><span class="rail-label">Lifecycle</span></button>
+      <button class="rail-item nav-item" data-nav="insights" title="Insights"><span data-icon="chart"></span><span class="rail-label">Insights</span></button>
+      <span class="rail-spacer"></span>
+      <button class="rail-item" id="collapseBtn" title="Show or hide chats"><span data-icon="sidebar"></span></button>
+    </nav>
+
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-top">
-        <button class="brand" data-nav="home" title="Home">
-          <span class="brand-mark"><svg viewBox="0 0 32 32"><defs><linearGradient id="bg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7c5cff"/><stop offset=".55" stop-color="#c757d6"/><stop offset="1" stop-color="#ff8a5b"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#bg1)"/><path d="M16 6.5l2.2 6.3 6.3 2.2-6.3 2.2L16 23.5l-2.2-6.3L7.5 15l6.3-2.2z" fill="#fff"/></svg></span>
-          <span class="brand-name">Lumen</span>
-        </button>
-        <button class="icon-btn collapse-btn" id="collapseBtn" title="Hide sidebar" data-icon="sidebar"></button>
+        <button class="brand" data-nav="home" title="Home"><span class="brand-name">Lumen</span></button>
       </div>
 
-      <button class="new-chat" id="newChatBtn"><span data-icon="plus"></span>New chat <kbd>Ctrl K</kbd></button>
+      <button class="new-chat" id="newChatBtn"><span data-icon="edit"></span>New chat <kbd>Ctrl K</kbd></button>
 
-      <nav class="nav">
-        <button class="nav-item" data-nav="assistants"><span data-icon="users"></span>Assistants</button>
-        <button class="nav-item" data-nav="recipes"><span data-icon="wand"></span>Quick starts</button>
-        <button class="nav-item" data-nav="runs"><span data-icon="list"></span>Lifecycle runs</button>
-        <button class="nav-item" data-nav="insights"><span data-icon="chart"></span>Insights</button>
-        <button class="nav-item" id="filesNavBtn"><span data-icon="folder"></span>Project folder</button>
-      </nav>
+      <div class="side-label"><span>Agents</span><a data-nav="assistants">All agents</a></div>
+      <div class="agent-list" id="agentList"></div>
 
+      <div class="side-label"><span>Chats</span></div>
       <div class="search-wrap">
         <span data-icon="search"></span>
         <input id="searchInput" placeholder="Search chats" autocomplete="off">
@@ -55,14 +63,13 @@
     </aside>
 
     <main class="main" id="main">
-      <button class="icon-btn expand-btn" id="expandBtn" title="Show sidebar" data-icon="sidebar"></button>
       <div class="view" id="view"></div>
     </main>
 
     <aside class="drawer" id="filesDrawer" aria-hidden="true">
       <div class="drawer-head">
         <div>
-          <div class="drawer-title">Project folder</div>
+          <div class="drawer-title">Notebook</div>
           <div class="drawer-sub" id="drawerPath"></div>
         </div>
         <button class="icon-btn" data-close-drawer data-icon="x"></button>
@@ -71,13 +78,14 @@
         <button class="btn soft sm" id="drawerOpenFolder"><span data-icon="external"></span>Open in Explorer</button>
         <button class="btn soft sm" id="drawerChangeFolder"><span data-icon="folder"></span>Change folder</button>
       </div>
+      <div class="drawer-tip" id="drawerTip"></div>
       <div class="drawer-body" id="drawerFiles"></div>
     </aside>
   </div>
 
   <div class="modal-root" id="modalRoot"></div>
   <div class="toasts" id="toasts"></div>
-  <div class="drop-overlay" id="dropOverlay"><div class="drop-card"><span data-icon="upload"></span><div>Drop files to attach</div><small>They'll be saved to your project folder</small></div></div>
+  <div class="drop-overlay" id="dropOverlay"><div class="drop-card"><span data-icon="upload"></span><div>Drop files to attach</div><small>They'll be saved to your notebook (project folder)</small></div></div>
 
   <script src="/vendor/marked.js"></script>
   <script src="/vendor/purify.js"></script>

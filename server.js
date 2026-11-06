@@ -11,6 +11,7 @@ const scheduler = require('./lib/scheduler');
 const registry = require('./providers');
 const skills = require('./lib/skills');
 const mdExport = require('./tools/md-export');
+const copilotExport = require('./lib/copilot-export');
 const excel = require('./tools/excel');
 const project = require('./tools/project');
 
@@ -37,8 +38,17 @@ const readBody = (req, limit = 25 * 1024 * 1024) => new Promise((resolve, reject
 });
 const json = async (req) => { const b = await readBody(req); return b.length ? JSON.parse(b.toString('utf8')) : {}; };
 
+// Prefer the work OneDrive, so files people make in Lumen are already where Microsoft 365 Copilot can find them.
+function oneDriveRoot() {
+  for (const k of ['OneDriveCommercial', 'OneDrive']) {
+    const v = process.env[k];
+    try { if (v && fs.statSync(v).isDirectory()) return v; } catch {}
+  }
+  return null;
+}
 function defaultWorkspace() {
-  const dir = path.join(os.homedir(), 'Documents', 'Lumen');
+  const od = oneDriveRoot();
+  const dir = od ? path.join(od, 'Lumen') : path.join(os.homedir(), 'Documents', 'Lumen');
   fs.mkdirSync(dir, { recursive: true });
   return dir;
 }
@@ -618,6 +628,18 @@ async function api(req, res, url) {
     if (resource === 'assistants' && action === 'export' && m === 'POST') {
       const a = col.get(rid); if (!a) return send(res, 404, { error: 'Not found' });
       return send(res, 200, exportAssistant(a, (await json(req)).workspace));
+    }
+    // Export to Microsoft 365 Copilot: one agent (/assistants/:id/export-copilot), all agents (/assistants/export-copilot)
+    // or every prompt (/recipes/export-copilot). Files land in "<project folder>/Microsoft 365 Copilot".
+    if (m === 'POST' && (rid === 'export-copilot' || action === 'export-copilot')) {
+      const body = await json(req);
+      const ws = resolveWorkspace(body.workspace);
+      try {
+        if (resource === 'recipes') return send(res, 200, copilotExport.exportPrompts(col.all(), store.assistants.all(), ws));
+        const list = rid === 'export-copilot' ? col.all().filter((a) => a.id !== 'lumen') : [col.get(rid)].filter(Boolean);
+        if (!list.length) return send(res, 404, { error: 'Not found' });
+        return send(res, 200, await copilotExport.exportAgents(list, ws, skills.all()));
+      } catch (e) { return send(res, 500, { error: `Couldn't export: ${e.message}` }); }
     }
     if (m === 'POST' && !rid) { const item = await json(req); delete item.builtin; return send(res, 200, col.upsert(item)); }
     if (m === 'PUT' && rid) return send(res, 200, col.upsert({ ...(await json(req)), id: rid }));

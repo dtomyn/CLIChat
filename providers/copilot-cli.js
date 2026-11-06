@@ -93,7 +93,7 @@ module.exports = {
   vendor: 'GitHub · Copilot CLI',
   description: 'Uses the GitHub Copilot CLI (`copilot` / `gh copilot`). Requires a Copilot subscription.',
   models: [
-    { id: 'default', label: 'Copilot default', hint: 'Whatever your Copilot plan selects' },
+    { id: 'default', label: 'Default', hint: 'Whatever your Copilot plan selects' },
     { id: 'auto', label: 'Auto', hint: 'Copilot picks the best model for each request' },
   ],
   supportsResume: true,

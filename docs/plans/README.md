@@ -11,6 +11,7 @@ Thirteen enhancements, grouped into seven plans. Each plan is sized for one work
 | 05 | [Chat context and file changes](05-chat-context-and-file-changes.md) | Pin files to a chat, show what changed in the folder | M | none |
 | 06 | [Guided delivery lifecycle](06-guided-lifecycle-pipeline.md) | Run the AIDLC stages as a pipeline with approval steps | L | 02 helps (it adds `forkConversation`) |
 | 07 | [Scheduled checks](07-scheduled-checks.md) | Run quick starts on a schedule | L | 04 helps (it adds unread state) |
+| 08 | [Azure DevOps wiki and work items](08-azure-devops.md) | Search, read, create and edit work items and wiki pages | L | 06 for phase 4 |
 
 Suggested order: 01 → 02 → 03 → 04 → 05 → 06 → 07. Plans 01 to 05 don't depend on each other.
 
