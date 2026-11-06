@@ -51,10 +51,11 @@ module.exports = {
   vendor: 'Anthropic · Claude Code CLI',
   description: 'Uses the Claude Code command-line tool you are already signed in to.',
   models: [
-    { id: 'default', label: 'Balanced', hint: 'Your Claude Code default' },
-    { id: 'opus', label: 'Most capable', hint: 'Opus — deep thinking, slower' },
-    { id: 'sonnet', label: 'Smart & fast', hint: 'Sonnet — great all-rounder' },
-    { id: 'haiku', label: 'Quickest', hint: 'Haiku — instant answers' },
+    // Labels follow Microsoft 365 Copilot's response modes so people learn one vocabulary.
+    { id: 'default', label: 'Auto', hint: 'Your Claude Code default model' },
+    { id: 'haiku', label: 'Quick response', hint: 'Haiku — fast answers for simple asks' },
+    { id: 'sonnet', label: 'Balanced', hint: 'Sonnet — a great all-rounder' },
+    { id: 'opus', label: 'Think deeper', hint: 'Opus — careful reasoning, slower' },
   ],
   supportsResume: true,
 
