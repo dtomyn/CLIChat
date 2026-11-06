@@ -32,7 +32,8 @@ function hasMsProject() {
 function runProjectCom(script) {
   execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], { stdio: 'pipe', timeout: 180000, windowsHide: true });
 }
-const psq = (s) => `'${String(s).replace(/'/g, "''")}'`;
+// PowerShell treats typographic quotes (‘ ’ ‚ ‛) as single quotes too, so double all of them.
+const psq = (s) => `'${String(s).replace(/['‘’‚‛]/g, (q) => q + q)}'`;
 function mppToXml(mpp) {
   if (!hasMsProject()) {
     const e = new Error(`"${path.basename(mpp)}" is a binary Microsoft Project file, and Microsoft Project is not installed on this computer. Open it in Project and choose File › Save As › "XML Format (*.xml)", then use the .xml file.`);
@@ -214,17 +215,21 @@ const xmlEsc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').rep
 function setField(block, tag, value) {
   const re = new RegExp(`<${tag}>[\\s\\S]*?</${tag}>|<${tag}\\s*/>`);
   const el = value === null ? '' : `<${tag}>${xmlEsc(value)}</${tag}>`;
-  if (re.test(block)) return block.replace(re, el);
+  if (re.test(block)) return block.replace(re, () => el); // a function, so "$&" in notes stays literal
   if (value === null) return block;
   const idx = TASK_ORDER.indexOf(tag);
   for (const later of TASK_ORDER.slice(idx + 1)) {
     const m = new RegExp(`\\n?([ \\t]*)<${later}[\\s>/]`).exec(block);
     if (m) return block.slice(0, m.index) + `\n${m[1]}${el}` + block.slice(m.index);
   }
-  return block.replace(/(\s*)<\/Task>\s*$/, `$1  ${el}$1</Task>`);
+  return block.replace(/(\s*)<\/Task>\s*$/, (_, ws) => `${ws}  ${el}${ws}</Task>`);
 }
 
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
 function updatePlan(file, { updates = [], statusDate, saveAs } = {}, workspace) {
+  for (const d of [statusDate, ...updates.flatMap((u) => [u.start, u.finish])]) {
+    if (d && !DATE.test(String(d))) throw Object.assign(new Error(`"${d}" isn't a date. Use YYYY-MM-DD.`), { friendly: true });
+  }
   const p = load(file);
   let raw = p.raw;
   const changed = [];
@@ -248,7 +253,7 @@ function updatePlan(file, { updates = [], statusDate, saveAs } = {}, workspace) 
     if (u.durationDays != null) { block = setField(block, 'Duration', pt(+u.durationDays * p.hoursPerDay)); fields.push(`duration=${u.durationDays}d`); }
     if (u.name) { block = setField(block, 'Name', u.name); fields.push(`name=${u.name}`); }
     if (u.notes != null) { block = setField(block, 'Notes', u.notes); fields.push('notes'); }
-    raw = raw.replace(m[0], block);
+    raw = raw.replace(m[0], () => block);
     changed.push({ id: t.id, task: t.name, changed: fields.join(', ') });
   }
   if (statusDate) raw = /<StatusDate>/.test(raw) ? raw.replace(/<StatusDate>[^<]*<\/StatusDate>/, `<StatusDate>${statusDate}T17:00:00</StatusDate>`) : raw.replace(/(<\/FinishDate>)/, `$1\n  <StatusDate>${statusDate}T17:00:00</StatusDate>`);

@@ -62,6 +62,10 @@ function resolveWorkspace(ws) {
   return store.settings.get().workspace && fs.existsSync(store.settings.get().workspace) ? store.settings.get().workspace : defaultWorkspace();
 }
 const inside = (child, parent) => { const rel = path.relative(parent, child); return rel && !rel.startsWith('..') && !path.isAbsolute(rel); };
+// Access levels the API accepts. The providers also know "full" (shell commands), which is never reachable from the UI.
+const ACCESS_LEVELS = ['chat', 'read', 'edit'];
+const cleanAccess = (v, fallback = 'read') => (ACCESS_LEVELS.includes(v) ? v : fallback);
+const isDir = (p) => { try { return typeof p === 'string' && !!p && fs.statSync(p).isDirectory(); } catch { return false; } };
 function workspaceFile(file, workspace) {
   if (typeof file !== 'string' || !file) return false;
   try {
@@ -140,18 +144,21 @@ async function runTurn(body, out = () => {}) {
     const idx = conv.messages.findIndex((x) => x.id === body.truncateFrom);
     if (idx >= 0) { conv.messages = conv.messages.slice(0, idx); conv.sessions = {}; }
   }
-  if (!conv) conv = store.conversations.create({ assistantId: body.assistantId || 'lumen', workspace: resolveWorkspace(body.workspace), access: body.access || settings.access, pinned_files: Array.isArray(body.pinned_files) ? body.pinned_files.filter((p) => typeof p === 'string') : [] });
+  if (!conv) conv = store.conversations.create({ assistantId: typeof body.assistantId === 'string' && body.assistantId ? body.assistantId : 'lumen', workspace: resolveWorkspace(body.workspace), access: cleanAccess(body.access, cleanAccess(settings.access)), pinned_files: Array.isArray(body.pinned_files) ? body.pinned_files.filter((p) => typeof p === 'string') : [] });
   if (running.has(conv.id)) throw new Error('Wait for the current reply to finish first.');
-  if (body.access) conv.access = body.access;
+  if (body.access) conv.access = cleanAccess(body.access, cleanAccess(conv.access));
   if (body.workspace) conv.workspace = resolveWorkspace(body.workspace);
   const assistant = store.assistants.get(conv.assistantId) || store.assistants.get('lumen');
+  // Only the engine's own response modes reach its command line.
+  const requestedModel = body.model || settings.model;
+  const model = (provider.models || []).some((x) => x.id === requestedModel) ? requestedModel : 'default';
 
   let message = String(body.message || '').trim();
-  const attachments = (body.attachments || []).filter((p) => fs.existsSync(p));
+  const attachments = (Array.isArray(body.attachments) ? body.attachments : []).filter((p) => { try { return typeof p === 'string' && fs.statSync(p).isFile(); } catch { return false; } });
   const rel = (p) => { const r = path.relative(conv.workspace, p); return r.startsWith('..') || path.isAbsolute(r) ? p : r; };
   if (attachments.length) message += `\n\n[Attached files: ${attachments.map((p) => `"${rel(p)}"`).join(', ')}]`;
   const pinned = (conv.pinned_files || []).filter((p) => workspaceFile(p, conv.workspace));
-  let access = conv.access || 'read';
+  let access = cleanAccess(conv.access);
   if ((attachments.length || pinned.length) && access === 'chat') access = 'read';
   const activeSkills = skills.resolve([...(assistant?.skills || []), ...(conv.skills || [])], [...attachments, ...pinned]);
   const skillCtx = { ado: settings.ado, dataDir: store.DATA, conversationId: conv.id, scheduled: !!conv.scheduled };
@@ -196,7 +203,7 @@ async function runTurn(body, out = () => {}) {
   const started = Date.now();
   try {
     await provider.run({
-      prompt, sessionId, cwd: conv.workspace, model: body.model || settings.model, access, signal: ac.signal, tools,
+      prompt, sessionId, cwd: conv.workspace, model, access, signal: ac.signal, tools,
       systemPrompt: [buildSystemPrompt(assistant, settings, activeSkills, access, skillCtx), pinned.length ? `Key files for this chat (read them when relevant): ${pinned.map((p) => JSON.stringify(rel(path.resolve(conv.workspace, p)))).join(', ')}` : ''].filter(Boolean).join('\n\n'),
     }, emit);
   } catch (e) { emit({ type: 'error', message: e.message }); }
@@ -204,7 +211,7 @@ async function runTurn(body, out = () => {}) {
   running.delete(conv.id);
   if (ac.signal.aborted) asstMsg.stopped = true;
   asstMsg.usage = reported
-    ? { durationMs: reported.durationMs ?? Date.now() - started, costUsd: reported.costUsd, model: modelLabel(provider, body.model || settings.model) }
+    ? { durationMs: reported.durationMs ?? Date.now() - started, costUsd: reported.costUsd, model: modelLabel(provider, model) }
     : { durationMs: Date.now() - started };
   const fresh = store.conversations.get(conv.id) || conv;
   fresh.sessions = conv.sessions; fresh.access = conv.access; fresh.workspace = conv.workspace;
@@ -449,6 +456,7 @@ function browseFolder(dir) {
   return { path: full, parent: parent === full ? '' : parent, places, dirs };
 }
 
+const RUNNABLE = /\.(exe|com|bat|cmd|ps1|psm1|vbs|vbe|js|jse|jar|wsf|wsh|msi|msp|scr|pif|cpl|hta|lnk|url|reg|scf|inf|application|appref-ms|sh|command|app)$/i;
 function openPath(p) {
   if (process.platform === 'win32') spawn('explorer.exe', [p], { detached: true, stdio: 'ignore' }).unref();
   else spawn(process.platform === 'darwin' ? 'open' : 'xdg-open', [p], { detached: true, stdio: 'ignore' }).unref();
@@ -645,7 +653,17 @@ async function api(req, res, url) {
     return send(res, 200, { path: target, pack, files: fs.readdirSync(target).filter((f) => !f.startsWith('.')) });
   }
   if (resource === 'reset' && m === 'POST') { store.assistants.reset(); store.recipes.reset(); return send(res, 200, { ok: true }); }
-  if (resource === 'settings' && m === 'PUT') return send(res, 200, store.settings.set(await json(req)));
+  if (resource === 'settings' && m === 'PUT') {
+    const patch = await json(req);
+    if (!patch || typeof patch !== 'object' || Array.isArray(patch)) return send(res, 400, { error: 'Settings must be an object.' });
+    delete patch.ado; delete patch.demoInstalled; // the Azure DevOps connection is validated by /api/connections/ado
+    if ('access' in patch) patch.access = cleanAccess(patch.access);
+    if ('providerId' in patch && !registry.get(patch.providerId)) return send(res, 400, { error: `Unknown provider ${patch.providerId}` });
+    if ('model' in patch && typeof patch.model !== 'string') return send(res, 400, { error: 'Choose a response mode.' });
+    if ('userName' in patch) patch.userName = String(patch.userName || '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 80);
+    if ('workspace' in patch && patch.workspace && !isDir(patch.workspace)) return send(res, 400, { error: 'Choose an existing project folder.' });
+    return send(res, 200, store.settings.set(patch));
+  }
 
   // Azure DevOps connection (plan 08). Settings hold no secret; the access token lives in lib/secrets.js.
   if (resource === 'connections' && rid === 'ado') {
@@ -765,8 +783,16 @@ async function api(req, res, url) {
         return send(res, 200, await copilotExport.exportAgents(list, ws, skills.all()));
       } catch (e) { return send(res, 500, { error: `Couldn't export: ${e.message}` }); }
     }
-    if (m === 'POST' && !rid) { const item = await json(req); delete item.builtin; return send(res, 200, col.upsert(item)); }
-    if (m === 'PUT' && rid) return send(res, 200, col.upsert({ ...(await json(req)), id: rid }));
+    // Ids and colours end up in HTML attributes and file names, so keep them to simple characters.
+    const cleanItem = (item) => {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) return null;
+      if ('id' in item && !/^[A-Za-z0-9_-]{1,80}$/.test(String(item.id))) return null;
+      if ('color' in item && item.color != null && !/^[A-Za-z0-9-]{0,30}$/.test(String(item.color))) delete item.color;
+      if ('access' in item && item.access != null) item.access = cleanAccess(item.access);
+      return item;
+    };
+    if (m === 'POST' && !rid) { const item = cleanItem(await json(req)); if (!item) return send(res, 400, { error: 'Invalid item.' }); delete item.builtin; return send(res, 200, col.upsert(item)); }
+    if (m === 'PUT' && rid) { const item = cleanItem({ ...(await json(req)), id: rid }); if (!item) return send(res, 400, { error: 'Invalid item.' }); return send(res, 200, col.upsert(item)); }
     if (m === 'DELETE' && rid) { col.remove(rid); return send(res, 200, { ok: true }); }
   }
 
@@ -797,7 +823,7 @@ async function api(req, res, url) {
       store.conversations.save(c);
       return send(res, 200, { feedback: msg.feedback || null });
     }
-    if (m === 'PATCH' && rid) { const c = store.conversations.get(rid); if (!c) return send(res, 404, {}); const p = await json(req); if ('pinned_files' in p && (!Array.isArray(p.pinned_files) || p.pinned_files.some((x) => typeof x !== 'string'))) return send(res, 400, { error: 'Pinned files must be a list of paths.' }); if ('unread' in p && typeof p.unread !== 'boolean') return send(res, 400, { error: 'Unread must be true or false.' }); for (const k of ['title', 'pinned', 'pinned_files', 'access', 'workspace', 'unread']) if (k in p) c[k] = p[k]; return send(res, 200, store.conversations.save(c)); }
+    if (m === 'PATCH' && rid) { const c = store.conversations.get(rid); if (!c) return send(res, 404, {}); const p = await json(req); if ('pinned_files' in p && (!Array.isArray(p.pinned_files) || p.pinned_files.some((x) => typeof x !== 'string'))) return send(res, 400, { error: 'Pinned files must be a list of paths.' }); if ('unread' in p && typeof p.unread !== 'boolean') return send(res, 400, { error: 'Unread must be true or false.' }); if ('access' in p) p.access = cleanAccess(p.access, cleanAccess(c.access)); if ('workspace' in p && !isDir(p.workspace)) return send(res, 400, { error: 'Choose an existing project folder.' }); if ('title' in p) p.title = String(p.title ?? '').slice(0, 200); for (const k of ['title', 'pinned', 'pinned_files', 'access', 'workspace', 'unread']) if (k in p) c[k] = p[k]; return send(res, 200, store.conversations.save(c)); }
     if (m === 'DELETE' && rid) { store.conversations.remove(rid); changesets.removeConversation(rid); return send(res, 200, { ok: true }); }
   }
 
@@ -830,7 +856,8 @@ async function api(req, res, url) {
 
   if (resource === 'upload' && m === 'POST') {
     const ws = resolveWorkspace(url.searchParams.get('workspace'));
-    const name = path.basename(decodeURIComponent(url.searchParams.get('name') || 'file')).replace(/[<>:"/\\|?*]/g, '_');
+    // searchParams is already decoded; decoding again breaks names such as "100% plan.xlsx".
+    const name = path.basename(url.searchParams.get('name') || 'file').replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_').replace(/[. ]+$/, '').slice(0, 200) || 'file';
     const dir = path.join(ws, 'Attachments');
     fs.mkdirSync(dir, { recursive: true });
     let target = path.join(dir, name);
@@ -845,12 +872,24 @@ async function api(req, res, url) {
     if (rid === 'mkdir' && m === 'POST') {
       const { parent, name } = await json(req);
       const clean = String(name || '').trim().replace(/[<>:"/\\|?*]/g, '').replace(/[. ]+$/, '');
-      if (!clean || !parent || !fs.existsSync(parent)) return send(res, 400, { error: 'Type a name for the new folder.' });
+      if (!clean || clean === '..' || !isDir(parent)) return send(res, 400, { error: 'Type a name for the new folder.' });
       const target = path.join(parent, clean);
       try { fs.mkdirSync(target, { recursive: true }); } catch (e) { return send(res, 400, { error: `Couldn't create the folder: ${e.message}` }); }
       return send(res, 200, { path: target });
     }
-    if (rid === 'open' && m === 'POST') { const { path: p, workspace } = await json(req); const ws = resolveWorkspace(workspace); const target = p && (p === ws || inside(p, ws)) ? p : ws; if (fs.existsSync(target)) openPath(target); return send(res, 200, { ok: true }); }
+    if (rid === 'open' && m === 'POST') {
+      const { path: p, workspace } = await json(req);
+      const ws = resolveWorkspace(workspace);
+      let target = ws;
+      try {
+        const real = fs.realpathSync(path.resolve(ws, String(p || '')));
+        if (real === fs.realpathSync(ws) || inside(real, fs.realpathSync(ws))) target = real;
+      } catch {}
+      // Opening a script or program would run it. The AI can write files here, so show those in their folder instead.
+      if (target !== ws && fs.statSync(target).isFile() && RUNNABLE.test(target)) target = path.dirname(target);
+      if (fs.existsSync(target)) openPath(target);
+      return send(res, 200, { ok: true });
+    }
     if (rid === 'files' && m === 'GET') { const ws = resolveWorkspace(url.searchParams.get('workspace')); const all = url.searchParams.has('all'); const files = listFolder(ws, 0, [], ws, all).sort((a, b) => b.mtime - a.mtime); return send(res, 200, { workspace: ws, files: all ? files : files.slice(0, 60) }); }
     if (rid === 'check' && m === 'POST') { const { path: p } = await json(req); const ok = !!p && fs.existsSync(p) && fs.statSync(p).isDirectory(); return send(res, 200, { ok }); }
   }
@@ -858,15 +897,46 @@ async function api(req, res, url) {
   return send(res, 404, { error: 'Not found' });
 }
 
+// The page's one inline script (theme before paint) is allowed by hash, so no other inline script can run.
+const INLINE_HASHES = (() => {
+  try {
+    const html = fs.readFileSync(path.join(PUBLIC, 'index.html'), 'utf8');
+    return [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((x) => `'sha256-${require('crypto').createHash('sha256').update(x[1]).digest('base64')}'`).join(' ');
+  } catch { return ''; }
+})();
+// External images are blocked: a reply could otherwise leak data by rendering an image from someone else's server.
+const CSP = [
+  "default-src 'self'", `script-src 'self' ${INLINE_HASHES}`.trim(), "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com data:", "img-src 'self' data: blob:", "connect-src 'self'",
+  "object-src 'none'", "base-uri 'none'", "form-action 'self'", "frame-ancestors 'none'",
+].join('; ');
+const SECURITY_HEADERS = { 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer', 'Content-Security-Policy': CSP };
+
+/**
+ * Cross-site request guard. The Host check stops DNS rebinding; the Origin / Sec-Fetch-Site checks stop other web pages
+ * (including other localhost ports) from driving the API with "simple" requests that skip CORS preflight.
+ * Requests without these headers (tests, curl) are not from a browser page and are allowed.
+ */
+function allowedRequest(req) {
+  const host = req.headers.host || '';
+  if (!/^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host)) return false;
+  if (!String(req.url || '').startsWith('/api/')) return true; // static files: following a link to Lumen must still work
+  const origin = req.headers.origin;
+  if (origin && origin !== `http://${host}`) return false;
+  const site = req.headers['sec-fetch-site'];
+  if (site && !['same-origin', 'none'].includes(site)) return false;
+  return true;
+}
+
 const server = http.createServer(async (req, res) => {
+  for (const [k, v] of Object.entries(SECURITY_HEADERS)) res.setHeader(k, v);
+  if (!allowedRequest(req)) { res.writeHead(403); return res.end(); }
   const url = new URL(req.url, `http://${req.headers.host}`);
-  // Basic CSRF/DNS-rebinding guard: only accept requests addressed to localhost.
-  if (!/^(localhost|127\.0\.0\.1)(:\d+)?$/.test(req.headers.host || '')) { res.writeHead(403); return res.end(); }
   try {
     if (url.pathname.startsWith('/api/')) return await api(req, res, url);
     if (VENDOR[url.pathname]) { res.writeHead(200, { 'Content-Type': MIME['.js'] }); return fs.createReadStream(VENDOR[url.pathname]).pipe(res); }
     const file = path.join(PUBLIC, url.pathname === '/' ? 'index.html' : path.normalize(url.pathname));
-    if (!file.startsWith(PUBLIC) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); return res.end('Not found'); }
+    if (!file.startsWith(PUBLIC + path.sep) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); return res.end('Not found'); }
     res.writeHead(200, { 'Content-Type': MIME[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-cache' });
     fs.createReadStream(file).pipe(res);
   } catch (e) {

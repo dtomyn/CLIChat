@@ -18,7 +18,13 @@ function resolveIn(p, { mustExist = true } = {}) {
   if (!p) throw Object.assign(new Error('A file path is required.'), { friendly: true });
   const full = path.resolve(ROOT, String(p).replace(/^["']|["']$/g, ''));
   const rel = path.relative(ROOT, full);
-  if (rel.startsWith('..') || path.isAbsolute(rel)) throw Object.assign(new Error(`"${p}" is outside the project folder (${ROOT}).`), { friendly: true });
+  // A link inside the folder that points outside it counts as outside.
+  let realRel = rel;
+  try {
+    const real = fs.existsSync(full) ? fs.realpathSync(full) : path.join(fs.realpathSync(path.dirname(full)), path.basename(full));
+    realRel = path.relative(fs.realpathSync(ROOT), real);
+  } catch {} // a folder that doesn't exist yet: the lexical check above applies
+  if (rel.startsWith('..') || path.isAbsolute(rel) || realRel.startsWith('..') || path.isAbsolute(realRel)) throw Object.assign(new Error(`"${p}" is outside the project folder (${ROOT}).`), { friendly: true });
   if (mustExist && !fs.existsSync(full)) {
     // Be forgiving: match by file name anywhere in the folder.
     const want = path.basename(full).toLowerCase();
@@ -26,6 +32,14 @@ function resolveIn(p, { mustExist = true } = {}) {
     if (hit) return hit;
     throw Object.assign(new Error(`Can't find "${p}" in the project folder.`), { friendly: true });
   }
+  return full;
+}
+/** A "save as" target, resolved like the tool does (relative to `base`) but confined to the project folder. */
+function outputIn(p, base = ROOT) {
+  if (p == null || p === '') return undefined;
+  const full = path.resolve(base, String(p).replace(/^["']|["']$/g, ''));
+  const rel = path.relative(ROOT, full);
+  if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) throw Object.assign(new Error(`"${p}" is outside the project folder (${ROOT}).`), { friendly: true });
   return full;
 }
 function walk(dir, depth = 0, out = []) {
@@ -99,7 +113,7 @@ const TOOLS = [
       },
       required: ['path'],
     },
-    run: write((a) => excel.update(resolveIn(a.path), a)),
+    run: write((a) => { const file = resolveIn(a.path); return excel.update(file, { ...a, saveAs: outputIn(a.saveAs, path.dirname(file)) }); }),
   },
   {
     name: 'read_project_plan',
@@ -126,7 +140,7 @@ const TOOLS = [
       },
       required: ['path', 'updates'],
     },
-    run: write((a) => project.updatePlan(resolveIn(a.path), a, ROOT)),
+    run: write((a) => project.updatePlan(resolveIn(a.path), { ...a, saveAs: outputIn(a.saveAs) }, ROOT)),
   },
   {
     name: 'project_plan_to_spreadsheet',

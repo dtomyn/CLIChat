@@ -190,7 +190,7 @@ function renderAgentList() {
   const el = $('#agentList'); if (!el) return;
   const ids = pinnedAgentIds();
   const sel = S.view === 'home' ? (S.draft.assistantId || 'lumen') : S.view === 'chat' ? S.current?.assistantId : null;
-  el.innerHTML = ids.length ? ids.map((id) => { const a = assistantById(id); return `<button class="agent-item ${sel === id ? 'active' : ''}" data-agent="${esc(id)}" data-color="${a.color}" title="${esc(a.tagline || a.name)}"><span class="a-badge sm">${esc(a.emoji)}</span><span class="conv-title">${esc(a.name)}</span></button>`; }).join('')
+  el.innerHTML = ids.length ? ids.map((id) => { const a = assistantById(id); return `<button class="agent-item ${sel === id ? 'active' : ''}" data-agent="${esc(id)}" data-color="${esc(a.color)}" title="${esc(a.tagline || a.name)}"><span class="a-badge sm">${esc(a.emoji)}</span><span class="conv-title">${esc(a.name)}</span></button>`; }).join('')
     : '<div class="conv-empty" style="padding:6px 10px;text-align:left">Pin agents here from the Agents page.</div>';
 }
 
@@ -209,13 +209,13 @@ function renderConvList() {
   el.innerHTML = groups.filter(([, items]) => items.length).map(([name, items]) => `
     <div class="conv-group">${name}</div>
     ${items.map((c) => `
-      <div class="conv ${S.current?.id === c.id ? 'active' : ''}" data-cid="${c.id}" title="${esc(c.title)}">
+      <div class="conv ${S.current?.id === c.id ? 'active' : ''}" data-cid="${esc(c.id)}" title="${esc(c.title)}">
         <span class="conv-emoji">${esc(assistantById(c.assistantId).emoji)}</span>
         <span class="conv-title">${esc(c.title)}</span>
         ${c.scheduled ? '<span title="Scheduled chat" aria-label="Scheduled chat">🕘</span>' : ''}
         ${c.unread ? '<i class="unread-dot" title="Unread" aria-label="Unread"></i>' : ''}
         ${S.live.has(c.id) ? '<i class="live-dot"></i>' : ''}
-        <span class="conv-actions"><button data-conv-menu="${c.id}" title="More">${icon('dots')}</button></span>
+        <span class="conv-actions"><button data-conv-menu="${esc(c.id)}" title="More">${icon('dots')}</button></span>
       </div>`).join('')}`).join('');
 }
 
@@ -351,7 +351,7 @@ function composerHTML({ home = false, conv = null } = {}) {
         <textarea id="input" rows="1" placeholder="${esc(placeholder)}">${esc(d.text)}</textarea>
         <div class="composer-row">
           <button class="pill round" id="attachBtn" title="Add content">${icon('plus')}</button>
-          ${home ? `<button class="pill outline" id="assistantPill" data-color="${a.color}"><span class="a-badge sm">${esc(a.emoji)}</span><span class="lbl">${esc(a.name)}</span>${icon('chevron', 'caret')}</button>` : ''}
+          ${home ? `<button class="pill outline" id="assistantPill" data-color="${esc(a.color)}"><span class="a-badge sm">${esc(a.emoji)}</span><span class="lbl">${esc(a.name)}</span>${icon('chevron', 'caret')}</button>` : ''}
           <button class="pill" id="accessPill" title="What Lumen is allowed to do">${ACCESS[access]?.emoji || '👀'} <span class="lbl">${esc(ACCESS[access]?.short || 'Can read files')}</span>${icon('chevron', 'caret')}</button>
           <span class="spacer"></span>
           ${model && p.models.length > 1 ? `<button class="pill" id="modelPill" title="Response mode">${icon('gauge')}<span class="lbl">${esc(model.label)}</span>${icon('chevron', 'caret')}</button>` : ''}
@@ -610,7 +610,7 @@ function renderHome() {
     <div class="home">
       <div class="home-inner">
         <div class="greeting">
-          ${a.id === 'lumen' ? '' : `<span class="a-badge md" data-color="${a.color}">${esc(a.emoji)}</span>`}
+          ${a.id === 'lumen' ? '' : `<span class="a-badge md" data-color="${esc(a.color)}">${esc(a.emoji)}</span>`}
           <h1>${a.id === 'lumen' ? `${greetingWord()}${firstName() ? `, ${esc(firstName())}` : ''}` : esc(a.name)}</h1>
         </div>
         <p class="home-sub">${a.id === 'lumen' ? 'How can I help today?' : esc(a.tagline || '')}</p>
@@ -622,7 +622,7 @@ function renderHome() {
 
         <div class="section-label"><span>Agents</span><a data-go="assistants">See all agents</a></div>
         <div class="assistant-row">
-          ${S.assistants.map((x) => `<button class="a-chip ${x.id === (S.draft.assistantId || 'lumen') ? 'selected' : ''}" data-color="${x.color}" data-pick-assistant="${x.id}" title="${esc(x.tagline || '')}"><span class="a-badge">${esc(x.emoji)}</span>${esc(x.name)}</button>`).join('')}
+          ${S.assistants.map((x) => `<button class="a-chip ${x.id === (S.draft.assistantId || 'lumen') ? 'selected' : ''}" data-color="${esc(x.color)}" data-pick-assistant="${esc(x.id)}" title="${esc(x.tagline || '')}"><span class="a-badge">${esc(x.emoji)}</span>${esc(x.name)}</button>`).join('')}
           <button class="a-chip" data-new-assistant><span class="a-badge" style="background:var(--panel-2)">${icon('plus')}</span>Create an agent</button>
         </div>
 
@@ -703,11 +703,11 @@ function homeClicks(e) {
 
 function recipeCard(r) {
   const a = assistantById(r.assistantId);
-  return `<button class="recipe-card" data-recipe="${r.id}" data-color="${a.color}">
+  return `<button class="recipe-card" data-recipe="${esc(r.id)}" data-color="${esc(a.color)}">
     <span class="recipe-emoji">${esc(r.emoji || '✨')}</span>
     <span class="recipe-name">${esc(r.name)}</span>
     <span class="recipe-desc">${esc(r.description || '')}</span>
-    <span class="recipe-meta"><span class="a-badge sm" data-color="${a.color}" style="width:18px;height:18px;font-size:10px">${esc(a.emoji)}</span>${esc(a.name)}${r.access === 'edit' ? ' · <span class="badge accent">Saves a file</span>' : ''}${needsLocalTools(r) ? ` ${lumenOnlyBadge('This prompt relies on Lumen’s local document tools (saving files, or reading Microsoft Project plans). In Microsoft 365 Copilot you’d do those steps by hand.')}` : ''}</span>
+    <span class="recipe-meta"><span class="a-badge sm" data-color="${esc(a.color)}" style="width:18px;height:18px;font-size:10px">${esc(a.emoji)}</span>${esc(a.name)}${r.access === 'edit' ? ' · <span class="badge accent">Saves a file</span>' : ''}${needsLocalTools(r) ? ` ${lumenOnlyBadge('This prompt relies on Lumen’s local document tools (saving files, or reading Microsoft Project plans). In Microsoft 365 Copilot you’d do those steps by hand.')}` : ''}</span>
   </button>`;
 }
 
@@ -764,7 +764,7 @@ function renderChat() {
   $('#view').innerHTML = `
     <div class="chat">
       <div class="chat-head" id="chatHead">
-        <span class="a-badge md" data-color="${a.color}">${esc(a.emoji)}</span>
+        <span class="a-badge md" data-color="${esc(a.color)}">${esc(a.emoji)}</span>
         <button class="chat-title" id="chatTitle" title="Click to rename">${esc(c.title)}</button>
         <span class="grow"></span>
         <button class="pill outline" id="folderPill" title="${esc(c.workspace || '')}">${icon('folder')}<span class="lbl">${esc(baseName(c.workspace) || 'Project folder')}</span></button>
@@ -807,7 +807,7 @@ function forkedFromHTML(c) {
 }
 
 function emptyChatHTML(a) {
-  return `<div class="chat-empty" style="min-height:50vh"><span class="a-badge lg" data-color="${a.color}">${esc(a.emoji)}</span><h2>${esc(a.name)}</h2><p>${esc(a.tagline || '')}</p></div>`;
+  return `<div class="chat-empty" style="min-height:50vh"><span class="a-badge lg" data-color="${esc(a.color)}">${esc(a.emoji)}</span><h2>${esc(a.name)}</h2><p>${esc(a.tagline || '')}</p></div>`;
 }
 
 function msgHTML(m, c) {
@@ -826,7 +826,7 @@ function msgHTML(m, c) {
   }
   const a = assistantById(c.assistantId);
   const live = [...S.live.values()].some((l) => l.msg === m);
-  return `<div class="msg assistant" data-mid="${m.id}" data-color="${a.color}">
+  return `<div class="msg assistant" data-mid="${m.id}" data-color="${esc(a.color)}">
     <span class="a-badge">${esc(a.emoji)}</span>
     <div class="msg-body">${assistantInner(m, a, live)}</div>
   </div>`;
@@ -925,7 +925,7 @@ function approvalCard(id, m) {
   const diff = d.diff ? `<details class="ap-diff" ${pending ? 'open' : ''}><summary>${d.diff.tooLarge ? 'The page is too large to compare line by line' : `Page changes: <span class="ap-add">+${d.diff.added}</span> <span class="ap-del">−${d.diff.removed}</span>`}</summary>${d.diff.tooLarge ? '' : `<pre>${d.diff.lines.map((l) => `<span class="dl ${l.t === '+' ? 'add' : l.t === '-' ? 'del' : l.t === '…' ? 'gap' : ''}">${esc(l.t === '…' ? `   ⋯ ${l.s}` : `${l.t} ${l.s}`)}</span>`).join('')}</pre>`}</details>` : '';
   const when = d.decidedAt ? `${d.decidedBy ? ` by ${esc(d.decidedBy)}` : ''} · ${esc(timeAgo(d.decidedAt))}` : pending && d.expiresAt ? ` · expires ${esc(new Date(d.expiresAt).toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' }))}` : '';
   const result = d.result && !pending ? `<div class="ap-result ${tone}">${icon(tone === 'ok' ? 'check' : tone === 'bad' ? 'alert' : 'x')}<span>${esc(d.result.message || label)}</span></div>
-    ${(d.result.links || []).length ? `<div class="ap-links">${d.result.links.map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${icon('external')}${esc(l.label)}</a>`).join('')}</div>` : ''}` : '';
+    ${(d.result.links || []).length ? `<div class="ap-links">${d.result.links.map((l) => `<a href="${esc(/^https?:\/\//i.test(String(l.url)) ? l.url : '#')}" target="_blank" rel="noopener noreferrer">${icon('external')}${esc(l.label)}</a>`).join('')}</div>` : ''}` : '';
   return `<div class="approval-card ${esc(d.status)}" data-approval="${esc(id)}">
     <div class="ap-head">${icon(d.kind === 'wiki' ? 'book' : 'board')}<div class="ap-title"><b>${esc(d.title)}</b><small>Azure DevOps${d.project ? ` · ${esc(d.project)}` : ''}</small></div><span class="status-tag ${tone}">${esc(label)}${when}</span></div>
     ${d.reason ? `<div class="ap-reason"><b>Why:</b> ${esc(d.reason)}</div>` : ''}
@@ -1092,7 +1092,7 @@ function setEditing(id) {
   const prev = S.editing; S.editing = id;
   for (const mid of [prev, id]) {
     const m = mid && c.messages.find((x) => x.id === mid);
-    const el = m && $(`[data-mid="${mid}"]`);
+    const el = m && $(`[data-mid="${esc(mid)}"]`);
     if (el) el.outerHTML = msgHTML(m, c);
   }
   const ta = $('#editInput');
@@ -1463,15 +1463,15 @@ function renderAssistantsPage() {
       </div>
       <div class="card-grid">
         ${S.assistants.map((a, i) => `
-          <div class="a-card" data-color="${a.color}" style="animation-delay:${i * 40}ms">
+          <div class="a-card" data-color="${esc(a.color)}" style="animation-delay:${i * 40}ms">
             <div class="a-card-top"><span class="a-badge lg">${esc(a.emoji)}</span>
-              <button class="icon-btn" data-assistant-menu="${a.id}" title="More">${icon('dots')}</button></div>
+              <button class="icon-btn" data-assistant-menu="${esc(a.id)}" title="More">${icon('dots')}</button></div>
             <div><h3>${esc(a.name)}</h3></div>
             <p class="tagline">${esc(a.tagline || '')}</p>
             ${skillChips(a)}
             <div class="a-card-actions">
-              <button class="btn primary sm" data-chat-with="${a.id}">${icon('spark')}Start chat</button>
-              <button class="btn soft sm" data-edit-assistant="${a.id}">${icon('edit')}Customize</button>
+              <button class="btn primary sm" data-chat-with="${esc(a.id)}">${icon('spark')}Start chat</button>
+              <button class="btn soft sm" data-edit-assistant="${esc(a.id)}">${icon('edit')}Customize</button>
             </div>
           </div>`).join('')}
         <button class="a-card new-card" data-new-assistant>
@@ -1553,7 +1553,7 @@ function openAssistantBuilder(existing) {
   while (a.starters.length < 3) a.starters.push('');
   const preview = () => `
     <div class="preview-label">Preview</div>
-    <div class="a-card" data-color="${a.color}" style="animation:none">
+    <div class="a-card" data-color="${esc(a.color)}" style="animation:none">
       <div class="a-card-top"><span class="a-badge lg">${esc(a.emoji)}</span></div>
       <div><h3>${esc(a.name || 'Your agent')}</h3></div>
       <p class="tagline">${esc(a.tagline || 'A short line about what it helps with')}</p>
@@ -1694,7 +1694,7 @@ function openRecipeRunner(id) {
   const m = modal({
     head: `<div class="modal-head"><span class="recipe-emoji" style="font-size:24px;width:48px;height:48px;border-radius:14px;margin:0">${esc(r.emoji)}</span><div><h2>${esc(r.name)}</h2><p>${esc(r.description || '')}</p></div><button class="icon-btn" data-x>${icon('x')}</button></div>`,
     body: `${(r.fields || []).map((f) => `<div class="field"><label>${esc(f.label)}</label>${fieldInput(f)}</div>`).join('')}
-      <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-top:4px" data-color="${a.color}"><span class="a-badge sm">${esc(a.emoji)}</span>${esc(a.name)} will take it from here${r.access === 'edit' ? ' and save the result to your project folder' : ''}.</div>`,
+      <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-top:4px" data-color="${esc(a.color)}"><span class="a-badge sm">${esc(a.emoji)}</span>${esc(a.name)} will take it from here${r.access === 'edit' ? ' and save the result to your project folder' : ''}.</div>`,
     leftAction: { label: 'Edit', icon: 'edit', run: () => openRecipeBuilder(r) },
     actions: [{ label: 'Cancel' }, { label: 'Copy for Copilot', icon: 'copy', run: async (el) => {
       // Answers filled in so far go in; anything blank stays as a [placeholder]. Files become "/name", the way
@@ -1804,7 +1804,7 @@ function openRecipeBuilder(existing, prefill) {
       </div>
       <div class="field"><label>Short description</label><input class="input" id="rDesc" value="${esc(r.description || '')}" placeholder="What does it produce?"></div>
       <div class="row">
-        <div class="field"><label>Agent</label><select class="select" id="rAsst">${S.assistants.map((a) => `<option value="${a.id}" ${a.id === r.assistantId ? 'selected' : ''}>${esc(a.emoji)} ${esc(a.name)}</option>`).join('')}</select></div>
+        <div class="field"><label>Agent</label><select class="select" id="rAsst">${S.assistants.map((a) => `<option value="${esc(a.id)}" ${a.id === r.assistantId ? 'selected' : ''}>${esc(a.emoji)} ${esc(a.name)}</option>`).join('')}</select></div>
         <div class="field"><label>File access</label><select class="select" id="rAccess"><option value="">Use my default</option>${Object.entries(ACCESS).map(([k, v]) => `<option value="${k}" ${r.access === k ? 'selected' : ''}>${v.label}</option>`).join('')}</select></div>
       </div>
       <div class="field"><label>Questions to ask</label><div id="rFields">${fieldsHTML()}</div><button class="btn ghost sm" id="addField">${icon('plus')}Add a question</button></div>
@@ -1888,7 +1888,7 @@ async function renderInsightsPage() {
 // ---------------------------------------------------------------- settings
 function providerCards(selected) {
   return S.providers.map((p) => `
-    <button class="option-card ${p.id === selected ? 'active' : ''}" data-provider="${p.id}">
+    <button class="option-card ${p.id === selected ? 'active' : ''}" data-provider="${esc(p.id)}">
       <span class="oc-icon">${p.id.startsWith('claude') ? '🟣' : p.id.startsWith('copilot') ? '🐙' : '🔌'}</span>
       <span class="oc-text"><span class="oc-title">${esc(p.name)} ${p.available ? `<span class="status-tag ok"><i class="dot ok" style="box-shadow:none"></i>Installed</span>` : `<span class="status-tag bad">Not set up</span>`}</span>
       <span class="oc-desc">${esc(p.available ? `${p.vendor}${p.version ? ` · ${p.version}` : ''}` : p.message || p.description)}</span></span>
