@@ -734,3 +734,53 @@ body { font-size: 14.5px; }
   .rail-label { display: none; }
   .ai-note { display: none; }
 }
+
+/* ---------- Azure DevOps Approve cards (plan 08) ---------- */
+.status-tag.warn { background: color-mix(in srgb, var(--warn) 14%, transparent); color: var(--warn); }
+.status-tag.muted { background: color-mix(in srgb, var(--muted) 14%, transparent); color: var(--muted); }
+.status-tag:not(.ok):not(.bad):not(.warn):not(.muted) { background: color-mix(in srgb, var(--muted) 12%, transparent); color: var(--text-2); }
+.approval-cards { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
+.approval-card { border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 12px; background: var(--panel); padding: 12px 14px; font-size: 14px; box-shadow: var(--shadow-sm); }
+.approval-card.loading { display: flex; align-items: center; gap: 10px; color: var(--muted); border-left-color: var(--border-strong); }
+.approval-card.applied { border-left-color: var(--success); }
+.approval-card.partial, .approval-card.conflict, .approval-card.failed { border-left-color: var(--warn); }
+.approval-card.discarded, .approval-card.expired { border-left-color: var(--border-strong); opacity: .85; }
+.ap-head { display: flex; align-items: flex-start; gap: 10px; }
+.ap-head > .ico { color: var(--accent); margin-top: 2px; }
+.ap-title { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ap-title small { color: var(--muted); font-size: 12.5px; }
+.ap-reason { margin: 8px 0 0; color: var(--text-2); font-size: 13.5px; }
+.ap-table-wrap { margin-top: 10px; overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
+.ap-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.ap-table th { text-align: left; font-weight: 600; color: var(--muted); background: var(--sidebar); padding: 6px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.ap-table td { padding: 6px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.ap-table tr:last-child td { border-bottom: 0; }
+.ap-table td:first-child { font-weight: 600; white-space: nowrap; }
+.ap-val { white-space: pre-wrap; word-break: break-word; max-height: 140px; overflow: auto; }
+.ap-table td.ap-now .ap-val { color: var(--muted); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--danger) 50%, transparent); }
+.ap-empty { color: var(--muted); }
+.ap-diff { margin-top: 10px; }
+.ap-diff summary { cursor: pointer; color: var(--text-2); font-size: 13px; }
+.ap-diff pre { margin: 6px 0 0; max-height: 320px; overflow: auto; font-size: 12px; line-height: 1.5; background: var(--sidebar); border: 1px solid var(--border); border-radius: 8px; padding: 8px 0; }
+.ap-diff .dl { display: block; padding: 0 10px; white-space: pre-wrap; word-break: break-word; }
+.ap-diff .dl.add { background: color-mix(in srgb, var(--success) 14%, transparent); }
+.ap-diff .dl.del { background: color-mix(in srgb, var(--danger) 12%, transparent); }
+.ap-diff .dl.gap { color: var(--muted); font-style: italic; }
+.ap-add { color: var(--success); font-weight: 600; }
+.ap-del { color: var(--danger); font-weight: 600; }
+.ap-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+.ap-note { color: var(--muted); font-size: 12.5px; margin-left: 4px; }
+.ap-result { display: flex; align-items: flex-start; gap: 8px; margin-top: 10px; font-size: 13.5px; }
+.ap-result.ok .ico { color: var(--success); }
+.ap-result.bad .ico, .ap-result.warn .ico { color: var(--warn); }
+.ap-result.muted { color: var(--muted); }
+.ap-links { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 6px; }
+.ap-links a { display: inline-flex; align-items: center; gap: 5px; color: var(--accent-text); font-size: 13px; }
+.ado-wikis { display: flex; flex-direction: column; gap: 6px; }
+.ado-wikis .check { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 400; }
+@media (max-width: 640px) {
+  .ap-note { flex-basis: 100%; margin-left: 0; }
+  .ap-head { flex-wrap: wrap; }
+  .ap-head .status-tag { order: 3; margin-left: 30px; }
+  .ap-table td:first-child { white-space: normal; }
+}

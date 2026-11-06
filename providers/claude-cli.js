@@ -6,7 +6,7 @@ const { spawn, execFile } = require('child_process');
 const path = require('path');
 const os = require('os');
 const cli = require('../lib/cli-bin');
-const { officeLabel, savedFile } = require('../lib/tool-labels');
+const { officeLabel, adoLabel, savedFile, pendingChangeSet } = require('../lib/tool-labels');
 
 const ACCESS_TOOLS = {
   // Plain-language access levels → the Claude Code tools they unlock.
@@ -41,6 +41,7 @@ function friendlyTool(name, input = {}) {
     case 'Skill': return { icon: 'spark', label: `Using skill ${input.skill || ''}`.trim() };
     default:
       if (name.startsWith('mcp__office__')) return officeLabel(name.slice('mcp__office__'.length), input); // Lumen's bundled Office tools
+      if (name.startsWith('mcp__ado__')) return adoLabel(name.slice('mcp__ado__'.length), input); // Lumen's Azure DevOps tools
       return { icon: 'spark', label: `Using ${name.replace(/^mcp__[^_]+__/, '').replace(/_/g, ' ')}` };
   }
 }
@@ -129,10 +130,13 @@ module.exports = {
           for (const block of msg.message?.content || []) {
             if (block.type !== 'tool_result') continue;
             emit({ type: 'tool_done', id: block.tool_use_id, ok: !block.is_error });
-            // Office tools report the file they saved: surface it as a file card.
-            if (!block.is_error && /^mcp__office__/.test(toolNames[block.tool_use_id] || '')) {
-              const saved = savedFile(Array.isArray(block.content) ? block.content.map((c) => c.text || '').join('') : block.content);
+            // Lumen's tools report the file they saved (a file card) or a staged Azure DevOps change (an Approve card).
+            if (!block.is_error && /^mcp__(office|ado)__/.test(toolNames[block.tool_use_id] || '')) {
+              const text = Array.isArray(block.content) ? block.content.map((c) => c.text || '').join('') : block.content;
+              const saved = savedFile(text);
               if (saved) emit({ type: 'file', path: saved });
+              const pending = /^mcp__ado__ado_propose_/.test(toolNames[block.tool_use_id]) && pendingChangeSet(text);
+              if (pending) emit({ type: 'approval', id: pending });
             }
           }
         } else if (msg.type === 'result') {

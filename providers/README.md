@@ -44,4 +44,13 @@ module.exports = {
 - `edit`: read, create and edit files in `cwd`
 - `full`: no restrictions (not shown in the UI, kept for power users)
 
-Icons available for `tool` events: `file`, `pen`, `search`, `globe`, `terminal`, `list`, `spark`.
+Icons available for `tool` events: `file`, `pen`, `search`, `globe`, `terminal`, `list`, `spark`, `sheet`, `gantt`, `board` (Azure DevOps work items) and `book` (wiki).
+
+### Lumen's own tool servers
+
+Skills get their tools from Lumen's MCP servers, passed in `run({ tools })` as `{ servers, allow }`: `office` ([tools/office-mcp.js](../tools/office-mcp.js)) and `ado` ([tools/ado-mcp.js](../tools/ado-mcp.js), Azure DevOps). When one of their tool results succeeds:
+
+- `"saved": "<path>"` in the text → emit `{ type: 'file', path }` (a file card).
+- `{"pending": "<uuid>"}` from an `ado_propose_*` tool → emit `{ type: 'approval', id }`. Lumen shows an Approve card for that staged Azure DevOps change. The server ignores ids it didn't stage for this chat, and nothing reaches Azure DevOps until a person clicks Apply.
+
+Label `ado` tools with `adoLabel` from [lib/tool-labels.js](../lib/tool-labels.js), the same way `officeLabel` labels `office` tools.

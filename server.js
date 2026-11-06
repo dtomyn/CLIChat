@@ -14,6 +14,11 @@ const mdExport = require('./tools/md-export');
 const copilotExport = require('./lib/copilot-export');
 const excel = require('./tools/excel');
 const project = require('./tools/project');
+const secrets = require('./lib/secrets');
+const adoAuth = require('./tools/ado/auth');
+const adoConn = require('./tools/ado/connection');
+const changesets = require('./tools/ado/changesets');
+const { normalizeOrgUrl } = require('./tools/ado/client');
 
 const PORT = process.env.PORT === undefined ? 4317 : Number(process.env.PORT);
 const HOST = '127.0.0.1'; // local only
@@ -67,7 +72,7 @@ function workspaceFile(file, workspace) {
 }
 const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'assistant';
 
-function buildSystemPrompt(assistant, settings, activeSkills = [], access = 'read') {
+function buildSystemPrompt(assistant, settings, activeSkills = [], access = 'read', skillCtx = {}) {
   const parts = [];
   if (assistant?.instructions) parts.push(assistant.instructions);
   if (settings.userName) parts.push(`The user's name is ${settings.userName}.`);
@@ -75,7 +80,7 @@ function buildSystemPrompt(assistant, settings, activeSkills = [], access = 'rea
   // Suggestion chips (plan 01, optional): a predictable closing line makes the UI's "suggested next step" extraction reliable.
   // Remove this push to revert.
   parts.push('When it genuinely helps, end a substantive reply with a final line in the form "**Suggested next step:** <one short imperative sentence>". Skip it for quick factual answers and small talk.');
-  const sk = skills.promptFor(activeSkills, access);
+  const sk = skills.promptFor(activeSkills, access, skillCtx);
   if (sk) parts.push(sk);
   return parts.join('\n\n');
 }
@@ -148,12 +153,16 @@ async function runTurn(body, out = () => {}) {
   const pinned = (conv.pinned_files || []).filter((p) => workspaceFile(p, conv.workspace));
   let access = conv.access || 'read';
   if ((attachments.length || pinned.length) && access === 'chat') access = 'read';
-  const activeSkills = skills.resolve(assistant?.skills || [], [...attachments, ...pinned]);
-  const tools = skills.toolConfig(activeSkills, access, conv.workspace);
+  const activeSkills = skills.resolve([...(assistant?.skills || []), ...(conv.skills || [])], [...attachments, ...pinned]);
+  const skillCtx = { ado: settings.ado, dataDir: store.DATA, conversationId: conv.id, scheduled: !!conv.scheduled };
+  const tools = skills.toolConfig(activeSkills, access, conv.workspace, skillCtx);
+  // Outcomes of Azure DevOps change sets applied or discarded since the last turn, so the AI knows what really happened.
+  const notes = (conv.adoNotes || []).slice();
+  if (notes.length) message = `[Lumen update: ${notes.map((n) => n.text).join(' ')}]\n\n${message}`;
 
   const userMsg = { id: store.id(), role: 'user', content: String(body.message || '').trim(), attachments: attachments.map((p) => ({ path: p, name: path.basename(p) })), createdAt: Date.now() };
   if (body.recipeId) userMsg.recipeId = String(body.recipeId);
-  const asstMsg = { id: store.id(), role: 'assistant', content: '', tools: [], files: [], createdAt: Date.now(), providerId };
+  const asstMsg = { id: store.id(), role: 'assistant', content: '', tools: [], files: [], approvals: [], createdAt: Date.now(), providerId };
   if (tools?.servers?.office && (access === 'edit' || access === 'full')) tools.servers.office.env.LUMEN_SNAPSHOT_DIR = path.join(conv.workspace, '.lumen', 'snapshots', asstMsg.id);
   const priorMessages = conv.messages.slice();
   conv.messages.push(userMsg);
@@ -177,6 +186,7 @@ async function runTurn(body, out = () => {}) {
     if (ev.type === 'tool_done') { const t = asstMsg.tools.find((x) => x.id === ev.id); if (t) t.ok = ev.ok; }
     if (ev.type === 'file' && ev.path) { const file = path.resolve(conv.workspace, ev.path); if (!asstMsg.files.includes(file)) asstMsg.files.push(file); }
     if (ev.type === 'error') asstMsg.error = ev.message;
+    if (ev.type === 'approval') { if (!changesets.load(conv.id, ev.id) || asstMsg.approvals.includes(ev.id)) return; asstMsg.approvals.push(ev.id); }
     if (ev.type === 'usage') { reported = ev; return; }
     out(ev);
   };
@@ -187,7 +197,7 @@ async function runTurn(body, out = () => {}) {
   try {
     await provider.run({
       prompt, sessionId, cwd: conv.workspace, model: body.model || settings.model, access, signal: ac.signal, tools,
-      systemPrompt: [buildSystemPrompt(assistant, settings, activeSkills, access), pinned.length ? `Key files for this chat (read them when relevant): ${pinned.map((p) => JSON.stringify(rel(path.resolve(conv.workspace, p)))).join(', ')}` : ''].filter(Boolean).join('\n\n'),
+      systemPrompt: [buildSystemPrompt(assistant, settings, activeSkills, access, skillCtx), pinned.length ? `Key files for this chat (read them when relevant): ${pinned.map((p) => JSON.stringify(rel(path.resolve(conv.workspace, p)))).join(', ')}` : ''].filter(Boolean).join('\n\n'),
     }, emit);
   } catch (e) { emit({ type: 'error', message: e.message }); }
 
@@ -198,6 +208,7 @@ async function runTurn(body, out = () => {}) {
     : { durationMs: Date.now() - started };
   const fresh = store.conversations.get(conv.id) || conv;
   fresh.sessions = conv.sessions; fresh.access = conv.access; fresh.workspace = conv.workspace;
+  if (notes.length) fresh.adoNotes = (fresh.adoNotes || []).filter((n) => !notes.some((x) => x.id === n.id));
   // Take earlier messages from disk, so feedback given while this reply was running isn't lost.
   fresh.messages = [...priorMessages.map((pm) => fresh.messages.find((x) => x.id === pm.id) || pm), userMsg, asstMsg];
   store.conversations.save(fresh);
@@ -309,6 +320,41 @@ async function diffFiles(a, b) {
   return changes;
 }
 
+// ---------- Azure DevOps change sets ----------
+const deciding = new Set(); // change set ids being applied right now (blocks double clicks)
+
+/** Apply or discard a staged change set after a person clicked the button. Returns { code, body }. */
+async function decideChangeSet(conversationId, id, decision) {
+  const cs = changesets.load(conversationId, id);
+  if (!cs) return { code: 404, body: { error: 'That proposal could not be found.' } };
+  if (cs.status !== 'pending') return { code: 409, body: { ...changesets.describe(cs), error: `This proposal was already ${cs.status}.` } };
+  if (deciding.has(cs.id)) return { code: 409, body: { error: 'This proposal is already being applied.' } };
+  const settings = store.settings.get();
+  const userName = String(settings.userName || '').trim();
+  if (decision === 'apply' && !userName) return { code: 400, body: { error: 'Set your name in Settings first, so Azure DevOps records who approved the change.', needName: true } };
+  deciding.add(cs.id);
+  try {
+    if (decision === 'discard') {
+      cs.status = 'discarded';
+      cs.result = { status: 'discarded', message: 'Discarded. Nothing was changed.', links: [] };
+    } else {
+      const ado = settings.ado;
+      let org = '';
+      try { org = adoConn.configured(ado) ? normalizeOrgUrl(ado.orgUrl) : ''; } catch {}
+      if (!org) return { code: 409, body: { error: 'Azure DevOps isn\'t connected. Open Settings › Connections.' } };
+      if (org !== cs.orgUrl || ado.project !== cs.project) return { code: 409, body: { error: `This was proposed for project "${cs.project}", but Lumen is now connected to "${ado.project}". Ask Lumen to propose it again.` } };
+      cs.result = await changesets.apply(adoConn.fromSettings(ado), cs, { userName });
+      cs.status = cs.result.status;
+    }
+    cs.decidedAt = Date.now(); cs.decidedBy = userName || null;
+    changesets.save(cs);
+    changesets.audit({ conversationId, changeSetId: cs.id, decision, decidedBy: cs.decidedBy, kind: cs.kind, project: cs.project, title: cs.title, status: cs.status, message: cs.result.message, links: cs.result.links });
+    const conv = store.conversations.get(conversationId);
+    if (conv) { conv.adoNotes = [...(conv.adoNotes || []), { id: cs.id, text: changesets.outcomeNote(cs) }]; store.conversations.save(conv); }
+    return { code: 200, body: changesets.describe(cs) };
+  } finally { deciding.delete(cs.id); }
+}
+
 // ---------- assistant helpers ----------
 async function draftAssistant(description) {
   const provider = registry.get(store.settings.get().providerId) || registry.get('claude-cli');
@@ -340,8 +386,11 @@ function writeVsCodeKit(ws, assistants) {
   }
   if (used.size) {
     const server = { command: 'node', args: [skills.MCP_SERVER] };
-    put('.mcp.json', JSON.stringify({ mcpServers: { office: { type: 'stdio', ...server, env: { OFFICE_MCP_ROOT: ws } } } }, null, 2));
-    put(path.join('.vscode', 'mcp.json'), JSON.stringify({ servers: { office: { type: 'stdio', ...server, env: { OFFICE_MCP_ROOT: '${workspaceFolder}' } } } }, null, 2));
+    // Outside Lumen there are no Approve cards, so the Azure DevOps tools are exported read-only. No credentials are written.
+    const ado = store.settings.get().ado;
+    const adoServer = used.has('azure-devops') && skills.adoReady(ado) ? { type: 'stdio', command: 'node', args: [skills.ADO_SERVER], env: { ADO_ORG_URL: ado.orgUrl, ADO_PROJECT: ado.project, ADO_TEAM: ado.team || '', ADO_AUTH: ado.auth === 'pat' ? 'pat' : 'azcli', ADO_WIKIS: (ado.wikis || []).join(','), ADO_READONLY: '1', LUMEN_DATA: store.DATA } } : null;
+    put('.mcp.json', JSON.stringify({ mcpServers: { office: { type: 'stdio', ...server, env: { OFFICE_MCP_ROOT: ws } }, ...(adoServer ? { ado: adoServer } : {}) } }, null, 2));
+    put(path.join('.vscode', 'mcp.json'), JSON.stringify({ servers: { office: { type: 'stdio', ...server, env: { OFFICE_MCP_ROOT: '${workspaceFolder}' } }, ...(adoServer ? { ado: adoServer } : {}) } }, null, 2));
   }
   return written;
 }
@@ -546,6 +595,23 @@ async function api(req, res, url) {
         startRunTurn(run, stage, prompt, true);
         return send(res, 200, run);
       }
+      if (operation === 'azure-devops') {
+        // Hand an approved stage to Azure DevOps: design stages are published to the wiki, the story stage becomes work items.
+        // The chat ends in Approve cards; nothing is written until a person clicks Apply.
+        if (stage.status !== 'approved') return send(res, 409, { error: 'Approve the stage first.' });
+        if (!workspaceFile(stage.outputPath, run.workspace)) return send(res, 400, { error: 'The output file is missing.' });
+        if (!skills.adoReady(store.settings.get().ado)) return send(res, 400, { error: 'Connect Azure DevOps in Settings › Connections first.' });
+        const target = body.target === 'workitems' ? 'workitems' : 'wiki';
+        const assistantId = target === 'workitems' ? 'story-writer' : def.assistantId;
+        if (!store.assistants.get(assistantId)) return send(res, 400, { error: 'The stage assistant is missing.' });
+        const out = JSON.stringify(path.relative(run.workspace, stage.outputPath));
+        const prompt = target === 'workitems'
+          ? `Turn the approved backlog in ${out} into Azure DevOps work items.\n\n1. Call ado_describe_work_item_type to learn this project's epic, feature and story types and required fields.\n2. Search for existing epics and features with the same titles, and reuse them instead of proposing duplicates.\n3. Propose missing epics and features first with ado_propose_work_items. Stories need their parent's number, so propose stories (with parentId) only after their parents have been applied. Tell me when I need to click Apply before you continue.\n4. Tag each story with the FD/TD IDs it implements, and put its Given/When/Then criteria in acceptanceCriteria.\n\nAsk me for any required value you can't take from the file. Don't invent owners, estimates or sprints.`
+          : `Publish the approved ${def.name.toLowerCase()} in ${out} to the Azure DevOps wiki.\n\n1. Look for an existing page for it (ado_search_wiki or ado_list_wiki_pages). If there is one, read it and keep its path; otherwise use "/Lifecycle/${run.name}/${def.name}".\n2. Propose the page with ado_propose_wiki_page, keeping the Markdown, IDs and tables exactly as in the file. Pass the etag when updating.\n3. Tell me what you proposed. It is applied only when I click Apply.`;
+        const c = store.conversations.create({ assistantId, workspace: run.workspace, access: 'edit', pinned_files: [stage.outputPath], skills: ['azure-devops'], title: `${run.name}: ${def.name} → Azure DevOps` });
+        runTurn({ conversationId: c.id, message: prompt }).catch((e) => console.error('Azure DevOps hand-off failed:', e));
+        return send(res, 200, { conversationId: c.id });
+      }
       return send(res, 404, { error: 'Unknown stage action.' });
     }
   }
@@ -580,6 +646,64 @@ async function api(req, res, url) {
   }
   if (resource === 'reset' && m === 'POST') { store.assistants.reset(); store.recipes.reset(); return send(res, 200, { ok: true }); }
   if (resource === 'settings' && m === 'PUT') return send(res, 200, store.settings.set(await json(req)));
+
+  // Azure DevOps connection (plan 08). Settings hold no secret; the access token lives in lib/secrets.js.
+  if (resource === 'connections' && rid === 'ado') {
+    const cur = store.settings.get().ado || {};
+    const view = (a) => ({ ...a, hasPat: secrets.has(adoAuth.PAT_SECRET), patSupported: secrets.supported(), hasAz: adoAuth.hasAz() });
+    const text = (v, max = 200) => String(v || '').replace(/[\u0000-\u001f]/g, '').trim().slice(0, max);
+    if (m === 'GET' && !action) return send(res, 200, view(cur));
+    if (m === 'PUT' && !action) {
+      const b = await json(req);
+      let orgUrl = '';
+      try { if (b.orgUrl) orgUrl = normalizeOrgUrl(b.orgUrl); } catch (e) { return send(res, 400, { error: e.message }); }
+      const next = { orgUrl, project: text(b.project), team: text(b.team), auth: b.auth === 'pat' ? 'pat' : 'azcli', wikis: (Array.isArray(b.wikis) ? b.wikis : []).map((w) => text(w)).filter(Boolean).slice(0, 20), enabled: b.enabled !== false };
+      store.settings.set({ ado: next });
+      return send(res, 200, view(next));
+    }
+    if (m === 'POST' && action === 'test') {
+      const b = { ...cur, ...(await json(req)) };
+      try {
+        const orgUrl = normalizeOrgUrl(b.orgUrl);
+        const org = adoConn.fromSettings({ orgUrl, auth: b.auth });
+        const [me, projects] = await Promise.all([org.me(), org.projects()]);
+        let teams = [], wikis = [];
+        if (b.project && projects.includes(b.project)) {
+          const p = adoConn.fromSettings({ orgUrl, project: b.project, auth: b.auth });
+          [teams, wikis] = await Promise.all([p.teams().catch(() => []), p.wikis().catch(() => [])]);
+        }
+        return send(res, 200, { ok: true, orgUrl, user: me.name, projects, teams, wikis });
+      } catch (e) { return send(res, 200, { ok: false, code: e.code, error: e.friendly ? e.message : `Couldn't connect to Azure DevOps: ${e.message}` }); }
+    }
+    if (m === 'POST' && action === 'pat') {
+      try { await secrets.save(adoAuth.PAT_SECRET, (await json(req)).pat); } catch (e) { return send(res, 400, { error: e.friendly ? e.message : `Couldn't save the token: ${e.message}` }); }
+      return send(res, 200, view(cur));
+    }
+    if (m === 'DELETE' && action === 'pat') { secrets.clear(adoAuth.PAT_SECRET); return send(res, 200, view(cur)); }
+  }
+
+  // Approve cards for proposed Azure DevOps changes. Only these endpoints write to Azure DevOps (decision D3).
+  if (resource === 'chat' && rid && action === 'approvals') {
+    const conv = store.conversations.get(rid);
+    if (!conv) return send(res, 404, { error: 'That chat could not be found.' });
+    if (m === 'GET' && !sub) return send(res, 200, changesets.list(rid).map(changesets.describe));
+    if (m === 'GET' && sub) { const cs = changesets.load(rid, sub); return cs ? send(res, 200, changesets.describe(cs)) : send(res, 404, { error: 'That proposal could not be found.' }); }
+    if (m === 'POST' && sub === 'apply-all') {
+      const body = await json(req);
+      const ids = Array.isArray(body.ids) ? body.ids.map(String) : changesets.list(rid).filter((x) => x.status === 'pending').map((x) => x.id);
+      const out = [];
+      for (const id of ids) {
+        const r = await decideChangeSet(rid, id, 'apply');
+        out.push(r.body);
+        if (r.code === 400) return send(res, 400, r.body);
+      }
+      return send(res, 200, out);
+    }
+    if ((m === 'POST' || m === 'DELETE') && sub) {
+      const r = await decideChangeSet(rid, sub, m === 'POST' ? 'apply' : 'discard');
+      return send(res, r.code, r.body);
+    }
+  }
 
   if (resource === 'schedules') {
     if (m === 'GET' && !rid) return send(res, 200, store.schedules.all().map((s) => ({ ...s, nextRunAt: s.enabled ? scheduler.nextDue(s, scheduler.dueFrom(s)).getTime() : null, running: scheduleRunner.isPending(s.id) })));
@@ -674,7 +798,7 @@ async function api(req, res, url) {
       return send(res, 200, { feedback: msg.feedback || null });
     }
     if (m === 'PATCH' && rid) { const c = store.conversations.get(rid); if (!c) return send(res, 404, {}); const p = await json(req); if ('pinned_files' in p && (!Array.isArray(p.pinned_files) || p.pinned_files.some((x) => typeof x !== 'string'))) return send(res, 400, { error: 'Pinned files must be a list of paths.' }); if ('unread' in p && typeof p.unread !== 'boolean') return send(res, 400, { error: 'Unread must be true or false.' }); for (const k of ['title', 'pinned', 'pinned_files', 'access', 'workspace', 'unread']) if (k in p) c[k] = p[k]; return send(res, 200, store.conversations.save(c)); }
-    if (m === 'DELETE' && rid) { store.conversations.remove(rid); return send(res, 200, { ok: true }); }
+    if (m === 'DELETE' && rid) { store.conversations.remove(rid); changesets.removeConversation(rid); return send(res, 200, { ok: true }); }
   }
 
   if (resource === 'chat' && m === 'POST' && !rid) return handleChat(req, res);

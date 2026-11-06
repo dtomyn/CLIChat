@@ -601,5 +601,172 @@
       }
     ],
     "template": "Analyse the downstream impact of changed requirements in {{trm}}. Changed IDs: {{ids}}. What changed: {{change}}\n\nFor each changed requirement, list every affected refined requirement, functional design element, technical design element and story (with IDs and cells), say whether each one probably needs to change or only needs a review and why, mark the ones last updated before the change, and say who should review each layer. End with a proposed change-log entry."
+  },
+  {
+    "id": "ado-my-work",
+    "name": "My open work items",
+    "emoji": "🔷",
+    "category": "Azure DevOps",
+    "description": "Everything assigned to you that isn't done, grouped by sprint, with what needs attention.",
+    "assistantId": "backlog-helper",
+    "builtin": true,
+    "access": "read",
+    "fields": [],
+    "template": "List the Azure DevOps work items assigned to me that are not closed, done or removed. Group them by sprint, then by state. Point out anything that looks stuck (no change in two weeks), anything blocked, and anything missing acceptance criteria or an estimate. End with what I should do first today."
+  },
+  {
+    "id": "ado-sprint-status",
+    "name": "Sprint status summary",
+    "emoji": "🏃",
+    "category": "Azure DevOps",
+    "description": "Progress, risks and blockers in the current sprint.",
+    "assistantId": "backlog-helper",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "audience",
+        "label": "Who is it for?",
+        "type": "select",
+        "options": [
+          "The team",
+          "Stakeholders",
+          "Steering committee"
+        ],
+        "default": "The team"
+      }
+    ],
+    "template": "Summarise the current sprint from Azure DevOps for {{audience}}. Lead with a RAG status and one line. Show counts by state (done, in progress, not started, blocked) and by type. List the items at risk of not finishing and why, unassigned items, and bugs raised this sprint. Link every item. Keep it to one screen."
+  },
+  {
+    "id": "ado-wiki-find",
+    "name": "Find it in the wiki",
+    "emoji": "📖",
+    "category": "Azure DevOps",
+    "description": "Answer a question from the Azure DevOps wiki, with the pages cited.",
+    "assistantId": "backlog-helper",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "question",
+        "label": "What do you want to know?",
+        "type": "textarea",
+        "placeholder": "e.g. How are renewal fees calculated for late renewals?"
+      }
+    ],
+    "template": "Answer this from our Azure DevOps wiki: {{question}}\n\nSearch the wiki, read the most relevant pages, and answer in plain language. Cite each page as a link next to the point it supports. Say clearly if the wiki doesn't answer it or if pages disagree."
+  },
+  {
+    "id": "ado-stories-from-design",
+    "name": "Stories from the design → Azure DevOps",
+    "emoji": "✍️",
+    "category": "Azure DevOps",
+    "description": "Propose epics, features and stories in Azure DevOps from an approved design, traced by tags. You approve each batch.",
+    "assistantId": "story-writer",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "design",
+        "label": "Approved design or backlog",
+        "type": "file",
+        "accept": ".md,.docx,.txt"
+      },
+      {
+        "key": "parent",
+        "label": "Parent feature or epic number (optional)",
+        "type": "text",
+        "placeholder": "e.g. 210"
+      }
+    ],
+    "template": "Create Azure DevOps work items for the approved design in {{design}}. Parent feature or epic, if given: {{parent}}.\n\nFirst call ado_describe_work_item_type and check for existing epics and features with the same titles. Then propose the items with ado_propose_work_items: one story per design behaviour, each tagged with the FD/TD IDs it implements, with Given/When/Then acceptance criteria. Propose parents before children. Ask me for any required value you can't take from the design."
+  },
+  {
+    "id": "ado-publish-wiki",
+    "name": "Publish a document to the wiki",
+    "emoji": "📤",
+    "category": "Azure DevOps",
+    "description": "Propose a wiki page from a Markdown or Word document. You review the diff and approve.",
+    "assistantId": "backlog-helper",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "doc",
+        "label": "Document to publish",
+        "type": "file",
+        "accept": ".md,.docx,.txt"
+      },
+      {
+        "key": "path",
+        "label": "Wiki page path (optional)",
+        "type": "text",
+        "placeholder": "e.g. /Design/Functional Design"
+      }
+    ],
+    "template": "Publish {{doc}} to our Azure DevOps wiki at {{path}} (if no path is given, suggest one that fits the existing page tree). If the page exists, read it first and pass its etag. Keep headings, IDs and tables. Propose the page with ado_propose_wiki_page and tell me what changed compared with the current page."
+  },
+  {
+    "id": "ado-stale-items",
+    "name": "Stale items check",
+    "emoji": "🕸️",
+    "category": "Azure DevOps",
+    "description": "Open work items with no change in a while, and what to do about each.",
+    "assistantId": "backlog-helper",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "days",
+        "label": "No change for how many days?",
+        "type": "select",
+        "options": [
+          "14",
+          "30",
+          "60"
+        ],
+        "default": "30"
+      }
+    ],
+    "template": "Find open Azure DevOps work items (not closed, done or removed) with no change in the last {{days}} days. Work out the cut-off date from today's date and use changedBefore. Group them by owner. For each, suggest one action: close it, re-plan it, split it, or ask the owner. Link every item."
+  },
+  {
+    "id": "ado-release-notes",
+    "name": "Release notes from closed items",
+    "emoji": "🗒️",
+    "category": "Azure DevOps",
+    "description": "Plain-language release notes from what was finished in a sprint.",
+    "assistantId": "backlog-helper",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "sprint",
+        "label": "Which sprint? (optional)",
+        "type": "text",
+        "placeholder": "Leave empty for the current sprint, or give an iteration path"
+      }
+    ],
+    "template": "Write release notes for business users from the Azure DevOps stories and bugs that are done or closed in this sprint: {{sprint}} (use the current sprint if empty). Group them as New, Improved and Fixed, one plain-language line each with a link. Leave out internal tasks."
+  },
+  {
+    "id": "ado-traceability-live",
+    "name": "Traceability against Azure DevOps",
+    "emoji": "🔗",
+    "category": "Azure DevOps",
+    "description": "Check requirements and design in the TRM against the live backlog.",
+    "assistantId": "traceability-analyst",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "trm",
+        "label": "Traceability workbook (TRM)",
+        "type": "file",
+        "accept": ".xlsx,.xlsm"
+      }
+    ],
+    "template": "Check traceability against the live Azure DevOps backlog. Run ado_export_backlog with {{trm}} as the workbook, then analyze_traceability on the saved copy. Report coverage per layer, design elements with no story in Azure DevOps, stories with no lifecycle tags, and broken links, citing IDs and work item links. The original workbook must stay unchanged."
   }
 ]

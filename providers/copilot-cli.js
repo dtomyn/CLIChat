@@ -14,7 +14,7 @@ const crypto = require('crypto');
 const path = require('path');
 const os = require('os');
 const cli = require('../lib/cli-bin');
-const { officeLabel, savedFile, base } = require('../lib/tool-labels');
+const { officeLabel, adoLabel, savedFile, pendingChangeSet, base } = require('../lib/tool-labels');
 
 const LOCAL = process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local');
 const BIN = cli.resolve('copilot', process.platform === 'win32'
@@ -36,6 +36,7 @@ const ACCESS_FLAGS = {
 
 function friendlyTool(name, input = {}, d = {}) {
   if (d.mcpServerName === 'office' && d.mcpToolName) return officeLabel(d.mcpToolName, input);
+  if (d.mcpServerName === 'ado' && d.mcpToolName) return adoLabel(d.mcpToolName, input);
   const file = input.path || input.file_path || input.filePath;
   switch (name) {
     case 'view': case 'read': case 'show_file': return { icon: 'file', label: `Reading ${base(file) || 'a file'}`, file };
@@ -177,9 +178,13 @@ module.exports = {
           case 'tool.execution_complete': {
             emit({ type: 'tool_done', id: d.toolCallId, ok: d.success !== false });
             for (const e of d.fileEdits || []) if (e?.path) emit({ type: 'file', path: e.path });
-            if (d.success !== false && tools[d.toolCallId]?.mcpServerName === 'office') {
-              const saved = savedFile(d.result?.content || (d.result?.contents || []).map((c) => c.text || '').join(''));
+            const started = tools[d.toolCallId];
+            if (d.success !== false && ['office', 'ado'].includes(started?.mcpServerName)) {
+              const text = d.result?.content || (d.result?.contents || []).map((c) => c.text || '').join('');
+              const saved = savedFile(text);
               if (saved) emit({ type: 'file', path: saved });
+              const pending = started.mcpServerName === 'ado' && /^ado_propose_/.test(started.mcpToolName || '') && pendingChangeSet(text);
+              if (pending) emit({ type: 'approval', id: pending });
             }
             break;
           }
@@ -188,6 +193,11 @@ module.exports = {
             if (office?.status === 'failed') {
               emit({ type: 'tool', id: 'office-mcp', icon: 'sheet', label: 'Couldn\'t start the document and spreadsheet tools' });
               emit({ type: 'tool_done', id: 'office-mcp', ok: false });
+            }
+            const ado = (d.servers || []).find((s) => s.name === 'ado');
+            if (ado?.status === 'failed') {
+              emit({ type: 'tool', id: 'ado-mcp', icon: 'board', label: 'Couldn\'t connect to Azure DevOps' });
+              emit({ type: 'tool_done', id: 'ado-mcp', ok: false });
             }
             break;
           }
