@@ -13,7 +13,10 @@ process.env.LUMEN_DATA = DATA;
 process.env.PORT = String(PORT);
 
 const store = require('../lib/store');
-store.settings.set({ workspace: PROJECT, providerId: 'fake', access: 'edit', onboarded: true });
+// E2E_ENGINE=copilot or =claude runs that real CLI (uses your sign-in); otherwise the stand-in engine below.
+const REAL_ENGINES = { copilot: 'copilot-cli', claude: 'claude-cli' };
+const REAL = !!REAL_ENGINES[process.env.E2E_ENGINE];
+store.settings.set({ workspace: PROJECT, providerId: REAL ? REAL_ENGINES[process.env.E2E_ENGINE] : 'fake', access: 'edit', onboarded: true });
 
 const project = require('../tools/project');
 const backlog = require('../tools/backlog');
@@ -51,7 +54,7 @@ async function answer(prompt, cwd) {
 }
 
 const registry = require('../providers');
-registry.providers.fake = {
+if (!REAL) registry.providers.fake = {
   id: 'fake', name: 'Test engine', vendor: 'Lumen tests', description: 'Stand-in engine for browser tests', models: [], supportsResume: false,
   async detect() { return { available: true, version: 'test' }; },
   async run(opts, emit) {
