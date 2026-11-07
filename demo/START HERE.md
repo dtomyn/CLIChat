@@ -9,6 +9,7 @@ A fictional project used to try Lumen's project-management assistants.
 | **CRM Migration - RAID Log.xlsx** | Risks, issues, assumptions, dependencies, decisions |
 | **Team Timesheets - October 2026.xlsx** | Hours booked per person per task |
 | **Weekly Progress Update - 30 Oct 2026.xlsx** | Team leads' latest % complete — use it to update the plan |
+| **ADO Backlog Export - 30 Oct 2026.xlsx** | Azure DevOps work items tagged MPP-<task ID> — use it to propose plan progress and see the data-quality gaps |
 | **Huddle 10-30 - 30 Oct 2026.vtt** | Teams transcript of the daily 10:30 huddle — use it to update the RAID log |
 
 ## Things to try
@@ -19,3 +20,4 @@ A fictional project used to try Lumen's project-management assistants.
 - *"Compare timesheet hours with the plan — where are we burning more effort than planned?"*
 - *"Turn the plan into an Excel tracker with a Gantt chart."*
 - *"Update the RAID log from this morning's huddle transcript."*
+- *"Update the plan from the ADO backlog export, and tell me what is wrong with the data."*
