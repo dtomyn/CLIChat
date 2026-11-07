@@ -711,5 +711,37 @@
       }
     ],
     "template": "Write next week's look-ahead for the project plan {{plan}}, limited to the workstream {{workstream}} (if blank, cover every workstream).\n\nCall plan_lookahead first and base everything on it. Open with the milestones and the 2 or 3 dependencies most likely to cause trouble. Then give one short section per workstream with what is starting, finishing and carried over late, and what it is waiting on and from whom. Keep it to one page that can be pasted into an email, and only report what the tool returned."
+  },
+  {
+    "id": "plan-progress-from-backlog",
+    "name": "Update plan from ADO backlog",
+    "emoji": "🔗",
+    "category": "Project plans",
+    "description": "Propose plan % complete from an Azure DevOps backlog export, and list the data-quality gaps that stop it being reliable.",
+    "assistantId": "schedule-analyst",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "plan",
+        "label": "Project plan",
+        "type": "file",
+        "accept": ".mpp,.xml"
+      },
+      {
+        "key": "backlog",
+        "label": "Azure DevOps backlog export",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv"
+      },
+      {
+        "key": "status",
+        "label": "Status date (optional)",
+        "type": "text",
+        "placeholder": "e.g. 2026-10-30",
+        "optional": true
+      }
+    ],
+    "template": "Compare the Azure DevOps backlog {{backlog}} with the project plan {{plan}} (status date {{status}}; if blank, use the plan's).\n\n1. Call plan_progress_from_backlog and base everything on it.\n2. Show the proposed % complete changes as a table (ID · Task · Now · Proposed · Items done/total), and any that were held back because the backlog shows less progress than the plan.\n3. Show the data-quality findings: unlinked items, links to missing or summary tasks, stale in-progress items, unknown states, and plan tasks that should be moving but have no backlog items. Say who needs to fix what.\n4. Ask me to approve before changing anything. If I approve, call update_project_plan with only the approved rows and summarise what moved."
   }
 ]

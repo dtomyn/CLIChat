@@ -8,6 +8,7 @@ const path = require('path');
 const fs = require('fs');
 const excel = require('./excel');
 const project = require('./project');
+const backlog = require('./backlog');
 const docx = require('./docx');
 const traceability = require('./traceability');
 const status = require('./status');
@@ -154,6 +155,12 @@ const TOOLS = [
     description: 'Forward-looking readout from a Microsoft Project plan for the coming week (or N days), grouped by workstream: tasks starting, tasks finishing, milestones, late carry-overs, and unfinished work these tasks are waiting on (from other workstreams or overdue). Read-only. Use it for "what do teams need on their radar next week?".',
     inputSchema: { type: 'object', properties: { path: { type: 'string' }, from: { type: 'string', description: 'YYYY-MM-DD; default the day after the status date' }, days: { type: 'number', description: 'Window length in days (default 7)' }, under: { type: 'string', description: 'Limit to a WBS branch or summary task' }, owner: { type: 'string', description: 'Limit to a person' }, statusDate: { type: 'string' } }, required: ['path'] },
     run: (a) => project.lookahead(resolveIn(a.path), a),
+  },
+  {
+    name: 'plan_progress_from_backlog',
+    description: "Propose % complete for Microsoft Project tasks from an Azure DevOps backlog export (.xlsx or .csv from a work-item query with ID, State, Tags and optionally Story Points). Items are linked to plan tasks by a tag such as MPP-23 (tagPrefix changes MPP), by a mapping sheet, or by a Plan task column. Each task's % complete is calculated from its items' states (or story points), items removed from the backlog are ignored, and a % that would go down is held back for confirmation. Also returns data-quality findings: items not linked to any task, links to tasks that do not exist or are summary tasks, unknown states, stale in-progress items, and plan tasks that should be moving but have no items. Read-only: show the proposals, and after approval pass them to update_project_plan.",
+    inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'The project plan' }, backlog: { type: 'string', description: 'The Azure DevOps work-item export (.xlsx/.csv)' }, tagPrefix: { type: 'string', description: 'Tag prefix that links an item to a plan task (default MPP, e.g. MPP-23)' }, basis: { type: 'string', enum: ['state', 'points'], description: 'Weight items equally by state (default) or by story points' }, stateMap: { type: 'object', description: 'Override the % counted as done for a state, e.g. {"Ready for test": 90}' }, staleDays: { type: 'number', description: 'Days without a change before an in-progress item is called stale (default 14)' }, allowDecrease: { type: 'boolean', description: 'Also propose lower percentages (default false)' }, statusDate: { type: 'string' } }, required: ['path', 'backlog'] },
+    run: (a) => backlog.progressFromBacklog(resolveIn(a.path), resolveIn(a.backlog), a),
   },
   {
     name: 'get_status_facts',
