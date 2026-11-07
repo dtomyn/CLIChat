@@ -121,3 +121,40 @@ test('RAID tools are exposed; proposing needs edit access', () => {
   assert.ok(!ok.result.isError, ok.result.content[0].text);
   assert.ok(fs.existsSync(path.join(root, 'RAID (proposed).xlsx')));
 });
+
+test('latestRaid prefers the approved copy, never the proposed one, and reports pending huddle changes', async () => {
+  const root = workspace();
+  const orig = path.join(root, 'RAID.xlsx');
+  assert.deepEqual(await raid.latestRaid(orig), { requested: 'RAID.xlsx', used: orig, notes: [], pending: null });
+
+  const res = await raid.propose(orig, path.join(root, 'huddle.vtt'), PROPOSALS.slice(0, 4), { meetingDate: '2026-10-30' });
+  const waiting = await raid.latestRaid(orig);
+  assert.equal(waiting.used, orig, 'unreviewed proposals are not read as if they were approved');
+  assert.equal(waiting.pending.awaitingReview, 4);
+  assert.match(waiting.notes[0], /4 awaiting review.*not in this report/);
+  // Handing over the review copy by mistake still reads the approved log.
+  const viaProposed = await raid.latestRaid(res.saved);
+  assert.equal(viaProposed.used, orig);
+  assert.match(viaProposed.notes[0], /review copy that already contains unapproved changes/);
+
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.readFile(res.saved);
+  ['Yes', 'Yes', 'No', 'Yes'].forEach((v, i) => { wb.getWorksheet('Proposed changes').getRow(i + 2).getCell(2).value = v; });
+  await wb.xlsx.writeFile(res.saved);
+  const approved = await raid.latestRaid(orig);
+  assert.equal(approved.pending.approvedNotApplied, 3);
+  assert.match(approved.notes[0], /3 approved but not yet applied/);
+
+  const done = await raid.applyApproved(res.saved);
+  fs.utimesSync(done.saved, new Date(Date.now() + 5000), new Date(Date.now() + 5000));
+  const after = await raid.latestRaid(orig);
+  assert.equal(after.used, done.saved);
+  assert.equal(after.pending, null);
+  assert.match(after.notes[0], /Used "RAID \(updated\)\.xlsx".*newer/);
+
+  // An original edited after the update wins, with a warning.
+  fs.utimesSync(orig, new Date(Date.now() + 60000), new Date(Date.now() + 60000));
+  const stale = await raid.latestRaid(orig);
+  assert.equal(stale.used, orig);
+  assert.match(stale.notes[0], /older than "RAID\.xlsx"/);
+});

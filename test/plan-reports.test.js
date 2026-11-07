@@ -39,6 +39,15 @@ test('change log separates material from administrative changes', () => {
   assert.match(r.summary, /1 task with progress updates/);
 });
 
+test('project finish follows the tasks when the header is stale', () => {
+  const { root, plan } = workspace();
+  const upd = project.updatePlan(plan, { statusDate: '2026-10-30', updates: [{ taskId: 42, finish: '2027-02-12' }, { taskId: 41, finish: '2027-02-12' }] }, root);
+  const r = project.changeLog(upd.saved, { against: 'last' }, root);
+  assert.equal(r.projectFinish.now, '2027-02-12');
+  assert.ok(r.projectFinish.movedWorkingDays > 0);
+  assert.match(r.summary, /project finish moved \+10 working days/);
+});
+
 test('change log honours a date and an explicit comparison file', () => {
   const { root, plan } = workspace();
   const upd = project.updatePlan(plan, { statusDate: '2026-10-30', updates: [{ taskId: 23, finish: '2026-12-01' }] }, root);

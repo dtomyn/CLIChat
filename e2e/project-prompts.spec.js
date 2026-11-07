@@ -94,10 +94,8 @@ test('Monthly plan change log: material changes are listed with reasons', async 
   project.recordVersion(project.load(plan), demo);
   project.updatePlan(plan, { statusDate: '2026-10-30', updates: [{ taskId: 23, finish: '2026-12-01' }, { taskId: 18, percentComplete: 55 }] }, demo);
   await openPrompt(page, 'plan-change-log');
-  // With two plan files in the folder the app preselects neither, so choose the updated copy.
-  const planSelect = page.locator('[data-file-select="plan"]');
-  await expect(planSelect.locator('option')).toHaveCount(4); // prompt, two plans, upload
-  await planSelect.selectOption({ label: 'Contoso CRM Migration (updated).xml' });
+  // Two versions of one plan are in the folder; the picker should settle on the newest.
+  expect(await pickedFile(page, 'plan')).toMatch(/\(updated\)\.xml$/);
   const reply = await start(page, 'changelog');
   await expect(page.locator('.msg.assistant .step')).toContainText('Comparing Contoso CRM Migration (updated).xml with an earlier version');
   await expect(reply).toContainText('material');

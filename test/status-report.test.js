@@ -108,3 +108,25 @@ test('status tools are exposed; the report needs edit access', () => {
   assert.ok(!built.result.isError, built.result.content[0].text);
   assert.ok(fs.existsSync(path.join(root, 'Status reports', '2026-10-23', 'status.json')));
 });
+
+test('the status model reads the approved RAID log and says what the huddle left pending', async () => {
+  const raid = require('../tools/raid');
+  const root = workspace();
+  fs.copyFileSync(path.join(DEMO, 'Huddle 10-30 - 30 Oct 2026.vtt'), path.join(root, 'huddle.vtt'));
+  const plan = path.join(root, 'Plan.xml'), log = path.join(root, 'RAID.xlsx');
+  const base = await status.buildModel(plan, { raid: log, root });
+  assert.equal(base.raidInput.notes.length, 0);
+
+  const res = await raid.propose(log, path.join(root, 'huddle.vtt'), [
+    { change: 'add', kind: 'risk', fields: { title: 'Performance environment not ready', owner: 'Grace Kim', probability: 'H', impact: 'H' }, evidence: { quote: "the performance environment won't be ready before performance testing starts" } },
+  ], { meetingDate: '2026-10-30' });
+  const m = await status.buildModel(plan, { raid: res.saved, root }); // the review copy passed by mistake
+  assert.equal(m.raidInput.used, 'RAID.xlsx');
+  assert.equal(m.raidInput.pending.awaitingReview, 1);
+  assert.ok(!m.risks.some((x) => /Performance environment/.test(x.title)), 'unapproved risk must not appear as fact');
+  assert.equal(m.provenance.sources.find((s) => s.kind === 'RAID log').file, 'RAID.xlsx');
+  const md = status.renderMarkdown(m);
+  assert.match(md, /## RAID log: what was used/);
+  assert.match(md, /1 awaiting review/);
+  assert.match(status.renderHtml(m), /<b>RAID log:<\/b>/);
+});

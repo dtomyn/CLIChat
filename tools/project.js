@@ -515,7 +515,10 @@ function changeLog(file, opts = {}, root) {
     const o = old.byUid.get(t.uid);
     return { id: t.id, milestone: t.name, before: iso(o?.finish), now: iso(t.finish), movedWorkingDays: o?.finish && t.finish ? workdaysBetween(o.finish, t.finish) : null, baseline: iso(t.baselineFinish) };
   });
-  const projectFinish = { before: iso(old.finish), now: iso(p.finish), movedWorkingDays: old.finish && p.finish ? workdaysBetween(old.finish, p.finish) : null };
+  // Use the latest task finish, not the plan header: the header isn't recalculated until Microsoft Project opens the file.
+  const lastFinish = (x) => x.tasks.filter((t) => !t.summary && t.finish).reduce((m, t) => (!m || t.finish > m ? t.finish : m), null);
+  const [fBefore, fNow] = [lastFinish(old), lastFinish(p)];
+  const projectFinish = { before: iso(fBefore), now: iso(fNow), movedWorkingDays: fBefore && fNow ? workdaysBetween(fBefore, fNow) : null };
   const moved = milestones.filter((x) => x.movedWorkingDays).length;
   return {
     plan: p.name, comparedWith: path.basename(pick), versionDate: iso(old.statusDate) || path.basename(pick, '.xml'), statusDate: iso(status), thresholdDays: threshold,

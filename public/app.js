@@ -1633,7 +1633,10 @@ function openRecipeRunner(id) {
         const score = (x) => words.reduce((s, w) => s + (x.name.toLowerCase().includes(w) ? 2 : 0), 0) - (/\(updated\)/i.test(x.name) ? 0 : 0);
         const matches = found.filter((x) => !exts.length || exts.includes(`.${x.name.split('.').pop().toLowerCase()}`)).sort((a, b) => score(b) - score(a) || b.mtime - a.mtime);
         const used = new Set(Object.values(files).filter(Boolean).map((x) => x.path));
-        const pick = matches.find((x) => !used.has(x.path) && (score(x) > 0 || matches.length === 1));
+        // No name clue? Still preselect when every match is a version of one file (plan and its "(updated)" copy): the newest is first.
+        const family = (x) => x.name.replace(/\s*\((updated|proposed)\)(?=\.[^.]+$)/i, '').toLowerCase();
+        const oneFamily = matches.length > 0 && matches.every((x) => family(x) === family(matches[0]));
+        const pick = matches.find((x) => !used.has(x.path) && (score(x) > 0 || matches.length === 1 || oneFamily));
         sel.innerHTML = `<option value="">${f.optional ? 'None' : matches.length ? 'Choose a file…' : `No ${exts.join('/') || ''} files in your project folder`}</option>`
           + matches.map((x) => `<option value="${esc(x.path)}" ${pick === x ? 'selected' : ''}>${esc(x.rel)}</option>`).join('')
           + '<option value="__upload">⬆ Upload from my computer…</option>';

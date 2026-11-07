@@ -8,6 +8,7 @@ const path = require('path');
 const crypto = require('crypto');
 const ExcelJS = require('exceljs');
 const project = require('./project');
+const raidTools = require('./raid');
 
 const iso = project.iso;
 const sha = (file) => crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex').slice(0, 16);
@@ -104,7 +105,10 @@ async function buildModel(planFile, opts = {}) {
   });
 
   const changes = prev ? q({ changedSince: 'last' }) : null;
-  const raid = opts.raid ? await readRaid(opts.raid) : [];
+  // Read the newest approved RAID log (never a "(proposed)" review copy) and note any huddle changes still waiting.
+  const raidInput = opts.raid ? await raidTools.latestRaid(opts.raid) : null;
+  const raidFile = raidInput?.used || null;
+  const raid = raidFile ? await readRaid(raidFile) : [];
   const open = raid.filter((x) => x.open);
   const bySeverity = (x, y) => (y.score ?? { High: 6, Medium: 3, Low: 1 }[y.severity] ?? 0) - (x.score ?? { High: 6, Medium: 3, Low: 1 }[x.severity] ?? 0);
   const risks = open.filter((x) => x.kind === 'risk').sort(bySeverity);
@@ -131,7 +135,7 @@ async function buildModel(planFile, opts = {}) {
 
   const sources = [{ kind: 'plan', file: path.basename(planFile), statusDate: a.statusDate, modified: fs.statSync(planFile).mtime.toISOString(), sha256: sha(planFile) }];
   if (prev) sources.push({ kind: 'plan (previous version)', file: path.relative(root, versions[0]).replace(/\\/g, '/'), statusDate: iso(prev.statusDate), sha256: sha(versions[0]) });
-  if (opts.raid) sources.push({ kind: 'RAID log', file: path.basename(opts.raid), modified: fs.statSync(opts.raid).mtime.toISOString(), sha256: sha(opts.raid) });
+  if (raidFile) sources.push({ kind: 'RAID log', file: path.basename(raidFile), modified: fs.statSync(raidFile).mtime.toISOString(), sha256: sha(raidFile) });
 
   return {
     schemaVersion: 1,
@@ -147,6 +151,7 @@ async function buildModel(planFile, opts = {}) {
       overallocated: a.overallocatedResources_next6Weeks,
       overdueRaid: overdueRaid.map((x) => ({ id: x.id, kind: x.kind, title: x.title, owner: x.owner, due: x.due, source: x.source })),
     },
+    raidInput: raidInput && { requested: raidInput.requested, used: path.basename(raidInput.used), notes: raidInput.notes, pending: raidInput.pending },
     risks, issues,
     decisions: raid.filter((x) => x.kind === 'decision').slice(-5),
     dependencies: open.filter((x) => x.kind === 'dependency'),
@@ -192,6 +197,10 @@ function renderMarkdown(m) {
     t([...m.issues, ...m.risks].map((x) => [x.id, x.kind, x.title, x.severity + (x.score ? ` (${x.score})` : ''), x.owner, x.status, x.action]), ['ID', 'Type', 'Description', 'Severity', 'Owner', 'Status', 'Mitigation / action']);
   }
   if (m.ai.decisionsNeeded.length) L.push('## Decisions needed *(AI-written)*', '', ...m.ai.decisionsNeeded.map((d) => `- ${d}`), '');
+  if (m.raidInput?.notes.length) {
+    L.push('## RAID log: what was used', '', ...m.raidInput.notes.map((n) => `- ${n}`), '');
+    if (m.raidInput.pending?.items.length) t(m.raidInput.pending.items.map((x) => [x.n, x.state, `${x.change} ${x.kind} ${x.id}`.trim(), x.what]), ['#', 'Status', 'Change', 'What changes']);
+  }
   L.push('## Sources', '');
   t(m.provenance.sources.map((s) => [s.kind, s.file, s.statusDate || s.modified?.slice(0, 10), s.sha256]), ['Source', 'File', 'As of', 'Fingerprint']);
   L.push(`*Generated ${m.generatedAt.slice(0, 16).replace('T', ' ')} UTC by ${m.provenance.generatedBy}. RAG rule: ${m.rag.rule}*`);
@@ -272,6 +281,7 @@ td{border-bottom:1px solid var(--line);padding:6px;vertical-align:top}table.inne
 @media (max-width:800px){.mshead{display:none}.ms summary{grid-template-columns:1fr auto auto}.ms summary .vbar,.ms summary .num:nth-of-type(2),.ms summary .num:nth-of-type(1){display:none}}
 </style></head><body><main>
 <div class="draft" role="status">${esc(m.provenance.review.status)}: for PMO review before it is shared. Facts come from the plan and RAID log; boxes marked AI-written need checking.</div>
+${m.raidInput?.notes.length ? `<div class="draft" role="note"><b>RAID log:</b> ${m.raidInput.notes.map(esc).join(' ')}</div>` : ''}
 <header><div><h1>${esc(m.project)}</h1><div class="sub">Executive status · status date ${esc(fmtDate(m.statusDate))}</div></div><div class="sub small">Generated ${esc(m.generatedAt.slice(0, 16).replace('T', ' '))} UTC</div></header>
 
 <section class="hero" aria-label="Overall status">

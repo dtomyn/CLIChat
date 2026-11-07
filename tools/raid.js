@@ -303,4 +303,59 @@ async function applyApproved(proposedFile, { original } = {}) {
   return { saved: out, applied: applied.filter((a) => !a.error).length, rejectedByReviewer: skipped, details: applied, note: 'Approved changes were written to the "(updated)" copy. The original RAID log is unchanged.' };
 }
 
-module.exports = { readTranscript, parseVtt, parsePlain, locateQuote, propose, applyApproved, huddleChecks, columns };
+/**
+ * Which RAID file should a report read? The huddle flow leaves three files side by side:
+ *   "<RAID>.xlsx" (original), "<RAID> (proposed).xlsx" (changes highlighted, not yet approved) and "<RAID> (updated).xlsx" (approved only).
+ * A report should read the newest approved log, never the proposed copy (it already contains unreviewed changes), and say
+ * which huddle changes are still waiting so nobody assumes the log is complete.
+ * Returns { requested, used, notes: [], pending: null | { file, awaitingReview, approvedNotApplied, items: [] } }.
+ */
+async function latestRaid(file) {
+  const dir = path.dirname(file), ext = path.extname(file);
+  const base = path.basename(file, ext).replace(/\s*\((proposed|updated)\)\s*$/i, '');
+  const at = (tag) => path.join(dir, tag ? `${base} (${tag}).xlsx` : `${base}${ext}`);
+  const [orig, upd, prop] = [at(''), at('updated'), at('proposed')];
+  const mtime = (f) => fs.statSync(f).mtimeMs;
+  const name = (f) => path.basename(f);
+  const notes = [];
+  let use = fs.existsSync(orig) ? orig : file;
+  if (/\(proposed\)\s*$/i.test(path.basename(file, ext))) {
+    notes.push(fs.existsSync(orig) || fs.existsSync(upd)
+      ? `"${name(file)}" is a review copy that already contains unapproved changes, so the approved RAID log was used instead.`
+      : `"${name(file)}" is a review copy and contains unapproved changes. There is no approved RAID log next to it to use instead.`);
+  }
+  if (fs.existsSync(upd)) {
+    if (!fs.existsSync(use) || mtime(upd) >= mtime(use)) {
+      if (use !== upd) notes.push(`Used "${name(upd)}" (approved huddle changes) because it is newer than "${name(use)}".`);
+      use = upd;
+    } else notes.push(`"${name(upd)}" is older than "${name(use)}", so it was not used. Re-apply the approved huddle changes if they are missing.`);
+  }
+
+  let pending = null;
+  if (fs.existsSync(prop)) {
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.readFile(prop);
+    const rs = wb.getWorksheet('Proposed changes');
+    if (rs) {
+      const applied = fs.existsSync(upd) && mtime(upd) >= mtime(prop); // approved rows were written to the updated copy
+      const items = [];
+      let awaiting = 0, approved = 0;
+      for (let r = 2; r <= rs.rowCount; r++) {
+        const row = rs.getRow(r);
+        if (!cellText(row.getCell(13)).startsWith('{')) continue;
+        const decision = cellText(row.getCell(2)).trim().toLowerCase();
+        const state = /^y/.test(decision) ? (applied ? 'applied' : 'approved') : /^n/.test(decision) ? 'declined' : 'awaiting';
+        if (state === 'awaiting') awaiting++; else if (state === 'approved') approved++;
+        if (state === 'awaiting' || state === 'approved') items.push({ n: +cellText(row.getCell(1)), state: state === 'awaiting' ? 'awaiting review' : 'approved, not yet applied', change: cellText(row.getCell(3)), kind: cellText(row.getCell(4)), id: cellText(row.getCell(5)), what: cellText(row.getCell(8)).replace(/\n/g, '; '), evidence: cellText(row.getCell(9)) });
+      }
+      if (awaiting || approved) pending = { file: name(prop), awaitingReview: awaiting, approvedNotApplied: approved, items: items.slice(0, 12) };
+    }
+  }
+  if (pending) {
+    const bits = [pending.awaitingReview && `${pending.awaitingReview} awaiting review`, pending.approvedNotApplied && `${pending.approvedNotApplied} approved but not yet applied`].filter(Boolean);
+    notes.push(`Huddle changes are still pending in "${pending.file}": ${bits.join(', ')}. They are not in this report.`);
+  }
+  return { requested: name(file), used: use, notes, pending };
+}
+
+module.exports = { readTranscript, parseVtt, parsePlain, locateQuote, propose, applyApproved, huddleChecks, columns, latestRaid };
