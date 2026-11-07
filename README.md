@@ -150,6 +150,12 @@ public/              The UI (vanilla HTML/CSS/JS, no build step)
 Start Lumen.cmd      Double-click launcher for Windows
 ```
 
+## Tests
+
+`node --test test/*.test.js` runs the unit and tool tests.
+
+`npm run test:e2e` runs browser tests ([Playwright](https://playwright.dev), using the Microsoft Edge already installed) against a throw-away copy of Lumen on 127.0.0.1:4391. It uses a stand-in engine that calls the real plan tools but has no AI, so it checks the screens, file pickers and tool results, not the wording of a real reply. Data goes to a temporary folder, and screenshots are saved in `e2e/screenshots/`.
+
 ## The explainer video
 
 [film/make_video.py](film/make_video.py) films a narrated demo of the real app with three personas: Marcus, a business analyst (user stories, reply actions, Save as Word, building an assistant); Priya, a project manager using the Microsoft Project plan and Excel workbooks (health check, scheduled checks, See changes, Gantt tracker); and Dana, a delivery lead (traceability check and a guided lifecycle run with an approval gate). It drives Lumen in Microsoft Edge the way a person would. A cursor moves and clicks, the camera zooms in on what matters, and text is typed key by key. The narration is read by **Kokoro** (`af_heart`), running locally the same way as in IRISIdeas, over click and keyboard sounds and a soft generated music bed.
