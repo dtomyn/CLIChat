@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@highlightjs/cdn-assets": "11.11.1",
-    "dompurify": "3.2.6",
+    "dompurify": "3.4.17",
     "exceljs": "4.4.0",
     "fast-xml-parser": "4.5.3",
     "jszip": "3.10.2",

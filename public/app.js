@@ -48,6 +48,9 @@ const P = {
   thumbUp: '<path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/>',
   thumbDown: '<path d="M17 14V2"/><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z"/>',
   chart: '<path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/>',
+  chat: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+  book: '<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M8 7h8M8 11h6"/>',
+  at: '<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><path d="M14 2v6h6M9 15l6-6"/>',
 };
 const icon = (n, cls = '') => `<span class="ico ${cls}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${P[n] || P.spark}</svg></span>`;
 const hydrateIcons = (root = document) => root.querySelectorAll('[data-icon]:not([data-icon-done])').forEach((el) => { el.insertAdjacentHTML('afterbegin', icon(el.dataset.icon)); el.dataset.iconDone = '1'; });
@@ -121,6 +124,7 @@ async function boot() {
   S.skills = skills;
   S.settings = status.settings; S.providers = status.providers; S.assistants = assistants; S.recipes = recipes; S.convs = convs; S.osUser = status.user;
   applyTheme(S.settings.theme);
+  if (innerWidth <= 860) $('#app').classList.add('collapsed'); // the chats panel overlays the page on small screens
   renderUser();
   renderConvList();
   bindChrome();
@@ -158,16 +162,39 @@ function route() {
   if (h.startsWith('run/')) { S.current = null; return renderRun(h.slice(4)); }
   S.current = null;
   if (h === 'runs') return renderRuns();
-  if (h === 'assistants') return renderAssistantsPage();
-  if (h === 'recipes') return renderRecipesPage();
+  if (h === 'assistants' || h === 'agents') return renderAssistantsPage();
+  if (h === 'recipes' || h === 'prompts') return renderRecipesPage();
   if (h === 'insights') return renderInsightsPage();
   renderHome();
 }
 const go = (h) => { if (location.hash === `#/${h}`) route(); else location.hash = `/${h}`; };
-function setNav(name) { $$('.nav-item').forEach((n) => n.classList.toggle('active', n.dataset.nav === name)); renderConvList(); }
+function setNav(name) { $$('.nav-item').forEach((n) => n.classList.toggle('active', n.dataset.nav === name || (n.dataset.nav === 'home' && name === 'chat'))); renderConvList(); }
 
 // ---------------------------------------------------------------- sidebar
+// Pinned agents, like the agent list in Microsoft 365 Copilot. Until someone pins their own, show the agents they
+// used most recently (topped up with the first built-ins).
+function pinnedAgentIds() {
+  if (Array.isArray(S.settings.pinnedAgents)) return S.settings.pinnedAgents.filter((id) => S.assistants.some((a) => a.id === id));
+  const recent = [...new Set(S.convs.map((c) => c.assistantId))].filter((id) => id !== 'lumen' && S.assistants.some((a) => a.id === id));
+  const fill = S.assistants.map((a) => a.id).filter((id) => id !== 'lumen' && !recent.includes(id));
+  return [...recent, ...fill].slice(0, 4);
+}
+async function togglePinAgent(id) {
+  const ids = pinnedAgentIds();
+  await saveSettings({ pinnedAgents: ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id] });
+  renderConvList();
+  toast(ids.includes(id) ? 'Removed from the sidebar' : 'Pinned to the sidebar', 'pin');
+}
+function renderAgentList() {
+  const el = $('#agentList'); if (!el) return;
+  const ids = pinnedAgentIds();
+  const sel = S.view === 'home' ? (S.draft.assistantId || 'lumen') : S.view === 'chat' ? S.current?.assistantId : null;
+  el.innerHTML = ids.length ? ids.map((id) => { const a = assistantById(id); return `<button class="agent-item ${sel === id ? 'active' : ''}" data-agent="${esc(id)}" data-color="${a.color}" title="${esc(a.tagline || a.name)}"><span class="a-badge sm">${esc(a.emoji)}</span><span class="conv-title">${esc(a.name)}</span></button>`; }).join('')
+    : '<div class="conv-empty" style="padding:6px 10px;text-align:left">Pin agents here from the Agents page.</div>';
+}
+
 function renderConvList() {
+  renderAgentList();
   const q = S.search.toLowerCase();
   const list = S.convs.filter((c) => !q || c.title.toLowerCase().includes(q) || (c.preview || '').toLowerCase().includes(q));
   const el = $('#convList');
@@ -201,13 +228,13 @@ async function pollSchedules() {
       const previous = S.schedules.find((p) => p.id === s.id);
       if (previous && ['ok', 'late'].includes(s.lastStatus) && (previous.lastRunAt !== s.lastRunAt || previous.lastStatus === 'running')) {
         const recipe = S.recipes.find((r) => r.id === s.recipeId);
-        toast(`Your ${recipe?.name || 'scheduled check'} is ready`, 'spark');
+        toast(`Your ${recipe?.name || 'scheduled prompt'} is ready`, 'spark');
       }
     }
     S.schedules = schedules;
     await refreshConvs();
     if (S.view === 'recipes' && S.recipeTab === 'Scheduled') renderRecipesPage();
-  } catch (e) { toast(`Couldn't refresh scheduled checks: ${e.message}`, 'alert'); }
+  } catch (e) { toast(`Couldn't refresh scheduled prompts: ${e.message}`, 'alert'); }
 }
 
 function convMenu(cid, anchor) {
@@ -314,7 +341,7 @@ function composerHTML({ home = false, conv = null } = {}) {
   const p = provider();
   const model = (p?.models || []).find((m) => m.id === S.settings.model) || p?.models?.[0];
   const live = isLive(conv);
-  const placeholder = home ? `How can I help${firstName() ? `, ${firstName()}` : ''} today?` : `Reply to ${a.name}…`;
+  const placeholder = home ? `Message ${a.id === 'lumen' ? 'Lumen' : a.name} · type / to add a file` : `Message ${a.name}…`;
   return `
     <div class="composer-wrap">
       <div class="pinned-strip" id="pinnedStrip">${pinnedHTML(conv)}</div>
@@ -322,17 +349,23 @@ function composerHTML({ home = false, conv = null } = {}) {
         <div class="attach-list" id="attachList">${attachChips()}</div>
         <textarea id="input" rows="1" placeholder="${esc(placeholder)}">${esc(d.text)}</textarea>
         <div class="composer-row">
-          <button class="pill round" id="attachBtn" title="Attach files">${icon('paperclip')}</button>
+          <button class="pill round" id="attachBtn" title="Add content">${icon('plus')}</button>
           ${home ? `<button class="pill outline" id="assistantPill" data-color="${a.color}"><span class="a-badge sm">${esc(a.emoji)}</span><span class="lbl">${esc(a.name)}</span>${icon('chevron', 'caret')}</button>` : ''}
           <button class="pill" id="accessPill" title="What Lumen is allowed to do">${ACCESS[access]?.emoji || '👀'} <span class="lbl">${esc(ACCESS[access]?.short || 'Can read files')}</span>${icon('chevron', 'caret')}</button>
           <span class="spacer"></span>
-          ${model && p.models.length > 1 ? `<button class="pill" id="modelPill" title="Response style">${icon('gauge')}<span class="lbl">${esc(model.label)}</span>${icon('chevron', 'caret')}</button>` : ''}
+          ${model && p.models.length > 1 ? `<button class="pill" id="modelPill" title="Response mode">${icon('gauge')}<span class="lbl">${esc(model.label)}</span>${icon('chevron', 'caret')}</button>` : ''}
           <button class="send-btn ${live ? 'stop' : ''}" id="sendBtn" title="${live ? 'Stop' : 'Send (Enter)'}">${icon(live ? 'stop' : 'send')}</button>
         </div>
         <input type="file" id="fileInput" multiple hidden>
       </div>
-      ${home ? '' : `<div class="composer-hint">${!live && suggestedNextStep(conv) ? `<span class="suggest-hint"><kbd>↑</kbd> fills in the suggested next step · </span>` : ''}Lumen can make mistakes — double-check important details.</div>`}
+      <div class="composer-hint">${!home && !live && suggestedNextStep(conv) ? `<span class="suggest-hint"><kbd>↑</kbd> fills in the suggested next step · </span>` : ''}${boundaryNote()}</div>
     </div>`;
+}
+
+// Lumen looks like Microsoft 365 Copilot on purpose, so say plainly which tool (and which AI service) this is.
+function boundaryNote() {
+  const p = provider();
+  return `<span class="boundary-note" title="Lumen sends your messages and files to ${esc(p?.name || 'the AI engine')} through ${esc(p?.vendor || 'its command-line tool')}. Microsoft 365 Copilot's data protections don't apply here.">${icon('shield')}<span>You're in <b>Lumen</b>, powered by ${esc(p?.name || 'your AI engine')}. This isn't Microsoft 365 Copilot.</span></span>`;
 }
 
 // Pull up to 3 suggested next steps out of the latest assistant reply: a "Suggested next step(s):" line or list,
@@ -430,8 +463,10 @@ function bindComposer(root, { conv = null } = {}) {
     send.classList.toggle('go', !live && !!ready);
   };
   autosize(); syncSend();
-  input.addEventListener('input', () => { S.draft.text = input.value; autosize(); syncSend(); });
+  const mention = fileMention(input, () => conv?.workspace || currentWorkspace());
+  input.addEventListener('input', () => { S.draft.text = input.value; autosize(); syncSend(); mention.update(); });
   input.addEventListener('keydown', (e) => {
+    if (mention.key(e)) return;
     if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); if (!isLive(conv)) submit(); return; }
     if (e.key === 'ArrowUp' && !e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey && !input.value.trim() && !isLive(conv)) {
       const s = suggestedNextStep(conv); if (!s) return;
@@ -443,13 +478,18 @@ function bindComposer(root, { conv = null } = {}) {
   });
   input.addEventListener('paste', (e) => { const files = [...(e.clipboardData?.files || [])]; if (files.length) { e.preventDefault(); uploadFiles(files); } });
   send.addEventListener('click', () => { if (isLive(conv)) stopConv(conv); else submit(); });
-  $('#attachBtn', root).addEventListener('click', () => $('#fileInput', root).click());
+  $('#attachBtn', root).addEventListener('click', (e) => openMenu(e.currentTarget, [
+    { heading: 'Add content' },
+    { icon: 'upload', label: 'Upload from this device', hint: 'Saved to your notebook’s Attachments folder', run: () => $('#fileInput', root).click() },
+    { icon: 'book', label: 'Reference a file in your notebook', hint: 'Or type / in the message box', run: () => mention.start() },
+    { icon: 'pin', label: 'Pin a file to this chat', hint: 'Included with every message', run: () => pickPinnedFiles(conv) },
+  ]));
   $('#fileInput', root).addEventListener('change', (e) => { uploadFiles([...e.target.files]); e.target.value = ''; });
   $('#attachList', root).addEventListener('click', (e) => { const b = e.target.closest('[data-rm-attach]'); if (b) { S.draft.attachments.splice(+b.dataset.rmAttach, 1); refreshAttach(); } });
   $('#assistantPill', root)?.addEventListener('click', (e) => openMenu(e.currentTarget, [
     { heading: 'Who should help?' },
     ...S.assistants.map((a) => ({ emoji: a.emoji, label: a.name, hint: a.tagline, selected: (S.draft.assistantId || 'lumen') === a.id, run: () => { S.draft.assistantId = a.id; if (a.access) S.draft.access = a.access; renderHome(); } })),
-    { sep: true }, { icon: 'plus', label: 'Create an assistant', run: () => openAssistantBuilder() },
+    { sep: true }, { icon: 'plus', label: 'Create an agent', run: () => openAssistantBuilder() },
   ]));
   $('#accessPill', root).addEventListener('click', (e) => {
     const cur = conv ? (conv.access || S.settings.access) : (S.draft.access || assistantById(S.draft.assistantId).access || S.settings.access);
@@ -458,8 +498,76 @@ function bindComposer(root, { conv = null } = {}) {
       toast(`${v.label} — ${k === 'edit' ? 'Lumen can now save files' : k === 'read' ? 'Lumen can read your folder' : 'files are off-limits'}`, 'shield');
     } }))]);
   });
-  $('#modelPill', root)?.addEventListener('click', (e) => openMenu(e.currentTarget, [{ heading: 'Response style' }, ...provider().models.map((m) => ({ label: m.label, hint: m.hint, selected: S.settings.model === m.id, run: async () => { await saveSettings({ model: m.id }); rerenderCurrent(); } }))], { align: 'right' }));
+  $('#modelPill', root)?.addEventListener('click', (e) => openMenu(e.currentTarget, [{ heading: 'Response mode' }, ...provider().models.map((m) => ({ label: m.label, hint: m.hint, selected: S.settings.model === m.id, run: async () => { await saveSettings({ model: m.id }); rerenderCurrent(); } }))], { align: 'right' }));
   root._sync = syncSend;
+}
+
+// "/" in the message box: pick a file from the notebook (project folder), the way "/" references a file in
+// Microsoft 365 Copilot. The chosen file is attached by reference: nothing is copied.
+const fileCache = { ws: '', at: 0, files: [] };
+async function notebookFiles(ws) {
+  if (fileCache.ws === ws && Date.now() - fileCache.at < 30000) return fileCache.files;
+  const { files } = await api(`/api/folder/files?workspace=${encodeURIComponent(ws)}&all=1`);
+  Object.assign(fileCache, { ws, at: Date.now(), files });
+  return files;
+}
+function fileMention(input, workspace) {
+  const st = { el: null, items: [], i: 0, files: null };
+  const TRIGGER = /(^|\s)\/([^\s/\\]*)$/;
+  const query = () => { const m = TRIGGER.exec(input.value.slice(0, input.selectionStart)); return m ? m[2] : null; };
+  const close = () => { st.el?.remove(); st.el = null; st.items = []; };
+  const pick = (f) => {
+    const caret = input.selectionStart, q = query();
+    if (q !== null) input.value = input.value.slice(0, caret - q.length - 1) + input.value.slice(caret);
+    const pos = caret - (q === null ? 0 : q.length + 1);
+    S.draft.text = input.value;
+    if (!S.draft.attachments.some((a) => a.path === f.path)) S.draft.attachments.push({ name: f.name, path: f.path });
+    close(); refreshAttach();
+    input.focus(); input.setSelectionRange(pos, pos);
+  };
+  const draw = () => {
+    const q = query();
+    if (q === null || !st.files) return close();
+    const ql = q.toLowerCase();
+    st.items = st.files.filter((f) => f.rel.toLowerCase().includes(ql))
+      .sort((a, b) => (b.name.toLowerCase().startsWith(ql) - a.name.toLowerCase().startsWith(ql)) || b.mtime - a.mtime).slice(0, 8);
+    st.i = Math.min(st.i, Math.max(0, st.items.length - 1));
+    if (!st.el) {
+      st.el = document.createElement('div'); st.el.className = 'menu mention-menu'; st.el.setAttribute('role', 'listbox');
+      st.el.addEventListener('mousedown', (e) => { e.preventDefault(); const b = e.target.closest('[data-mi]'); if (b) pick(st.items[+b.dataset.mi]); });
+      document.body.appendChild(st.el);
+    }
+    st.el.innerHTML = `<div class="menu-title">Files in your notebook</div>` + (st.items.length ? st.items.map((f, i) => `
+      <button class="menu-item ${i === st.i ? 'focus' : ''}" data-mi="${i}" role="option" aria-selected="${i === st.i}">${icon('file')}<span class="mi-text"><span>${esc(f.name)}</span>${f.rel !== f.name ? `<span class="mi-hint">${esc(f.rel.slice(0, -f.name.length - 1))}</span>` : ''}</span></button>`).join('')
+      : `<div class="conv-empty" style="padding:10px">No files match “${esc(q)}”.</div>`);
+    const r = (input.closest('.composer') || input).getBoundingClientRect();
+    Object.assign(st.el.style, { left: `${Math.max(8, r.left)}px`, bottom: `${innerHeight - r.top + 6}px`, top: 'auto', width: `${Math.min(r.width, 440)}px`, maxWidth: 'none' });
+  };
+  const update = async () => {
+    if (query() === null) return close();
+    if (!st.files) { try { st.files = await notebookFiles(workspace()); } catch (e) { toast(e.message, 'alert'); return close(); } }
+    draw();
+  };
+  input.addEventListener('blur', () => setTimeout(close, 120));
+  return {
+    update,
+    // Open the picker from the "+" menu: insert a "/" at the caret.
+    start() {
+      const s = input.selectionStart ?? input.value.length;
+      const pre = s && !/\s$/.test(input.value.slice(0, s)) ? ' /' : '/';
+      input.value = input.value.slice(0, s) + pre + input.value.slice(s);
+      input.focus(); input.setSelectionRange(s + pre.length, s + pre.length);
+      input.dispatchEvent(new Event('input'));
+    },
+    // Keyboard handling while the picker is open. Returns true when it used the key.
+    key(e) {
+      if (!st.el) return false;
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); if (st.items.length) { st.i = (st.i + (e.key === 'ArrowDown' ? 1 : -1) + st.items.length) % st.items.length; draw(); } return true; }
+      if ((e.key === 'Enter' || e.key === 'Tab') && st.items.length) { e.preventDefault(); pick(st.items[st.i]); return true; }
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); return true; }
+      return false;
+    },
+  };
 }
 
 function refreshAttach() { const l = $('#attachList'); if (l) l.innerHTML = attachChips(); syncAnySend(); }
@@ -501,29 +609,27 @@ function renderHome() {
     <div class="home">
       <div class="home-inner">
         <div class="greeting">
-          <svg class="greeting-spark" viewBox="0 0 40 40"><defs><linearGradient id="gs" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7c5cff"/><stop offset=".55" stop-color="#c757d6"/><stop offset="1" stop-color="#ff8a5b"/></linearGradient></defs><path d="M20 2l4.4 13.6L38 20l-13.6 4.4L20 38l-4.4-13.6L2 20l13.6-4.4z" fill="url(#gs)"/></svg>
-          <h1>${greetingWord()}${firstName() ? `, <em>${esc(firstName())}</em>` : ''}</h1>
+          ${a.id === 'lumen' ? '' : `<span class="a-badge md" data-color="${a.color}">${esc(a.emoji)}</span>`}
+          <h1>${a.id === 'lumen' ? `${greetingWord()}${firstName() ? `, ${esc(firstName())}` : ''}` : esc(a.name)}</h1>
         </div>
-        <p class="home-sub">${a.id === 'lumen' ? 'Ask anything, attach a document, or pick a quick start below.' : `You're working with <b>${esc(a.name)}</b> — ${esc(a.tagline || '')}`}</p>
+        <p class="home-sub">${a.id === 'lumen' ? 'How can I help today?' : esc(a.tagline || '')}</p>
         ${composerHTML({ home: true })}
+
+        ${a.starters?.length ? `<div class="prompt-chips" aria-label="Suggested prompts">${a.starters.map((s) => `<button class="prompt-chip" data-starter="${esc(s)}" title="${esc(s)}">${icon('spark')}<span>${esc(s)}</span></button>`).join('')}</div>` : ''}
 
         ${demoBanner()}
 
-        <div class="section-label"><span>Guided delivery</span><a data-go="runs">View lifecycle runs</a></div>
-        <button class="starter" data-go="runs"><span>🧬 Requirements to stories — guided stages with approval gates</span>${icon('right')}</button>
-
-        <div class="section-label"><span>Who would you like to work with?</span><a data-go="assistants">Manage assistants</a></div>
+        <div class="section-label"><span>Agents</span><a data-go="assistants">See all agents</a></div>
         <div class="assistant-row">
           ${S.assistants.map((x) => `<button class="a-chip ${x.id === (S.draft.assistantId || 'lumen') ? 'selected' : ''}" data-color="${x.color}" data-pick-assistant="${x.id}" title="${esc(x.tagline || '')}"><span class="a-badge">${esc(x.emoji)}</span>${esc(x.name)}</button>`).join('')}
-          <button class="a-chip" data-new-assistant><span class="a-badge" style="background:var(--panel-2)">${icon('plus')}</span>Create your own</button>
+          <button class="a-chip" data-new-assistant><span class="a-badge" style="background:var(--panel-2)">${icon('plus')}</span>Create an agent</button>
         </div>
 
-        ${a.starters?.length ? `
-        <div class="section-label"><span>Try asking ${esc(a.name)}</span></div>
-        <div class="starter-list" style="max-width:none">${a.starters.map((s) => `<button class="starter" data-starter="${esc(s)}"><span>${esc(s)}</span>${icon('right')}</button>`).join('')}</div>` : ''}
-
-        <div class="section-label"><span>Quick starts</span><a data-go="recipes">See all</a></div>
+        <div class="section-label"><span>From the prompt gallery</span><a data-go="recipes">See all prompts</a></div>
         <div class="recipe-grid">${recipes.map(recipeCard).join('')}</div>
+
+        <div class="section-label"><span>Guided delivery ${lumenOnlyBadge()}</span><a data-go="runs">View lifecycle runs</a></div>
+        <button class="starter" data-go="runs"><span>🧬 Requirements to stories: guided stages with approval gates</span>${icon('right')}</button>
       </div>
     </div>`;
   const root = $('#view');
@@ -563,7 +669,7 @@ function demoBanner() {
   }
   return `<div class="demo-banner">
     <div class="demo-icon">📦</div>
-    <div class="demo-text"><b>Try it on sample data</b><span>A project manager demo (Microsoft Project plan with Excel budget, RAID log and timesheets), or a delivery-lifecycle sample (BRD, design and a traceability workbook) for the requirements, design, story and traceability assistants.</span></div>
+    <div class="demo-text"><b>Try it on sample data</b><span>A project manager demo (Microsoft Project plan with Excel budget, RAID log and timesheets), or a delivery-lifecycle sample (BRD, design and a traceability workbook) for the requirements, design, story and traceability agents.</span></div>
     <div class="demo-cta"><button class="btn grad sm" data-install-demo="crm">${icon('package')}PM demo</button><button class="btn grad sm" data-install-demo="aidlc">${icon('package')}AIDLC sample</button><button class="icon-btn" data-dismiss-demo title="Hide">${icon('x')}</button></div>
   </div>`;
 }
@@ -600,9 +706,16 @@ function recipeCard(r) {
     <span class="recipe-emoji">${esc(r.emoji || '✨')}</span>
     <span class="recipe-name">${esc(r.name)}</span>
     <span class="recipe-desc">${esc(r.description || '')}</span>
-    <span class="recipe-meta"><span class="a-badge sm" data-color="${a.color}" style="width:18px;height:18px;font-size:10px">${esc(a.emoji)}</span>${esc(a.name)}${r.access === 'edit' ? ' · <span class="badge accent">Saves a file</span>' : ''}</span>
+    <span class="recipe-meta"><span class="a-badge sm" data-color="${a.color}" style="width:18px;height:18px;font-size:10px">${esc(a.emoji)}</span>${esc(a.name)}${r.access === 'edit' ? ' · <span class="badge accent">Saves a file</span>' : ''}${needsLocalTools(r) ? ` ${lumenOnlyBadge('This prompt relies on Lumen’s local document tools (saving files, or reading Microsoft Project plans). In Microsoft 365 Copilot you’d do those steps by hand.')}` : ''}</span>
   </button>`;
 }
+
+// Marks features that won't be in Microsoft 365 Copilot, so nobody builds a habit that breaks on switch-over day.
+const LUMEN_ONLY_TIP = 'Lumen only: this runs on your computer and isn’t part of Microsoft 365 Copilot.';
+// A prompt is Lumen-only when it saves or updates files, or works from Microsoft Project plans. Reading Word or
+// Excel files and writing a reply is something Copilot does too.
+const needsLocalTools = (r) => r.access === 'edit' || (r.fields || []).some((f) => /\.(mpp|xml)\b/i.test(f.accept || ''));
+const lumenOnlyBadge = (tip = LUMEN_ONLY_TIP) => `<span class="badge lumen-only" title="${esc(tip)}">Lumen only</span>`;
 
 // ---------------------------------------------------------------- chat
 async function openConversation(id) {
@@ -673,7 +786,7 @@ function renderChat() {
   $('#chatMenuBtn').addEventListener('click', (e) => openMenu(e.currentTarget, [
     { icon: 'edit', label: 'Rename', run: () => renameConv(c.id) },
     { icon: 'copy', label: 'Copy whole conversation', run: () => { navigator.clipboard.writeText(c.messages.map((m) => `${m.role === 'user' ? 'You' : a.name}:\n${m.content}`).join('\n\n---\n\n')); toast('Conversation copied'); } },
-    { icon: 'folder', label: 'Show project files', run: () => openDrawer() },
+    { icon: 'book', label: 'Open notebook', run: () => openDrawer() },
     { sep: true },
     { icon: 'trash', label: 'Delete chat', danger: true, run: () => deleteConv(c.id) },
   ], { align: 'right' }));
@@ -707,7 +820,7 @@ function msgHTML(m, c) {
     }
     return `<div class="msg user" data-mid="${m.id}">${attach}
       <div class="bubble">${esc(m.content)}</div>
-      <div class="msg-actions"><button data-edit-msg title="Edit and resend">${icon('pen')}Edit</button><button data-save-recipe title="Turn this request into a reusable quick start">${icon('wand')}Save as quick start</button></div>
+      <div class="msg-actions"><button data-edit-msg title="Edit and resend">${icon('pen')}Edit</button><button data-save-recipe title="Save this request to your prompt gallery">${icon('wand')}Save prompt</button></div>
     </div>`;
   }
   const a = assistantById(c.assistantId);
@@ -737,10 +850,10 @@ function assistantInner(m, a, live) {
       <div class="steps-list">${tools.map((t) => `<div class="step ${t.ok === false ? 'fail' : ''}"><span class="step-state">${t.ok === undefined && live ? '<span class="spinner"></span>' : icon(t.ok === false ? 'x' : 'check')}</span>${icon(t.icon)}<span>${esc(t.label)}</span></div>`).join('')}</div>
     </div>` : ''}
     ${m.content ? `<div class="md">${md(m.content, live)}</div>` : live && !running ? `<div class="thinking"><span class="orb"></span><span class="shimmer">${esc(a.name)} is thinking…</span></div>` : ''}
-    ${files.length ? `<div class="file-cards">${files.map((f) => `<div><button class="file-card" data-open-file="${esc(f)}" title="Open ${esc(f)}"><span class="file-icon">${esc(extOf(f))}</span><span class="file-info"><b>${esc(baseName(f))}</b><small>Saved to your project folder · Click to open</small></span></button>${/\.(xlsx|xml)$/i.test(f) ? `<button class="btn ghost sm" data-diff-file="${esc(f)}">See changes / Compare with…</button>` : ''}</div>`).join('')}</div>` : ''}
+    ${files.length ? `<div class="file-cards">${files.map((f) => `<div><button class="file-card" data-open-file="${esc(f)}" title="Open ${esc(f)}"><span class="file-icon">${esc(extOf(f))}</span><span class="file-info"><b>${esc(baseName(f))}</b><small>Saved to your project folder · Click to open</small></span></button>${/\.(xlsx|xml)$/i.test(f) ? `<button class="btn ghost sm" data-diff-file="${esc(f)}" title="${esc(LUMEN_ONLY_TIP)}">See changes / Compare with…</button>` : ''}</div>`).join('')}</div>` : ''}
     ${m.error ? `<div class="error-card">${icon('alert')}<div><b>Something went wrong.</b><div style="color:var(--text-2);font-size:13.5px">${esc(friendlyError(m.error))}</div><button class="btn soft sm" data-retry="${m.id}">${icon('retry')}Try again</button></div></div>` : ''}
     ${m.stopped ? `<div class="msg-meta" style="margin:6px 0 0">Stopped</div>` : ''}
-    ${!live && (m.content || m.error) ? `<div class="msg-actions"><button data-copy-msg="${m.id}">${icon('copy')}Copy</button>${m.error ? '' : `<button data-retry="${m.id}" title="Replace this reply with a new one">${icon('retry')}Retry</button>`}<button data-branch="${m.id}" title="Continue from here in a new chat">${icon('branch')}Branch from here</button>${m.content ? `<button data-save-as title="Save this reply as a Word or Excel file">${icon('save')}Save as…</button>${feedbackButtons(m)}` : ''}${usageMeta(m)}</div>` : ''}
+    ${!live && (m.content || m.error) ? `<div class="msg-actions"><button data-copy-msg="${m.id}">${icon('copy')}Copy</button>${m.error ? '' : `<button data-retry="${m.id}" title="Replace this reply with a new one">${icon('retry')}Retry</button>`}<button data-branch="${m.id}" title="Continue from here in a new chat">${icon('branch')}Branch</button>${m.content ? `<button data-save-as title="Export this reply to Word or Excel">${icon('save')}Export</button>${feedbackButtons(m)}` : ''}${usageMeta(m)}${m.content ? '<span class="ai-note">AI-generated content may be incorrect</span>' : ''}</div>` : ''}
     ${steps.length ? `<div class="suggest-chips">${steps.map((s) => `<button class="suggest-chip" data-suggest="${esc(s)}" title="${esc(s)}&#10;&#10;Click to send · Shift-click to edit first">${esc(s.length > 140 ? `${s.slice(0, 139)}…` : s)}</button>`).join('')}</div>` : ''}`;
 }
 
@@ -829,7 +942,7 @@ function rerenderMsg(c, m) {
 function saveReplyMenu(c, mid, anchor) {
   const m = c.messages.find((x) => x.id === mid); if (!m?.content || !c.id) return;
   openMenu(anchor, [
-    { heading: 'Save to your project folder' },
+    { heading: 'Export to your notebook' },
     { icon: 'file', label: 'Word document (.docx)', hint: 'Headings, lists and tables, ready to edit', run: () => exportReply(c, m, 'docx') },
     ...(hasMdTable(m.content) ? [{ icon: 'sheet', label: 'Excel workbook (.xlsx)', hint: 'One sheet per table', run: () => exportReply(c, m, 'xlsx') }] : []),
   ]);
@@ -860,7 +973,7 @@ async function rateReply(c, mid, rating) {
   } catch (e) { return toast(e.message, 'alert'); }
   let reason = '';
   modal({
-    title: 'What went wrong?', sub: 'Optional, and it stays on this computer. It helps your team see which assistants need work.',
+    title: 'What went wrong?', sub: 'Optional, and it stays on this computer. It helps your team see which agents need work.',
     body: `<div class="chip-list" id="fbReasons" style="margin-bottom:12px">${DOWN_REASONS.map((x) => `<button class="chip" data-reason="${esc(x)}">${esc(x)}</button>`).join('')}</div>
       <textarea class="textarea" id="fbNote" rows="3" maxlength="2000" placeholder="Anything else? (optional)"></textarea>`,
     actions: [{ label: 'Cancel' }, { label: 'Send feedback', primary: true, run: async (el) => { await save({ rating: 'down', reason, note: $('#fbNote', el).value }); toast('Thanks — noted', 'thumbDown'); } }],
@@ -884,7 +997,7 @@ function saveAsRecipe(c, mid) {
     const ext = (f.name.match(/\.[a-z0-9]+$/i) || [''])[0].toLowerCase();
     return { key, label: `File ${i + 1}`, type: 'file', ...(ext ? { accept: ext } : {}) };
   });
-  openRecipeBuilder(null, { name: c.title || '', emoji: a.emoji || '⚡', description: '', category: 'My quick starts', assistantId: a.id, access: c.access || '', fields, template });
+  openRecipeBuilder(null, { name: c.title || '', emoji: a.emoji || '⚡', description: '', category: 'My prompts', assistantId: a.id, access: c.access || '', fields, template });
 }
 
 // --- edit, retry and branch
@@ -1132,7 +1245,9 @@ async function openDrawer() {
   d.classList.add('open'); d.setAttribute('aria-hidden', 'false');
   $('#drawerFiles').innerHTML = '<div class="conv-empty"><span class="spinner" style="width:18px;height:18px"></span></div>';
   const r = await api(`/api/folder/files?workspace=${encodeURIComponent(currentWorkspace())}`);
-  $('#drawerPath').textContent = r.workspace;
+  $('#drawerPath').textContent = `Project folder · ${r.workspace}`;
+  $('#drawerTip').innerHTML = /onedrive/i.test(r.workspace) ? ''
+    : `${icon('alert')}<span>This folder isn't in OneDrive. Keep your notebook in OneDrive so Microsoft 365 Copilot can find these files later.</span>`;
   const changed = new Map();
   for (const msg of S.current?.messages || []) for (const file of msg.files || []) changed.set(file, msg.id);
   const paths = [...changed.keys()];
@@ -1140,7 +1255,7 @@ async function openDrawer() {
   const section = paths.length ? `<div class="conv-group">Files changed in this chat</div>` + paths.map((p, i) => `<button class="file-row" data-jump-message="${esc(changed.get(p))}" title="Go to the reply that changed this file"><span class="file-icon">${esc(extOf(p))}</span><span class="file-info"><b>${esc(baseName(p))}</b><small>${status.mtime[i] ? esc(timeAgo(status.mtime[i])) : 'Missing'} · Go to reply</small></span></button>`).join('') : '';
   $('#drawerFiles').innerHTML = section + (r.files.length ? `<div class="conv-group" style="padding-top:4px">Recently changed</div>` + r.files.map((f) => `
     <div class="drawer-file"><button class="file-row" data-open-file="${esc(f.path)}" title="${esc(f.rel)}"><span class="file-icon">${esc(extOf(f.name))}</span><span class="file-info"><b>${esc(f.name)}</b><small>${esc(f.rel.includes('\\') || f.rel.includes('/') ? f.rel.replace(/[\\/][^\\/]+$/, '') + ' · ' : '')}${fmtSize(f.size)} · ${timeAgo(f.mtime)}</small></span></button><button class="btn ghost sm" data-pin-file="${esc(f.path)}" title="Pin to this chat">📌</button></div>`).join('')
-    : `<div class="conv-empty">This folder is empty.<br>Files Lumen creates will appear here.</div>`);
+    : `<div class="conv-empty">This notebook is empty.<br>Files Lumen creates will appear here.</div>`);
 }
 function closeDrawer() { const d = $('#filesDrawer'); d.classList.remove('open'); d.setAttribute('aria-hidden', 'true'); }
 
@@ -1149,8 +1264,8 @@ async function renderRuns() {
   try { S.runs = await api('/api/runs'); }
   catch (e) { toast(e.message, 'alert'); return; }
   if (S.view !== 'runs') return;
-  $('#view').innerHTML = `<div class="page"><div class="page-inner"><div class="section-label"><span>Lifecycle runs</span></div>
-    <p>Move from requirements to stories, reviewing each stage before the next.</p>
+  $('#view').innerHTML = `<div class="page"><div class="page-inner"><div class="page-head"><div><h1>Lifecycle runs ${lumenOnlyBadge()}</h1>
+    <p>Move from requirements to stories, reviewing each stage before the next.</p></div></div>
     <button class="btn primary" id="newRun">🧬 Start requirements to stories</button>
     <div class="lifecycle-list">${S.runs.length ? S.runs.map((r) => `<button class="starter" data-run="${esc(r.id)}"><span><b>${esc(r.name)}</b> · ${r.stages.filter((s) => s.status === 'approved').length}/${r.stages.length} approved</span>${icon('right')}</button>`).join('') : '<p>No runs yet.</p>'}</div></div></div>`;
   $('#newRun').addEventListener('click', startNewRun);
@@ -1246,8 +1361,8 @@ function renderAssistantsPage() {
   $('#view').innerHTML = `
     <div class="page"><div class="page-inner">
       <div class="page-head">
-        <div><h1>Assistants</h1><p>Assistants are helpers with their own expertise and personality. Pick one to start a chat, or create your own in under a minute — no technical setup needed.</p></div>
-        <button class="btn grad" data-new-assistant>${icon('plus')}Create assistant</button>
+        <div><h1>Agents</h1><p>Agents are helpers with their own expertise and instructions, the same idea as agents in Microsoft 365 Copilot. Pick one to start a chat, or create your own in under a minute.</p></div>
+        <div class="row" style="flex:0 0 auto;gap:8px"><button class="btn soft" data-export-all title="Save every agent in a form Microsoft 365 Copilot can use">${icon('external')}Export all to Copilot</button><button class="btn grad" data-new-assistant>${icon('plus')}Create agent</button></div>
       </div>
       <div class="card-grid">
         ${S.assistants.map((a, i) => `
@@ -1263,23 +1378,27 @@ function renderAssistantsPage() {
             </div>
           </div>`).join('')}
         <button class="a-card new-card" data-new-assistant>
-          <span class="plus">${icon('plus')}</span><b>Create an assistant</b><span style="font-size:13px">Describe it in a sentence — Lumen sets it up</span>
+          <span class="plus">${icon('plus')}</span><b>Create an agent</b><span style="font-size:13px">Describe it in a sentence and Lumen sets it up</span>
         </button>
       </div>
     </div></div>`;
   $('#view').firstElementChild.addEventListener('click', (e) => {
-    const t = e.target.closest('[data-new-assistant],[data-chat-with],[data-edit-assistant],[data-assistant-menu]'); if (!t) return;
-    if ('newAssistant' in t.dataset) openAssistantBuilder();
+    const t = e.target.closest('[data-new-assistant],[data-chat-with],[data-edit-assistant],[data-assistant-menu],[data-export-all]'); if (!t) return;
+    if ('exportAll' in t.dataset) exportToCopilot(null, t);
+    else if ('newAssistant' in t.dataset) openAssistantBuilder();
     else if (t.dataset.chatWith) { S.draft.assistantId = t.dataset.chatWith; S.draft.access = assistantById(t.dataset.chatWith).access || null; go(''); }
     else if (t.dataset.editAssistant) openAssistantBuilder(assistantById(t.dataset.editAssistant));
     else if (t.dataset.assistantMenu) {
       const a = assistantById(t.dataset.assistantMenu);
       openMenu(t, [
         { icon: 'edit', label: 'Customize', run: () => openAssistantBuilder(a) },
-        { icon: 'copy', label: 'Duplicate', run: async () => { const { id, builtin, createdAt, updatedAt, ...rest } = a; await api('/api/assistants', { method: 'POST', body: { ...rest, name: `${a.name} (copy)` } }); await reloadAssistants(); toast('Assistant duplicated'); } },
-        { icon: 'code', label: 'Use in VS Code', hint: 'Save for Claude Code & Copilot', run: () => exportAssistant(a) },
+        { icon: 'pin', label: pinnedAgentIds().includes(a.id) ? 'Unpin from sidebar' : 'Pin to sidebar', run: () => togglePinAgent(a.id) },
+        { icon: 'copy', label: 'Duplicate', run: async () => { const { id, builtin, createdAt, updatedAt, ...rest } = a; await api('/api/assistants', { method: 'POST', body: { ...rest, name: `${a.name} (copy)` } }); await reloadAssistants(); toast('Agent duplicated'); } },
         { sep: true },
-        { icon: 'trash', label: 'Delete', danger: true, run: () => modal({ title: `Delete ${a.name}?`, sub: 'Existing chats with this assistant are kept.', actions: [{ label: 'Cancel' }, { label: 'Delete', danger: true, run: async () => { await api(`/api/assistants/${a.id}`, { method: 'DELETE' }); await reloadAssistants(); toast('Assistant deleted', 'trash'); } }] }) },
+        ...(a.id === 'lumen' ? [] : [{ icon: 'external', label: 'Export to Microsoft 365 Copilot', hint: 'For Agent Builder, or as an app package for IT', run: () => exportToCopilot(a) }]),
+        { icon: 'code', label: 'Use in VS Code', hint: 'Save for Claude Code & GitHub Copilot', run: () => exportAssistant(a) },
+        { sep: true },
+        { icon: 'trash', label: 'Delete', danger: true, run: () => modal({ title: `Delete ${a.name}?`, sub: 'Existing chats with this agent are kept.', actions: [{ label: 'Cancel' }, { label: 'Delete', danger: true, run: async () => { await api(`/api/assistants/${a.id}`, { method: 'DELETE' }); await reloadAssistants(); toast('Agent deleted', 'trash'); } }] }) },
       ], { align: 'right' });
     }
   });
@@ -1300,9 +1419,36 @@ async function exportAssistant(a) {
   });
 }
 
+// Export one agent (or all of them when `a` is null) for Microsoft 365 Copilot.
+async function exportToCopilot(a, btn) {
+  const label = btn?.innerHTML;
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner" style="border-color:var(--border-strong);border-top-color:var(--accent)"></span>Exporting…'; }
+  let r;
+  try { r = await api(a ? `/api/assistants/${a.id}/export-copilot` : '/api/assistants/export-copilot', { method: 'POST', body: { workspace: currentWorkspace() } }); }
+  catch (e) { toast(e.message, 'alert'); return; }
+  finally { if (btn) { btn.disabled = false; btn.innerHTML = label; } }
+  const one = r.agents.length === 1 ? r.agents[0] : null;
+  const notes = r.agents.filter((x) => x.lumenOnly.length);
+  modal({
+    title: one ? `${one.agent} is ready for Microsoft 365 Copilot` : `${r.agents.length} agents are ready for Microsoft 365 Copilot`,
+    sub: 'Saved in your notebook. Pick whichever way in suits you.', wide: true,
+    body: `<div class="option-cards">
+      <div class="option-card"><span class="oc-icon">📝</span><div class="oc-text"><div class="oc-title">Paste into Agent Builder</div><div class="oc-desc">In Microsoft 365 Copilot, open <b>Agents › Create agent › Configure</b> and paste the name, description, instructions and starter prompts from <b>Copy into Agent Builder.txt</b>. No IT help needed.</div></div></div>
+      <div class="option-card"><span class="oc-icon">📦</span><div class="oc-text"><div class="oc-title">App package for IT</div><div class="oc-desc">Each agent also has a <b>(Teams app).zip</b> with a declarative agent manifest. Your Microsoft 365 admin fills in the developer details, validates it and publishes it for the team.</div></div></div>
+      ${notes.length ? `<div class="option-card"><span class="oc-icon">⚠️</span><div class="oc-text"><div class="oc-title">Not carried over ${lumenOnlyBadge()}</div><div class="oc-desc">${notes.map((x) => `<b>${esc(x.agent)}</b>: ${esc(x.lumenOnly.join('; '))}`).join('<br>')}</div></div></div>` : ''}
+    </div>
+    <div class="help" style="margin-top:12px;word-break:break-all">${esc(r.folder)}</div>`,
+    actions: [
+      ...(one ? [{ label: 'Copy Agent Builder text', icon: 'copy', run: async () => { try { await navigator.clipboard.writeText(one.text); toast('Copied. Paste it into Agent Builder'); } catch { toast("Couldn't copy. Open the file instead", 'alert'); } return false; } }] : []),
+      { label: 'Open folder', icon: 'external', run: () => { api('/api/folder/open', { method: 'POST', body: { workspace: one ? one.folder : r.folder } }); return false; } },
+      { label: 'Done', primary: true },
+    ],
+  });
+}
+
 function skillChips(a) {
   const list = (a.skills || []).map((id) => S.skills.find((s) => s.id === id)).filter(Boolean);
-  return list.length ? `<div class="skill-chips">${list.map((s) => `<span class="skill-chip" title="${esc(s.description)}">${esc(s.emoji)} ${esc(s.title)}</span>`).join('')}</div>` : '';
+  return list.length ? `<div class="skill-chips">${list.map((s) => `<span class="skill-chip" title="${esc(s.description)}">${esc(s.emoji)} ${esc(s.title)}</span>`).join('')}${lumenOnlyBadge('These skills use Lumen’s local document tools and aren’t part of Microsoft 365 Copilot.')}</div>` : '';
 }
 
 function openAssistantBuilder(existing) {
@@ -1312,28 +1458,28 @@ function openAssistantBuilder(existing) {
     <div class="preview-label">Preview</div>
     <div class="a-card" data-color="${a.color}" style="animation:none">
       <div class="a-card-top"><span class="a-badge lg">${esc(a.emoji)}</span></div>
-      <div><h3>${esc(a.name || 'Your assistant')}</h3></div>
+      <div><h3>${esc(a.name || 'Your agent')}</h3></div>
       <p class="tagline">${esc(a.tagline || 'A short line about what it helps with')}</p>
       ${skillChips(a)}
       <div class="starter-list">${a.starters.filter(Boolean).slice(0, 3).map((s) => `<div class="starter" style="font-size:12.5px;padding:8px 10px">${esc(s)}</div>`).join('')}</div>
     </div>`;
   const m = modal({
-    title: existing ? `Customize ${existing.name}` : 'Create an assistant', sub: existing ? 'Change how this assistant looks and behaves.' : 'Give it a job and a personality. You can change everything later.', wide: true,
+    title: existing ? `Customize ${existing.name}` : 'Create an agent', sub: existing ? 'Change how this agent looks and behaves.' : 'The same fields as Agent Builder in Microsoft 365 Copilot, so it exports cleanly later.', wide: true,
     body: `<div class="builder">
       <div>
         ${existing ? '' : `<div class="magic-box">
-          <div class="label">${icon('wand')} Describe it and let Lumen do the setup</div>
+          <div class="label">${icon('wand')} Describe: tell Lumen what you need and it fills in the rest</div>
           <div class="magic-row"><input class="input" id="magicInput" placeholder="e.g. Helps me write clear test plans for our HR system"><button class="btn grad" id="magicBtn">${icon('spark')}Draft it</button></div>
-        </div><div class="divider-text">or fill it in yourself</div>`}
+        </div><div class="divider-text">or configure it yourself</div>`}
         <div class="row">
           <div class="field" style="flex:2"><label>Name</label><input class="input" id="fName" value="${esc(a.name)}" placeholder="e.g. Test Plan Pro" maxlength="40"></div>
           <div class="field"><label>Color</label><div class="chip-list" id="fColors" style="padding-top:4px">${COLORS.map((c) => `<button class="color-opt ${c === a.color ? 'active' : ''}" data-color="${c}" data-set-color="${c}" title="${c}"></button>`).join('')}</div></div>
         </div>
         <div class="field"><label>Icon</label><div class="emoji-grid" id="fEmojis">${EMOJIS.map((e) => `<button class="emoji-opt ${e === a.emoji ? 'active' : ''}" data-set-emoji="${e}">${e}</button>`).join('')}</div></div>
-        <div class="field"><label>What does it help with?</label><input class="input" id="fTagline" value="${esc(a.tagline)}" placeholder="One short line" maxlength="80"></div>
-        <div class="field"><label>How should it behave?</label><textarea class="textarea" id="fInstr" rows="6" placeholder="Describe its expertise, tone and the format you like. e.g. You are a QA lead. Write test cases as tables with steps, expected result and priority. Keep language simple.">${esc(a.instructions)}</textarea><div class="help">Write it like you'd brief a new colleague. Plain English is perfect.</div></div>
-        <div class="field"><label>Example requests <span style="color:var(--muted);font-weight:400">(shown as suggestions)</span></label>${a.starters.slice(0, 3).map((s, i) => `<input class="input" data-starter-i="${i}" value="${esc(s)}" placeholder="Example ${i + 1}" style="margin-bottom:8px">`).join('')}</div>
-        ${S.skills.length ? `<div class="field"><label>Skills <span style="color:var(--muted);font-weight:400">(what it can work with)</span></label>
+        <div class="field"><label>Description</label><input class="input" id="fTagline" value="${esc(a.tagline)}" placeholder="What does it help with? One short line" maxlength="80"></div>
+        <div class="field"><label>Instructions</label><textarea class="textarea" id="fInstr" rows="6" placeholder="Describe its expertise, tone and the format you like. e.g. You are a QA lead. Write test cases as tables with steps, expected result and priority. Keep language simple.">${esc(a.instructions)}</textarea><div class="help">Write it like you'd brief a new colleague. Plain English is perfect.</div></div>
+        <div class="field"><label>Starter prompts <span style="color:var(--muted);font-weight:400">(shown as suggestions)</span></label>${a.starters.slice(0, 3).map((s, i) => `<input class="input" data-starter-i="${i}" value="${esc(s)}" placeholder="Example ${i + 1}" style="margin-bottom:8px">`).join('')}</div>
+        ${S.skills.length ? `<div class="field"><label>Capabilities ${lumenOnlyBadge('These skills use Lumen’s local document tools and won’t carry over to Microsoft 365 Copilot.')}</label>
           <div class="option-cards" id="fSkills">${S.skills.map((s) => `
             <button type="button" class="option-card skill-toggle ${a.skills.includes(s.id) ? 'active' : ''}" data-toggle-skill="${s.id}">
               <span class="oc-icon">${esc(s.emoji)}</span>
@@ -1346,10 +1492,10 @@ function openAssistantBuilder(existing) {
       </div>
       <div class="preview-pane" id="previewPane">${preview()}</div>
     </div>`,
-    leftAction: existing && !existing.builtin ? { label: 'Delete', icon: 'trash', danger: true, run: async () => { await api(`/api/assistants/${existing.id}`, { method: 'DELETE' }); await reloadAssistants(); toast('Assistant deleted', 'trash'); } } : null,
-    actions: [{ label: 'Cancel' }, { label: existing ? 'Save changes' : 'Create assistant', grad: true, run: async () => {
+    leftAction: existing && !existing.builtin ? { label: 'Delete', icon: 'trash', danger: true, run: async () => { await api(`/api/assistants/${existing.id}`, { method: 'DELETE' }); await reloadAssistants(); toast('Agent deleted', 'trash'); } } : null,
+    actions: [{ label: 'Cancel' }, { label: existing ? 'Save changes' : 'Create agent', grad: true, run: async () => {
       collect();
-      if (!a.name.trim()) { toast('Give your assistant a name', 'alert'); $('#fName').focus(); return false; }
+      if (!a.name.trim()) { toast('Give your agent a name', 'alert'); $('#fName').focus(); return false; }
       if (!a.instructions.trim()) a.instructions = `You are ${a.name}, a helpful assistant. ${a.tagline}`;
       a.starters = a.starters.filter((s) => s.trim());
       const { builtin, ...body } = a;
@@ -1404,24 +1550,25 @@ function renderRecipesPage() {
   $('#view').innerHTML = `
     <div class="page"><div class="page-inner">
       <div class="page-head">
-        <div><h1>Quick starts</h1><p>Ready-made tasks that ask you a few simple questions, then hand the work to the right assistant. Make your own for anything you do often.</p></div>
-        <button class="btn grad" data-new-recipe>${icon('plus')}New quick start</button>
+        <div><h1>Prompt gallery</h1><p>Saved prompts that ask you a few simple questions, then hand the work to the right agent. Save your own from any chat with <b>Save prompt</b>, just like in Microsoft 365 Copilot.</p></div>
+        <div class="row" style="flex:0 0 auto;gap:8px"><button class="btn soft" data-export-prompts title="Save every prompt as plain text you can use in Microsoft 365 Copilot">${icon('external')}Export to Copilot</button><button class="btn grad" data-new-recipe>${icon('plus')}New prompt</button></div>
       </div>
-      <div class="tabs">${cats.map((c) => `<button class="tab ${c === S.recipeTab ? 'active' : ''}" data-tab="${esc(c)}">${esc(c)}</button>`).join('')}</div>
-      ${S.recipeTab === 'Scheduled' ? `<div class="help schedule-notice">Schedules run only while Lumen is running. Missed checks run once when Lumen starts again. Monthly dates that don't exist in a month are skipped.</div>
+      <div class="tabs">${cats.map((c) => `<button class="tab ${c === S.recipeTab ? 'active' : ''}" data-tab="${esc(c)}">${esc(c === 'Scheduled' ? 'Scheduled prompts' : c)}</button>`).join('')}</div>
+      ${S.recipeTab === 'Scheduled' ? `<div class="help schedule-notice">Scheduled prompts run only while Lumen is running. Missed runs happen once when Lumen starts again. Monthly dates that don't exist in a month are skipped.</div>
       <div class="schedule-list">${S.schedules.length ? S.schedules.map((s) => {
         const r = S.recipes.find((x) => x.id === s.recipeId);
         const result = s.running ? 'Running or waiting' : s.lastStatus === 'error' ? `Error: ${s.lastError || 'The check failed.'}` : s.lastStatus === 'late' ? 'Ran late' : s.lastStatus === 'ok' ? 'Ready' : 'Not run yet';
-        return `<div class="schedule-card"><div><strong>${esc(r?.name || 'Deleted quick start')}</strong><div class="help">${s.enabled ? `Next run: ${esc(new Date(s.nextRunAt).toLocaleString())}` : 'Paused'} · ${esc(result)}</div>${s.lastConversationId ? `<button class="schedule-link" data-schedule-chat="${esc(s.lastConversationId)}">Open last chat</button>` : ''}</div>
+        return `<div class="schedule-card"><div><strong>${esc(r?.name || 'Deleted prompt')}</strong><div class="help">${s.enabled ? `Next run: ${esc(new Date(s.nextRunAt).toLocaleString())}` : 'Paused'} · ${esc(result)}</div>${s.lastConversationId ? `<button class="schedule-link" data-schedule-chat="${esc(s.lastConversationId)}">Open last chat</button>` : ''}</div>
           <div class="schedule-actions"><button class="btn soft sm" data-schedule-toggle="${esc(s.id)}">${s.enabled ? 'Pause' : 'Resume'}</button><button class="btn soft sm" data-schedule-run="${esc(s.id)}" ${s.running ? 'disabled' : ''}>Run now</button><button class="btn soft sm" data-schedule-delete="${esc(s.id)}">Delete</button></div></div>`;
-      }).join('') : '<div class="conv-empty">No scheduled checks yet. Open a quick start and choose Repeat…</div>'}</div>` : `<div class="recipe-grid" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr))">
+      }).join('') : '<div class="conv-empty">No scheduled prompts yet. Open a prompt and choose Repeat…</div>'}</div>` : `<div class="recipe-grid" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr))">
         ${list.map(recipeCard).join('')}
-        <button class="recipe-card new-card" data-new-recipe style="min-height:170px"><span class="plus" style="width:40px;height:40px">${icon('plus')}</span><b>Create a quick start</b></button>
+        <button class="recipe-card new-card" data-new-recipe style="min-height:170px"><span class="plus" style="width:40px;height:40px">${icon('plus')}</span><b>Create a prompt</b></button>
       </div>`}
     </div></div>`;
   $('#view').firstElementChild.addEventListener('click', async (e) => {
-    const t = e.target.closest('[data-tab],[data-recipe],[data-new-recipe],[data-schedule-toggle],[data-schedule-run],[data-schedule-delete],[data-schedule-chat]'); if (!t) return;
-    if (t.dataset.tab) { S.recipeTab = t.dataset.tab; renderRecipesPage(); }
+    const t = e.target.closest('[data-tab],[data-recipe],[data-new-recipe],[data-schedule-toggle],[data-schedule-run],[data-schedule-delete],[data-schedule-chat],[data-export-prompts]'); if (!t) return;
+    if ('exportPrompts' in t.dataset) exportPromptsToCopilot();
+    else if (t.dataset.tab) { S.recipeTab = t.dataset.tab; renderRecipesPage(); }
     else if (t.dataset.recipe) openRecipeRunner(t.dataset.recipe);
     else if (t.dataset.scheduleChat) go(`c/${t.dataset.scheduleChat}`);
     else if (t.dataset.scheduleDelete) modal({ title: 'Delete this schedule?', sub: 'Existing chats and files are kept.', actions: [{ label: 'Cancel' }, { label: 'Delete', danger: true, run: async () => { await api(`/api/schedules/${t.dataset.scheduleDelete}`, { method: 'DELETE' }); S.schedules = await api('/api/schedules'); renderRecipesPage(); } }] });
@@ -1452,7 +1599,17 @@ function openRecipeRunner(id) {
     body: `${(r.fields || []).map((f) => `<div class="field"><label>${esc(f.label)}</label>${fieldInput(f)}</div>`).join('')}
       <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-top:4px" data-color="${a.color}"><span class="a-badge sm">${esc(a.emoji)}</span>${esc(a.name)} will take it from here${r.access === 'edit' ? ' and save the result to your project folder' : ''}.</div>`,
     leftAction: { label: 'Edit', icon: 'edit', run: () => openRecipeBuilder(r) },
-    actions: [{ label: 'Cancel' }, { label: 'Repeat…', run: (el) => {
+    actions: [{ label: 'Cancel' }, { label: 'Copy for Copilot', icon: 'copy', run: async (el) => {
+      // Answers filled in so far go in; anything blank stays as a [placeholder]. Files become "/name", the way
+      // you'd reference them in Microsoft 365 Copilot.
+      const text = r.template.replace(/\{\{(\w+)\}\}/g, (_, k) => {
+        const f = (r.fields || []).find((x) => x.key === k);
+        const v = f?.type === 'file' ? (files[k]?.name ? `/${files[k].name}` : '') : ($(`[data-field="${k}"]`, el)?.value || '').trim();
+        return v || `[${f?.label || k}]`;
+      });
+      try { await navigator.clipboard.writeText(text); toast('Copied. Paste it into Microsoft 365 Copilot and choose Save prompt'); } catch { toast("Couldn't copy the prompt", 'alert'); }
+      return false;
+    } }, { label: 'Repeat…', run: (el) => {
       const values = readValues(el, true); if (!values) return false;
       openScheduleForm(r, values, () => m.close()); return false;
     } }, { label: 'Start', icon: 'play', grad: true, run: (el) => {
@@ -1505,7 +1662,7 @@ function openRecipeRunner(id) {
 
 function openScheduleForm(recipe, values, onSaved) {
   const m = modal({
-    title: `Repeat ${recipe.name}`, sub: 'Schedules run only while Lumen is running. Missed checks run once when Lumen starts again.',
+    title: `Repeat ${recipe.name}`, sub: 'Scheduled prompts run only while Lumen is running. Missed runs happen once when Lumen starts again.',
     body: `<div class="field"><label>Repeat</label><select class="select" id="scheduleKind"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></div>
       <div class="field" id="scheduleDays" hidden><label>Days</label><div class="schedule-days">${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => `<label><input type="checkbox" value="${i}" ${i === 1 ? 'checked' : ''}> ${d}</label>`).join('')}</div></div>
       <div class="field" id="scheduleMonth" hidden><label>Day of month</label><input class="input" type="number" min="1" max="31" value="1" id="scheduleDay"><div class="help">Months without this date are skipped.</div></div>
@@ -1531,7 +1688,7 @@ function fieldInput(f) {
 }
 
 function openRecipeBuilder(existing, prefill) {
-  const r = existing || prefill ? JSON.parse(JSON.stringify(existing || prefill)) : { name: '', emoji: '⚡', description: '', category: 'My quick starts', assistantId: S.assistants[0]?.id || 'lumen', access: '', fields: [{ key: 'topic', label: 'What is it about?', type: 'textarea' }], template: '' };
+  const r = existing || prefill ? JSON.parse(JSON.stringify(existing || prefill)) : { name: '', emoji: '⚡', description: '', category: 'My prompts', assistantId: S.assistants[0]?.id || 'lumen', access: '', fields: [{ key: 'topic', label: 'What is it about?', type: 'textarea' }], template: '' };
   const TYPES = { text: 'Short answer', textarea: 'Long answer', select: 'Pick one', file: 'A file' };
   const keyOf = (label, i) => (label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 24) || `field${i + 1}`);
   const fieldsHTML = () => r.fields.map((f, i) => `
@@ -1541,7 +1698,7 @@ function openRecipeBuilder(existing, prefill) {
     ${f.type === 'select' ? `<input class="input" data-fo="${i}" value="${esc((f.options || []).join(', '))}" placeholder="Choices, separated by commas" style="margin:-2px 0 10px">` : ''}`).join('');
   const chipsHTML = () => r.fields.map((f) => `<button class="chip" data-insert="${f.key}">+ ${esc(f.label || f.key)}</button>`).join('');
   const m = modal({
-    title: existing ? 'Edit quick start' : 'New quick start', sub: 'Ask a few questions, then send a prompt built from the answers.', wide: true,
+    title: existing ? 'Edit prompt' : 'New prompt', sub: 'Ask a few questions, then send a prompt built from the answers.', wide: true,
     body: `
       <div class="row">
         <div class="field" style="flex:0 0 90px"><label>Icon</label><input class="input" id="rEmoji" value="${esc(r.emoji)}" maxlength="4" style="text-align:center;font-size:20px;padding:6px"></div>
@@ -1550,7 +1707,7 @@ function openRecipeBuilder(existing, prefill) {
       </div>
       <div class="field"><label>Short description</label><input class="input" id="rDesc" value="${esc(r.description || '')}" placeholder="What does it produce?"></div>
       <div class="row">
-        <div class="field"><label>Assistant</label><select class="select" id="rAsst">${S.assistants.map((a) => `<option value="${a.id}" ${a.id === r.assistantId ? 'selected' : ''}>${esc(a.emoji)} ${esc(a.name)}</option>`).join('')}</select></div>
+        <div class="field"><label>Agent</label><select class="select" id="rAsst">${S.assistants.map((a) => `<option value="${a.id}" ${a.id === r.assistantId ? 'selected' : ''}>${esc(a.emoji)} ${esc(a.name)}</option>`).join('')}</select></div>
         <div class="field"><label>File access</label><select class="select" id="rAccess"><option value="">Use my default</option>${Object.entries(ACCESS).map(([k, v]) => `<option value="${k}" ${r.access === k ? 'selected' : ''}>${v.label}</option>`).join('')}</select></div>
       </div>
       <div class="field"><label>Questions to ask</label><div id="rFields">${fieldsHTML()}</div><button class="btn ghost sm" id="addField">${icon('plus')}Add a question</button></div>
@@ -1558,7 +1715,7 @@ function openRecipeBuilder(existing, prefill) {
         <div class="chip-list" id="rChips" style="margin-bottom:8px">${chipsHTML()}</div>
         <textarea class="textarea" id="rTemplate" rows="6" placeholder="Write the request. Click the chips above to drop in the answers. e.g. Prepare 10 interview questions about {{topic}}...">${esc(r.template)}</textarea>
         <div class="help">Answers are inserted wherever you see {{like_this}}.</div></div>`,
-    leftAction: existing && !existing.builtin ? { label: 'Delete', icon: 'trash', danger: true, run: async () => { await api(`/api/recipes/${existing.id}`, { method: 'DELETE' }); S.recipes = await api('/api/recipes'); rerenderPage(); toast('Quick start deleted', 'trash'); } } : null,
+    leftAction: existing && !existing.builtin ? { label: 'Delete', icon: 'trash', danger: true, run: async () => { await api(`/api/recipes/${existing.id}`, { method: 'DELETE' }); S.recipes = await api('/api/recipes'); rerenderPage(); toast('Prompt deleted', 'trash'); } } : null,
     actions: [{ label: 'Cancel' }, { label: existing ? 'Save' : 'Create', grad: true, run: async (el) => {
       collect(el);
       if (!r.name.trim()) { toast('Give it a name', 'alert'); return false; }
@@ -1566,12 +1723,12 @@ function openRecipeBuilder(existing, prefill) {
       const { builtin, ...body } = r;
       if (existing) await api(`/api/recipes/${existing.id}`, { method: 'PUT', body }); else await api('/api/recipes', { method: 'POST', body });
       S.recipes = await api('/api/recipes'); rerenderPage();
-      toast(existing ? 'Quick start saved' : 'Quick start created', 'spark');
+      toast(existing ? 'Prompt saved' : 'Prompt saved to your gallery', 'spark');
     } }],
   });
   const el = m.el;
   function collect() {
-    r.emoji = $('#rEmoji', el).value || '⚡'; r.name = $('#rName', el).value; r.category = $('#rCat', el).value || 'My quick starts';
+    r.emoji = $('#rEmoji', el).value || '⚡'; r.name = $('#rName', el).value; r.category = $('#rCat', el).value || 'My prompts';
     r.description = $('#rDesc', el).value; r.assistantId = $('#rAsst', el).value; r.access = $('#rAccess', el).value; r.template = $('#rTemplate', el).value;
     r.fields.forEach((f, i) => {
       const l = $(`[data-fl="${i}"]`, el); if (l) f.label = l.value;
@@ -1592,26 +1749,38 @@ function openRecipeBuilder(existing, prefill) {
     else if (t.dataset.insert) { const ta = $('#rTemplate', el); const tok = `{{${t.dataset.insert}}}`; const s = ta.selectionStart ?? ta.value.length; ta.value = ta.value.slice(0, s) + tok + ta.value.slice(ta.selectionEnd ?? s); ta.focus(); ta.selectionStart = ta.selectionEnd = s + tok.length; }
   });
 }
+async function exportPromptsToCopilot() {
+  try {
+    const r = await api('/api/recipes/export-copilot', { method: 'POST', body: { workspace: currentWorkspace() } });
+    modal({
+      title: `${r.count} prompts are ready for Microsoft 365 Copilot`,
+      sub: 'Saved as Prompts.md in your notebook. Fill in the [blanks], paste into Copilot, then choose Save prompt to keep the ones you use often.',
+      body: `<div class="help" style="word-break:break-all">${esc(r.file)}</div>`,
+      actions: [{ label: 'Open file', icon: 'external', run: () => { api('/api/folder/open', { method: 'POST', body: { path: r.file, workspace: currentWorkspace() } }); return false; } }, { label: 'Done', primary: true }],
+    });
+  } catch (e) { toast(e.message, 'alert'); }
+}
+
 function rerenderPage() { if (S.view === 'recipes') renderRecipesPage(); else rerenderCurrent(); }
 
 // ---------------------------------------------------------------- insights
 async function renderInsightsPage() {
   S.view = 'insights'; setNav('insights');
-  $('#view').innerHTML = `<div class="page"><div class="page-inner"><div class="page-head"><div><h1>Insights</h1><p>Which assistants and quick starts are working, from the 👍 and 👎 people give replies. Everything here comes from chats on this computer and isn't sent anywhere.</p></div></div><div id="insightsBody"><div class="conv-empty"><span class="spinner" style="width:18px;height:18px"></span></div></div></div></div>`;
+  $('#view').innerHTML = `<div class="page"><div class="page-inner"><div class="page-head"><div><h1>Insights</h1><p>Which agents and prompts are working, from the 👍 and 👎 people give replies. Everything here comes from chats on this computer and isn't sent anywhere.</p></div></div><div id="insightsBody"><div class="conv-empty"><span class="spinner" style="width:18px;height:18px"></span></div></div></div></div>`;
   let d;
   try { d = await api('/api/insights'); } catch (e) { $('#insightsBody').innerHTML = `<div class="conv-empty">${esc(e.message)}</div>`; return; }
   if (S.view !== 'insights') return;
   const thumbs = (x) => `<td class="num">${x.up || ''}</td><td class="num">${x.down || ''}</td>`;
   const table = (head, rows, empty) => rows.length ? `<div class="table-wrap"><table class="insights-table"><thead><tr>${head}</tr></thead><tbody>${rows.join('')}</tbody></table></div>` : `<p class="insights-empty">${empty}</p>`;
   $('#insightsBody').innerHTML = `
-    <div class="section-label"><span>Assistants</span></div>
-    ${table('<th>Assistant</th><th class="num">Chats</th><th class="num">Replies</th><th class="num">👍</th><th class="num">👎</th><th class="num">Typical reply time</th>',
+    <div class="section-label"><span>Agents</span></div>
+    ${table('<th>Agent</th><th class="num">Chats</th><th class="num">Replies</th><th class="num">👍</th><th class="num">👎</th><th class="num">Typical reply time</th>',
       d.assistants.map((a) => `<tr><td>${esc(a.emoji)} ${esc(a.name)}</td><td class="num">${a.chats}</td><td class="num">${a.replies}</td>${thumbs(a)}<td class="num">${a.medianMs ? fmtDuration(a.medianMs) : '—'}</td></tr>`),
       'No chats yet.')}
-    <div class="section-label"><span>Quick starts</span></div>
-    ${table('<th>Quick start</th><th class="num">Runs</th><th class="num">👍</th><th class="num">👎</th>',
+    <div class="section-label"><span>Prompts</span></div>
+    ${table('<th>Prompt</th><th class="num">Runs</th><th class="num">👍</th><th class="num">👎</th>',
       d.recipes.map((r) => `<tr><td>${esc(r.emoji)} ${esc(r.name)}</td><td class="num">${r.runs}</td>${thumbs(r)}</tr>`),
-      'No quick starts have been run yet.')}
+      'No prompts have been run yet.')}
     <div class="section-label"><span>Recent 👎 replies</span></div>
     ${table('<th>Chat</th><th>Reason</th><th>Note</th><th>When</th>',
       d.recentDown.map((x) => `<tr><td><a data-go-conv="${esc(x.conversationId)}" title="${esc(x.excerpt)}">${esc(assistantById(x.assistantId).emoji)} ${esc(x.title)}</a></td><td>${esc(x.reason) || '—'}</td><td>${esc(x.note) || '—'}</td><td class="nowrap">${timeAgo(x.at)}</td></tr>`),
@@ -1639,11 +1808,11 @@ function openSettings(focus) {
         <div class="option-cards" id="providerCards">${providerCards(s.providerId)}</div>
         <div class="help">Lumen is pluggable — it runs on whichever AI tool is installed on this computer. Add more engines by dropping a file into the <code>providers</code> folder.</div></div>
       <div class="field"><label>Default file access</label><div class="seg" id="sAccess">${Object.entries(ACCESS).map(([k, v]) => `<button data-v="${k}" class="${s.access === k ? 'active' : ''}">${v.emoji} ${esc(v.label)}</button>`).join('')}</div></div>
-      <div class="field"><label>Default project folder</label><div class="row" style="align-items:center"><input class="input" id="sFolder" value="${esc(s.workspace)}" readonly style="flex:1"><button class="btn soft" id="sFolderBtn" style="flex:0 0 auto">${icon('folder')}Change</button></div><div class="help">Where Lumen reads and saves documents unless a chat uses a different folder.</div></div>
+      <div class="field"><label>Default notebook (project folder)</label><div class="row" style="align-items:center"><input class="input" id="sFolder" value="${esc(s.workspace)}" readonly style="flex:1"><button class="btn soft" id="sFolderBtn" style="flex:0 0 auto">${icon('folder')}Change</button></div><div class="help">Your notebook: where Lumen reads and saves documents unless a chat uses a different folder. Keep it in OneDrive so Microsoft 365 Copilot can find the same files later.</div></div>
       <div class="field"><label>Appearance</label><div class="seg" id="sTheme">${[['system', 'Match system'], ['light', 'Light'], ['dark', 'Dark']].map(([k, l]) => `<button data-v="${k}" class="${(s.theme || 'system') === k ? 'active' : ''}">${l}</button>`).join('')}</div></div>
       <details class="advanced"><summary>${icon('settings')} Advanced</summary>
         <div class="field"><label>Reply details</label><button type="button" class="option-card skill-toggle ${s.showCost ? 'active' : ''}" id="sShowCost"><span class="oc-icon">💲</span><span class="oc-text"><span class="oc-title">Show the cost of each reply</span><span class="oc-desc">When the AI engine reports it. Leave off if you're on a subscription.</span></span><span class="switch"></span></button></div>
-        <div class="field"><label>Reset built-in content</label><div class="help" style="margin:0 0 8px">Restores the original assistants and quick starts. Your chats are not affected.</div><button class="btn soft sm" id="sReset">${icon('refresh')}Restore defaults</button></div>
+        <div class="field"><label>Reset built-in content</label><div class="help" style="margin:0 0 8px">Restores the original agents and prompts. Your chats are not affected.</div><button class="btn soft sm" id="sReset">${icon('refresh')}Restore defaults</button></div>
       </details>`,
     leftAction: { label: 'Keyboard shortcuts', icon: 'keyboard', run: () => { openShortcuts(); return false; } },
     actions: [{ label: 'Close' }, { label: 'Save', primary: true, run: async (el) => {
@@ -1658,7 +1827,7 @@ function openSettings(focus) {
   $('#providerCards', el).addEventListener('click', (e) => { const b = e.target.closest('[data-provider]'); if (!b) return; s.providerId = b.dataset.provider; $('#providerCards', el).innerHTML = providerCards(s.providerId); });
   $('#refreshEngines', el).addEventListener('click', async () => { $('#providerCards', el).style.opacity = .5; const st = await api('/api/status?refresh=1'); S.providers = st.providers; $('#providerCards', el).innerHTML = providerCards(s.providerId); $('#providerCards', el).style.opacity = 1; renderUser(); });
   $('#sFolderBtn', el).addEventListener('click', async () => { const p = await pickFolder(s.workspace); if (p) { s.workspace = p; $('#sFolder', el).value = p; } });
-  $('#sReset', el).addEventListener('click', () => modal({ title: 'Restore defaults?', sub: 'Built-in assistants and quick starts go back to how they shipped. Ones you created are removed.', actions: [{ label: 'Cancel' }, { label: 'Restore', danger: true, run: async () => { await api('/api/reset', { method: 'POST' }).catch(() => {}); toast('Defaults restored'); location.reload(); } }] }));
+  $('#sReset', el).addEventListener('click', () => modal({ title: 'Restore defaults?', sub: 'Built-in agents and prompts go back to how they shipped. Ones you created are removed.', actions: [{ label: 'Cancel' }, { label: 'Restore', danger: true, run: async () => { await api('/api/reset', { method: 'POST' }).catch(() => {}); toast('Defaults restored'); location.reload(); } }] }));
   if (focus === 'engine') setTimeout(() => $('#engineField', el).scrollIntoView({ block: 'center' }), 50);
 }
 
@@ -1668,16 +1837,17 @@ function openOnboarding() {
   const draft = { userName: S.settings.userName || '', providerId: S.settings.providerId, workspace: S.settings.workspace };
   const steps = [
     () => `<div class="welcome"><div class="welcome-orb"><svg viewBox="0 0 32 32"><path d="M16 4l2.6 7.4L26 14l-7.4 2.6L16 24l-2.6-7.4L6 14l7.4-2.6z" fill="#fff"/></svg></div>
-      <h2>Welcome to Lumen</h2><p>Your AI workspace for writing, analysis and planning — right on your computer. Let's get you set up in three quick steps.</p>
+      <h2>Welcome to Lumen</h2><p>Your AI workspace for writing, analysis and planning. It works like Microsoft 365 Copilot (agents, prompts, notebooks), so what you learn here carries over when your Copilot licence arrives.</p>
       <input class="input" id="obName" placeholder="Your first name" value="${esc(draft.userName)}"></div>`,
     () => `<div class="welcome" style="padding-bottom:10px"><h2>Choose your AI engine</h2><p>Lumen works with the AI tools installed on this computer. We picked the one that's ready.</p>
       <div class="option-cards" id="obProviders" style="text-align:left;max-width:440px;margin:0 auto">${providerCards(draft.providerId)}</div></div>`,
-    () => `<div class="welcome"><h2>Where do you keep your work?</h2><p>Pick a project folder. Lumen can read documents there and save new ones — only when you allow it.</p>
+    () => `<div class="welcome"><h2>Where do you keep your work?</h2><p>Pick a folder for your notebook. Lumen reads documents there and saves new ones, but only when you allow it. A folder in OneDrive means Microsoft 365 Copilot can find them later too.</p>
       <div class="option-card active" style="max-width:420px;margin:0 auto 12px;text-align:left"><span class="oc-icon">📁</span><span class="oc-text"><span class="oc-title" id="obFolderName">${esc(baseName(draft.workspace))}</span><span class="oc-desc" id="obFolder" style="word-break:break-all">${esc(draft.workspace)}</span></span></div>
       <button class="btn soft sm" id="obFolderBtn">${icon('folder')}Choose a different folder</button>
       <div class="feature-list" style="margin-top:22px">
-        <div class="feature"><span class="fi">🤝</span><div><b>Assistants</b><span>Specialists for requirements, status reports, writing and data.</span></div></div>
-        <div class="feature"><span class="fi">⚡</span><div><b>Quick starts</b><span>Answer a few questions, get a finished deliverable.</span></div></div>
+        <div class="feature"><span class="fi">🤝</span><div><b>Agents</b><span>Specialists for requirements, status reports, writing and data.</span></div></div>
+        <div class="feature"><span class="fi">⚡</span><div><b>Prompt gallery</b><span>Answer a few questions, get a finished deliverable.</span></div></div>
+        <div class="feature"><span class="fi">🛡️</span><div><b>Not Microsoft 365 Copilot</b><span>Lumen runs on ${esc(S.providers.find((p) => p.id === draft.providerId)?.name || 'your AI engine')}, so Copilot's data protections don't apply. Follow your organisation's rules on what you share.</span></div></div>
       </div></div>`,
   ];
   const m = modal({ head: '', body: '<div id="obBody"></div>', dismissable: false, actions: [] });
@@ -1704,7 +1874,7 @@ function openOnboarding() {
 }
 
 function celebrate() {
-  const colors = ['#7c5cff', '#c757d6', '#ff8a5b', '#12a594', '#f59e0b'];
+  const colors = ['#0f6cbd', '#479ef5', '#7c5cff', '#12a594', '#f59e0b'];
   for (let i = 0; i < 34; i++) {
     const s = document.createElement('span');
     const angle = Math.random() * Math.PI * 2, dist = 120 + Math.random() * 260;
@@ -1725,6 +1895,7 @@ function openShortcuts() {
     ['New line in your message', ['Shift', 'Enter']],
     ['Fill in the suggested next step (empty message box)', ['↑']],
     ['Jump to the message box', ['/']],
+    ['Reference a file in your notebook (in the message box)', ['/']],
     ['Stop the reply', ['Esc']],
     ['Copy the last reply', [MOD, 'Shift', 'C']],
     ['Show this list', [MOD, '/']],
@@ -1741,8 +1912,12 @@ function bindChrome() {
   $$('[data-nav]').forEach((n) => n.addEventListener('click', () => go(n.dataset.nav === 'home' ? '' : n.dataset.nav)));
   $('#filesNavBtn').addEventListener('click', openDrawer);
   $('#settingsBtn').addEventListener('click', () => openSettings());
-  $('#collapseBtn').addEventListener('click', () => $('#app').classList.add('collapsed'));
-  $('#expandBtn').addEventListener('click', () => $('#app').classList.remove('collapsed'));
+  $('#collapseBtn').addEventListener('click', () => $('#app').classList.toggle('collapsed'));
+  $('#agentList').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-agent]'); if (!b) return;
+    const a = assistantById(b.dataset.agent);
+    S.draft = { text: '', attachments: [], assistantId: a.id, access: a.access || null }; S.current = null; go('');
+  });
   $('#searchInput').addEventListener('input', (e) => { S.search = e.target.value; renderConvList(); });
   $('#convList').addEventListener('click', (e) => {
     const menu = e.target.closest('[data-conv-menu]');
