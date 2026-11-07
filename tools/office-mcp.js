@@ -144,6 +144,18 @@ const TOOLS = [
     run: (a) => project.queryPlan(resolveIn(a.path), a, ROOT),
   },
   {
+    name: 'plan_change_log',
+    description: 'Compare a Microsoft Project plan with an earlier version (the last saved one, the one on or before a date, or a file you name) and produce the change log: every change sorted into material (moves a milestone or the finish, critical-path or large date moves, dependency logic changes, added or removed work that matters) or administrative (renames, notes, resources, small date moves), each with the reason it is material, plus milestone movement and the project finish. Progress updates are only counted. Read-only. Use it for the monthly change log or "what changed since the last baseline?".',
+    inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'The current plan' }, against: { type: 'string', description: '"last" (default) or YYYY-MM-DD: compare with the saved version on or before that date' }, compareFile: { type: 'string', description: 'Optional: an earlier version of the plan to compare with, instead of the saved history' }, thresholdDays: { type: 'number', description: 'Working days of date movement that count as material for non-critical tasks (default 3)' }, statusDate: { type: 'string' } }, required: ['path'] },
+    run: (a) => project.changeLog(resolveIn(a.path), { ...a, compareFile: a.compareFile ? resolveIn(a.compareFile) : undefined }, ROOT),
+  },
+  {
+    name: 'plan_lookahead',
+    description: 'Forward-looking readout from a Microsoft Project plan for the coming week (or N days), grouped by workstream: tasks starting, tasks finishing, milestones, late carry-overs, and unfinished work these tasks are waiting on (from other workstreams or overdue). Read-only. Use it for "what do teams need on their radar next week?".',
+    inputSchema: { type: 'object', properties: { path: { type: 'string' }, from: { type: 'string', description: 'YYYY-MM-DD; default the day after the status date' }, days: { type: 'number', description: 'Window length in days (default 7)' }, under: { type: 'string', description: 'Limit to a WBS branch or summary task' }, owner: { type: 'string', description: 'Limit to a person' }, statusDate: { type: 'string' } }, required: ['path'] },
+    run: (a) => project.lookahead(resolveIn(a.path), a),
+  },
+  {
     name: 'get_status_facts',
     description: 'Calculate the weekly status facts for a Microsoft Project plan, optionally with a RAID log: overall RAG with the rule-based reasons, schedule and cost vs. baseline, milestones with variance and movement since the last saved version (plus the unfinished work each depends on), what changed since then, late and behind tasks, over-allocation, overdue RAID items, and the top open risks and issues. Every fact has a source reference. Read-only. Use it before writing a status summary, then pass your summary to build_status_report.',
     inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'The project plan' }, raid: { type: 'string', description: 'Optional RAID log workbook (.xlsx/.csv)' }, statusDate: { type: 'string', description: 'YYYY-MM-DD; defaults to the plan status date' } }, required: ['path'] },

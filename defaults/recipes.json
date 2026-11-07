@@ -659,5 +659,57 @@
       }
     ],
     "template": "Analyse the downstream impact of changed requirements in {{trm}}. Changed IDs: {{ids}}. What changed: {{change}}\n\nFor each changed requirement, list every affected refined requirement, functional design element, technical design element and story (with IDs and cells), say whether each one probably needs to change or only needs a review and why, mark the ones last updated before the change, and say who should review each layer. End with a proposed change-log entry."
+  },
+  {
+    "id": "plan-change-log",
+    "name": "Monthly plan change log",
+    "emoji": "🧾",
+    "category": "Project plans",
+    "description": "Compare the plan with an earlier version and list the changes, separating material schedule changes from administrative ones.",
+    "assistantId": "schedule-analyst",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "plan",
+        "label": "Project plan",
+        "type": "file",
+        "accept": ".mpp,.xml"
+      },
+      {
+        "key": "since",
+        "label": "Compare with the version from (optional)",
+        "type": "text",
+        "placeholder": "e.g. 2026-10-01, or leave blank for the last saved version",
+        "optional": true
+      }
+    ],
+    "template": "Produce the change log for the project plan {{plan}}, compared with the version from {{since}} (if blank, use the last saved version).\n\nCall plan_change_log first and base everything on it. Then write:\n1. A two-sentence headline: how many material changes, which milestones moved and by how many working days, and the project finish movement.\n2. A table of material changes (ID · Task · What changed · Why it is material).\n3. A short summary of the administrative changes, grouped by kind, without listing every row.\n4. Anything the planner should confirm before this is published as the monthly baseline.\nOnly report what the tool returned."
+  },
+  {
+    "id": "plan-lookahead",
+    "name": "Weekly look-ahead",
+    "emoji": "🔭",
+    "category": "Project plans",
+    "description": "What each workstream needs on its radar next week: starts, finishes, milestones, late work and dependencies.",
+    "assistantId": "schedule-analyst",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "plan",
+        "label": "Project plan",
+        "type": "file",
+        "accept": ".mpp,.xml"
+      },
+      {
+        "key": "workstream",
+        "label": "Workstream (optional)",
+        "type": "text",
+        "placeholder": "e.g. Testing, or leave blank for all",
+        "optional": true
+      }
+    ],
+    "template": "Write next week's look-ahead for the project plan {{plan}}, limited to the workstream {{workstream}} (if blank, cover every workstream).\n\nCall plan_lookahead first and base everything on it. Open with the milestones and the 2 or 3 dependencies most likely to cause trouble. Then give one short section per workstream with what is starting, finishing and carried over late, and what it is waiting on and from whom. Keep it to one page that can be pasted into an email, and only report what the tool returned."
   }
 ]

@@ -439,4 +439,154 @@ function queryPlan(file, opts = {}, root) {
   };
 }
 
-module.exports = { load, readPlan, analyze, updatePlan, queryPlan, hasMsProject, iso, toDate, addWorkdays, workdaysBetween, isWorkday, recordVersion, earlierVersions, historyKey };
+// ------------------------------------------------------------------ change log (version vs. version)
+const sgn = (n) => (n > 0 ? '+' : '') + n;
+
+/** The saved version to compare with: 'last' (before the status date) or a YYYY-MM-DD date. Null when none exists. */
+function pickVersion(root, file, status, against) {
+  const before = !against || against === 'last' ? status : new Date(+toDate(against) + DAY);
+  return earlierVersions(root, file, before, 50).at(-1) || null;
+}
+
+/**
+ * Compare the plan with an earlier version and sort every change into "material" (moves a milestone or the finish,
+ * critical-path or large date moves, logic changes, added or removed work that matters) or "administrative"
+ * (renames, notes, resources, small date moves, minor tasks). Progress (% complete) is only counted.
+ * opts: { against: 'last'|'YYYY-MM-DD', compareFile, thresholdDays (default 3), statusDate }
+ */
+function changeLog(file, opts = {}, root) {
+  const p = load(file);
+  const status = toDate(opts.statusDate) || p.statusDate || toDate(iso(new Date()));
+  const pick = opts.compareFile || pickVersion(root, file, status, opts.against);
+  if (!pick) return { plan: p.name, warnings: ['No earlier saved version of this plan to compare with. Lumen saves one each time a tracker is built or progress is recorded; or pass compareFile.'], material: [], administrative: [] };
+  const old = load(pick);
+  const threshold = opts.thresholdDays != null ? +opts.thresholdDays : 3;
+  criticalPath(p);
+  const milestonesAfter = (uid) => [...related(p, uid, 'downstream').keys()].map((u) => p.byUid.get(u)).filter((t) => t?.milestone).map((t) => `#${t.id} ${t.name}`);
+  const material = [], administrative = [];
+  let progress = 0;
+  const add = (t, kind, detail, reasons) => (reasons.length ? material : administrative).push({ id: t.id, task: t.name, kind, detail, ...(reasons.length ? { why: reasons.join('; ') } : {}) });
+  const predKey = (x) => x.preds.map((q) => `${q.uid}${q.type}${q.lagDays}`).sort().join(',');
+  const predIds = (x, other) => x.preds.map((q) => p.byUid.get(q.uid)?.id ?? other.byUid.get(q.uid)?.id).join(',') || 'none';
+
+  for (const t of p.tasks) {
+    const o = old.byUid.get(t.uid);
+    if (!o) {
+      if (t.summary) { add(t, 'added', 'new summary task', []); continue; }
+      const r = [];
+      if (t.milestone) r.push('new milestone');
+      if (t.onCriticalPath) r.push('on the critical path');
+      if (!t.milestone && t.durationDays > threshold) r.push(`${t.durationDays} days of new work`);
+      add(t, 'added', `new task ${iso(t.start)} → ${iso(t.finish)}`, r);
+      continue;
+    }
+    const fin = o.finish && t.finish ? workdaysBetween(o.finish, t.finish) : 0;
+    const sta = o.start && t.start ? workdaysBetween(o.start, t.start) : 0;
+    if ((fin || sta) && !t.summary) {
+      const r = [];
+      if (fin) {
+        if (t.milestone) r.push(`milestone moved ${sgn(fin)} working days`);
+        else if (t.onCriticalPath) r.push(`critical-path task finish moved ${sgn(fin)} working days`);
+        else if (Math.abs(fin) > threshold) r.push(`finish moved ${sgn(fin)} working days (more than ${threshold})`);
+        const ms = r.length && !t.milestone ? milestonesAfter(t.uid) : [];
+        if (ms.length) r.push(`feeds ${ms.slice(0, 3).join(', ')}${ms.length > 3 ? ` +${ms.length - 3} more` : ''}`);
+      }
+      add(t, 'dates', `${iso(o.start)} → ${iso(t.start)}; finish ${iso(o.finish)} → ${iso(t.finish)} (${sgn(fin)} working days)`, r);
+    }
+    if (predKey(o) !== predKey(t)) add(t, 'logic', `predecessors ${predIds(o, old)} → ${predIds(t, old)}`, ['dependency logic changed']);
+    if (!t.summary && !fin && o.durationDays !== t.durationDays) {
+      const d = t.durationDays - o.durationDays;
+      add(t, 'duration', `${o.durationDays} → ${t.durationDays} days`, Math.abs(d) > threshold ? [`duration changed by ${sgn(d)} days`] : []);
+    }
+    if (o.name !== t.name) add(t, 'renamed', `"${o.name}" → "${t.name}"`, []);
+    if (o.resources.join('|') !== t.resources.join('|')) add(t, 'resources', `${o.resources.join(', ') || 'unassigned'} → ${t.resources.join(', ') || 'unassigned'}`, []);
+    if ((o.notes || '') !== (t.notes || '')) add(t, 'notes', 'notes edited', []);
+    if (!t.summary && o.percent !== t.percent) progress++;
+  }
+  for (const o of old.tasks) {
+    if (p.byUid.has(o.uid) || o.summary) continue;
+    const r = [];
+    if (o.milestone) r.push('milestone removed');
+    if (!o.milestone && o.durationDays > threshold) r.push(`${o.durationDays} days of work removed`);
+    (r.length ? material : administrative).push({ id: o.id, task: o.name, kind: 'removed', detail: `removed (was ${iso(o.start)} → ${iso(o.finish)})`, ...(r.length ? { why: r.join('; ') } : {}) });
+  }
+
+  const milestones = p.tasks.filter((t) => t.milestone).map((t) => {
+    const o = old.byUid.get(t.uid);
+    return { id: t.id, milestone: t.name, before: iso(o?.finish), now: iso(t.finish), movedWorkingDays: o?.finish && t.finish ? workdaysBetween(o.finish, t.finish) : null, baseline: iso(t.baselineFinish) };
+  });
+  const projectFinish = { before: iso(old.finish), now: iso(p.finish), movedWorkingDays: old.finish && p.finish ? workdaysBetween(old.finish, p.finish) : null };
+  const moved = milestones.filter((x) => x.movedWorkingDays).length;
+  return {
+    plan: p.name, comparedWith: path.basename(pick), versionDate: iso(old.statusDate) || path.basename(pick, '.xml'), statusDate: iso(status), thresholdDays: threshold,
+    summary: `${material.length} material and ${administrative.length} administrative change${administrative.length === 1 ? '' : 's'}; ${moved} milestone${moved === 1 ? '' : 's'} moved; project finish ${projectFinish.movedWorkingDays ? `moved ${sgn(projectFinish.movedWorkingDays)} working days` : 'unchanged'}; ${progress} task${progress === 1 ? '' : 's'} with progress updates (not listed).`,
+    projectFinish, milestones, material, administrative,
+  };
+}
+
+// ------------------------------------------------------------------ look-ahead (what is on each workstream's radar)
+/** The workstream a task belongs to: its summary ancestor one level below the project root (or the top level when there are several). */
+function workstreamOf(p, t) {
+  const tops = p.tasks.filter((x) => x.summary && x.level === 1);
+  const level = tops.length === 1 && p.tasks.some((x) => x.summary && x.level === 2) ? 2 : 1;
+  const key = t.wbs.split('.').slice(0, level).join('.');
+  return p.tasks.find((x) => x.summary && x.wbs === key) || null;
+}
+
+/**
+ * Forward-looking readout for the coming week, grouped by workstream: what starts, what finishes, milestones, late carry-overs,
+ * and unfinished work these tasks are waiting on (from another workstream, or overdue).
+ * opts: { from (default the day after the status date), days (default 7), statusDate, under, owner }
+ */
+function lookahead(file, opts = {}) {
+  const p = load(file);
+  const status = toDate(opts.statusDate) || p.statusDate || toDate(iso(new Date()));
+  const facts = taskFacts(p, status);
+  const from = toDate(opts.from) || new Date(+status + DAY);
+  const days = Math.max(1, Math.min(60, +opts.days || 7));
+  const to = new Date(+from + (days - 1) * DAY);
+  const warnings = [];
+  let pool = p.tasks.filter((t) => !t.summary);
+  if (opts.under) {
+    const b = /^[\d.]+$/.test(String(opts.under)) ? p.tasks.find((t) => t.wbs === String(opts.under)) : findTask(p, opts.under);
+    if (!b) { warnings.push(`No task or WBS "${opts.under}" found.`); pool = []; } else pool = pool.filter((t) => t.wbs === b.wbs || t.wbs.startsWith(`${b.wbs}.`));
+  }
+  if (opts.owner) { const o = String(opts.owner).toLowerCase(); pool = pool.filter((t) => t.resources.some((r) => r.toLowerCase().includes(o))); }
+  const row = (t) => ({ id: t.id, task: t.name, start: iso(t.start), finish: iso(t.finish), percentComplete: t.percent, resources: t.resources.join(', '), ...(t.onCriticalPath ? { critical: true } : {}) });
+  const wsName = (w) => (w ? `${w.wbs} ${w.name}` : '(no workstream)');
+  const groups = new Map();
+  const grp = (t) => { const k = wsName(workstreamOf(p, t)); if (!groups.has(k)) groups.set(k, { workstream: k, starting: [], finishing: [], milestones: [], lateCarryOver: [], waitingOn: [] }); return groups.get(k); };
+  const inWin = (d) => d && d >= from && d <= to;
+  criticalPath(p);
+  for (const t of pool) {
+    const f = facts.get(t.uid);
+    if (t.percent >= 100) continue;
+    if (t.milestone) { if (inWin(t.finish)) grp(t).milestones.push({ ...row(t), baselineFinish: iso(t.baselineFinish), slipWorkingDays: f.slip }); }
+    else {
+      if (inWin(t.start)) grp(t).starting.push(row(t));
+      if (inWin(t.finish)) grp(t).finishing.push(row(t));
+      if (f.state === 'late') grp(t).lateCarryOver.push({ ...row(t), workingDaysLate: workdaysBetween(t.finish, status) });
+    }
+    if (t.start && t.finish && t.start <= to && t.finish >= from) {
+      const tw = workstreamOf(p, t);
+      for (const pr of t.preds) {
+        const d = p.byUid.get(pr.uid);
+        if (!d || d.summary || d.percent >= 100) continue;
+        const dw = workstreamOf(p, d);
+        const overdue = !!(d.finish && d.finish < status), cross = dw?.wbs !== tw?.wbs;
+        if (!overdue && !cross) continue; // same workstream and on track: already on its own list
+        grp(t).waitingOn.push({ task: `#${t.id} ${t.name}`, waitsFor: `#${d.id} ${d.name}`, owner: d.resources.join(', '), finish: iso(d.finish), percentComplete: d.percent, overdue, ...(cross ? { fromWorkstream: wsName(dw) } : {}) });
+      }
+    }
+  }
+  const list = [...groups.values()].filter((g) => g.starting.length || g.finishing.length || g.milestones.length || g.lateCarryOver.length || g.waitingOn.length)
+    .sort((a, b) => a.workstream.localeCompare(b.workstream, undefined, { numeric: true }));
+  const n = (k) => list.reduce((s, g) => s + g[k].length, 0);
+  return {
+    plan: p.name, statusDate: iso(status), window: { from: iso(from), to: iso(to) },
+    summary: `${n('starting')} starting, ${n('finishing')} finishing, ${n('milestones')} milestone(s), ${n('lateCarryOver')} late carry-over(s), ${n('waitingOn')} dependenc${n('waitingOn') === 1 ? 'y' : 'ies'} to watch.`,
+    ...(warnings.length ? { warnings } : {}), workstreams: list,
+  };
+}
+
+module.exports = { load, readPlan, analyze, updatePlan, queryPlan, changeLog, lookahead, hasMsProject, iso, toDate, addWorkdays, workdaysBetween, isWorkday, recordVersion, earlierVersions, historyKey };

@@ -4,7 +4,7 @@ title: Microsoft Project plans
 emoji: 📅
 description: Read, analyze and update Microsoft Project plans (.mpp and Project XML) — schedule health, critical path, slippage, resource over-allocation, and progress updates.
 extensions: .mpp, .xml
-readTools: list_office_files, read_project_plan, analyze_project_plan, query_plan, get_status_facts
+readTools: list_office_files, read_project_plan, analyze_project_plan, query_plan, plan_change_log, plan_lookahead, get_status_facts
 writeTools: update_project_plan, project_plan_to_spreadsheet, build_status_report
 ---
 
@@ -17,6 +17,8 @@ You have tools for Microsoft Project plans in the user's project folder. **Alway
 | `list_office_files` | Find plans and workbooks when the user doesn't name a file |
 | `analyze_project_plan` | Health checks, status reports, "what's late / slipping / at risk", critical path, over-allocation. **Start here for any question about schedule health.** |
 | `query_plan` | Questions about **part** of a plan: a workstream (`under`), a person (`owner`), late/behind tasks, the critical path, slips over N days, a date window, what a task depends on or what depends on it (`relatedTo`), and what changed since last week (`changedSince: "last"`). Returns exact rows; combine filters rather than reading the whole plan. Report the filters it applied, and any warnings |
+| `plan_change_log` | The change log between plan versions (the monthly one, or "what changed since the baseline?"). Changes are already sorted into **material** (milestone or finish moves, critical-path or large date moves, dependency logic changes, work added or removed) and **administrative**, each with the reason. Report material changes first, with their reasons; summarise administrative ones in a line or two |
+| `plan_lookahead` | The weekly forward-looking readout by workstream: starting, finishing, milestones, late carry-overs and what each workstream is waiting on. Lead with milestones and dependencies, since those are what teams need on their radar |
 | `get_status_facts` | The weekly status model for a plan and optional RAID log: rule-based RAG with reasons, milestones with variance and movement since last time, changes, late/behind work, overdue RAID items, top risks and issues. Every fact has a source. Use it before writing any status summary |
 | `build_status_report` | Save the status pack (status.json, a detailed Markdown report, a one-page HTML executive dashboard) under "Status reports/<date>/" as a Draft. Pass your narrative and decisions needed; they are labelled AI-written. Never contradict the calculated rating in the narrative; recommend a change instead |
 | `read_project_plan` | Full task list (IDs, WBS, dates, % complete, predecessors, resources) when you need details |
