@@ -382,26 +382,13 @@ async function draftAssistant(description) {
   return JSON.parse(m[0]);
 }
 
-const yamlStr = (v) => JSON.stringify(String(v).replace(/\n/g, ' '));
-
 /** Write the files that make assistants + skills + the office tools work in VS Code and the CLIs (Claude Code and GitHub Copilot). */
 function writeVsCodeKit(ws, assistants) {
   const written = [];
   const put = (rel, content) => { const f = path.join(ws, rel); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, content); written.push(f); };
   const used = new Set(assistants.flatMap((a) => a.skills || []));
-  for (const s of skills.all().filter((x) => used.has(x.id))) {
-    const md = `---\nname: ${s.id}\ndescription: ${yamlStr(s.description)}\n---\n\n${s.body}\n`;
-    put(path.join('.claude', 'skills', s.id, 'SKILL.md'), md);
-    put(path.join('.github', 'skills', s.id, 'SKILL.md'), md);
-  }
-  for (const a of assistants) {
-    const name = slug(a.name);
-    const sk = a.skills || [];
-    const skillNote = sk.length ? `\n\nUse the ${sk.join(' and ')} skill${sk.length > 1 ? 's' : ''} and the "office" MCP tools for documents, Excel workbooks, Microsoft Project plans and traceability.` : '';
-    put(path.join('.claude', 'agents', `${name}.md`), `---\nname: ${name}\ndescription: ${yamlStr(a.tagline || a.name)}\n---\n\n${a.instructions}${skillNote}\n`);
-    const skillText = skills.all().filter((x) => sk.includes(x.id)).map((x) => `\n\n## ${x.title}\n\n${x.body}`).join('');
-    put(path.join('.github', 'agents', `${name}.agent.md`), `---\nname: ${yamlStr(a.name)}\ndescription: ${yamlStr(a.tagline || a.name)}\n---\n\n${a.instructions}${skillText}\n`);
-  }
+  // Skills (with their reference files) and agents for .claude and .github.
+  for (const f of copilotExport.vsCodeKitFiles(assistants, skills.all())) put(f.rel, f.content);
   if (used.size) {
     const server = { command: 'node', args: [skills.MCP_SERVER] };
     // Outside Lumen there are no Approve cards, so the Azure DevOps tools are exported read-only. No credentials are written.
@@ -415,7 +402,22 @@ function writeVsCodeKit(ws, assistants) {
 
 function exportAssistant(a, workspace) {
   const ws = resolveWorkspace(workspace);
-  return { files: writeVsCodeKit(ws, [a]), workspace: ws };
+  const files = writeVsCodeKit(ws, [a]);
+  const agentFile = (dir, ext) => files.find((f) => f.endsWith(path.join(dir, 'agents', `${slug(a.name)}${ext}`)));
+  return { files, claude: agentFile('.claude', '.md'), github: agentFile('.github', '.agent.md'), workspace: ws };
+}
+
+/** The three engineering skill packs (developer, test automation, pipeline readiness) into a code repository folder. */
+function exportEngineeringPacks(folder) {
+  if (!folder) throw new Error('Choose the code repository folder first.');
+  const ws = path.resolve(String(folder));
+  if (!fs.existsSync(ws) || !fs.statSync(ws).isDirectory()) throw new Error("That folder doesn't exist.");
+  const agents = copilotExport.ENGINEERING_PACKS.map((id) => store.assistants.get(id)).filter(Boolean);
+  if (!agents.length) throw new Error('The engineering agents were removed. Restore the built-in agents in Settings first.');
+  const files = writeVsCodeKit(ws, agents);
+  const readme = path.join(ws, '.github', 'Engineering skill packs.md');
+  fs.writeFileSync(readme, copilotExport.ENGINEERING_README(agents));
+  return { folder: ws, agents: agents.map((a) => a.name), files: [...files, readme], readme };
 }
 
 // Sample packs offered on the home screen. Each is copied into a sibling of the user's project folder.
@@ -798,6 +800,10 @@ async function api(req, res, url) {
     if (resource === 'assistants' && action === 'export' && m === 'POST') {
       const a = col.get(rid); if (!a) return send(res, 404, { error: 'Not found' });
       return send(res, 200, exportAssistant(a, (await json(req)).workspace));
+    }
+    // Engineering skill packs: the developer, test automation and pipeline agents with their skills, into a repo folder.
+    if (resource === 'assistants' && rid === 'export-engineering' && m === 'POST') {
+      try { return send(res, 200, exportEngineeringPacks((await json(req)).folder)); } catch (e) { return send(res, 400, { error: e.message }); }
     }
     // Export to Microsoft 365 Copilot: one agent (/assistants/:id/export-copilot), all agents (/assistants/export-copilot)
     // or every prompt (/recipes/export-copilot). Files land in "<project folder>/Microsoft 365 Copilot".

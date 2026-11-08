@@ -21,6 +21,9 @@ Synthetic data for trying Lumen's delivery-lifecycle assistants locally: Require
 | **Knowledge/API Standards.md**, **Knowledge/HIP Patterns.md** | The program API rules (versioning, naming, error model, headers, traceability) and the HIP integration patterns (ARO P4/P5) |
 | **Integration/permit-renewal-api.yaml** | An OpenAPI 3.0 spec for the Case API, for **Review an OpenAPI spec** |
 | **Integration/ICD - Case API (draft).md** | A draft interface control document, for **Draft an ICD** |
+| **Environments/STE, UAT, PRD/** | App settings (.env) and OpenShift deployment exports per environment, with **Environments/Config rules.md** (the env-specific keys), for **Compare environment configs** |
+| **Environments/azure-pipelines.yml** | The release pipeline, for **Check a pipeline** |
+| **Quality/Test cases - Photo upload (SIT).xlsx** | Test cases in the Azure DevOps import layout, for **Turn test cases into Playwright tests** |
 
 ## Built-in scenarios
 - **One-to-many and many-to-many links:** BR-002 has three refined requirements, and FD-012 realises all three.
@@ -33,6 +36,7 @@ Synthetic data for trying Lumen's delivery-lifecycle assistants locally: Require
 - **Defect triage:** 1201/1204 (payment time-outs) and 1203/1206 (PNG photos) are probable duplicates, 1207 is critical but priority 4, and 1203 has no owner. 1210 looks like 1203 but is in a different area.
 - **Architecture:** the TDD names an *Address lookup service* the blueprint never mentions (and the reusable-asset register already has an address lookup API), cites ADR-002 although ADR-003 superseded it, and uses an entity (Renewal Fee) and a field (Permit.renewalCount) the data model doesn't have. For the design gate, the blueprint has no approval, the security assessment is missing, and interface catalogue v1.1 is a newer draft that isn't approved yet. The git log adds a photo validation service, changes the eligibility service and the Case API, and retires the legacy kiosk interface.
 - **Integration:** in `permit-renewal-api.yaml` the eligibility response points to a schema that does not exist (`EligibilityResult`; the schema is `EligibilityDecision`), and the photo upload has no 400 error response although the API standards require 400, 401 and 500. The draft Case API ICD has no volumes section, and its integration pattern, error handling and service levels are still TBD.
+- **Environments:** PRD has no NOTIFY_QUEUE_NAME, runs permit-api 1.3.9-hotfix (STE 1.4.2, UAT 1.4.1, and the hotfix never ran in either), keeps DB_PASSWORD as plain text (STE and UAT use Key Vault references), and still has PHOTO_MAX_AGE_MONTHS=12. The pipeline has no UAT stage, deploys to PRD with no approval gate, and two tasks have no version.
 
 ## Things to try
 - *"Inventory the program knowledge in this folder."*
@@ -45,5 +49,6 @@ Synthetic data for trying Lumen's delivery-lifecycle assistants locally: Require
 - *"Publish the approved lifecycle outputs to the Design library."* then edit one and run **Knowledge freshness**.
 - **Architecture review** on the blueprint and the TDD (with the ADR folder and the data model), **Reuse vs. build assessment** for the address lookup, **Assemble a gate pack** from `Architecture/Design gate.json`, and **Update technical inventory** from the git log.
 - **Review an OpenAPI spec** on `Integration/permit-renewal-api.yaml` with `Knowledge/API Standards.md`, **Draft an ICD** for the Case API (or check the draft one), **Design an API** for the notification interface, and **Generate API scaffolding** once a spec has no errors.
+- **Compare environment configs** on `Environments/` with `Environments/Config rules.md`, **Check a pipeline** on `Environments/azure-pipelines.yml`, and **Turn test cases into Playwright tests** on `Quality/Test cases - Photo upload (SIT).xlsx`.
 
 Regenerate with `node scripts/make-aidlc-sample.js` (templates: `node scripts/make-word-templates.js`).

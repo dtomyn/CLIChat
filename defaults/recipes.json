@@ -1919,5 +1919,98 @@
       }
     ],
     "template": "Generate a static mock and scaffolding from the OpenAPI spec {{spec}}, in the stack named in {{blueprint}} (ask me which stack if blank), checked against {{standards}}.\n\n1. Call validate_openapi first. If there are errors, list them with their JSON paths and stop: no scaffolding until they are fixed.\n2. Call generate_api_scaffold with the spec, the blueprint and the standards.\n3. List the files written (mock responses, controller stubs, DTOs, contract tests) and the operations with their x-traces-to IDs.\n4. Explain the next steps: implement each stub (they return 501), enable its contract test, and point API_BASE_URL at a test environment. Lumen does not run a mock server."
+  },
+  {
+    "id": "engineering-pr-description",
+    "name": "Write a PR description",
+    "emoji": "👩‍💻",
+    "category": "Engineering",
+    "description": "A pull request description from the program template, tracing the change to the story (AB#id) and the design (TD-###), with the acceptance criteria mapped to tests.",
+    "assistantId": "developer-copilot",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "story",
+        "label": "Story",
+        "placeholder": "e.g. AB#1234 Reject photos older than 6 months"
+      },
+      {
+        "key": "design",
+        "label": "Technical design",
+        "type": "file",
+        "accept": ".md,.docx"
+      },
+      {
+        "key": "changes",
+        "label": "What changed (optional)",
+        "placeholder": "e.g. PhotoValidator age rule, 4 unit tests",
+        "optional": true
+      }
+    ],
+    "template": "Write the pull request description for {{story}}, using the technical design {{design}} and these changes: {{changes}} (ask me what changed if blank).\n\n1. Find the TD-### sections in the design that the story implements, and the BR/FD IDs they trace to.\n2. Fill in the PR template from the dev-pack skill: what and why, traceability (AB#id, TD-###, BR/FD), acceptance criteria to tests, how it was verified, risks and rollback, and the checklist.\n3. Save it with save_draft_document as \"Pull requests/<story> - PR description.md\".\n4. List anything the reviewer will ask about that I have not told you (tests for a criterion, config changes per environment, differences from the TDD)."
+  },
+  {
+    "id": "engineering-playwright-tests",
+    "name": "Turn test cases into Playwright tests",
+    "emoji": "🤖",
+    "category": "Engineering",
+    "description": "Generate Playwright regression specs from a test-case workbook: one test per case, tagged by test case and story, with steps, evidence and a CI-ready config.",
+    "assistantId": "test-automation-copilot",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "workbook",
+        "label": "Test-case workbook",
+        "type": "file",
+        "accept": ".xlsx"
+      }
+    ],
+    "template": "Turn the test cases in {{workbook}} into Playwright regression tests.\n\n1. Read the workbook and list any case with no steps, no expected result or no trace: those need a tester before they can be automated.\n2. Call generate_playwright_tests with {{workbook}}.\n3. List the spec files written, each test with its tags, and the commands to run one story (--grep @US-###) or one case.\n4. Explain the next steps for an automation engineer: write the page objects and assertions from the expected results, remove .fixme, and publish the JUnit and HTML reports in the pipeline."
+  },
+  {
+    "id": "engineering-compare-configs",
+    "name": "Compare environment configs",
+    "emoji": "🔧",
+    "category": "Engineering",
+    "description": "Find settings missing per environment, values that should match but differ, image tag drift and plain-text secrets across STE, UAT and PRD.",
+    "assistantId": "pipeline-readiness",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "folder",
+        "label": "Folder with the environment configs",
+        "placeholder": "e.g. Environments"
+      },
+      {
+        "key": "rules",
+        "label": "Config rules (optional)",
+        "type": "file",
+        "accept": ".md,.txt,.json",
+        "optional": true
+      }
+    ],
+    "template": "Compare the environment configs in the {{folder}} folder, with the rules in {{rules}} (none if blank).\n\n1. Call compare_configs with the folder and the rules.\n2. Report the blockers first: missing keys (and where they are set), settings that must match but differ, and any PRD image tag or version that no lower environment runs.\n3. Then the warnings: other tag and version drift, and plain-text secrets (say where; never show the value).\n4. End with a short readiness verdict for PRD and the owner to ask about each blocker."
+  },
+  {
+    "id": "engineering-lint-pipeline",
+    "name": "Check a pipeline",
+    "emoji": "🚦",
+    "category": "Engineering",
+    "description": "Check an Azure Pipelines or GitHub Actions file for missing environment stages, no approval gate before PRD and unpinned task versions.",
+    "assistantId": "pipeline-readiness",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "pipeline",
+        "label": "Pipeline YAML",
+        "type": "file",
+        "accept": ".yml,.yaml"
+      }
+    ],
+    "template": "Check the release pipeline {{pipeline}}.\n\n1. Call lint_pipeline on it (required environments STE, UAT, PRD).\n2. List every error and warning with its line: missing stages, no approval gate before PRD, PRD not waiting for UAT, unpinned tasks or actions, images without a fixed tag.\n3. For each, show the YAML fix.\n4. Remind me what to confirm outside the YAML: approvals on the PRD environment and where the secrets come from."
   }
 ]

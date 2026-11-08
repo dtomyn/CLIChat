@@ -4,15 +4,15 @@ This tracker covers the 42 use cases in *Initial AI use-case catalogue* (AITheme
 
 Status key: ✅ Done · 🟡 Partial (works locally from files; a named gap remains) · 📝 Planned (plan written, not built) · ⬜ Not started
 
-Last reviewed: 2026-11-07 (branch `feature/ideas-for-pm`, commit `82b234d`)
+Last reviewed: 2026-11-07 (branch `feat/plans-09-17`, plan 17)
 
 ## Summary
 
 | Status | Count |
 |---|---|
-| ✅ Done | 34 |
+| ✅ Done | 37 |
 | 🟡 Partial | 4 |
-| 📝 Planned | 4 |
+| 📝 Planned | 1 |
 | ⬜ Not started | 0 |
 
 Lumen runs on one computer and works on files in the notebook folder. Where the catalogue names a cloud target (SharePoint, Teams, Power BI, Fabric, ADO Test Plans), Lumen produces the file or proposal locally, and a person publishes it. "Done" means the use case works end to end in that model. Live system connections are tracked separately in Plan 08 (Azure DevOps) and in the "Live targets" column.
@@ -55,13 +55,13 @@ Lumen runs on one computer and works on files in the notebook folder. Where the 
 | 32 | Documentation / Bilingual | French drafts and bilingual QA | Med–High | ✅ | **Bilingual Reviewer** agent, `bilingual` skill, `check_terminology` (glossary terms, untranslated English, numbers/dates/IDs, missing paragraphs after alignment), prompts **Draft French version** (labelled machine-drafted, needs translator review) and **Bilingual QA**, sample 30-term glossary and EN/FR guide pair with three seeded issues (2026-11-07) | 14 |
 | 33 | Functional / ADO Backlog | ADO backlog Q&A and controlled updates | High | 📝 | Plan 08 written, nothing built | 08 |
 | 34 | Testing / QE | Test strategy, coverage model, risk priorities | High | ✅ | **Test Planner** agent, prompt **Draft the test strategy** (levels, STE/UAT/STG/PRD, entry/exit, test data, risk × change-impact priority); coverage model from `analyze_traceability` (2026-11-07) | 09 |
-| 35 | Test Automation | Automated regression tests (Playwright) | High | 📝 | Lumen's own e2e suite as a pattern | 17 |
-| 36 | Development / Engineering | Developer Copilot skill pack | High | 📝 | "Use in VS Code" export exists to reuse | 17 |
+| 35 | Test Automation | Automated regression tests (Playwright) | High | ✅ | **Test Automation Copilot** 🤖 agent, `test-automation` skill (page objects, data factories, tags by test case and story, CI evidence; references: Playwright conventions and Lumen's own `e2e/` as the worked example), `generate_playwright_tests` (a Plan 09 test-case workbook → one spec per story, one `test.fixme` per case tagged `@TC-### @US-### @SIT`, a `test.step` per step, data factory, base page object, `playwright.config.js` with traces and JUnit/HTML reports), prompt **Turn test cases into Playwright tests**, sample `Quality/Test cases - Photo upload (SIT).xlsx` (2026-11-07). Exported to VS Code with **Engineering packs** | 17 |
+| 36 | Development / Engineering | Developer Copilot skill pack | High | ✅ | **Developer Copilot** 👩‍💻 agent, `dev-pack` skill (story and TDD first, unit tests first, PR with `AB#`/`TD-###` traceability, pre-review checklist; references: coding standards, PR template, branch naming), prompt **Write a PR description**; **Use in VS Code** now copies skill reference files, and **Agents › Engineering packs** writes all three packs into a chosen repo folder (`.github` and `.claude` agents and skills, MCP settings, a README) (2026-11-07). Loading in VS Code Copilot / Claude Code: checked by hand only | 17 |
 | 37 | Cross-Functional / Knowledge | ADO Wiki → SharePoint publishing, freshness | Foundational | 🟡 | `tools/publish.js`: `publish_snapshot`, `check_freshness`, `Published/publishing-log.xlsx`, **Knowledge freshness** prompt (2026-11-07). Missing: live ADO Wiki source (Plan 08 phase 2) | 18, 08 |
 | 38 | Architecture / Governance | ADRs and reuse vs. build | High | ✅ | **ADR & Reuse Advisor** agent, `index_adrs` (MADR and Nygard ADRs: status, supersedes, no status, superseded still referenced, duplicate decisions), prompts **Draft an ADR** (MADR, status Proposed, via `save_draft_document`) and **Reuse vs. build assessment**, sample `Architecture/ADRs/` (ADR-002 superseded but still cited) and `Reusable assets.xlsx` (2026-11-07) | 16 |
 | 39 | Planning / Resources | Estimates and resource capacity | High | ✅ | `tools/capacity.js`, `analyze_capacity` (weekly demand vs. capacity per person and role, leave clashes with critical work, sprint overloads from an ADO export, story-point outliers vs. the team median), **Who's overloaded?** takes an optional capacity workbook and backlog, sample `Team Capacity - Q4 2026.xlsx` (2026-11-07) | 10 |
 | 40 | Architecture / Governance | Stage-gate packs | High | ✅ | **Gate Pack Assembler** agent, `assemble_gate_pack` (latest approved version per artefact from the lifecycle approval stamp or Word properties, newer drafts left out; writes `Gate packs/<gate>/` with a combined Word pack through `md-export` `toDocx` and the program template, an index with approval status and open items, an open-item log and artefact copies), prompt **Assemble a gate pack**, sample `Architecture/Design gate.json` (2026-11-07). SharePoint upload: out of scope | 16 |
-| 41 | DevOps / Environments | Pipeline assets and environment drift | High | 📝 | — | 17 |
+| 41 | DevOps / Environments | Pipeline assets and environment drift | High | ✅ | **Pipeline & Environment Readiness** 🔧 agent, `pipeline-readiness` skill, `tools/drift.js`: `compare_configs` (.env/.properties, JSON, multi-document Kubernetes/OpenShift YAML across STE/UAT/PRD; missing keys, must-match differences per a rules file, image tag/version drift, plain-text secrets, values always masked) and `lint_pipeline` (Azure Pipelines / GitHub Actions: stage per environment, approval gate before PRD, PRD waits for UAT, pinned tasks/actions, fixed image tags), prompts **Compare environment configs** and **Check a pipeline**, sample `Environments/` with a seeded missing key, tag drift and secret (2026-11-07). Running pipelines or connecting to clusters: out of scope | 17 |
 | 42 | Architecture / Knowledge | Technical catalogues from delivery changes | High | ✅ | **Inventory Keeper** agent, `propose_inventory_updates` (adds, changes and retirements from an ADO export, `git log --name-only` text, accepted ADRs and design documents; `(proposed)` copy with Approve column), prompt **Update technical inventory**, sample `Technical Inventory.xlsx` and git log (2026-11-07). Applying approved rows is by hand; live GitHub PRs: out of scope | 16 |
 
 (#39 is counted as Planned in the summary because the missing half is the substantial part.)
@@ -79,7 +79,7 @@ Lumen runs on one computer and works on files in the notebook folder. Where the 
 | [14 Change, training and bilingual](14-change-training-bilingual.md) | 24, 25, 26, 32 | M | — | ✅ 2026-11-07 |
 | [15 Release and cutover](15-release-and-cutover.md) | 27, 28, 29, 30 | M | 09 (defect reader) | ✅ 2026-11-07 |
 | [16 Architecture and governance](16-architecture-governance.md) | 31, 38, 40, 42 | M | 18 (templates) | ✅ 2026-11-07 |
-| [17 Engineering skill packs](17-engineering-skill-packs.md) | 35, 36, 41 | M | — | 📝 |
+| [17 Engineering skill packs](17-engineering-skill-packs.md) | 35, 36, 41 | M | — | ✅ 2026-11-07 |
 | [18 Document templates and publishing](18-document-templates-publishing.md) | 8, 9, 37 | M | — (08 for wiki source) | 📝 |
 
 Suggested order: 18 (templates unblock 13 and 16) → 09 → 10 → 14 → 15 → 16 → 13 → 11 → 12 → 17. Plan 08 can run in parallel at any time.
@@ -108,3 +108,4 @@ These extend the [ground rules](README.md#ground-rules-for-every-plan):
 | 2026-11-07 | Plan 13 implemented: #21, #22, #23 done |
 | 2026-11-07 | Plan 11 implemented: #13, #14, #15, #18 done |
 | 2026-11-07 | Plan 12 implemented: #16, #17 done |
+| 2026-11-07 | Plan 17 implemented: #35, #36, #41 done |

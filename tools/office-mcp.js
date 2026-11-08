@@ -24,6 +24,7 @@ const governance = require('./governance');
 const controls = require('./controls');
 const data = require('./data');
 const openapi = require('./openapi');
+const drift = require('./drift');
 
 const ROOT = path.resolve(process.env.OFFICE_MCP_ROOT || process.cwd());
 const READ_ONLY = process.env.OFFICE_MCP_READONLY === '1';
@@ -74,7 +75,7 @@ const TOOLS = [
     description: 'List the documents (.docx/.md/.txt/.pdf), Excel workbooks (.xlsx/.xlsm/.csv) and Microsoft Project plans (.mpp/.xml) and OpenAPI specs (.yaml/.yml) in the project folder, with size and last-modified date.',
     inputSchema: { type: 'object', properties: {} },
     run: () => {
-      const files = walk(ROOT).filter((f) => /\.(xlsx|xlsm|csv|mpp|xml|docx|docm|md|txt|pdf|vtt|yaml|yml)$/i.test(f) && !/[\\/]\.?(claude|github|vscode)[\\/]/i.test(f));
+      const files = walk(ROOT).filter((f) => /\.(xlsx|xlsm|csv|mpp|xml|docx|docm|md|txt|pdf|vtt|yaml|yml|env|properties)$/i.test(f) && !/[\\/]\.?(claude|github|vscode)[\\/]/i.test(f));
       return files.map((f) => `${path.relative(ROOT, f)}  (${Math.round(fs.statSync(f).size / 1024)} KB, modified ${new Date(fs.statSync(f).mtimeMs).toISOString().slice(0, 10)})`).join('\n') || 'No documents, workbooks or plans found.';
     },
   },
@@ -582,6 +583,43 @@ const TOOLS = [
       outDir: { type: 'string', description: 'Output folder (default "<spec folder>/API/<API title>")' },
     }, required: ['spec'] },
     run: write((a) => openapi.generateScaffold(resolveIn(a.spec), { stack: a.stack, stackText: !a.stack && a.blueprint ? governance.readText(resolveIn(a.blueprint)) : '', standards: a.standards ? resolveIn(a.standards) : undefined, outDir: outputIn(a.outDir), root: ROOT })),
+  },
+  {
+    name: 'compare_configs',
+    description: 'Compare config files across environments (STE, UAT, PRD…): .env / .properties (KEY=value), JSON, and YAML including Kubernetes / OpenShift manifests exported as YAML (several documents per file). The environment comes from the folder or file name (Environments/UAT/app.env, app.prd.env) or is given per file. Reports keys missing per environment, values that differ where they should match, image tag and version drift (and a PRD tag no lower environment runs), and secrets stored as plain text. With a rules file (Markdown "Key | Rule" table, "KEY: rule" lines or JSON; rules env-specific, must-match, optional, ignore) every setting not listed as env-specific must match. Secret-looking values are always hidden. Read-only.',
+    inputSchema: { type: 'object', properties: {
+      files: { type: 'array', items: { anyOf: [{ type: 'string' }, { type: 'object', properties: { path: { type: 'string' }, environment: { type: 'string' } }, required: ['path'] }] }, description: 'Config files, e.g. ["Environments/STE/app-settings.env", "Environments/UAT/app-settings.env"]' },
+      folder: { type: 'string', description: 'Or a folder: every config file under it whose folder or name says its environment' },
+      rules: { type: 'string', description: 'Optional rules file listing env-specific keys, e.g. "Environments/Config rules.md"' },
+      environments: { type: 'array', items: { type: 'string' }, description: 'Promotion order, default DEV, STE, QA, UAT, PREPROD, PRD' },
+    } },
+    run: (a) => {
+      let files = (a.files || []).map((f) => (typeof f === 'string' ? resolveIn(f) : { ...f, path: resolveIn(f.path) }));
+      if (!files.length && a.folder) {
+        const dir = resolveIn(a.folder);
+        const rules = a.rules ? resolveIn(a.rules) : null;
+        files = walk(dir).filter((f) => /\.(env|properties|json|ya?ml)$/i.test(f) && f !== rules && drift.envFromPath(path.relative(ROOT, f)) && !/pipeline|workflow/i.test(path.basename(f)));
+      }
+      return drift.compareConfigs(files, { rules: a.rules ? resolveIn(a.rules) : undefined, environments: a.environments, root: ROOT });
+    },
+  },
+  {
+    name: 'lint_pipeline',
+    description: 'Basic checks on an Azure Pipelines or GitHub Actions YAML file: a stage (or job) for each required environment (default STE, UAT, PRD), an approval gate before PRD (a deployment to a named environment, where approvals are set, or a manual validation step), PRD waiting for the environment before it, task versions pinned (Task@2) and actions pinned to a tag or SHA, and container images with a fixed tag. Every finding has a JSON path and line. Read-only: nothing is run.',
+    inputSchema: { type: 'object', properties: {
+      path: { type: 'string', description: 'The pipeline YAML, e.g. "azure-pipelines.yml" or ".github/workflows/deploy.yml"' },
+      environments: { type: 'array', items: { type: 'string' }, description: 'Required environments in order, default ["STE", "UAT", "PRD"]' },
+    }, required: ['path'] },
+    run: (a) => drift.lintPipeline(resolveIn(a.path), { environments: a.environments, root: ROOT }),
+  },
+  {
+    name: 'generate_playwright_tests',
+    description: 'Turn a test-case workbook (the write_test_cases layout: one row per step) into Playwright regression specs: one spec per story, one test per case tagged with its test case ID, the IDs it traces to (@US-104 @BR-004) and SIT/UAT, one test.step per step with the expected result, a screenshot attached as evidence, plus a test-data factory, a base page object, a playwright.config.js (trace and screenshots on failure, HTML and JUnit reports) and a README mapping cases to specs. Tests are marked fixme until the actions and assertions are written. Writes to "<workbook folder>/Playwright" by default (a numbered folder if that one has files); never overwrites.',
+    inputSchema: { type: 'object', properties: {
+      workbook: { type: 'string', description: 'The test-case workbook, e.g. "Quality/Test cases - Photo upload (SIT).xlsx"' },
+      outDir: { type: 'string', description: 'Output folder (default "<workbook folder>/Playwright")' },
+    }, required: ['workbook'] },
+    run: write((a) => qe.generatePlaywrightTests(resolveIn(a.workbook), { outDir: outputIn(a.outDir), root: ROOT })),
   },
   {
     name: 'write_test_cases',

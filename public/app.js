@@ -1271,13 +1271,13 @@ function stopConv(conv) {
 // ---------------------------------------------------------------- folder
 // In-app folder browser. (A native dialog started by the server can open behind the browser or on another
 // screen, which looks like a dead button, so Lumen browses folders itself.)
-function pickFolder(start = currentWorkspace()) {
+function pickFolder(start = currentWorkspace(), opts = {}) {
   return new Promise((resolve) => {
     let current = '';
     let settled = false;
     const finish = (p) => { if (!settled) { settled = true; resolve(p); } };
     modal({
-      title: 'Choose a project folder', sub: 'Open the folder Lumen should work in, then choose “Use this folder”.', wide: true,
+      title: opts.title || 'Choose a project folder', sub: opts.sub || 'Open the folder Lumen should work in, then choose “Use this folder”.', wide: true,
       body: `<div class="fp">
         <div class="fp-places" id="fpPlaces"></div>
         <div class="fp-main">
@@ -1285,7 +1285,7 @@ function pickFolder(start = currentWorkspace()) {
           <div class="fp-list" id="fpList"><div class="fp-empty"><span class="spinner"></span></div></div>
           <div class="row" style="gap:6px;align-items:center"><input class="input" id="fpNew" placeholder="New folder name (optional)"><button class="btn soft sm" id="fpMk" style="flex:0 0 auto">${icon('plus')}Create folder</button></div>
         </div></div>`,
-      actions: [{ label: 'Cancel', run: () => finish(null) }, { label: 'Use this folder', primary: true, run: () => {
+      actions: [{ label: 'Cancel', run: () => finish(null) }, { label: opts.action || 'Use this folder', primary: true, run: () => {
         if (!current) { toast('Open a folder first', 'alert'); return false; }
         finish(current);
       } }],
@@ -1483,7 +1483,7 @@ function renderAssistantsPage() {
     <div class="page"><div class="page-inner">
       <div class="page-head">
         <div><h1>Agents</h1><p>Agents are helpers with their own expertise and instructions, the same idea as agents in Microsoft 365 Copilot. Pick one to start a chat, or create your own in under a minute.</p></div>
-        <div class="row" style="flex:0 0 auto;gap:8px"><button class="btn soft" data-export-all title="Save every agent in a form Microsoft 365 Copilot can use">${icon('external')}Export all to Copilot</button><button class="btn grad" data-new-assistant>${icon('plus')}Create agent</button></div>
+        <div class="row" style="flex:0 0 auto;gap:8px"><button class="btn soft" data-export-engineering title="Save the developer, test automation and pipeline packs into a code repository for VS Code">${icon('code')}Engineering packs</button><button class="btn soft" data-export-all title="Save every agent in a form Microsoft 365 Copilot can use">${icon('external')}Export all to Copilot</button><button class="btn grad" data-new-assistant>${icon('plus')}Create agent</button></div>
       </div>
       <div class="card-grid">
         ${S.assistants.map((a, i) => `
@@ -1504,8 +1504,9 @@ function renderAssistantsPage() {
       </div>
     </div></div>`;
   $('#view').firstElementChild.addEventListener('click', (e) => {
-    const t = e.target.closest('[data-new-assistant],[data-chat-with],[data-edit-assistant],[data-assistant-menu],[data-export-all]'); if (!t) return;
+    const t = e.target.closest('[data-new-assistant],[data-chat-with],[data-edit-assistant],[data-assistant-menu],[data-export-all],[data-export-engineering]'); if (!t) return;
     if ('exportAll' in t.dataset) exportToCopilot(null, t);
+    else if ('exportEngineering' in t.dataset) exportEngineeringPacks();
     else if ('newAssistant' in t.dataset) openAssistantBuilder();
     else if (t.dataset.chatWith) { S.draft.assistantId = t.dataset.chatWith; S.draft.access = assistantById(t.dataset.chatWith).access || null; go(''); }
     else if (t.dataset.editAssistant) openAssistantBuilder(assistantById(t.dataset.editAssistant));
@@ -1533,10 +1534,28 @@ async function exportAssistant(a) {
     title: `${a.name} is ready for VS Code`,
     sub: 'Open your project folder in VS Code and this assistant will be available as a custom agent.',
     body: `<div class="option-cards">
-      <div class="option-card"><span class="oc-icon">🟣</span><div class="oc-text"><div class="oc-title">Claude Code</div><div class="oc-desc" style="word-break:break-all">${esc(r.files[0])}</div></div></div>
-      <div class="option-card"><span class="oc-icon">🐙</span><div class="oc-text"><div class="oc-title">GitHub Copilot</div><div class="oc-desc" style="word-break:break-all">${esc(r.files[1])}</div></div></div>
+      <div class="option-card"><span class="oc-icon">🟣</span><div class="oc-text"><div class="oc-title">Claude Code</div><div class="oc-desc" style="word-break:break-all">${esc(r.claude || r.files[0])}</div></div></div>
+      <div class="option-card"><span class="oc-icon">🐙</span><div class="oc-text"><div class="oc-title">GitHub Copilot</div><div class="oc-desc" style="word-break:break-all">${esc(r.github || r.files[1])}</div></div></div>
     </div>`,
     actions: [{ label: 'Open folder', icon: 'external', run: () => api('/api/folder/open', { method: 'POST', body: { workspace: r.workspace } }) }, { label: 'Done', primary: true }],
+  });
+}
+
+// The developer, test automation and pipeline skill packs, saved into a code repository for VS Code.
+async function exportEngineeringPacks() {
+  const folder = await pickFolder(currentWorkspace(), { title: 'Choose the code repository', sub: 'The packs are saved in its .github and .claude folders, ready to commit for the whole team.', action: 'Save packs here' });
+  if (!folder) return;
+  let r;
+  try { r = await api('/api/assistants/export-engineering', { method: 'POST', body: { folder } }); } catch (e) { toast(e.message, 'alert'); return; }
+  modal({
+    title: 'Engineering packs are ready for VS Code',
+    sub: `${r.agents.join(', ')}: saved with their skills and reference files. Commit the .github and .claude folders so every developer gets the same standards.`,
+    body: `<div class="option-cards">
+      <div class="option-card"><span class="oc-icon">🐙</span><div class="oc-text"><div class="oc-title">GitHub Copilot</div><div class="oc-desc">Open the folder in VS Code, open Copilot Chat and pick the agent from the agent list.</div></div></div>
+      <div class="option-card"><span class="oc-icon">🟣</span><div class="oc-text"><div class="oc-title">Claude Code</div><div class="oc-desc">The same agents and skills are in the .claude folder.</div></div></div>
+    </div>
+    <div class="help" style="margin-top:12px;word-break:break-all">${esc(r.readme)}</div>`,
+    actions: [{ label: 'Open folder', icon: 'external', run: () => { api('/api/folder/open', { method: 'POST', body: { workspace: r.folder } }); return false; } }, { label: 'Done', primary: true }],
   });
 }
 
