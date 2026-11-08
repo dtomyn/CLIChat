@@ -10,6 +10,10 @@ const crypto = require('crypto');
 
 const keyOf = (prompt) => crypto.createHash('sha1').update(String(prompt).replace(/\s+/g, ' ').trim()).digest('hex').slice(0, 16);
 const load = (file) => { try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return { runs: {}, completes: {} }; } };
+// Azure DevOps proposals are staged as files (tools/ado/changesets.js) that the Approve card reads. Recordings keep a copy,
+// and a replay re-stages it for the new conversation, so Apply works in the film too (against ADO_MOCK, never a real org).
+const adoEnv = (opts) => opts.tools?.servers?.ado?.env || {};
+const pendingFile = (env, id) => path.join(env.LUMEN_DATA || '', 'ado-pending', String(env.LUMEN_CONVERSATION_ID || '').replace(/[^a-zA-Z0-9-]/g, ''), `${String(id).replace(/[^a-zA-Z0-9-]/g, '')}.json`);
 const sleep = (ms, signal) => new Promise((resolve) => { const t = setTimeout(resolve, ms); signal?.addEventListener('abort', () => { clearTimeout(t); resolve(); }, { once: true }); });
 
 function record(provider, file) {
@@ -37,8 +41,10 @@ function record(provider, file) {
       fs.copyFileSync(f, path.join(artifacts, copy));
       files[f] = copy;
     }
+    const changesets = {};
+    for (const ev of events) if (ev.type === 'approval') { try { changesets[ev.id] = JSON.parse(fs.readFileSync(pendingFile(adoEnv(opts), ev.id), 'utf8')); } catch {} }
     const key = keyOf(opts.prompt);
-    save((db) => { (db.runs[key] ||= []).push({ prompt: opts.prompt.slice(0, 300), events, files }); });
+    save((db) => { (db.runs[key] ||= []).push({ prompt: opts.prompt.slice(0, 300), events, files, ...(Object.keys(changesets).length ? { changesets } : {}) }); });
     console.log(`[record] run ${key} (${events.length} events, ${Object.keys(files).length} files)`);
   };
   provider.complete = async (opts) => {
@@ -81,11 +87,22 @@ function replay(provider, file) {
       if (ev.type === 'tool') { emit(clean); await sleep(STEP, signal); continue; }
       if (ev.type === 'file' && rec.files?.[ev.path]) { fs.mkdirSync(path.dirname(ev.path), { recursive: true }); fs.copyFileSync(path.join(artifacts, rec.files[ev.path]), ev.path); }
       if (ev.type === 'usage') continue;
+      if (ev.type === 'approval' && rec.changesets?.[ev.id]) {
+        const env = adoEnv(opts);
+        if (env.LUMEN_DATA && env.LUMEN_CONVERSATION_ID) {
+          const file = pendingFile(env, ev.id);
+          fs.mkdirSync(path.dirname(file), { recursive: true });
+          fs.writeFileSync(file, JSON.stringify({ ...rec.changesets[ev.id], conversationId: path.basename(path.dirname(file)), status: 'pending', createdAt: Date.now(), expiresAt: Date.now() + 86400000 }, null, 1));
+        }
+      }
       emit(clean);
     }
     await flush();
     for (const [f, copy] of Object.entries(rec.files || {})) if (!fs.existsSync(f)) fs.copyFileSync(path.join(artifacts, copy), f);
   };
+  // Replayed answers need no CLI, so every engine counts as ready (a film can show an engine this computer doesn't have).
+  const detect = provider.detect?.bind(provider);
+  provider.detect = async () => { const d = await (detect ? detect().catch(() => ({})) : {}); return d.available ? d : { available: true }; };
   provider.complete = async (opts) => {
     const rec = take('completes', keyOf(opts.prompt));
     await sleep(Number(process.env.LUMEN_REPLAY_COMPLETE_MS) || 1600);

@@ -960,7 +960,9 @@ def finish(cap, events, args):
     import imageio_ffmpeg
     ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
     OUT.mkdir(parents=True, exist_ok=True)
-    frames = cap.frames
+    # The screencast sometimes delivers frames out of order. Put them back in capture order; otherwise each late
+    # frame would play for a near-zero slot and the picture would slowly fall behind the sound (~20 s over 12 min).
+    frames = sorted(cap.frames, key=lambda f: f[1])
     (WORK / "events.json").write_text(json.dumps({"start": frames[0][1], "events": events, "frames": len(frames), "frame_list": frames}, indent=1), encoding="utf-8")
     frames, events = trim_dead_air(frames, events)
     start = frames[0][1]

@@ -1,0 +1,46 @@
+TITLE
+How to Use Lumen: GitHub Copilot Chat for Non-Technical Users (No VS Code Needed)
+
+DESCRIPTION
+Lumen is a friendly chat workspace built on GitHub Copilot (and Claude Code works too). It runs on the same Copilot agent that powers Copilot Chat in VS Code, in a chat window built for plans, spreadsheets and documents rather than code, on your own computer, and it deliberately looks and works like Microsoft 365 Copilot, so everything you learn carries straight over when your Copilot licence arrives.
+
+This guide walks through every feature, step by step:
+
+1. Get set up: your name, the AI engine (GitHub Copilot or Claude Code), and your notebook folder (keep it in OneDrive)
+2. Find your way around: the Microsoft 365 Copilot-style rail (Chat, Agents, Prompts, Notebook) and the "This isn't Microsoft 365 Copilot" reminder
+3. Chat with an agent: starter prompts, "What can Lumen do?" file access, response modes, streaming answers
+4. Work with the reply: suggested next steps, copy, retry, branch, 👍/👎, export to Word, edit and resend, Save prompt
+5. Bring in your files: the sample project, the Notebook, and "/" to reference a file
+6. Use the prompt gallery: categories, file questions pre-filled from your notebook, a Microsoft Project health check, copying tables into Excel or Outlook
+7. Put it on repeat: weekly scheduled prompts
+8. Let Lumen update your files safely: update a plan from an Excel progress sheet (saved as a new copy), See changes, an Excel tracker with a Gantt chart
+9. Create your own agent: describe it in one sentence, the same fields as Agent Builder, "Lumen only" capabilities, pin to the sidebar
+10. Connect Azure DevOps: sign in, pick the project, team and wikis, read the sprint, and approve proposed changes before anything is written
+11. Run a guided delivery lifecycle: traceability check, requirements → functional design → technical design → stories with approval gates
+12. See what's working: Insights from thumbs up and down
+13. Take it to Microsoft 365 Copilot: export agents for Agent Builder or as an app package, export prompts, and export to VS Code for GitHub Copilot Chat
+14. Make it yours: switch engines, light or dark, keyboard shortcuts
+
+CHAPTERS
+0:00 Built on GitHub Copilot
+0:38 1. Get set up
+1:11 2. Find your way around
+1:44 3. Chat with an agent
+2:23 4. Work with the reply
+3:01 5. Bring in your files
+3:50 6. Use the prompt gallery
+4:40 7. Put it on repeat
+5:05 8. Let Lumen update your files
+6:00 9. Create your own agent
+6:48 10. Connect Azure DevOps
+8:06 11. Run a guided delivery lifecycle
+10:22 12. See what's working (Insights)
+10:35 13. Take it to Microsoft 365 Copilot
+11:17 14. Make it yours
+11:43 Wrap-up
+
+ABOUT THIS VIDEO
+Everything on screen is the real Lumen app. The film shows Lumen set to GitHub Copilot; the AI answers were recorded once with Claude Code and replayed at a brisk pace, so there's no waiting. The Azure DevOps organisation shown is a demo stand-in, not a live organisation. Projects, people, plans, documents and figures are fictional demo data. Narration uses a synthetic voice (Kokoro, generated locally).
+
+TAGS
+GitHub Copilot, GitHub Copilot Chat, Copilot CLI, Claude Code, Microsoft 365 Copilot, AI agents, how to, tutorial, Agent Builder, prompt gallery, Microsoft Project, Excel, Word, Azure DevOps, requirements traceability, delivery lifecycle, project management, business analysis, no-code AI, VS Code

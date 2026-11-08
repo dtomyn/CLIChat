@@ -179,4 +179,6 @@ Start Lumen.cmd      Double-click launcher for Windows
 
 If a recording pass fails partway, `--record --resume` replays what was already recorded and only sends the missing requests to the engine. `--refinish` re-runs just the edit and encode from the last film's kept frames (`--keep-frames`).
 
+**How-to video.** [film/make_howto.py](film/make_howto.py) films a step-by-step guide to every feature, opening with Lumen as a GitHub Copilot workspace for plans, spreadsheets and documents (the same Copilot agent the team uses in VS Code Copilot Chat) and covering the Microsoft 365 Copilot alignment. It uses the same pipeline and flags (`--record`, `--resume`, `--voice`, `--stills`) and writes `film/out/lumen-howto.mp4`. Recording starts from the explainer's recording and only sends new requests to the engine. Filming replays the answers with GitHub Copilot selected, because in replay mode every engine reports ready. Azure DevOps runs against the offline stand-in in [film/ado-demo.js](film/ado-demo.js) (`ADO_MOCK`), so **Apply** never reaches a real organisation.
+
 Setup: `pip install playwright imageio-ffmpeg kokoro-onnx soundfile numpy` into `.venv`, then copy `kokoro-v1.0.onnx` and `voices-v1.0.bin` into `.venv/kokoro`. Narration lines live at the top of `make_video.py` and are re-voiced only when they change.
