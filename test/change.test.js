@@ -156,6 +156,26 @@ test('saveDraft labels the draft, lists sources, writes Word and never overwrite
   await assert.rejects(change.saveDraft(path.join(dir, 'x.pdf'), 'x'), /\.md .*\.docx .* or \.pptx/);
 });
 
+test('saveDraft fills the Word template version, date and approver so no {{placeholder}} is left', async () => {
+  const JSZip = require('jszip');
+  const dir = fs.mkdtempSync(path.join(temp, 'tpl-'));
+  const template = path.join(__dirname, '..', 'samples', 'aidlc', 'Templates', 'Runbook Template.dotx');
+  const wordText = async (file) => {
+    const zip = await JSZip.loadAsync(fs.readFileSync(file));
+    const parts = Object.keys(zip.files).filter((n) => /^word\/(document|header\d*|footer\d*)\.xml$/.test(n));
+    return (await Promise.all(parts.map((n) => zip.file(n).async('string')))).join('').replace(/<[^>]+>/g, '');
+  };
+  const draft = await change.saveDraft(path.join(dir, 'Runbook.docx'), '# Runbook\n\n## Steps\n\nSource: TDD 4', { template, now: new Date(2026, 10, 8) });
+  const text = await wordText(draft.saved);
+  assert.doesNotMatch(text, /\{\{\s*(version|date|approver)\s*\}\}/);
+  assert.match(text, /Not yet approved/);
+  assert.match(text, /2026-11-08/);
+  const signed = await change.saveDraft(path.join(dir, 'Runbook.docx'), '# Runbook\n\nSource: TDD', { template, version: '1.2', approver: 'Dana Lee' });
+  const signedText = await wordText(signed.saved);
+  assert.match(signedText, /1\.2/);
+  assert.match(signedText, /Dana Lee/);
+});
+
 test('change tools are exposed; writing needs edit access and stays in the folder', () => {
   const root = fs.mkdtempSync(path.join(temp, 'ws-'));
   for (const f of [PROCESSING, TEMPLATE, CIA_P, CIA_C]) copy(f, root);

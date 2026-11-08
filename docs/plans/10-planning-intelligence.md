@@ -52,4 +52,4 @@ Deviations from the design:
 - **Saving a scenario.** `model_scenario` returns `planUpdates` (start, finish, duration) for `update_project_plan`. Microsoft Project still recalculates dependent dates when the copy is opened.
 - **Capacity.** Plan demand (assignment units × hours per day) and sprint demand (Remaining Work, or story points × `hoursPerPoint` only when given) are reported separately, so the same work isn't counted twice. Sprint dates come from a *Sprints* sheet in the capacity workbook, because ADO exports don't include them. An estimate outlier is at least double or at most half the median for its work item type, with three or more estimates.
 - **Scenarios/<date>.xlsx** is written by the prompt through `create_spreadsheet`. There is no dedicated writer.
-- **Not verified in the running app.** The prompts haven't been run with the AI engine. Coverage comes from unit tests and MCP round-trip tests only.
+- **Live-engine checks.** Besides the unit and MCP round-trip tests, the prompts have cases in `e2e/real-engine-plans.spec.js` and `e2e/real-engine-plans-2.spec.js`, which run them against a real engine when `E2E_ENGINE=copilot` or `claude` is set.

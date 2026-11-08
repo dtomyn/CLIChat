@@ -150,6 +150,17 @@ test('proposeDefectChanges writes a (proposed) copy with an Approve column and l
   assert.equal(wb.getWorksheet('Defects').getCell('D5').value, 'Duplicate');
 });
 
+test('a re-run of proposeDefectChanges keeps the earlier (proposed) copy and saves a numbered one', async () => {
+  const dir = fs.mkdtempSync(path.join(temp, 'rerun-'));
+  const file = path.join(dir, 'Defects export.xlsx');
+  fs.copyFileSync(DEFECTS, file);
+  const first = await qe.proposeDefectChanges(file, [{ id: '1207', field: 'priority', value: '1' }]);
+  const marked = fs.readFileSync(first.saved);
+  const second = await qe.proposeDefectChanges(file, [{ id: '1207', field: 'priority', value: '2' }]);
+  assert.equal(second.saved, path.join(dir, 'Defects export (proposed) (2).xlsx'));
+  assert.ok(fs.readFileSync(first.saved).equals(marked), 'the copy under review is not replaced');
+});
+
 test('quality tools are exposed; writing needs edit access', () => {
   const root = fs.mkdtempSync(path.join(temp, 'ws-'));
   fs.copyFileSync(DEFECTS, path.join(root, 'Defects.xlsx'));

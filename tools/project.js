@@ -260,7 +260,10 @@ function updatePlan(file, { updates = [], statusDate, saveAs } = {}, workspace) 
 
   // Never overwrite the original: save a new version next to it unless told otherwise.
   const ext = path.extname(file).toLowerCase();
-  const baseOut = saveAs ? path.resolve(workspace || path.dirname(file), saveAs) : path.join(path.dirname(file), `${path.basename(file, ext)} (updated)${ext}`);
+  // Updating an "(updated)" copy again keeps that name instead of stacking "(updated) (updated)"; the original plan
+  // stays untouched and plan history keeps each version.
+  const stem = path.basename(file, path.extname(file)).replace(/\s*\(updated\)$/i, '');
+  const baseOut = saveAs ? path.resolve(workspace || path.dirname(file), saveAs) : path.join(path.dirname(file), `${stem} (updated)${ext}`);
   let outXml = baseOut.toLowerCase().endsWith('.mpp') ? baseOut.replace(/\.mpp$/i, '.xml') : baseOut;
   fs.writeFileSync(outXml, raw, 'utf8');
   let saved = outXml;

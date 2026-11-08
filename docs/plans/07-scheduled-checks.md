@@ -28,7 +28,7 @@ A `schedules` collection in `lib/store.js`:
   "allowEdit": false, "enabled": true, "lastRunAt", "lastConversationId", "lastStatus": "ok|error|late" }
 ```
 
-Only offer daily, weekly and monthly, so there's no free-form cron to parse.
+Only offer daily, weekly and monthly, so there's no free-form cron to parse. (Plan 15 later added a fourth option, *Every few minutes, between two times*, for cutover weekends: 5 to 720 minutes inside a window of at most 14 days.)
 
 ### `lib/scheduler.js`
 

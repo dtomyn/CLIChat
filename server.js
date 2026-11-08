@@ -154,7 +154,8 @@ async function runTurn(body, out = () => {}) {
   const model = (provider.models || []).some((x) => x.id === requestedModel) ? requestedModel : 'default';
 
   let message = String(body.message || '').trim();
-  const attachments = (Array.isArray(body.attachments) ? body.attachments : []).filter((p) => { try { return typeof p === 'string' && fs.statSync(p).isFile(); } catch { return false; } });
+  // Only files inside this chat's notebook folder can be attached (uploads land in its Attachments/ folder).
+  const attachments = (Array.isArray(body.attachments) ? body.attachments : []).filter((p) => workspaceFile(p, conv.workspace)).map((p) => path.resolve(conv.workspace, p));
   const rel = (p) => { const r = path.relative(conv.workspace, p); return r.startsWith('..') || path.isAbsolute(r) ? p : r; };
   if (attachments.length) message += `\n\n[Attached files: ${attachments.map((p) => `"${rel(p)}"`).join(', ')}]`;
   const pinned = (conv.pinned_files || []).filter((p) => workspaceFile(p, conv.workspace));
@@ -425,6 +426,8 @@ const PACKS = {
   crm: { dir: path.join(__dirname, 'demo'), folder: 'Contoso CRM Migration (demo)', assistants: ['schedule-analyst', 'ask-the-plan', 'budget-controller', 'project-partner'] },
   aidlc: { dir: path.join(__dirname, 'samples', 'aidlc'), folder: 'Online Permit Renewal (AIDLC sample)', assistants: ['requirements-refiner', 'functional-designer', 'technical-designer', 'story-writer', 'traceability-analyst'] },
   data: { dir: path.join(__dirname, 'samples', 'data'), folder: 'Permit Applications (data sample)', assistants: ['data-profiler', 'mapping-analyst', 'data-engineer'] },
+  security: { dir: path.join(__dirname, 'samples', 'security'), folder: 'Permit Renewal Security (SA&A sample)', assistants: ['security-control-mapper', 'security-documentation', 'cae-evidence'] },
+  change: { dir: path.join(__dirname, 'samples', 'change'), folder: 'Permit Renewal Change (change sample)', assistants: ['change-impact-analyst', 'training-content', 'bilingual-reviewer'] },
 };
 function copyMissing(from, to) {
   fs.mkdirSync(to, { recursive: true });
@@ -435,7 +438,7 @@ function copyMissing(from, to) {
   }
 }
 function installDemo(packId = 'crm') {
-  const pack = PACKS[packId];
+  const pack = Object.hasOwn(PACKS, packId) ? PACKS[packId] : null;
   if (!pack || !fs.existsSync(pack.dir)) throw new Error(`The ${packId} sample isn't available in this copy of Lumen.`);
   const base = resolveWorkspace(store.settings.get().workspace);
   const parent = Object.values(PACKS).some((p) => path.basename(base) === p.folder) ? path.dirname(base) : base;
@@ -523,7 +526,7 @@ function insights() {
     }).sort((x, y) => y.replies - x.replies),
     recipes: [...recipes.values()].map(({ id, runs, up, down: dn }) => {
       const def = allRecipes.find((x) => x.id === id);
-      return { id, name: def?.name || 'Deleted quick start', emoji: def?.emoji || '🗑️', runs, up, down: dn };
+      return { id, name: def?.name || 'Deleted prompt', emoji: def?.emoji || '🗑️', runs, up, down: dn };
     }).sort((x, y) => y.runs - x.runs),
     recentDown: down.sort((x, y) => y.at - x.at).slice(0, 20),
   };
@@ -771,7 +774,7 @@ async function api(req, res, url) {
       }
       const recipeId = body.recipeId ?? old?.recipeId;
       const recipe = store.recipes.get(recipeId);
-      if (!recipe) return send(res, 400, { error: 'Choose an existing quick start.' });
+      if (!recipe) return send(res, 400, { error: 'Choose an existing prompt.' });
       const when = body.when ?? old?.when;
       try { scheduler.validateWhen(when); } catch (e) { return send(res, 400, { error: e.message }); }
       const values = body.values ?? old?.values;
@@ -779,9 +782,9 @@ async function api(req, res, url) {
       if ('enabled' in body && typeof body.enabled !== 'boolean') return send(res, 400, { error: 'Enabled must be true or false.' });
       if ('allowEdit' in body && typeof body.allowEdit !== 'boolean') return send(res, 400, { error: 'File permission must be true or false.' });
       const allowEdit = body.allowEdit ?? old?.allowEdit ?? false;
-      if (old && recipeId !== old.recipeId && recipe.access === 'edit' && body.allowEdit !== true) return send(res, 400, { error: 'Explicitly allow saving files for the new quick start.' });
-      if (recipe.access === 'edit' && !allowEdit) return send(res, 400, { error: 'Allow saving files to schedule this quick start.' });
-      if (allowEdit && recipe.access !== 'edit') return send(res, 400, { error: 'Only quick starts that save files can receive this permission.' });
+      if (old && recipeId !== old.recipeId && recipe.access === 'edit' && body.allowEdit !== true) return send(res, 400, { error: 'Explicitly allow saving files for the new prompt.' });
+      if (recipe.access === 'edit' && !allowEdit) return send(res, 400, { error: 'Allow saving files to schedule this prompt.' });
+      if (allowEdit && recipe.access !== 'edit') return send(res, 400, { error: 'Only prompts that save files can receive this permission.' });
       const workspace = body.workspace ?? old?.workspace ?? resolveWorkspace();
       if (typeof workspace !== 'string' || !fs.existsSync(workspace) || !fs.statSync(workspace).isDirectory()) return send(res, 400, { error: 'Choose an existing project folder.' });
       const enabled = body.enabled ?? old?.enabled ?? true;
@@ -868,7 +871,7 @@ async function api(req, res, url) {
 
   if (resource === 'export' && m === 'POST') {
     const { conversationId, messageId, format } = await json(req);
-    if (!['docx', 'xlsx', 'pptx'].includes(format)) return send(res, 400, { error: 'Choose Word, Excel or PowerPoint.' });
+    if (!['docx', 'xlsx', 'pptx', 'md'].includes(format)) return send(res, 400, { error: 'Choose Word, Excel, PowerPoint or Markdown.' });
     const c = store.conversations.get(conversationId); if (!c) return send(res, 404, { error: 'That chat could not be found.' });
     const msg = c.messages.find((x) => x.id === messageId); if (!msg || !msg.content) return send(res, 404, { error: "That reply isn't in this chat any more." });
     const content = stripSuggestion(msg.content);
@@ -881,6 +884,7 @@ async function api(req, res, url) {
     for (let i = 2; fs.existsSync(target); i++) target = path.join(dir, `${stem} (${i}).${format}`);
     try {
       if (format === 'docx') fs.writeFileSync(target, await mdExport.markdownToDocx(content, { title: c.title }), { flag: 'wx' });
+      else if (format === 'md') fs.writeFileSync(target, content.trim() + '\n', { encoding: 'utf8', flag: 'wx' });
       else if (format === 'pptx') fs.writeFileSync(target, (await require('./tools/pptx').toPptx(content, { title: c.title })).buffer, { flag: 'wx' });
       else await mdExport.markdownTablesToXlsx(content, target);
     } catch (e) { return send(res, 500, { error: `Couldn't save the file: ${e.message}` }); }

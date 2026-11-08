@@ -46,4 +46,4 @@ Deviations from the design:
 - **Security Design Document** uses the existing `save_draft_document` (Markdown plus Word through `md-export` `toDocx` with the Plan 18 program template). No new writer was needed. The skill can also put the approved SCTM and SDD into a gate pack through `assemble_gate_pack`.
 - **Shared helpers.** `release.js` now exports `readSheet`, and `governance.js` exports `readText`, so both can be reused. `verifyQuotes` wasn't needed, because no transcript is involved. `lib/skills.js` needed no change, because skills are discovered from `skills/<id>/SKILL.md`.
 - **The sample** lives in its own `samples/security` folder rather than in the AIDLC sample. Its catalogue wording is a short synthetic paraphrase, not ITSG-33 or NIST text.
-- **Not verified in the running app.** The prompts haven't been run with the AI engine. Coverage comes from unit tests and MCP round-trip tests only.
+- **Live-engine checks.** Besides the unit and MCP round-trip tests, the prompts have cases in `e2e/real-engine-plans.spec.js` and `e2e/real-engine-plans-2.spec.js`, which run them against a real engine when `E2E_ENGINE=copilot` or `claude` is set.
