@@ -10,9 +10,9 @@ Last reviewed: 2026-11-07 (branch `feature/ideas-for-pm`, commit `82b234d`)
 
 | Status | Count |
 |---|---|
-| ✅ Done | 25 |
+| ✅ Done | 28 |
 | 🟡 Partial | 4 |
-| 📝 Planned | 13 |
+| 📝 Planned | 10 |
 | ⬜ Not started | 0 |
 
 Lumen runs on one computer and works on files in the notebook folder. Where the catalogue names a cloud target (SharePoint, Teams, Power BI, Fabric, ADO Test Plans), Lumen produces the file or proposal locally, and a person publishes it. "Done" means the use case works end to end in that model. Live system connections are tracked separately in Plan 08 (Azure DevOps) and in the "Live targets" column.
@@ -41,9 +41,9 @@ Lumen runs on one computer and works on files in the notebook folder. Where the 
 | 18 | Partner / Integration | Reconcile schemas and canonical models | Med–High | 📝 | — | 11 |
 | 19 | Testing / QE | Test cases and coverage gaps | High | ✅ | **Test Designer** agent, `test-design` skill, `write_test_cases` (Excel in the ADO Test Plans import layout, one row per step), prompts **Generate test cases from stories** and **Coverage gaps**, optional lifecycle stage `tests` (`05-test-cases.md`), sample Tests sheet in the AIDLC TRM (2026-11-07). Live ADO Test Plans writes: Plan 08 | 09 |
 | 20 | Testing / QE | Assist defect triage | High | ✅ | **Defect Triage** agent, `analyze_defects` (duplicates, severity–priority mismatches, ageing, unowned), `propose_defect_changes` (`(proposed)` copy with Approve column), prompt **Triage defects**, sample `Defects export.xlsx` (2026-11-07) | 09 |
-| 21 | Security / SA&A | Map security controls and evidence needs | High | 📝 | — | 13 |
-| 22 | Security / SA&A | Security design documentation | Med–High | 📝 | — | 13 |
-| 23 | Security / SA&A | Assemble and validate control evidence | High | 📝 | — | 13 |
+| 21 | Security / SA&A | Map security controls and evidence needs | High | ✅ | **Security Control Mapper** agent, `security-saa` skill, `tools/controls.js` (`readControlCatalogue`, `readSctm`/`writeSctm`), read-only `analyze_controls` (controls in the profile not yet mapped, statements whose design reference is not a real FDD/TDD heading marked *needs input*, gaps) and `write_sctm` (`(proposed)` SCTM with Approve column; uncited statements set to Needs input; remediation items and Gap rows as `<SCTM> - remediation (ADO import).xlsx`), prompt **Draft the SCTM**, synthetic 20-control catalogue and partially filled SCTM in `samples/security` (2026-11-07). Program supplies its own ITSG-33/NIST text; pushing remediation to ADO: Plan 08 | 13 |
+| 22 | Security / SA&A | Security design documentation | Med–High | ✅ | **Security Documentation** agent, prompt **Security design document** (sections cite the design heading or SCTM cell; Needs input and Gap controls listed as open items), saved as Markdown and Word through `save_draft_document` with the program template (Plan 18), sample `Technical Design - Security.md` (2026-11-07) | 13 |
+| 23 | Security / SA&A | Assemble and validate control evidence | High | ✅ | **CAE Evidence** agent, `indexEvidence` in `analyze_controls` (evidence per control by ID in the file name, an evidence index workbook or the SCTM reference; missing, stale and orphan files, each citing its cell or file), prompt **Evidence gap check** (gap tracker and ADO remediation list), sample `Evidence/` with one missing, one stale and one orphan item (2026-11-07). Scanning Azure/Fabric/Purview directly: out of scope | 13 |
 | 24 | Change Management | Summarize interviews, draft change impacts | High | ✅ | **Change Impact Analyst** agent, `change-management` skill, `propose_change_impacts` (quote-checked through the shared `verifyQuotes`; `(proposed)` CIA with Approve column) and `apply_change_impacts`, prompt **Interview → change impacts**, two sample interview transcripts and a CIA template (2026-11-07) | 14 |
 | 25 | Change Management | Consolidate CIA and training needs | High | ✅ | `consolidate_cia` (duplicates merged, Rejected left out, heat map of group × H/M/L, TNA from approved impacts with the role list, `Training actions - ADO import.xlsx`), prompts **Consolidate the CIA** and **Training needs analysis**, sample CIAs with a seeded duplicate and `Roles.xlsx` (2026-11-07). Pushing actions to ADO: Plan 08 | 14 |
 | 26 | Change Management | Draft training products | Med–High | ✅ | **Training Content** agent, prompt **Draft training materials** (deck outline, job aid, FAQ, knowledge check, each section citing its source), `save_draft_document` (Markdown and Word, draft label, sources listed) (2026-11-07). Decks are Markdown outlines, not .pptx | 14 |
@@ -75,7 +75,7 @@ Lumen runs on one computer and works on files in the notebook folder. Where the 
 | [10 Planning intelligence](10-planning-intelligence.md) | 3, 5, 39 | M | — | ✅ 2026-11-07 |
 | [11 Data engineering](11-data-engineering.md) | 13, 14, 15, 18 | L | — | 📝 |
 | [12 Integration and APIs](12-integration-and-apis.md) | 16, 17 | M | 11 (schema reader) | 📝 |
-| [13 Security and SA&A](13-security-saa.md) | 21, 22, 23 | M | 18 (templates) helps | 📝 |
+| [13 Security and SA&A](13-security-saa.md) | 21, 22, 23 | M | 18 (templates) helps | ✅ 2026-11-07 |
 | [14 Change, training and bilingual](14-change-training-bilingual.md) | 24, 25, 26, 32 | M | — | ✅ 2026-11-07 |
 | [15 Release and cutover](15-release-and-cutover.md) | 27, 28, 29, 30 | M | 09 (defect reader) | ✅ 2026-11-07 |
 | [16 Architecture and governance](16-architecture-governance.md) | 31, 38, 40, 42 | M | 18 (templates) | ✅ 2026-11-07 |
@@ -105,3 +105,4 @@ These extend the [ground rules](README.md#ground-rules-for-every-plan):
 | 2026-11-07 | Plan 14 implemented: #24, #25, #26, #32 done |
 | 2026-11-07 | Plan 15 implemented: #27, #28, #29, #30 done |
 | 2026-11-07 | Plan 16 implemented: #31, #38, #40, #42 done |
+| 2026-11-07 | Plan 13 implemented: #21, #22, #23 done |

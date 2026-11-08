@@ -21,6 +21,7 @@ const change = require('./change');
 const glossary = require('./glossary');
 const release = require('./release');
 const governance = require('./governance');
+const controls = require('./controls');
 
 const ROOT = path.resolve(process.env.OFFICE_MCP_ROOT || process.cwd());
 const READ_ONLY = process.env.OFFICE_MCP_READONLY === '1';
@@ -435,6 +436,36 @@ const TOOLS = [
     run: write((a) => governance.diffInventory(resolveIn(a.inventory), { adoExports: (a.adoExports || []).map((p) => resolveIn(p)), gitLogs: (a.gitLogs || []).map((p) => resolveIn(p)), adrs: a.adrs ? resolveIn(a.adrs) : undefined, documents: (a.documents || []).map((p) => resolveIn(p)) }, { root: ROOT })),
   },
   {
+    name: 'analyze_controls',
+    description: 'Security control analysis for SA&A. Reads the program\'s control catalogue workbook (Control ID, Family, Title, Statement, Baseline/Profile) and the SCTM (Control ID, Applicability, Implementation statement, Responsible party, Design reference, Evidence references, Status Planned/Implemented/Gap). Reports catalogue coverage (controls in the profile not yet in the SCTM), statements whose design reference is not a real heading in the FDD/TDD you pass (needs input), applicable controls with no statement, gaps, and with an evidence folder: per control the evidence found (by control ID in the file name, an evidence index workbook in the folder, or the SCTM reference), missing evidence (named but not there, or an implemented control with none), stale evidence (older than staleDays, from the date in the index or file name) and orphan files. Every finding cites its Sheet!Cell or file. Read-only.',
+    inputSchema: { type: 'object', properties: {
+      catalogue: { type: 'string', description: 'Control catalogue workbook' },
+      sctm: { type: 'string', description: 'SCTM workbook' },
+      evidence: { type: 'string', description: 'Optional evidence folder, e.g. "Evidence"' },
+      documents: { type: 'array', items: { type: 'string' }, description: 'Optional FDD/TDD documents whose headings the design references must cite' },
+      staleDays: { type: 'number', description: 'Evidence older than this many days is stale (default 365)' },
+      asOf: { type: 'string', description: 'Date to check against, YYYY-MM-DD (default today)' },
+    } },
+    run: (a) => controls.analyzeControls({ catalogue: a.catalogue ? resolveIn(a.catalogue) : undefined, sctm: a.sctm ? resolveIn(a.sctm) : undefined, evidence: a.evidence ? resolveIn(a.evidence) : undefined, documents: (a.documents || []).map((p) => resolveIn(p)) }, { root: ROOT, asOf: a.asOf, staleDays: a.staleDays }),
+  },
+  {
+    name: 'write_sctm',
+    description: 'Propose SCTM rows (implementation statements, applicability, responsible party, design reference, evidence references, status) for an assessor to approve. Saves "<SCTM> (proposed).xlsx" (or "SCTM (proposed).xlsx" next to the catalogue when no SCTM is given) with changed cells highlighted, new rows in green, and a "Proposed changes" sheet with an "Approve? (Yes/No)" column and a design citation check. A statement whose design reference is missing or is not a real heading in the FDD/TDD you pass is marked Status "Needs input". Controls not in the catalogue are rejected. Remediation items (and every Gap row) are saved as "<SCTM> - remediation (ADO import).xlsx". The original SCTM is never changed.',
+    inputSchema: { type: 'object', properties: {
+      sctm: { type: 'string', description: 'The SCTM to propose changes to (optional when starting one)' },
+      catalogue: { type: 'string', description: 'Control catalogue workbook (controls not in it are rejected)' },
+      documents: { type: 'array', items: { type: 'string' }, description: 'FDD/TDD documents the design references must cite' },
+      rows: { type: 'array', items: { type: 'object', properties: {
+        control: { type: 'string' }, applicability: { type: 'string', description: 'Applicable, Not applicable, Inherited or Shared' },
+        statement: { type: 'string', description: 'Implementation statement, drafted only from the design' }, responsible: { type: 'string' },
+        designReference: { type: 'string', description: 'Document and heading the statement is based on, e.g. "Technical Design - Security.md > 3.2 Encryption at rest"' },
+        evidence: { type: 'array', items: { type: 'string' } }, status: { type: 'string', description: 'Planned, Implemented, Partially implemented or Gap' }, notes: { type: 'string' },
+      }, required: ['control'] } },
+      remediation: { type: 'array', items: { type: 'object', properties: { control: { type: 'string' }, title: { type: 'string' }, description: { type: 'string' }, priority: { type: 'number', description: '1 (highest) to 4' }, owner: { type: 'string' } } }, description: 'Optional remediation items for the Azure DevOps import workbook' },
+    }, required: ['rows'] },
+    run: write((a) => controls.proposeSctm(a.sctm ? resolveIn(a.sctm) : null, a.rows || [], { catalogue: a.catalogue ? resolveIn(a.catalogue) : undefined, documents: (a.documents || []).map((p) => resolveIn(p)), remediation: a.remediation || [], root: ROOT })),
+  },
+  {
     name: 'write_test_cases',
     description: 'Save test cases as an Excel workbook in the Azure DevOps Test Plans import layout: one row per step (ID, Work Item Type, Title, Test Step, Step Action, Step Expected, Traces To, Priority, Type SIT/UAT, Preconditions), with the case fields on its first step row, plus a Coverage sheet with one row per case. Cases without an ID get TC-001, TC-002… An existing file is never overwritten; a numbered copy is saved instead. Returns warnings for cases without steps, expected results or traces.',
     inputSchema: {
@@ -529,7 +560,7 @@ const TOOLS = [
 
 // ------------------------------------------------------------------ JSON-RPC over stdio
 if (require.main === module) {
-  require('./mcp-stdio').serve({ name: 'office', instructions: 'Tools for Excel workbooks, Microsoft Project plans (including delivery scenarios and team capacity), Word documents, requirements traceability, test cases, defect triage, change impacts and training needs, bilingual QA, release readiness, cutover and hypercare, architecture reviews, ADRs, gate packs and technical inventories, and knowledge publishing in the project folder.', tools: TOOLS });
+  require('./mcp-stdio').serve({ name: 'office', instructions: 'Tools for Excel workbooks, Microsoft Project plans (including delivery scenarios and team capacity), Word documents, requirements traceability, test cases, defect triage, change impacts and training needs, bilingual QA, release readiness, cutover and hypercare, architecture reviews, ADRs, gate packs and technical inventories, security controls (SCTM and SA&A evidence), and knowledge publishing in the project folder.', tools: TOOLS });
 }
 
 module.exports = { TOOLS };

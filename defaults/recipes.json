@@ -1574,5 +1574,105 @@
       }
     ],
     "template": "Propose updates to the technical inventory {{inventory}} from the git log {{gitlog}}, the Azure DevOps export {{ado}} and the ADRs in {{adrs}} (skip any that are blank; you may add the design documents in the notebook).\n\nCall propose_inventory_updates. Summarise the result as three short tables (to add, changed, to retire) with the evidence for each row (commit, work item, ADR or document heading). Point out anything that looks like a false match. End by reminding me to set Approve? on every row of the (proposed) copy; the inventory itself has not been changed."
+  },
+  {
+    "id": "security-draft-sctm",
+    "name": "Draft the SCTM",
+    "emoji": "🛡️",
+    "category": "Security",
+    "description": "Map the control catalogue to the design: implementation statements that cite real FDD/TDD headings, saved as a (proposed) SCTM for the assessor, with remediation items for gaps.",
+    "assistantId": "security-control-mapper",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "catalogue",
+        "label": "Control catalogue",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv"
+      },
+      {
+        "key": "sctm",
+        "label": "Current SCTM (optional)",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv",
+        "optional": true
+      },
+      {
+        "key": "design",
+        "label": "Design document (FDD or TDD)",
+        "type": "file",
+        "accept": ".docx,.md,.txt"
+      }
+    ],
+    "template": "Draft SCTM rows for the controls in {{catalogue}}, based on the design {{design}} and the current SCTM {{sctm}} (skip it if blank).\n\n1. Call analyze_controls with the catalogue, the SCTM and the design document. List the controls not yet mapped and the statements that need input.\n2. Read the design and, for each control that is not mapped or needs input, draft an implementation statement only from what the design says, with the design reference set to the document and heading (e.g. \"Technical Design - Security.md > 3.2 Encryption at rest\"). If no heading covers it, write the question that needs answering and leave the design reference blank.\n3. Call write_sctm with the rows, the catalogue and the design document, plus remediation items for any gaps.\n4. Summarise: rows proposed, rows marked Needs input (with the question), rejected controls, and the remediation items.\n\nDo not mark any control Implemented unless the documents say it is in place. The original SCTM must not change."
+  },
+  {
+    "id": "security-design-document",
+    "name": "Security design document",
+    "emoji": "📘",
+    "category": "Security",
+    "description": "Draft the Security Design Document from the architecture, the TDD and the SCTM, saved as Markdown and Word in the program template.",
+    "assistantId": "security-documentation",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "design",
+        "label": "Design document (TDD or architecture)",
+        "type": "file",
+        "accept": ".docx,.md,.txt"
+      },
+      {
+        "key": "sctm",
+        "label": "SCTM",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv"
+      },
+      {
+        "key": "template",
+        "label": "Word template (optional)",
+        "type": "file",
+        "accept": ".dotx,.docx",
+        "optional": true
+      }
+    ],
+    "template": "Draft the Security Design Document from {{design}} and the SCTM {{sctm}}, in the Word template {{template}} (skip it if blank).\n\n1. Call analyze_controls with the SCTM and the design document so you know which controls need input or are gaps.\n2. Write the document: purpose and scope, system overview, security architecture (identity and access, logging and monitoring, data protection, network boundary, configuration and patching), control implementation summary by family (from the SCTM), residual risks and open items. Use the template's sections instead when it has them.\n3. Cite the design heading or SCTM cell for each section. List controls marked Needs input or Gap as open items, not as in place.\n4. Save it with save_draft_document as \"Security Design Document.md\" with word: true and the template, listing the sources."
+  },
+  {
+    "id": "security-evidence-gaps",
+    "name": "Evidence gap check",
+    "emoji": "🗂️",
+    "category": "Security",
+    "description": "Check the evidence folder against the SCTM: evidence found per control, missing, stale and orphan files, and a remediation list to import into Azure DevOps.",
+    "assistantId": "cae-evidence",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "sctm",
+        "label": "SCTM",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv"
+      },
+      {
+        "key": "evidence",
+        "label": "Evidence folder",
+        "placeholder": "e.g. Evidence"
+      },
+      {
+        "key": "catalogue",
+        "label": "Control catalogue (optional)",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv",
+        "optional": true
+      },
+      {
+        "key": "days",
+        "label": "Evidence older than (days)",
+        "placeholder": "e.g. 365"
+      }
+    ],
+    "template": "Check the control evidence in {{evidence}} against the SCTM {{sctm}} and the catalogue {{catalogue}} (skip it if blank). Evidence older than {{days}} days is stale (365 if blank).\n\n1. Call analyze_controls with the SCTM, the evidence folder, the catalogue and staleDays.\n2. Lead with the counts: controls with evidence, missing, stale, orphan.\n3. Tables of the missing evidence (control, what is missing, SCTM cell), the stale evidence (control, file, date, age) and the orphan files (file, suggested control). Report exactly what the tool found.\n4. Save the evidence index and gap tracker with create_spreadsheet as \"Evidence gap tracker.xlsx\" (Control, Status, Evidence, Problem, Responsible party, Due), and the remediation list through write_sctm remediation items (one per missing or stale item and per gap).\n\nDo not accept evidence or close gaps yourself."
   }
 ]

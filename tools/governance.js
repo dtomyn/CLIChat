@@ -643,4 +643,4 @@ async function diffInventory(inventory, sources = {}, { root } = {}) {
   };
 }
 
-module.exports = { parseAdr, readAdrs, adrRefs, extractNames, mentions, readDataModel, checkConsistency, assembleGatePack, diffInventory, parseGitLog, componentOfPath, scan };
+module.exports = { parseAdr, readAdrs, adrRefs, extractNames, mentions, readDataModel, checkConsistency, assembleGatePack, diffInventory, parseGitLog, componentOfPath, scan, readText };

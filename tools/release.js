@@ -468,4 +468,4 @@ async function hypercareTrends(file, opts = {}) {
   };
 }
 
-module.exports = { readinessCheck, cutoverStatus, hypercareTrends, renderCutover, parseCriterion, wall, fmt };
+module.exports = { readinessCheck, cutoverStatus, hypercareTrends, renderCutover, parseCriterion, wall, fmt, readSheet };
