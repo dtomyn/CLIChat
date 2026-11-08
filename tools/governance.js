@@ -230,26 +230,17 @@ function mentions(text, name) {
   return sl.length > 5 && t.replace(/\s+/g, '').includes(sl);
 }
 
-/** Entities and attributes from a data model workbook (Entities sheet with Entity; Attributes sheet with Entity + Attribute). */
+/** Entities and attributes from a data model (workbook with Entities / Attributes sheets, SQL DDL or JSON Schema). */
+// Read through the shared schema reader (tools/data.js), so a data model can also be SQL DDL or a JSON Schema.
 async function readDataModel(file) {
-  const wb = await excel.open(file);
+  const schema = await require('./data').readSchema(file);
   const entities = new Map(), attributes = new Map();
-  for (const ws of wb.worksheets) {
-    const head = [];
-    ws.getRow(1).eachCell((c, n) => { head[n] = cellText(c).trim(); });
-    const e = head.findIndex((h) => h && /^(entity|entity name|table|object)$/i.test(h));
-    const a = head.findIndex((h) => h && /^(attribute|field|column|attribute name|field name)$/i.test(h));
-    if (e < 1) continue;
-    ws.eachRow({ includeEmpty: false }, (row, r) => {
-      if (r === 1) return;
-      const en = cellText(row.getCell(e)).trim();
-      if (!en) return;
-      if (!entities.has(slug(en))) entities.set(slug(en), { name: en, at: `${ws.name}!${String.fromCharCode(64 + e)}${r}` });
-      if (a > 0) { const an = cellText(row.getCell(a)).trim(); if (an) { if (!attributes.has(slug(en))) attributes.set(slug(en), new Set()); attributes.get(slug(en)).add(an.toLowerCase()); } }
-    });
+  for (const e of schema.entities) {
+    if (!entities.has(slug(e.entity))) entities.set(slug(e.entity), { name: e.entity, at: e.at || '' });
+    if (e.fields.length) { if (!attributes.has(slug(e.entity))) attributes.set(slug(e.entity), new Set()); for (const f of e.fields) attributes.get(slug(e.entity)).add(f.name.toLowerCase()); }
   }
   if (!entities.size) throw friendly(`"${path.basename(file)}" needs a sheet with an "Entity" column (and ideally an Attributes sheet with "Entity" and "Attribute").`);
-  return { entities, attributes, file };
+  return { entities, attributes, file, schema };
 }
 const knownEntity = (dm, name) => dm.entities.has(slug(name)) || dm.entities.has(slug(name).replace(/s$/, ''));
 

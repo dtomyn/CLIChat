@@ -22,6 +22,7 @@ const glossary = require('./glossary');
 const release = require('./release');
 const governance = require('./governance');
 const controls = require('./controls');
+const data = require('./data');
 
 const ROOT = path.resolve(process.env.OFFICE_MCP_ROOT || process.cwd());
 const READ_ONLY = process.env.OFFICE_MCP_READONLY === '1';
@@ -466,6 +467,73 @@ const TOOLS = [
     run: write((a) => controls.proposeSctm(a.sctm ? resolveIn(a.sctm) : null, a.rows || [], { catalogue: a.catalogue ? resolveIn(a.catalogue) : undefined, documents: (a.documents || []).map((p) => resolveIn(p)), remediation: a.remediation || [], root: ROOT })),
   },
   {
+    name: 'profile_data',
+    description: 'Profile a data extract saved in the notebook (.csv or .xlsx, up to 200,000 rows). Per column: inferred type, nulls and null %, distinct count, min/max, top values, pattern classes (e.g. AA9999) and numeric outliers. With a data dictionary (workbook, SQL DDL or JSON Schema) it also checks each field\'s rules: required, type (bad dates and numbers), allowed values, pattern, maximum length, unique, and foreign keys into another extract (found next to the file by entity name, or given in lookups). Each finding has a severity, a count and at most 5 example rows; values in columns that look personal are masked. scripts: true adds PySpark and Spark SQL to re-run the profile on the full table in Fabric. Read-only.',
+    inputSchema: { type: 'object', properties: {
+      path: { type: 'string', description: 'The extract to profile, e.g. "Applications - source extract.csv"' },
+      dictionary: { type: 'string', description: 'Optional data dictionary workbook, SQL DDL or JSON Schema with the rules' },
+      entity: { type: 'string', description: 'Dictionary entity for this file (default: by file name or matching columns)' },
+      sheet: { type: 'string', description: 'Sheet to profile in a workbook (default the first)' },
+      lookups: { type: 'object', additionalProperties: { type: 'string' }, description: 'Optional files for foreign keys, e.g. { "CLIENTS": "Clients - source extract.csv" }' },
+      scripts: { type: 'boolean', description: 'Also return PySpark and Spark SQL profiling scripts' },
+      table: { type: 'string', description: 'Lakehouse table name for the scripts, e.g. "bronze.applications"' },
+    }, required: ['path'] },
+    run: (a) => data.profileTable(resolveIn(a.path), { dictionary: a.dictionary ? resolveIn(a.dictionary) : undefined, entity: a.entity, sheet: a.sheet, lookups: Object.fromEntries(Object.entries(a.lookups || {}).map(([k, v]) => [k, resolveIn(v)])), scripts: !!a.scripts, table: a.table, root: ROOT }),
+  },
+  {
+    name: 'read_schema',
+    description: 'Read a schema: SQL DDL (CREATE TABLE, with NOT NULL, PRIMARY KEY, REFERENCES, CHECK IN and -- comments), a JSON Schema (properties, required, enum, pattern, format, $defs) or a data dictionary / data model workbook (Entity, Field, Type, Required, Allowed values, Pattern, Unique, References, Description). Returns each entity with its fields: name, type, type family, nullable, description and rules. Read-only.',
+    inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'The .sql, .json or .xlsx schema file' } }, required: ['path'] },
+    run: (a) => data.readSchema(resolveIn(a.path)).then((s) => ({ ...s, file: path.relative(ROOT, s.file) })),
+  },
+  {
+    name: 'compare_schemas',
+    description: 'Compare a source schema with a target schema (SQL DDL, JSON Schema or data dictionary; e.g. source extract → Silver canonical model, or Silver → Gold). Finds exact, normalized (case and underscores) and fuzzy name matches (abbreviations such as DT, CD, AMT, ADDR expanded), checks type compatibility (compatible, widening, narrowing, conversion, incompatible) and blanks into required fields, and lists the unmatched fields on both sides. Fuzzy matches are suggestions to confirm. Read-only.',
+    inputSchema: { type: 'object', properties: {
+      source: { type: 'string', description: 'Source schema file' },
+      target: { type: 'string', description: 'Target schema file' },
+      sourceEntity: { type: 'string', description: 'Source table/entity to compare (default all of them)' },
+      targetEntity: { type: 'string', description: 'Target table/entity to compare (default all of them)' },
+      threshold: { type: 'number', description: 'Fuzzy name similarity, 0 to 1 (default 0.55)' },
+    }, required: ['source', 'target'] },
+    run: (a) => data.compareSchemas(resolveIn(a.source), resolveIn(a.target), { sourceEntity: a.sourceEntity, targetEntity: a.targetEntity, threshold: a.threshold }),
+  },
+  {
+    name: 'write_sttm',
+    description: 'Save a source-to-target mapping (STTM) workbook: ID, source entity/field/type, transformation rule, target layer (Bronze/Silver/Gold), target entity/field/type, match, DQ rule, Status, Reviewer, notes. Every row is saved as Draft with no reviewer; only a person sets Approved. With source and target schemas, the match evidence is filled in, every unmatched source and target field is added as a "Needs input" row, and "Unmatched fields" and "Match evidence" sheets are added. Never overwrites: a numbered copy is saved instead.',
+    inputSchema: { type: 'object', properties: {
+      path: { type: 'string', description: 'Output .xlsx path, e.g. "STTM - Applications to Silver.xlsx"' },
+      source: { type: 'string', description: 'Optional source schema file (to list unmatched fields)' },
+      target: { type: 'string', description: 'Optional target schema file' },
+      sourceEntity: { type: 'string' }, targetEntity: { type: 'string' },
+      rows: { type: 'array', items: { type: 'object', properties: {
+        sourceEntity: { type: 'string' }, sourceField: { type: 'string' }, sourceType: { type: 'string' },
+        rule: { type: 'string', description: 'Transformation rule in plain words: direct, trim, upper, parse date format \'yyyy-MM-dd\', cast to decimal(10,2), default \'X\', constant \'X\', or "expr: <PySpark>" / "sql: <Spark SQL>"' },
+        targetLayer: { type: 'string', description: 'Bronze, Silver or Gold' }, targetEntity: { type: 'string' }, targetField: { type: 'string' }, targetType: { type: 'string' },
+        match: { type: 'string' }, dqRule: { type: 'string', description: 'e.g. not null, in NEW, RENEWAL, AMEND, > 0' }, notes: { type: 'string' },
+      } } },
+    }, required: ['path'] },
+    run: write(async (a) => {
+      const out = outputIn(a.path);
+      if (!out || !/\.xlsx$/i.test(out)) throw Object.assign(new Error('Save the STTM as an .xlsx file.'), { friendly: true });
+      const comparison = a.source && a.target ? await data.compareSchemas(resolveIn(a.source), resolveIn(a.target), { sourceEntity: a.sourceEntity, targetEntity: a.targetEntity }) : undefined;
+      const r = await data.writeSttm(out, a.rows || [], { comparison });
+      return { ...r, saved: path.relative(ROOT, r.saved) };
+    }),
+  },
+  {
+    name: 'generate_pipeline_code',
+    description: 'Generate pipeline code from the APPROVED rows of an STTM workbook (Status = Approved). For each target layer and table it writes, under "Pipelines/<layer> - <table>/": a PySpark notebook (.py), Spark SQL (CREATE TABLE and INSERT … SELECT), a Data Factory / Fabric pipeline JSON, pytest unit tests and a reconciliation query (row counts and checksums per layer). Plain-word rules are turned into code; any rule it can\'t translate is marked TODO and listed. Rows that are not Approved are refused and listed, and no code is written for them. Never overwrites: numbered copies are saved instead.',
+    inputSchema: { type: 'object', properties: {
+      sttm: { type: 'string', description: 'The STTM workbook' },
+      layer: { type: 'string', description: 'Only rows for this target layer (Bronze, Silver, Gold)' },
+      entity: { type: 'string', description: 'Only rows for this target table' },
+      outDir: { type: 'string', description: 'Output folder (default "Pipelines")' },
+      sourceTables: { type: 'object', additionalProperties: { type: 'string' }, description: 'Lakehouse table per source entity, e.g. { "APPLICATIONS": "bronze.src_applications" }' },
+    }, required: ['sttm'] },
+    run: write((a) => data.generatePipelineCode(resolveIn(a.sttm), { layer: a.layer, entity: a.entity, outDir: outputIn(a.outDir), sourceTables: a.sourceTables, root: ROOT })),
+  },
+  {
     name: 'write_test_cases',
     description: 'Save test cases as an Excel workbook in the Azure DevOps Test Plans import layout: one row per step (ID, Work Item Type, Title, Test Step, Step Action, Step Expected, Traces To, Priority, Type SIT/UAT, Preconditions), with the case fields on its first step row, plus a Coverage sheet with one row per case. Cases without an ID get TC-001, TC-002… An existing file is never overwritten; a numbered copy is saved instead. Returns warnings for cases without steps, expected results or traces.',
     inputSchema: {
@@ -560,7 +628,7 @@ const TOOLS = [
 
 // ------------------------------------------------------------------ JSON-RPC over stdio
 if (require.main === module) {
-  require('./mcp-stdio').serve({ name: 'office', instructions: 'Tools for Excel workbooks, Microsoft Project plans (including delivery scenarios and team capacity), Word documents, requirements traceability, test cases, defect triage, change impacts and training needs, bilingual QA, release readiness, cutover and hypercare, architecture reviews, ADRs, gate packs and technical inventories, security controls (SCTM and SA&A evidence), and knowledge publishing in the project folder.', tools: TOOLS });
+  require('./mcp-stdio').serve({ name: 'office', instructions: 'Tools for Excel workbooks, Microsoft Project plans (including delivery scenarios and team capacity), Word documents, requirements traceability, test cases, defect triage, change impacts and training needs, bilingual QA, release readiness, cutover and hypercare, architecture reviews, ADRs, gate packs and technical inventories, security controls (SCTM and SA&A evidence), data profiling, schemas, source-to-target mappings (STTM) and pipeline code, and knowledge publishing in the project folder.', tools: TOOLS });
 }
 
 module.exports = { TOOLS };

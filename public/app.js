@@ -655,6 +655,19 @@ function demoBanner() {
         </div>
       </div></div>`;
   }
+  if (inDemo && S.settings.demoPack === 'data') {
+    return `<div class="demo-banner active">
+      <div class="demo-icon">📊</div>
+      <div class="demo-text"><b>You're in the Permit Applications data sample</b><span>A synthetic source extract with seeded data quality problems, the source tables, a Silver canonical model, a Gold model and a data dictionary. Try them in order:</span>
+        <div class="demo-actions">
+          <button class="btn soft sm" data-recipe="data-profile">📊 Profile a dataset</button>
+          <button class="btn soft sm" data-recipe="data-compare-schemas">🔀 Compare schemas</button>
+          <button class="btn soft sm" data-recipe="data-draft-sttm">🗺️ Draft the STTM</button>
+          <button class="btn soft sm" data-recipe="data-generate-code">🧱 Generate pipeline code</button>
+          <button class="btn ghost sm" data-open-drawer>${icon('folder')}See the files</button>
+        </div>
+      </div></div>`;
+  }
   if (inDemo) {
     return `<div class="demo-banner active">
       <div class="demo-icon">📦</div>
@@ -670,8 +683,8 @@ function demoBanner() {
   }
   return `<div class="demo-banner">
     <div class="demo-icon">📦</div>
-    <div class="demo-text"><b>Try it on sample data</b><span>A project manager demo (Microsoft Project plan with Excel budget, RAID log and timesheets), or a delivery-lifecycle sample (BRD, design and a traceability workbook) for the requirements, design, story and traceability agents.</span></div>
-    <div class="demo-cta"><button class="btn grad sm" data-install-demo="crm">${icon('package')}PM demo</button><button class="btn grad sm" data-install-demo="aidlc">${icon('package')}AIDLC sample</button><button class="icon-btn" data-dismiss-demo title="Hide">${icon('x')}</button></div>
+    <div class="demo-text"><b>Try it on sample data</b><span>A project manager demo (Microsoft Project plan with Excel budget, RAID log and timesheets), a delivery-lifecycle sample (BRD, design and a traceability workbook) for the requirements, design, story and traceability agents, or a data sample (source extract, schemas and a data dictionary) for profiling, mapping and pipeline code.</span></div>
+    <div class="demo-cta"><button class="btn grad sm" data-install-demo="crm">${icon('package')}PM demo</button><button class="btn grad sm" data-install-demo="aidlc">${icon('package')}AIDLC sample</button><button class="btn grad sm" data-install-demo="data">${icon('package')}Data sample</button><button class="icon-btn" data-dismiss-demo title="Hide">${icon('x')}</button></div>
   </div>`;
 }
 
@@ -682,8 +695,8 @@ async function installDemo(btn) {
   try {
     const r = await api('/api/demo/install', { method: 'POST', body: { pack } });
     const st = await api('/api/status'); S.settings = st.settings;
-    S.draft.assistantId = pack === 'aidlc' ? 'traceability-analyst' : 'schedule-analyst'; S.draft.access = 'read';
-    celebrate(); toast(`${pack === 'aidlc' ? 'Sample' : 'Demo'} ready — your project folder is now “${baseName(r.path)}”`, 'package');
+    S.draft.assistantId = { aidlc: 'traceability-analyst', data: 'data-profiler' }[pack] || 'schedule-analyst'; S.draft.access = 'read';
+    celebrate(); toast(`${pack === 'crm' ? 'Demo' : 'Sample'} ready — your project folder is now “${baseName(r.path)}”`, 'package');
     renderHome();
   } catch (e) { toast(e.message, 'alert'); if (btn) { btn.disabled = false; btn.innerHTML = label; } }
 }

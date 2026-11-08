@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/schemas/silver/application.json",
+  "title": "Application",
+  "description": "Canonical permit application (Silver / EDR layer). Synthetic sample.",
+  "x-layer": "Silver",
+  "type": "object",
+  "required": [
+    "applicationId",
+    "clientId",
+    "applicationType",
+    "submittedOn",
+    "statusCode",
+    "feeAmount",
+    "channelCode",
+    "lastUpdatedAt"
+  ],
+  "properties": {
+    "applicationId": {
+      "type": "string",
+      "pattern": "AP[0-9]{7}",
+      "description": "Application number"
+    },
+    "clientId": {
+      "type": "string",
+      "description": "Client number",
+      "x-references": "Client.clientId"
+    },
+    "applicationType": {
+      "type": "string",
+      "enum": [
+        "NEW",
+        "RENEWAL",
+        "AMEND"
+      ],
+      "description": "Kind of application"
+    },
+    "submittedOn": {
+      "type": "string",
+      "format": "date",
+      "description": "Date submitted"
+    },
+    "statusCode": {
+      "type": "string",
+      "enum": [
+        "DRAFT",
+        "SUBMITTED",
+        "IN_REVIEW",
+        "APPROVED",
+        "REFUSED"
+      ]
+    },
+    "feeAmount": {
+      "type": "number",
+      "description": "Fee paid, in dollars"
+    },
+    "provinceCode": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Province or territory (ISO 3166-2:CA suffix)"
+    },
+    "emailAddress": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "email"
+    },
+    "channelCode": {
+      "type": "string",
+      "enum": [
+        "ONLINE",
+        "PAPER",
+        "COUNTER"
+      ],
+      "description": "How the application arrived (not in the source extract)"
+    },
+    "languageCode": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "EN",
+        "FR",
+        null
+      ],
+      "description": "Language of correspondence"
+    },
+    "lastUpdatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last change in the source"
+    }
+  }
+}

@@ -1674,5 +1674,123 @@
       }
     ],
     "template": "Check the control evidence in {{evidence}} against the SCTM {{sctm}} and the catalogue {{catalogue}} (skip it if blank). Evidence older than {{days}} days is stale (365 if blank).\n\n1. Call analyze_controls with the SCTM, the evidence folder, the catalogue and staleDays.\n2. Lead with the counts: controls with evidence, missing, stale, orphan.\n3. Tables of the missing evidence (control, what is missing, SCTM cell), the stale evidence (control, file, date, age) and the orphan files (file, suggested control). Report exactly what the tool found.\n4. Save the evidence index and gap tracker with create_spreadsheet as \"Evidence gap tracker.xlsx\" (Control, Status, Evidence, Problem, Responsible party, Due), and the remediation list through write_sctm remediation items (one per missing or stale item and per gap).\n\nDo not accept evidence or close gaps yourself."
+  },
+  {
+    "id": "data-profile",
+    "name": "Profile a dataset",
+    "emoji": "📊",
+    "category": "Data",
+    "description": "Profile a CSV or Excel extract against the data dictionary: types, nulls, patterns, outliers and rule breaks with example rows, saved as a DQ findings report with scripts to re-run in Fabric.",
+    "assistantId": "data-profiler",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "extract",
+        "label": "Data extract",
+        "type": "file",
+        "accept": ".csv,.xlsx,.xlsm"
+      },
+      {
+        "key": "dictionary",
+        "label": "Data dictionary or schema (optional)",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv,.sql,.json",
+        "optional": true
+      }
+    ],
+    "template": "Profile the extract {{extract}} against the data dictionary {{dictionary}} (skip it if blank).\n\n1. Call profile_data with the extract, the dictionary and scripts: true.\n2. Lead with the counts: rows, columns, findings by severity.\n3. A column profile table (column, type, null %, distinct, min, max, main pattern) and a findings table (column, rule, severity, count, example rows). Report exactly what the tool found.\n4. For each High finding, suggest a fix at the source or a DQ rule for the pipeline.\n5. Save the report with save_draft_document as \"DQ findings - <extract name>.md\" with word: true, including the PySpark and SQL profiling scripts in code blocks, and the extract and dictionary as sources.\n\nDo not read the raw rows: refer to problems by column and row number."
+  },
+  {
+    "id": "data-compare-schemas",
+    "name": "Compare schemas",
+    "emoji": "🔀",
+    "category": "Data",
+    "description": "Reconcile a source schema with a target or canonical model: matched fields with type checks, fuzzy matches to confirm, and unmatched fields on both sides.",
+    "assistantId": "mapping-analyst",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "source",
+        "label": "Source schema (DDL, JSON Schema or dictionary)",
+        "type": "file",
+        "accept": ".sql,.json,.xlsx,.xlsm,.csv"
+      },
+      {
+        "key": "target",
+        "label": "Target or canonical schema",
+        "type": "file",
+        "accept": ".sql,.json,.xlsx,.xlsm,.csv"
+      },
+      {
+        "key": "entity",
+        "label": "Source table (optional)",
+        "placeholder": "e.g. APPLICATIONS",
+        "optional": true
+      }
+    ],
+    "template": "Compare the source schema {{source}} (table {{entity}}; all tables if blank) with the target schema {{target}}.\n\n1. Call compare_schemas with the source, the target and sourceEntity.\n2. Lead with the summary: matched (exact, normalized, fuzzy), type issues, unmatched on each side.\n3. A table of matches (source field, target field, match, score, type check, note). Say for each fuzzy match whether the meaning fits.\n4. Separate lists of the unmatched source fields and unmatched target fields, with a suggested way to handle each (derive, default, not migrated).\n5. List the type conversions that need a decision."
+  },
+  {
+    "id": "data-draft-sttm",
+    "name": "Draft the STTM",
+    "emoji": "🗺️",
+    "category": "Data",
+    "description": "Draft the source-to-target mapping workbook from the schema comparison, with transformation and DQ rules, unmatched fields marked Needs input and every row left as Draft for review.",
+    "assistantId": "mapping-analyst",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "source",
+        "label": "Source schema",
+        "type": "file",
+        "accept": ".sql,.json,.xlsx,.xlsm,.csv"
+      },
+      {
+        "key": "target",
+        "label": "Target schema",
+        "type": "file",
+        "accept": ".sql,.json,.xlsx,.xlsm,.csv"
+      },
+      {
+        "key": "layer",
+        "label": "Target layer",
+        "placeholder": "e.g. Silver"
+      },
+      {
+        "key": "entity",
+        "label": "Source table (optional)",
+        "placeholder": "e.g. APPLICATIONS",
+        "optional": true
+      }
+    ],
+    "template": "Draft the STTM from {{source}} (table {{entity}}; all tables if blank) to the {{layer}} model {{target}}.\n\n1. Call compare_schemas with the source, the target and sourceEntity.\n2. For each confirmed match, write a transformation rule in plain words (direct, trim, upper, parse date format 'yyyy-MM-dd', cast to decimal(10,2), default 'X', constant 'X', or expr: / sql:) and a DQ rule where the target is required or has allowed values. Note type conversions that need a decision.\n3. Call write_sttm with path \"STTM - <source> to {{layer}}.xlsx\", the rows (target layer {{layer}}), and the source and target files with sourceEntity, so unmatched fields on both sides are added as Needs input.\n4. Summarise: rows drafted, fuzzy matches to confirm, unmatched source and target fields (ask how to handle each).\n\nEvery row stays Draft. Ask the reviewer to set Status to Approved and add their name for each row they accept."
+  },
+  {
+    "id": "data-generate-code",
+    "name": "Generate pipeline code from the STTM",
+    "emoji": "🧱",
+    "category": "Data",
+    "description": "Generate PySpark, Spark SQL, pipeline JSON, unit tests and a reconciliation query for the approved STTM rows only, ready to review and run in a lower-environment Fabric workspace.",
+    "assistantId": "data-engineer",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "sttm",
+        "label": "STTM workbook",
+        "type": "file",
+        "accept": ".xlsx,.xlsm"
+      },
+      {
+        "key": "layer",
+        "label": "Target layer (optional)",
+        "placeholder": "e.g. Silver",
+        "optional": true
+      }
+    ],
+    "template": "Generate pipeline code from the approved rows of {{sttm}} for the {{layer}} layer (all layers if blank).\n\n1. Call generate_pipeline_code with the STTM and the layer.\n2. List the files written per target table, the rows code was generated for, and the rows refused (with the reason and cell).\n3. List every TODO rule the generator could not translate, with a suggested expr: or sql: rule for the STTM.\n4. Explain how to run it in a lower-environment Fabric workspace: notebook first, then the reconciliation query (row counts and checksums per layer), then the unit tests.\n\nDo not generate code for rows that are not Approved, and do not change any row's status."
   }
 ]

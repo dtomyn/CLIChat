@@ -422,6 +422,7 @@ function exportAssistant(a, workspace) {
 const PACKS = {
   crm: { dir: path.join(__dirname, 'demo'), folder: 'Contoso CRM Migration (demo)', assistants: ['schedule-analyst', 'ask-the-plan', 'budget-controller', 'project-partner'] },
   aidlc: { dir: path.join(__dirname, 'samples', 'aidlc'), folder: 'Online Permit Renewal (AIDLC sample)', assistants: ['requirements-refiner', 'functional-designer', 'technical-designer', 'story-writer', 'traceability-analyst'] },
+  data: { dir: path.join(__dirname, 'samples', 'data'), folder: 'Permit Applications (data sample)', assistants: ['data-profiler', 'mapping-analyst', 'data-engineer'] },
 };
 function copyMissing(from, to) {
   fs.mkdirSync(to, { recursive: true });

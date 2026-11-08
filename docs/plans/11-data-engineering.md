@@ -39,3 +39,15 @@ A synthetic "Applications" source CSV (bad dates, null mandatory field, orphan F
 
 ## Out of scope
 Connecting to Fabric/OneLake and running pipelines. Revisit if IT approves a Fabric connector (ask before adding any package or connection).
+
+## Status: implemented (7 Nov 2026)
+
+Shipped: `tools/data.js` (`readSchema`, `compareSchemas`, `profileTable`, `writeSttm`, `readSttm`, `generatePipelineCode`), MCP tools `profile_data`, `read_schema` and `compare_schemas` (read-only) and `write_sttm` and `generate_pipeline_code` (edit mode) with labels, the `data-engineering` skill, the Data Profiler 📊, Mapping Analyst 🔀 and Data Engineer 🧱 agents, four *Data* prompts (Profile a dataset, Compare schemas, Draft the STTM, Generate pipeline code from the STTM), the sample in `samples/data` (from new `scripts/make-data-sample.js`), a **Data sample** button on the home screen, and `test/data.test.js`.
+
+Deviations from the design:
+- **`readSchema`** returns `{ entities: [...], entity, fields }`: a DDL file or dictionary often holds several tables, so every entity is listed, and `entity`/`fields` are the first one's. Fields carry a type family and `rules` (required, unique, allowed, pattern, maxLength, references) from NOT NULL, PRIMARY KEY, REFERENCES, CHECK IN, JSON Schema `required`/`enum`/`pattern` or dictionary columns. `governance.js` `readDataModel` now uses it, so `check_consistency` also accepts DDL or JSON Schema data models. It is exported for Plan 12.
+- **Profiling** reads CSV with its own small parser (exceljs converts CSV values, which hides bad dates), keeps true file line numbers, and masks example values in columns that look personal (by header or email-like values), on top of the 5-example cap. Foreign keys are checked against an extract named after the referenced entity next to the file, or one given in `lookups`. Profiling scripts are returned with `scripts: true` and saved in the DQ report through `save_draft_document`, so no extra write tool was needed.
+- **Fuzzy matching** expands common abbreviations (DT, CD, AMT, ADDR, TS, UPD…) before comparing words, so `SUBMIT_DT` → `submittedOn` scores as a strong fuzzy match. Matches stay labelled *fuzzy* for the analyst to confirm.
+- **`write_sttm`** always saves rows as Draft with no reviewer (an AI-supplied status is ignored and reported), so only a person approves. The STTM has an ID, source/target types and a Match column besides the planned fields. There is no `(proposed)`/apply step: the STTM is a new workbook and approval happens in it.
+- **Code generation** is a new tool, `generate_pipeline_code`, so "approved rows only" is enforced in code rather than by the agent. Plain-word rules (direct, trim, upper/lower, parse date with a format, cast, default, constant, `expr:`/`sql:`) are translated; anything else is mapped directly and listed as a TODO. ADF output targets a Fabric notebook activity with placeholder IDs.
+- **Not verified in the running app.** Step 4 (profile → compare → STTM → approve two rows → generate code) is covered by unit and MCP round-trip tests, not by running the prompts with the AI engine.
