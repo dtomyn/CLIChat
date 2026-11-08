@@ -167,6 +167,21 @@ test('the ICD completeness log lists the empty and missing sections of the draft
   assert.deepEqual(oa.icdCompleteness(full, { sections: ['Purpose', 'Rollback plan'] }).missing, ['Rollback plan']);
 });
 
+test('the ICD check counts Needs input bullets and table cells, and matches the section heading, not a subheading', () => {
+  // As an AI drafts it: schema subsections (one about error responses) before the Error handling section, and open
+  // points as their own bullets or table cells next to sourced content.
+  const icd = `# ICD: Case API\n\n## 1. Purpose and scope\nWhy.\n## 2. Parties\nPortal and case management.\n## 3. Protocol\nREST.\n## 4. Integration pattern\nARO P4.\n`
+    + `## 5. Message schemas\nSee spec.\n### Problem (all error responses, RFC 7807)\ntype, title, status.\n`
+    + `## 6. Error handling\nRetry 5xx 3 times.\n\n- Needs input: what happens after the third failure?\n`
+    + `## 7. Security\nOAuth 2.0.\n## 8. Service levels\nP4 is under 2 s at p95.\n\n| Measure | Target |\n|---|---|\n| Availability | Needs input: 99.5%? |\n`
+    + `## 9. Volumes\nAbout 180,000 renewals a year.\n`;
+  const r = oa.icdCompleteness(icd);
+  const errors = r.sections.find((s) => s.id === 'errors');
+  assert.equal(errors.heading, '6. Error handling');
+  assert.deepEqual(r.incomplete, ['Error handling', 'Service levels (SLAs)']);
+  assert.match(errors.note, /1 line still marked Needs input/);
+});
+
 test('integration tools are exposed; write tools need edit access', () => {
   const root = path.join(temp, 'ws'); copyDir(SAMPLE, root);
   const run = (readonly, name, args) => {

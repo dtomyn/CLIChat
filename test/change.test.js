@@ -153,7 +153,7 @@ test('saveDraft labels the draft, lists sources, writes Word and never overwrite
   const again = await change.saveDraft(f, 'Another', { label: 'Machine-drafted, needs translator review' });
   assert.equal(again.saved, path.join(dir, 'Job aid (2).md'));
   assert.ok(again.warnings.some((w) => /does not cite any source/.test(w)));
-  await assert.rejects(change.saveDraft(path.join(dir, 'x.pdf'), 'x'), /\.md .* or \.docx/);
+  await assert.rejects(change.saveDraft(path.join(dir, 'x.pdf'), 'x'), /\.md .*\.docx .* or \.pptx/);
 });
 
 test('change tools are exposed; writing needs edit access and stays in the folder', () => {

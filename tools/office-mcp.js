@@ -337,17 +337,19 @@ const TOOLS = [
   },
   {
     name: 'save_draft_document',
-    description: 'Save AI-written Markdown (training material, job aids, FAQs, knowledge checks, a French draft) as a draft document: .md, .docx (Word), or .md with a Word copy (word: true). The label is put at the top (default "Draft (AI) for review"; for French drafts use "Machine-drafted, needs translator review") and the sources it cites are listed at the end. An optional Word template gives the program styles. Never overwrites: a numbered copy is saved instead. Warns when nothing cites a source.',
+    description: 'Save AI-written Markdown (training material, job aids, FAQs, knowledge checks, a French draft) as a draft document: .md, .docx (Word), .pptx (PowerPoint), or .md with a Word copy (word: true) and/or a PowerPoint copy (powerpoint: true). The label is put at the top (default "Draft (AI) for review"; for French drafts use "Machine-drafted, needs translator review"; on a deck it is on the title slide) and the sources it cites are listed at the end (a Sources slide in a deck). PowerPoint takes a deck outline: "# Deck title" and an optional subtitle line, then one "## Slide title" per slide with bullets (nested allowed), short tables or paragraphs, then a line starting "Notes:" whose text up to the next heading becomes the speaker notes. Long slides continue on "(cont.)" slides. An optional Word template gives the program styles; a deck uses the program PowerPoint template (deckTemplate, else the project\'s Templates/… Deck Template.potx when there is one). Never overwrites: a numbered copy is saved instead. Warns when nothing cites a source.',
     inputSchema: { type: 'object', properties: {
-      path: { type: 'string', description: 'Output path ending in .md or .docx, e.g. "Training/Processing officer - job aid.md"' },
+      path: { type: 'string', description: 'Output path ending in .md, .docx or .pptx, e.g. "Training/Processing officer - job aid.md"' },
       markdown: { type: 'string' },
       label: { type: 'string' },
       sources: { type: 'array', items: { type: 'string' }, description: 'Approved sections this draft is based on, e.g. "CIA - consolidated.xlsx › TNA!A3"' },
       word: { type: 'boolean', description: 'Also save a Word copy of a .md draft' },
+      powerpoint: { type: 'boolean', description: 'Also save a PowerPoint deck (.pptx) of a .md deck outline' },
       template: { type: 'string', description: 'Optional Word template (.dotx/.docx)' },
+      deckTemplate: { type: 'string', description: 'Optional PowerPoint template (.potx/.pptx). Default: the project\'s Templates/… Deck Template.potx when there is one' },
       title: { type: 'string' },
     }, required: ['path', 'markdown'] },
-    run: write((a) => { const out = outputIn(a.path); if (!out) throw Object.assign(new Error('A file path is required.'), { friendly: true }); fs.mkdirSync(path.dirname(out), { recursive: true }); return change.saveDraft(out, a.markdown, { label: a.label, sources: a.sources, word: !!a.word, template: a.template ? resolveIn(a.template) : undefined, title: a.title }); }),
+    run: write((a) => { const out = outputIn(a.path); if (!out) throw Object.assign(new Error('A file path is required.'), { friendly: true }); fs.mkdirSync(path.dirname(out), { recursive: true }); return change.saveDraft(out, a.markdown, { label: a.label, sources: a.sources, word: !!a.word, powerpoint: !!a.powerpoint, template: a.template ? resolveIn(a.template) : undefined, deckTemplate: a.deckTemplate ? resolveIn(a.deckTemplate) : undefined, root: ROOT, title: a.title }); }),
   },
   {
     name: 'check_readiness',

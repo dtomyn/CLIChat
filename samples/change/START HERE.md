@@ -11,6 +11,7 @@ Synthetic data for trying Lumen's Change Impact Analyst, Training Content and Bi
 | **Roles.xlsx** | Roles, stakeholder groups and headcount, for the training needs analysis |
 | **EN-FR Glossary.xlsx** | 30 approved English/French terms (GCKey stays in English) |
 | **Renewal guide (EN).docx**, **Guide de renouvellement (FR).docx** | An approved English guide and its French version, for **Bilingual QA** |
+| **Templates/Training Deck Template.potx** | The program PowerPoint template (teal theme, Georgia headings, OPR logo, footer). **Draft training materials** saves the training deck in it as a .pptx |
 
 ## Built-in scenarios
 - **Interviews:** each one has three or four clear impacts (screen-based review, automatic eligibility flags, override approvals, status look-ups, the online refund form, bilingual scripts). Impacts must quote the transcript word for word, or they are rejected.
@@ -19,7 +20,7 @@ Synthetic data for trying Lumen's Change Impact Analyst, Training Content and Bi
 
 ## Things to try
 - **Interview → change impacts** on either transcript, with the CIA template.
-- **Consolidate the CIA** on both CIA workbooks with the role list, then **Training needs analysis** and **Draft training materials** for processing officers.
+- **Consolidate the CIA** on both CIA workbooks with the role list, then **Training needs analysis** and **Draft training materials** for processing officers: Markdown and Word drafts, plus the deck as a PowerPoint (.pptx) with speaker notes in the training deck template.
 - **Bilingual QA** on the guide pair with the glossary, and **Draft French version** of the English guide.
 
-Regenerate with `node scripts/make-change-sample.js`.
+Regenerate with `node scripts/make-change-sample.js` (deck template: `node scripts/make-deck-template.js`).

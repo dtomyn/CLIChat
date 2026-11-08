@@ -868,7 +868,7 @@ function assistantInner(m, a, live) {
     ${(m.approvals || []).length ? `<div class="approval-cards">${m.approvals.map((id) => approvalCard(id, m)).join('')}</div>` : ''}
     ${m.error ? `<div class="error-card">${icon('alert')}<div><b>Something went wrong.</b><div style="color:var(--text-2);font-size:13.5px">${esc(friendlyError(m.error))}</div><button class="btn soft sm" data-retry="${m.id}">${icon('retry')}Try again</button></div></div>` : ''}
     ${m.stopped ? `<div class="msg-meta" style="margin:6px 0 0">Stopped</div>` : ''}
-    ${!live && (m.content || m.error) ? `<div class="msg-actions"><button data-copy-msg="${m.id}">${icon('copy')}Copy</button>${m.error ? '' : `<button data-retry="${m.id}" title="Replace this reply with a new one">${icon('retry')}Retry</button>`}<button data-branch="${m.id}" title="Continue from here in a new chat">${icon('branch')}Branch</button>${m.content ? `<button data-save-as title="Export this reply to Word or Excel">${icon('save')}Export</button>${feedbackButtons(m)}` : ''}${usageMeta(m)}${m.content ? '<span class="ai-note">AI-generated content may be incorrect</span>' : ''}</div>` : ''}
+    ${!live && (m.content || m.error) ? `<div class="msg-actions"><button data-copy-msg="${m.id}">${icon('copy')}Copy</button>${m.error ? '' : `<button data-retry="${m.id}" title="Replace this reply with a new one">${icon('retry')}Retry</button>`}<button data-branch="${m.id}" title="Continue from here in a new chat">${icon('branch')}Branch</button>${m.content ? `<button data-save-as title="Export this reply to Word, Excel or PowerPoint">${icon('save')}Export</button>${feedbackButtons(m)}` : ''}${usageMeta(m)}${m.content ? '<span class="ai-note">AI-generated content may be incorrect</span>' : ''}</div>` : ''}
     ${steps.length ? `<div class="suggest-chips">${steps.map((s) => `<button class="suggest-chip" data-suggest="${esc(s)}" title="${esc(s)}&#10;&#10;Click to send · Shift-click to edit first">${esc(s.length > 140 ? `${s.slice(0, 139)}…` : s)}</button>`).join('')}</div>` : ''}`;
 }
 
@@ -887,6 +887,8 @@ function usageMeta(m) {
 }
 // A markdown pipe table: a |row| followed by a |---|---| separator row.
 const hasMdTable = (text) => /^\s*\|.*\|\s*$\n^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/m.test(text || '');
+// A deck outline: at least one "## Slide title" heading.
+const hasMdSlides = (text) => /^##\s+\S/m.test(text || '');
 
 function friendlyError(e) {
   if (/not found|ENOENT|spawn/i.test(e)) return 'The AI engine could not be started. Open Settings to check your connection.';
@@ -1037,13 +1039,14 @@ function rerenderMsg(c, m) {
   highlight($(`[data-mid="${m.id}"]`));
 }
 
-// --- save a reply as Word / Excel
+// --- save a reply as Word / Excel / PowerPoint
 function saveReplyMenu(c, mid, anchor) {
   const m = c.messages.find((x) => x.id === mid); if (!m?.content || !c.id) return;
   openMenu(anchor, [
     { heading: 'Export to your notebook' },
     { icon: 'file', label: 'Word document (.docx)', hint: 'Headings, lists and tables, ready to edit', run: () => exportReply(c, m, 'docx') },
     ...(hasMdTable(m.content) ? [{ icon: 'sheet', label: 'Excel workbook (.xlsx)', hint: 'One sheet per table', run: () => exportReply(c, m, 'xlsx') }] : []),
+    ...(hasMdSlides(m.content) ? [{ icon: 'file', label: 'PowerPoint deck (.pptx)', hint: 'One slide per ## heading, speaker notes from Notes:', run: () => exportReply(c, m, 'pptx') }] : []),
   ]);
 }
 

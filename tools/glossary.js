@@ -134,15 +134,27 @@ function align(E, F, gap = -0.15) {
 // ------------------------------------------------------------------ check
 const ENGLISH_WORDS = ['the', 'and', 'with', 'your', 'you', 'will', 'must', 'please', 'should', 'which', 'this', 'that', 'from', 'have', 'been', 'are', 'for', 'our', 'can', 'when', 'what', 'before', 'after'];
 
+// What save_draft_document adds to a draft: the review label at the top and the Sources list at the end. They have no
+// counterpart in the other version, so they are not reported as missing paragraphs.
+const DRAFT_LABEL = /^\**\s*(machine[- ]drafted\b|draft \(ai\) for review\b)/i;
+function draftAdditions(paras) {
+  const out = new Set();
+  paras.forEach((p, k) => { if (DRAFT_LABEL.test(p)) out.add(k); });
+  const s = paras.findIndex((p) => /^\**sources:?\**$/i.test(p));
+  if (s >= 0) for (let k = s; k < paras.length; k++) out.add(k);
+  return out;
+}
+
 /** en, fr: Markdown/text, or { file }. glossary: terms from readGlossary. */
 function compare(enText, frText, glossary = []) {
   const en = paragraphs(enText), fr = paragraphs(frText);
+  const enAdded = draftAdditions(en), frAdded = draftAdditions(fr);
   const { E, F } = features(en, fr, glossary);
   const findings = [];
   const add = (type, i, j, detail, extra = {}) => findings.push({ type, en: i == null ? null : i + 1, fr: j == null ? null : j + 1, detail, enText: i == null ? '' : excerpt(en[i]), frText: j == null ? '' : excerpt(fr[j]), ...extra });
   for (const [i, j] of align(E, F)) {
-    if (j == null) { add('missing', i, null, `English paragraph ${i + 1} has no French counterpart.`); continue; }
-    if (i == null) { add('missing', null, j, `French paragraph ${j + 1} has no English counterpart.`); continue; }
+    if (j == null) { if (!enAdded.has(i)) add('missing', i, null, `English paragraph ${i + 1} has no French counterpart.`); continue; }
+    if (i == null) { if (!frAdded.has(j)) add('missing', null, j, `French paragraph ${j + 1} has no English counterpart.`); continue; }
     const e = E[i], f = F[j];
     // Terminology: mask longer matches so "renewal application" isn't also checked as "renewal".
     let masked = e.f;
