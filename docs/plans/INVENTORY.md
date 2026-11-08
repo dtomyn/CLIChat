@@ -10,9 +10,9 @@ Last reviewed: 2026-11-07 (branch `feature/ideas-for-pm`, commit `82b234d`)
 
 | Status | Count |
 |---|---|
-| ✅ Done | 13 |
+| ✅ Done | 17 |
 | 🟡 Partial | 4 |
-| 📝 Planned | 25 |
+| 📝 Planned | 21 |
 | ⬜ Not started | 0 |
 
 Lumen runs on one computer and works on files in the notebook folder. Where the catalogue names a cloud target (SharePoint, Teams, Power BI, Fabric, ADO Test Plans), Lumen produces the file or proposal locally, and a person publishes it. "Done" means the use case works end to end in that model. Live system connections are tracked separately in Plan 08 (Azure DevOps) and in the "Live targets" column.
@@ -44,15 +44,15 @@ Lumen runs on one computer and works on files in the notebook folder. Where the 
 | 21 | Security / SA&A | Map security controls and evidence needs | High | 📝 | — | 13 |
 | 22 | Security / SA&A | Security design documentation | Med–High | 📝 | — | 13 |
 | 23 | Security / SA&A | Assemble and validate control evidence | High | 📝 | — | 13 |
-| 24 | Change Management | Summarize interviews, draft change impacts | High | 📝 | `read_transcript` exists to reuse | 14 |
-| 25 | Change Management | Consolidate CIA and training needs | High | 📝 | — | 14 |
-| 26 | Change Management | Draft training products | Med–High | 📝 | — | 14 |
+| 24 | Change Management | Summarize interviews, draft change impacts | High | ✅ | **Change Impact Analyst** agent, `change-management` skill, `propose_change_impacts` (quote-checked through the shared `verifyQuotes`; `(proposed)` CIA with Approve column) and `apply_change_impacts`, prompt **Interview → change impacts**, two sample interview transcripts and a CIA template (2026-11-07) | 14 |
+| 25 | Change Management | Consolidate CIA and training needs | High | ✅ | `consolidate_cia` (duplicates merged, Rejected left out, heat map of group × H/M/L, TNA from approved impacts with the role list, `Training actions - ADO import.xlsx`), prompts **Consolidate the CIA** and **Training needs analysis**, sample CIAs with a seeded duplicate and `Roles.xlsx` (2026-11-07). Pushing actions to ADO: Plan 08 | 14 |
+| 26 | Change Management | Draft training products | Med–High | ✅ | **Training Content** agent, prompt **Draft training materials** (deck outline, job aid, FAQ, knowledge check, each section citing its source), `save_draft_document` (Markdown and Word, draft label, sources listed) (2026-11-07). Decks are Markdown outlines, not .pptx | 14 |
 | 27 | Release / Cutover | Release checklists | High | 📝 | — | 15 |
 | 28 | Release / Cutover | Operational runbook | High | 📝 | — | 15 |
 | 29 | Release / Cutover | Coordinate and summarize cutover | High | 📝 | — | 15 |
 | 30 | Release / Cutover | Hypercare analysis and closure report | Med–High | 📝 | — | 15 |
 | 31 | Architecture / Governance | Architecture and design consistency review | High | 📝 | — | 16 |
-| 32 | Documentation / Bilingual | French drafts and bilingual QA | Med–High | 📝 | — | 14 |
+| 32 | Documentation / Bilingual | French drafts and bilingual QA | Med–High | ✅ | **Bilingual Reviewer** agent, `bilingual` skill, `check_terminology` (glossary terms, untranslated English, numbers/dates/IDs, missing paragraphs after alignment), prompts **Draft French version** (labelled machine-drafted, needs translator review) and **Bilingual QA**, sample 30-term glossary and EN/FR guide pair with three seeded issues (2026-11-07) | 14 |
 | 33 | Functional / ADO Backlog | ADO backlog Q&A and controlled updates | High | 📝 | Plan 08 written, nothing built | 08 |
 | 34 | Testing / QE | Test strategy, coverage model, risk priorities | High | ✅ | **Test Planner** agent, prompt **Draft the test strategy** (levels, STE/UAT/STG/PRD, entry/exit, test data, risk × change-impact priority); coverage model from `analyze_traceability` (2026-11-07) | 09 |
 | 35 | Test Automation | Automated regression tests (Playwright) | High | 📝 | Lumen's own e2e suite as a pattern | 17 |
@@ -76,7 +76,7 @@ Lumen runs on one computer and works on files in the notebook folder. Where the 
 | [11 Data engineering](11-data-engineering.md) | 13, 14, 15, 18 | L | — | 📝 |
 | [12 Integration and APIs](12-integration-and-apis.md) | 16, 17 | M | 11 (schema reader) | 📝 |
 | [13 Security and SA&A](13-security-saa.md) | 21, 22, 23 | M | 18 (templates) helps | 📝 |
-| [14 Change, training and bilingual](14-change-training-bilingual.md) | 24, 25, 26, 32 | M | — | 📝 |
+| [14 Change, training and bilingual](14-change-training-bilingual.md) | 24, 25, 26, 32 | M | — | ✅ 2026-11-07 |
 | [15 Release and cutover](15-release-and-cutover.md) | 27, 28, 29, 30 | M | 09 (defect reader) | 📝 |
 | [16 Architecture and governance](16-architecture-governance.md) | 31, 38, 40, 42 | M | 18 (templates) | 📝 |
 | [17 Engineering skill packs](17-engineering-skill-packs.md) | 35, 36, 41 | M | — | 📝 |
@@ -102,3 +102,4 @@ These extend the [ground rules](README.md#ground-rules-for-every-plan):
 | 2026-11-07 | Inventory created from AIThemes.pdf; plans 09–18 written |
 | 2026-11-07 | Plan 09 implemented: #19, #20, #34 done; #11 gains the test-case layer |
 | 2026-11-07 | Plan 10 implemented: #3, #5, #39 done |
+| 2026-11-07 | Plan 14 implemented: #24, #25, #26, #32 done |

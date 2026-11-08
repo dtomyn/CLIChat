@@ -17,6 +17,8 @@ const publish = require('./publish');
 const qe = require('./tests');
 const scenario = require('./scenario');
 const capacity = require('./capacity');
+const change = require('./change');
+const glossary = require('./glossary');
 
 const ROOT = path.resolve(process.env.OFFICE_MCP_ROOT || process.cwd());
 const READ_ONLY = process.env.OFFICE_MCP_READONLY === '1';
@@ -230,7 +232,7 @@ const TOOLS = [
   },
   {
     name: 'read_transcript',
-    description: 'Read a meeting transcript (Teams .vtt, a Teams transcript saved as Word .docx, or a .txt/.md file) as numbered turns with time, speaker and text. Use it before proposing RAID log updates, and quote from it word for word.',
+    description: 'Read a meeting transcript (Teams .vtt, a Teams transcript saved as Word .docx, or a .txt/.md file) as numbered turns with time, speaker and text. Use it before proposing RAID log updates or change impacts from an interview, and quote from it word for word.',
     inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'The transcript file' } }, required: ['path'] },
     run: (a) => { const segs = raid.readTranscript(resolveIn(a.path)); return { file: path.basename(a.path), turns: segs.length, speakers: [...new Set(segs.map((s) => s.speaker).filter(Boolean))], transcript: segs.map((s) => `[${s.n}] ${s.time ? s.time + ' ' : ''}${s.speaker ? s.speaker + ': ' : ''}${s.text}`).join('\n') }; },
   },
@@ -268,6 +270,78 @@ const TOOLS = [
     description: 'Apply only the approved changes from a reviewed "<RAID log> (proposed).xlsx" (rows marked Yes in "Approve?") to "<RAID log> (updated).xlsx". Refuses if any row is not marked Yes or No. Only call this after the person says they have reviewed the proposed workbook. The original RAID log is never overwritten.',
     inputSchema: { type: 'object', properties: { proposed: { type: 'string', description: 'The reviewed "(proposed)" workbook' } }, required: ['proposed'] },
     run: write((a) => raid.applyApproved(resolveIn(a.proposed))),
+  },
+  {
+    name: 'propose_change_impacts',
+    description: 'Propose change impacts from stakeholder interview transcripts, for a change lead to approve. Each impact needs a stakeholder group, business process, change description, impact level (H/M/L) and evidence.quote copied word for word from a transcript (at least 4 words); impacts whose quote cannot be found are rejected, and the speaker and time are taken from the transcript. Saves "<CIA> (proposed).xlsx" (or "Change impacts (proposed).xlsx" next to the first transcript when no CIA workbook is given) with the new rows highlighted, Status Proposed, and a "Proposed changes" sheet with an "Approve? (Yes/No)" column. The original CIA workbook is not changed.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        transcripts: { type: 'array', items: { type: 'string' }, description: 'Interview transcripts (.vtt, .docx or .txt)' },
+        cia: { type: 'string', description: 'Optional CIA workbook to add to (e.g. the CIA template)' },
+        interviewDate: { type: 'string', description: 'YYYY-MM-DD, recorded with the source' },
+        impacts: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              stakeholderGroup: { type: 'string' },
+              role: { type: 'string', description: 'Affected roles, comma-separated, if the interview names them' },
+              process: { type: 'string', description: 'Business process that changes' },
+              change: { type: 'string', description: 'What changes for these people, in one sentence' },
+              level: { type: 'string', enum: ['H', 'M', 'L'], description: 'H = new skills or way of working; M = changed steps or tools; L = awareness only' },
+              skillGap: { type: 'string', description: 'Optional skill gap or training need' },
+              trainingType: { type: 'string', description: 'Optional, e.g. instructor-led, job aid' },
+              evidence: { type: 'object', properties: { quote: { type: 'string', description: 'At least 4 words copied exactly from a transcript' } }, required: ['quote'] },
+              reason: { type: 'string' },
+            },
+            required: ['stakeholderGroup', 'process', 'change', 'level', 'evidence'],
+          },
+        },
+      },
+      required: ['transcripts', 'impacts'],
+    },
+    run: write((a) => change.proposeImpacts([].concat(a.transcripts || a.transcript || []).map((t) => resolveIn(t)), a.cia ? resolveIn(a.cia) : null, a.impacts || [], { interviewDate: a.interviewDate })),
+  },
+  {
+    name: 'apply_change_impacts',
+    description: 'Write only the approved impacts (rows marked Yes in "Approve?") from a reviewed "(proposed)" CIA workbook to "<CIA> (updated).xlsx" with Status Approved. Refuses if any row is not marked Yes or No. Only call this after the person says they have reviewed the proposed workbook. The original is never overwritten.',
+    inputSchema: { type: 'object', properties: { proposed: { type: 'string', description: 'The reviewed "(proposed)" workbook' } }, required: ['proposed'] },
+    run: write((a) => change.applyImpacts(resolveIn(a.proposed))),
+  },
+  {
+    name: 'consolidate_cia',
+    description: 'Consolidate several Change Impact Assessment workbooks (every sheet with Stakeholder group, Change description and Impact level columns). Merges duplicate impacts (same stakeholder group and process, similar description; the higher level is kept), leaves out Rejected impacts, builds a heat map of stakeholder group by impact level, and derives training needs (TNA: group, role, headcount, skill gap, training type, priority) from approved impacts, using an optional role list for groups without named roles. Saves "CIA - consolidated.xlsx" (sheets Consolidated impacts, Heat map, TNA, Merged duplicates, Sources) and "Training actions - ADO import.xlsx" (one Task per role and training type). Never overwrites; source workbooks are not changed. Every impact cites its file and cell.',
+    inputSchema: { type: 'object', properties: {
+      files: { type: 'array', items: { type: 'string' }, description: 'CIA workbooks to consolidate' },
+      roles: { type: 'string', description: 'Optional role list workbook (Role, Stakeholder group, Headcount)' },
+      output: { type: 'string', description: 'Optional output path (default "CIA - consolidated.xlsx" next to the first file)' },
+    }, required: ['files'] },
+    run: write((a) => change.consolidateCia((a.files || []).map((f) => resolveIn(f)), { roles: a.roles ? resolveIn(a.roles) : undefined, output: outputIn(a.output) })),
+  },
+  {
+    name: 'check_terminology',
+    description: 'Bilingual QA: compare an English document with its French version (.docx, .md or .txt) against an EN/FR terminology sheet (columns English and Français; optional Do not translate). Paragraphs are aligned first. Reports glossary terms translated differently from the approved French term, English left in the French text, numbers, dates, amounts and IDs that differ between the versions, and paragraphs missing from either version, each with paragraph numbers and excerpts. Read-only. It is a machine check: a translator still reviews the French.',
+    inputSchema: { type: 'object', properties: {
+      english: { type: 'string', description: 'The approved English document' },
+      french: { type: 'string', description: 'The French version or draft' },
+      glossary: { type: 'string', description: 'The EN/FR terminology workbook' },
+    }, required: ['english', 'french'] },
+    run: (a) => glossary.checkTerminology(resolveIn(a.english), resolveIn(a.french), a.glossary ? resolveIn(a.glossary) : null),
+  },
+  {
+    name: 'save_draft_document',
+    description: 'Save AI-written Markdown (training material, job aids, FAQs, knowledge checks, a French draft) as a draft document: .md, .docx (Word), or .md with a Word copy (word: true). The label is put at the top (default "Draft (AI) for review"; for French drafts use "Machine-drafted, needs translator review") and the sources it cites are listed at the end. An optional Word template gives the program styles. Never overwrites: a numbered copy is saved instead. Warns when nothing cites a source.',
+    inputSchema: { type: 'object', properties: {
+      path: { type: 'string', description: 'Output path ending in .md or .docx, e.g. "Training/Processing officer - job aid.md"' },
+      markdown: { type: 'string' },
+      label: { type: 'string' },
+      sources: { type: 'array', items: { type: 'string' }, description: 'Approved sections this draft is based on, e.g. "CIA - consolidated.xlsx › TNA!A3"' },
+      word: { type: 'boolean', description: 'Also save a Word copy of a .md draft' },
+      template: { type: 'string', description: 'Optional Word template (.dotx/.docx)' },
+      title: { type: 'string' },
+    }, required: ['path', 'markdown'] },
+    run: write((a) => { const out = outputIn(a.path); if (!out) throw Object.assign(new Error('A file path is required.'), { friendly: true }); fs.mkdirSync(path.dirname(out), { recursive: true }); return change.saveDraft(out, a.markdown, { label: a.label, sources: a.sources, word: !!a.word, template: a.template ? resolveIn(a.template) : undefined, title: a.title }); }),
   },
   {
     name: 'write_test_cases',
@@ -364,7 +438,7 @@ const TOOLS = [
 
 // ------------------------------------------------------------------ JSON-RPC over stdio
 if (require.main === module) {
-  require('./mcp-stdio').serve({ name: 'office', instructions: 'Tools for Excel workbooks, Microsoft Project plans (including delivery scenarios and team capacity), Word documents, requirements traceability, test cases, defect triage and knowledge publishing in the project folder.', tools: TOOLS });
+  require('./mcp-stdio').serve({ name: 'office', instructions: 'Tools for Excel workbooks, Microsoft Project plans (including delivery scenarios and team capacity), Word documents, requirements traceability, test cases, defect triage, change impacts and training needs, bilingual QA and knowledge publishing in the project folder.', tools: TOOLS });
 }
 
 module.exports = { TOOLS };

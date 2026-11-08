@@ -1086,5 +1086,177 @@
       }
     ],
     "template": "Triage the defect export {{defects}} as of {{asof}} (if blank, today).\n\n1. Call analyze_defects and base everything on it.\n2. Lead with the summary line and counts by severity and state. Then tables: probable duplicates (Keep, Probable duplicate, Similarity, Area), severity-priority mismatches (Defect, Severity, Priority, Why it matters), the oldest open defects, and defects with no owner. Cite IDs and cells.\n3. Show the proposed changes as a table (Defect, Field, Now, Proposed, Why) and ask me which to record. Only after I agree, call propose_defect_changes with the agreed rows and tell me how to approve them. Never change the original export."
+  },
+  {
+    "id": "change-interview-impacts",
+    "name": "Interview → change impacts",
+    "emoji": "🔄",
+    "category": "Change & training",
+    "description": "Propose change impacts from stakeholder interviews, each backed by a word-for-word quote, into a CIA workbook for you to approve.",
+    "assistantId": "change-impact-analyst",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "transcript",
+        "label": "Interview transcript",
+        "type": "file",
+        "accept": ".vtt,.docx,.txt,.md"
+      },
+      {
+        "key": "cia",
+        "label": "CIA workbook or template (optional)",
+        "type": "file",
+        "accept": ".xlsx,.xlsm",
+        "optional": true
+      }
+    ],
+    "template": "Read the CIA {{cia}} (if blank, there is none yet) and the interview transcript {{transcript}}. Take the interview date from the file name.\n\n1. List the change impacts the interview supports: stakeholder group, roles if named, business process, the change in one sentence, level H/M/L, and a skill gap where it is clear. Skip impacts already in the CIA.\n2. Propose them with propose_change_impacts (the CIA as cia if given). Quote the transcript word for word for each one; do not invent roles, headcounts or dates.\n\nThen show me a table (ID, group, process, change, level, who said it and when), anything that was rejected and why, and the worries or risks raised that are not impacts. Tell me how to approve them."
+  },
+  {
+    "id": "change-consolidate-cia",
+    "name": "Consolidate the CIA",
+    "emoji": "🧩",
+    "category": "Change & training",
+    "description": "Merge several Change Impact Assessments: duplicates merged, a heat map by stakeholder group and impact level, and the training needs.",
+    "assistantId": "change-impact-analyst",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "cia1",
+        "label": "CIA workbook",
+        "type": "file",
+        "accept": ".xlsx,.xlsm"
+      },
+      {
+        "key": "cia2",
+        "label": "Another CIA workbook",
+        "type": "file",
+        "accept": ".xlsx,.xlsm"
+      },
+      {
+        "key": "cia3",
+        "label": "A third CIA workbook (optional)",
+        "type": "file",
+        "accept": ".xlsx,.xlsm",
+        "optional": true
+      },
+      {
+        "key": "roles",
+        "label": "Role list (optional)",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv",
+        "optional": true
+      }
+    ],
+    "template": "Consolidate these Change Impact Assessments: {{cia1}}, {{cia2}} and {{cia3}} (skip any that are blank), plus any other CIA workbooks I name, with the role list {{roles}} (skip it if blank).\n\nCall consolidate_cia and base everything on it. Lead with the summary line. Then show: the duplicates merged (which IDs, and the level kept), the heat map as a table (group × High/Medium/Low with totals), the groups with the most high impacts, impacts still waiting for approval, and anything rejected or flagged in the notes. Give me links to the consolidated workbook and the training actions file, and remind me that the source workbooks were not changed."
+  },
+  {
+    "id": "change-tna",
+    "name": "Training needs analysis",
+    "emoji": "📚",
+    "category": "Change & training",
+    "description": "Training needs by role from the consolidated CIA: skill gaps, training type, priority and headcount, with the training actions ready for Azure DevOps.",
+    "assistantId": "change-impact-analyst",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "cia",
+        "label": "Consolidated CIA",
+        "type": "file",
+        "accept": ".xlsx,.xlsm"
+      }
+    ],
+    "template": "Read the TNA and Consolidated impacts sheets of {{cia}}.\n\nWrite the Training Needs Analysis: 1 Summary (people affected by role and priority, using headcounts where given); 2 A table by role (role, group, headcount, skill gaps, training type, priority, impacts it comes from); 3 Recommended sequence (High first, and what must be ready before go-live); 4 Gaps: roles with no headcount, impacts with no skill gap, impacts not yet approved. Cite the sheet and row for every line. Then say how to bring the training actions into Azure DevOps (import the 'Training actions - ADO import.xlsx' file, or ask the Backlog Helper to propose them). Label it 'Draft (AI) for review'. Do not change any files."
+  },
+  {
+    "id": "change-training-materials",
+    "name": "Draft training materials",
+    "emoji": "🎓",
+    "category": "Change & training",
+    "description": "A role-based deck outline, job aid, FAQ and knowledge check from the approved impacts and TNA, each section citing its source.",
+    "assistantId": "training-content",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "cia",
+        "label": "Consolidated CIA (with TNA)",
+        "type": "file",
+        "accept": ".xlsx,.xlsm"
+      },
+      {
+        "key": "role",
+        "label": "Role",
+        "type": "text",
+        "placeholder": "e.g. Processing officer"
+      },
+      {
+        "key": "process",
+        "label": "Approved process document (optional)",
+        "type": "file",
+        "accept": ".docx,.md,.txt",
+        "optional": true
+      }
+    ],
+    "template": "Draft training materials for the role {{role}} from the approved impacts and TNA in {{cia}} and the process document {{process}} (skip it if blank).\n\nProduce: 1 a deck outline (one ## per slide, 3 to 5 bullets and speaker notes, 8 to 12 slides); 2 a one-page job aid (numbered steps for the new way of working); 3 an FAQ (8 to 12 questions); 4 a knowledge check (5 to 10 multiple-choice questions with the answer and why). End every section with 'Source:' and the sheet and row or document heading it is based on, and leave out anything you can't source.\n\nShow the drafts, then save each one with save_draft_document under 'Training/{{role}}/' with word: true, listing its sources. Tell me the file names. Everything is a draft for the change lead."
+  },
+  {
+    "id": "bilingual-draft-french",
+    "name": "Draft French version",
+    "emoji": "🍁",
+    "category": "Change & training",
+    "description": "A French draft of an approved English document using the EN/FR glossary, labelled machine-drafted for translator review, then checked.",
+    "assistantId": "bilingual-reviewer",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "english",
+        "label": "Approved English document",
+        "type": "file",
+        "accept": ".docx,.md,.txt"
+      },
+      {
+        "key": "glossary",
+        "label": "EN/FR glossary",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv"
+      }
+    ],
+    "template": "Read the glossary {{glossary}} and the approved English document {{english}}.\n\nDraft the French version paragraph by paragraph: same headings and paragraphs in the same order, the glossary's French term every time, Do-not-translate terms kept, and numbers, dates, amounts and IDs copied exactly in French format. Save it with save_draft_document next to the English document, as '<name> (FR draft).docx', label 'Machine-drafted, needs translator review', sources = the English document. Then run check_terminology on the English document and your draft with the glossary, fix what it finds and save again if needed.\n\nReply with the file name, the check's headline, and any terms you were unsure about for the translator."
+  },
+  {
+    "id": "bilingual-qa",
+    "name": "Bilingual QA",
+    "emoji": "🔍",
+    "category": "Change & training",
+    "description": "Check an English/French pair against the glossary: inconsistent terms, English left in the French, numbers and dates that differ, and missing paragraphs.",
+    "assistantId": "bilingual-reviewer",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "english",
+        "label": "English document",
+        "type": "file",
+        "accept": ".docx,.md,.txt"
+      },
+      {
+        "key": "french",
+        "label": "French document",
+        "type": "file",
+        "accept": ".docx,.md,.txt"
+      },
+      {
+        "key": "glossary",
+        "label": "EN/FR glossary",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv"
+      }
+    ],
+    "template": "Check {{french}} against {{english}} with the glossary {{glossary}}.\n\nCall check_terminology and base everything on it. Lead with the headline. Then a table (Type · EN ¶ · FR ¶ · What differs · Suggested fix) with the excerpts, in this order: missing paragraphs, numbers/dates/IDs, terminology, untranslated English. End with a note that this is a machine check and a translator still reviews the French. Do not change either document."
   }
 ]
