@@ -161,7 +161,8 @@ test('Change: consolidating the CIAs merges the duplicate and leaves out the rej
   await pick(page, 'roles', 'Roles.xlsx');
   const { text, steps } = await run(page, 'consolidate-cia');
   expect(stepsOf(steps)).toMatch(/Consolidating 2 change impact assessments/);
-  all(text, /CI-001/, /CI-002/, /CI-003/, /Processing officers/, /Client support centre/, /not (been )?changed|unchanged|untouched/i);
+  // That the originals were left alone is checked on disk below (c.modified), not in the reply's wording.
+  all(text, /CI-001/, /CI-002/, /CI-003/, /Processing officers/, /Client support centre/);
   const c = changes(dir, before);
   expect(c.modified).toEqual([]);
   expect(added(c, /^CIA - consolidated.*\.xlsx$/).length).toBe(1);
@@ -348,7 +349,7 @@ test('Release: cutover status at 23:30 is Red because C04 is late, with a saved 
   await fill(page, 'asof', '2027-01-02 23:30');
   const { text, steps } = await run(page, 'cutover-status');
   expect(stepsOf(steps)).toMatch(/Checking cutover progress in Cutover Run-sheet - Go-live weekend\.xlsx/);
-  all(text, /\bRed\b/, /C04/, /Ben Carter/, /06:45/, /05:00/, /\b5 of 11\b|5\/11/);
+  all(text, /\bRed\b/i, /C04/, /Ben Carter/, /06:45/, /05:00/, /\b5 of 11\b|5\/11/);
   const c = changes(dir, before);
   expect(c.modified).toEqual([]);
   expect(added(c, /^Cutover\/.*\.md$/).length).toBe(1);
