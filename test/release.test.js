@@ -169,3 +169,27 @@ test('release agents, prompts and skill are wired up', () => {
   const labels = require('../lib/tool-labels');
   assert.match(labels.officeLabel('cutover_status', { path: 'x/Run-sheet.xlsx' }).label, /Checking cutover progress in Run-sheet\.xlsx/);
 });
+
+test('the runbook is saved as Word in the program runbook template', async () => {
+  const recipe = require('../defaults/recipes.json').find((r) => r.id === 'release-runbook');
+  const field = recipe.fields.find((f) => f.key === 'template');
+  assert.ok(field && field.optional && /\.dotx/.test(field.accept), 'optional Word template field');
+  assert.match(recipe.template, /word: true and the Word template \{\{template\}\}/);
+  assert.match(recipe.template, /Templates\/Runbook Template\.dotx/);
+  const writer = require('../defaults/assistants.json').find((a) => a.id === 'runbook-writer');
+  assert.match(writer.instructions, /Runbook Template\.dotx/);
+
+  const JSZip = require('jszip');
+  const template = path.join(__dirname, '..', 'samples', 'aidlc', 'Templates', 'Runbook Template.dotx');
+  assert.ok(fs.existsSync(template), 'sample runbook template exists');
+  const r = await require('../tools/change').saveDraft(path.join(temp, 'Runbook - Contoso CRM (draft).md'),
+    '# Overview and contacts\n\nService desk: 555-0100.\n\nSource: TDD > 1 Overview\n', { word: true, template, sources: ['TDD.md'], title: 'Runbook - Contoso CRM' });
+  assert.deepEqual(r.warnings, []);
+  const zip = await JSZip.loadAsync(fs.readFileSync(r.word));
+  const original = await JSZip.loadAsync(fs.readFileSync(template));
+  assert.equal(await zip.file('word/styles.xml').async('string'), await original.file('word/styles.xml').async('string'), 'program styles kept');
+  assert.match(await zip.file('word/header1.xml').async('string'), /Runbook - Contoso CRM[\s\S]*Operational Runbook/);
+  const doc = await zip.file('word/document.xml').async('string');
+  assert.match(doc, /Overview and contacts/);
+  assert.doesNotMatch(doc, /\{\{content\}\}/);
+});

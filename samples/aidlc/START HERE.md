@@ -12,6 +12,7 @@ Synthetic data for trying Lumen's delivery-lifecycle assistants locally: Require
 | **Knowledge/Ways of Working - Delivery.md** | Artifact ownership, Definition of Ready/Done, change control |
 | **Knowledge/Data Model - Permit Renewal.xlsx** | Entities and attributes |
 | **Templates/FDD Template.dotx**, **Templates/TDD Template.dotx** | Program Word templates: styles, cover page, header and footer. Approved Functional and Technical design stages offer **Save as Word (program template)** |
+| **Templates/Runbook Template.dotx** | Program Word template for the operational runbook. The *Draft the runbook* prompt (category *Release*) saves the runbook in it |
 | **Knowledge/Technical Design - Permit Renewal.md** | The approved technical design: components, endpoints and the data it uses |
 | **Architecture/ADRs/** | Three architecture decision records (ADR-002 is superseded by ADR-003) |
 | **Architecture/Design/** | Interface catalogue v1.0 (approved) and v1.1 (draft) |
