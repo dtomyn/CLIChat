@@ -110,6 +110,7 @@ const modelLabel = (provider, id) => (provider.models || []).find((m) => m.id ==
 
 async function handleChat(req, res) {
   const body = await json(req);
+  if (body.providerId && !registry.get(body.providerId)) return send(res, 400, { error: `Unknown provider ${body.providerId}` });
   if (body.conversationId && running.has(body.conversationId)) return send(res, 409, { error: 'Wait for the current reply to finish first.' });
   if (body.conversationId && store.runs.list().some((r) => r.stages.some((s) => s.conversationId === body.conversationId && s.status === 'approved'))) return send(res, 409, { error: 'Send this approved stage back before changing it.' });
   if (body.conversationId) {
@@ -122,7 +123,6 @@ async function handleChat(req, res) {
       stage.checkSummary = ''; stage.gateConversationId = null; store.runs.save(run);
     }
   }
-  if (body.providerId && !registry.get(body.providerId)) return send(res, 400, { error: `Unknown provider ${body.providerId}` });
   res.writeHead(200, { 'Content-Type': 'application/x-ndjson', 'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no' });
   try { await runTurn(body, (ev) => { if (!res.destroyed) res.write(JSON.stringify(ev) + '\n'); }); }
   catch (e) { res.write(JSON.stringify({ type: 'error', message: e.message }) + '\n'); }
@@ -470,7 +470,9 @@ function browseFolder(dir) {
   return { path: full, parent: parent === full ? '' : parent, places, dirs };
 }
 
-const RUNNABLE = /\.(exe|com|bat|cmd|ps1|psm1|vbs|vbe|js|jse|jar|wsf|wsh|msi|msp|scr|pif|cpl|hta|lnk|url|reg|scf|inf|application|appref-ms|sh|command|app)$/i;
+// Files Lumen opens directly in their app. Anything else (programs, scripts, shortcuts, macro-enabled Office files and
+// the many other types Windows runs on open) is shown in its folder instead, because the AI can write files here.
+const OPENABLE = /\.(docx|dotx|doc|xlsx|xltx|xls|csv|tsv|pptx|potx|ppt|pdf|txt|md|markdown|json|xml|ya?ml|mpp|vtt|srt|log|sql|png|jpe?g|gif|bmp|webp|html?)$/i;
 function openPath(p) {
   if (process.platform === 'win32') spawn('explorer.exe', [p], { detached: true, stdio: 'ignore' }).unref();
   else spawn(process.platform === 'darwin' ? 'open' : 'xdg-open', [p], { detached: true, stdio: 'ignore' }).unref();
@@ -895,10 +897,14 @@ async function api(req, res, url) {
     const name = path.basename(url.searchParams.get('name') || 'file').replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_').replace(/[. ]+$/, '').slice(0, 200) || 'file';
     const dir = path.join(ws, 'Attachments');
     fs.mkdirSync(dir, { recursive: true });
-    let target = path.join(dir, name);
+    const body = await readBody(req);
     const { name: stem, ext } = path.parse(name);
-    for (let i = 2; fs.existsSync(target); i++) target = path.join(dir, `${stem} (${i})${ext}`);
-    fs.writeFileSync(target, await readBody(req));
+    // 'wx' never replaces a file, even one created after the name was chosen (two uploads of the same name at once).
+    let target;
+    for (let i = 1; ; i++) {
+      target = path.join(dir, i === 1 ? name : `${stem} (${i})${ext}`);
+      try { fs.writeFileSync(target, body, { flag: 'wx' }); break; } catch (e) { if (e.code !== 'EEXIST' || i > 999) throw e; }
+    }
     return send(res, 200, { path: target, name: path.basename(target) });
   }
 
@@ -921,7 +927,7 @@ async function api(req, res, url) {
         if (real === fs.realpathSync(ws) || inside(real, fs.realpathSync(ws))) target = real;
       } catch {}
       // Opening a script or program would run it. The AI can write files here, so show those in their folder instead.
-      if (target !== ws && fs.statSync(target).isFile() && RUNNABLE.test(target)) target = path.dirname(target);
+      if (target !== ws && fs.statSync(target).isFile() && !OPENABLE.test(target)) target = path.dirname(target);
       if (fs.existsSync(target)) openPath(target);
       return send(res, 200, { ok: true });
     }
@@ -943,7 +949,8 @@ const INLINE_HASHES = (() => {
 const CSP = [
   "default-src 'self'", `script-src 'self' ${INLINE_HASHES}`.trim(), "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com data:", "img-src 'self' data: blob:", "connect-src 'self'",
-  "object-src 'none'", "base-uri 'none'", "form-action 'self'", "frame-ancestors 'none'",
+  // The UI never submits forms; 'none' stops a form smuggled into a reply from POSTing to the API (e.g. /api/reset).
+  "object-src 'none'", "base-uri 'none'", "form-action 'none'", "frame-ancestors 'none'",
 ].join('; ');
 const SECURITY_HEADERS = { 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer', 'Content-Security-Policy': CSP };
 

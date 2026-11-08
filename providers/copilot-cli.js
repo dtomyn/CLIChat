@@ -20,7 +20,8 @@ const LOCAL = process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Lo
 const BIN = cli.resolve('copilot', process.platform === 'win32'
   ? [path.join(LOCAL, 'Microsoft', 'WinGet', 'Links', 'copilot.exe'), path.join(LOCAL, 'GitHubCopilotCLI', 'copilot.exe'), path.join(process.env.APPDATA || '', 'npm', 'copilot.cmd')]
   : [path.join(os.homedir(), '.local', 'bin', 'copilot'), '/usr/local/bin/copilot', '/opt/homebrew/bin/copilot'], process.env.COPILOT_CLI_PATH);
-const launch = (args, opts) => spawn(BIN.command, [...BIN.prefix, ...args], { shell: BIN.shell, windowsHide: true, ...opts });
+const launch = (args, opts) => { const c = cli.command(BIN, args); return spawn(c.command, c.args, { windowsHide: true, ...c.options, ...opts }); };
+const run = (args, opts, cb) => { const c = cli.command(BIN, args); return execFile(c.command, c.args, { windowsHide: true, ...c.options, ...opts }, cb); };
 
 // Flags every run shares: machine-readable output, no prompts, no self-update, no GitHub MCP server
 // (Lumen users work with documents, not repositories).
@@ -36,7 +37,7 @@ let helpText = null;
 function runHelp() {
   if (!helpText) {
     helpText = new Promise((resolve) => {
-      execFile(BIN.command, [...BIN.prefix, '--no-auto-update', '--help'], { shell: BIN.shell, timeout: 15000, windowsHide: true },
+      run(['--no-auto-update', '--help'], { timeout: 15000 },
         (err, stdout) => resolve(err ? '' : String(stdout)));
     });
   }
@@ -119,7 +120,7 @@ module.exports = {
 
   detect() {
     return new Promise((resolve) => {
-      execFile(BIN.command, [...BIN.prefix, '--no-auto-update', '--version'], { shell: BIN.shell, timeout: 15000, windowsHide: true }, (err, stdout) => {
+      run(['--no-auto-update', '--version'], { timeout: 15000 }, (err, stdout) => {
         if (err) return resolve({ available: false, message: 'GitHub Copilot CLI not found. Install it (`winget install GitHub.Copilot` or `npm i -g @github/copilot`), then run `copilot` and `/login` once — or sign in with `gh auth login`.' });
         const version = String(stdout).trim().split('\n')[0];
         const major = Number((/(\d+)\.\d+/.exec(version) || [])[1]);

@@ -93,7 +93,13 @@ renderer.table = function (token) {
   return `<div class="table-wrap"><div class="table-tools"><button data-copy-table title="Copy for Excel, Word or Outlook">${icon('copy')}Copy table</button></div><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
 };
 DOMPurify.addHook('afterSanitizeAttributes', (n) => { if (n.tagName === 'A') { n.setAttribute('target', '_blank'); n.setAttribute('rel', 'noopener noreferrer'); } });
-const md = (text, cursor = false) => DOMPurify.sanitize(marked.parse(String(text || ''), { renderer }) + (cursor ? '<span class="cursor"></span>' : ''), { ADD_ATTR: ['target', 'data-copy-code', 'data-copy-table'] });
+// AI replies can carry text from documents and web pages. The app's click handlers are keyed on data-* attributes
+// (Apply, open file, send suggestion…), so replies may not carry data attributes other than the two copy buttons,
+// ids that could shadow the app's own elements (#input…), or forms.
+const md = (text, cursor = false) => DOMPurify.sanitize(marked.parse(String(text || ''), { renderer }) + (cursor ? '<span class="cursor"></span>' : ''), {
+  ALLOW_DATA_ATTR: false, ADD_ATTR: ['target', 'data-copy-code', 'data-copy-table'],
+  FORBID_TAGS: ['form', 'textarea', 'select', 'option', 'style'], FORBID_ATTR: ['id', 'name', 'form', 'formaction'],
+});
 const highlight = (root) => { if (window.hljs) $$('pre code[class*="language-"]:not(.hljs)', root).forEach((b) => { try { hljs.highlightElement(b); } catch {} }); };
 
 // ---------------------------------------------------------------- state

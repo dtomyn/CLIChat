@@ -19,7 +19,9 @@ function hasExcel() {
 }
 function recalc(file) {
   if (!hasExcel() || !/\.xlsx?m?$/i.test(file)) return false;
-  const q = `'${String(file).replace(/'/g, "''")}'`;
+  // PowerShell treats typographic quotes (‘ ’ ‚ ‛) as single quotes too, so a file name such as "Bob’s plan.xlsx"
+  // would end the string early and the rest of the name would run as a command. Double all of them.
+  const q = `'${String(file).replace(/['‘’‚‛]/g, (c) => c + c)}'`;
   try {
     execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command',
       `$x = New-Object -ComObject Excel.Application; $x.Visible = $false; $x.DisplayAlerts = $false; try { $wb = $x.Workbooks.Open(${q}); $x.CalculateFull(); $wb.Save(); $wb.Close($false) } finally { $x.Quit(); [void][Runtime.InteropServices.Marshal]::ReleaseComObject($x) }`],
