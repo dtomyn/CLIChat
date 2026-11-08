@@ -1666,7 +1666,7 @@ function renderRecipesPage() {
       <div class="schedule-list">${S.schedules.length ? S.schedules.map((s) => {
         const r = S.recipes.find((x) => x.id === s.recipeId);
         const result = s.running ? 'Running or waiting' : s.lastStatus === 'error' ? `Error: ${s.lastError || 'The check failed.'}` : s.lastStatus === 'late' ? 'Ran late' : s.lastStatus === 'ok' ? 'Ready' : 'Not run yet';
-        return `<div class="schedule-card"><div><strong>${esc(r?.name || 'Deleted prompt')}</strong><div class="help">${s.enabled ? `Next run: ${esc(new Date(s.nextRunAt).toLocaleString())}` : 'Paused'} · ${esc(result)}</div>${s.lastConversationId ? `<button class="schedule-link" data-schedule-chat="${esc(s.lastConversationId)}">Open last chat</button>` : ''}</div>
+        return `<div class="schedule-card"><div><strong>${esc(r?.name || 'Deleted prompt')}</strong><div class="help">${!s.enabled ? 'Paused' : s.nextRunAt ? `Next run: ${esc(new Date(s.nextRunAt).toLocaleString())}` : 'Window finished'} · ${esc(result)}</div>${s.lastConversationId ? `<button class="schedule-link" data-schedule-chat="${esc(s.lastConversationId)}">Open last chat</button>` : ''}</div>
           <div class="schedule-actions"><button class="btn soft sm" data-schedule-toggle="${esc(s.id)}">${s.enabled ? 'Pause' : 'Resume'}</button><button class="btn soft sm" data-schedule-run="${esc(s.id)}" ${s.running ? 'disabled' : ''}>Run now</button><button class="btn soft sm" data-schedule-delete="${esc(s.id)}">Delete</button></div></div>`;
       }).join('') : '<div class="conv-empty">No scheduled prompts yet. Open a prompt and choose Repeat…</div>'}</div>` : `<div class="recipe-grid" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr))">
         ${list.map(recipeCard).join('')}
@@ -1774,21 +1774,24 @@ function openRecipeRunner(id) {
 function openScheduleForm(recipe, values, onSaved) {
   const m = modal({
     title: `Repeat ${recipe.name}`, sub: 'Scheduled prompts run only while Lumen is running. Missed runs happen once when Lumen starts again.',
-    body: `<div class="field"><label>Repeat</label><select class="select" id="scheduleKind"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></div>
+    body: `<div class="field"><label>Repeat</label><select class="select" id="scheduleKind"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="interval">Every few minutes, between two times</option></select></div>
+      <div id="scheduleWindow" hidden><div class="field"><label>Every</label><select class="select" id="scheduleEvery"><option value="15">15 minutes</option><option value="30" selected>30 minutes</option><option value="45">45 minutes</option><option value="60">Hour</option></select></div>
+        <div class="field"><label>From</label><input class="input" type="datetime-local" id="scheduleStart"></div>
+        <div class="field"><label>Until</label><input class="input" type="datetime-local" id="scheduleEnd"><div class="help">For a cutover or other busy window. It runs only between these times, and runs missed while Lumen was closed are not made up after the window ends.</div></div></div>
       <div class="field" id="scheduleDays" hidden><label>Days</label><div class="schedule-days">${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => `<label><input type="checkbox" value="${i}" ${i === 1 ? 'checked' : ''}> ${d}</label>`).join('')}</div></div>
       <div class="field" id="scheduleMonth" hidden><label>Day of month</label><input class="input" type="number" min="1" max="31" value="1" id="scheduleDay"><div class="help">Months without this date are skipped.</div></div>
-      <div class="field"><label>Time (local)</label><input class="input" type="time" value="09:00" id="scheduleTime"></div>
+      <div class="field" id="scheduleTimeField"><label>Time (local)</label><input class="input" type="time" value="09:00" id="scheduleTime"></div>
       ${recipe.access === 'edit' ? '<label class="schedule-permission"><input type="checkbox" id="scheduleAllow"> Allow this schedule to save files</label>' : ''}`,
     actions: [{ label: 'Cancel' }, { label: 'Save schedule', primary: true, run: async (el) => {
       const kind = $('#scheduleKind', el).value, time = $('#scheduleTime', el).value;
-      const when = { kind, time };
+      const when = kind === 'interval' ? { kind, minutes: Number($('#scheduleEvery', el).value), start: $('#scheduleStart', el).value, end: $('#scheduleEnd', el).value } : { kind, time };
       if (kind === 'weekly') when.days = $$('#scheduleDays input:checked', el).map((x) => Number(x.value));
       if (kind === 'monthly') when.day = Number($('#scheduleDay', el).value);
       await api('/api/schedules', { method: 'POST', body: { recipeId: recipe.id, values, workspace: S.settings.workspace, when, allowEdit: !!$('#scheduleAllow', el)?.checked } });
       S.schedules = await api('/api/schedules'); onSaved(); toast('Schedule saved');
     } }],
   });
-  $('#scheduleKind', m.el).addEventListener('change', (e) => { $('#scheduleDays', m.el).hidden = e.target.value !== 'weekly'; $('#scheduleMonth', m.el).hidden = e.target.value !== 'monthly'; });
+  $('#scheduleKind', m.el).addEventListener('change', (e) => { $('#scheduleDays', m.el).hidden = e.target.value !== 'weekly'; $('#scheduleMonth', m.el).hidden = e.target.value !== 'monthly'; $('#scheduleWindow', m.el).hidden = e.target.value !== 'interval'; $('#scheduleTimeField', m.el).hidden = e.target.value === 'interval'; });
 }
 
 function fieldInput(f) {

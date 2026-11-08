@@ -1258,5 +1258,152 @@
       }
     ],
     "template": "Check {{french}} against {{english}} with the glossary {{glossary}}.\n\nCall check_terminology and base everything on it. Lead with the headline. Then a table (Type · EN ¶ · FR ¶ · What differs · Suggested fix) with the excerpts, in this order: missing paragraphs, numbers/dates/IDs, terminology, untranslated English. End with a note that this is a machine check and a translator still reviews the French. Do not change either document."
+  },
+  {
+    "id": "release-cutover-checklist",
+    "name": "Generate cutover checklist",
+    "emoji": "🗒️",
+    "category": "Release",
+    "description": "Draft the cutover and rollback run-sheet from the deployment approach and the plan, in a layout the cutover status check can read.",
+    "assistantId": "release-readiness",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "approach",
+        "label": "Deployment approach or release plan",
+        "type": "file",
+        "accept": ".docx,.md,.txt,.pdf"
+      },
+      {
+        "key": "plan",
+        "label": "Project plan (optional)",
+        "type": "file",
+        "accept": ".mpp,.xml",
+        "optional": true
+      },
+      {
+        "key": "window",
+        "label": "Cutover window",
+        "placeholder": "e.g. Sat 2 Jan 18:00 to Sun 3 Jan 06:00"
+      }
+    ],
+    "template": "Draft the cutover and rollback checklist for the window {{window}}, from the deployment approach {{approach}} and the project plan {{plan}} (skip the plan if blank).\n\n1. List the cutover steps in order: ID (C01, C02…), step, owner, planned start, planned end, depends on (step IDs), and how each step is verified. Include the go/no-go call, the freeze, data migration, integrations, smoke tests and the go-live confirmation.\n2. List the rollback steps (R01…) with the trigger and the latest time the rollback decision can be made.\n3. Save them with create_spreadsheet as \"Cutover Run-sheet (draft).xlsx\" with sheets Run-sheet and Rollback, using the columns ID, Step, Owner, Planned start, Planned end, Depends on, Actual start, Actual end, Forecast end, Status, Notes (times as YYYY-MM-DD HH:MM, Status Not started).\n\nTake owners and times only from the documents; leave them blank where the documents don't say, and list those gaps at the end. Cite the section each step comes from."
+  },
+  {
+    "id": "release-readiness-check",
+    "name": "Readiness check",
+    "emoji": "🚦",
+    "category": "Release",
+    "description": "Check the go-live readiness checklist: status by environment, missing evidence, overdue items and a Red/Amber/Green rating.",
+    "assistantId": "release-readiness",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "checklist",
+        "label": "Readiness checklist",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv"
+      },
+      {
+        "key": "asof",
+        "label": "As of (optional)",
+        "placeholder": "YYYY-MM-DD, optional"
+      }
+    ],
+    "template": "Check release readiness using {{checklist}} as of {{asof}} (if blank, today).\n\nCall check_readiness and base everything on it. Lead with the rating, its reasons and the rule. Then: missing evidence (item, the file it points to, cell), open must-have items, overdue items and items with no owner, and a table by environment (STE, UAT, STG, PRD: items, complete, open, missing evidence). End with what has to happen before go-live and who owns it. Do not mark anything as done."
+  },
+  {
+    "id": "release-runbook",
+    "name": "Draft the runbook",
+    "emoji": "📗",
+    "category": "Release",
+    "description": "Draft the operational runbook from the design, the deployment procedures and the support model, each section citing its source.",
+    "assistantId": "runbook-writer",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "design",
+        "label": "Technical or solution design",
+        "type": "file",
+        "accept": ".docx,.md,.txt,.pdf"
+      },
+      {
+        "key": "deploy",
+        "label": "Deployment procedures (optional)",
+        "type": "file",
+        "accept": ".docx,.md,.txt,.pdf",
+        "optional": true
+      },
+      {
+        "key": "support",
+        "label": "Support model (optional)",
+        "type": "file",
+        "accept": ".docx,.md,.txt,.pdf",
+        "optional": true
+      },
+      {
+        "key": "system",
+        "label": "System name",
+        "placeholder": "e.g. Contoso CRM"
+      }
+    ],
+    "template": "Draft the operational runbook for {{system}} from the design {{design}}, the deployment procedures {{deploy}} and the support model {{support}} (skip any that are blank, and read other design documents in the notebook if they help).\n\nSections: overview and contacts, system context, routine operations (daily, weekly, monthly checks), monitoring and alerts, start-up and shut-down, backup and restore, common incidents and fixes, escalation and support hours, change and release steps. End each section with \"Source:\" and the document heading. Mark anything you can't source as To be confirmed.\n\nSave it with save_draft_document as \"Runbook - {{system}} (draft).md\" with word: true, listing the source documents. Then tell me which sections still need input and from whom."
+  },
+  {
+    "id": "release-cutover-status",
+    "name": "Cutover status update",
+    "emoji": "⏱️",
+    "category": "Release",
+    "description": "A short status update from the cutover run-sheet: late steps, critical path, next steps and the projected finish. Repeat it every 30 minutes during the window.",
+    "assistantId": "cutover-coordinator",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "runsheet",
+        "label": "Cutover run-sheet",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv"
+      },
+      {
+        "key": "asof",
+        "label": "As of (optional)",
+        "placeholder": "YYYY-MM-DD HH:MM, optional (default now)"
+      }
+    ],
+    "template": "Give me a cutover status update from {{runsheet}} as of {{asof}} (if blank, now).\n\nCall cutover_status with snapshot: true and base everything on it. Start with one line: the rating, steps done out of the total, and the projected finish against the planned finish. Then: late and blocked steps (step, owner, how late, cell), the critical path to the finish, and the next steps due in the next hour with who is waiting on whom. Keep it short enough to paste into the cutover bridge chat, and give me the link to the saved snapshot."
+  },
+  {
+    "id": "release-hypercare-closure",
+    "name": "Hypercare closure report",
+    "emoji": "📉",
+    "category": "Release",
+    "description": "Hypercare defect trends against the exit criteria, and a draft closure report with a recommendation.",
+    "assistantId": "hypercare-analyst",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "defects",
+        "label": "Hypercare defect export",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv"
+      },
+      {
+        "key": "criteria",
+        "label": "Exit criteria (optional)",
+        "type": "textarea",
+        "placeholder": "One per line, e.g. No Sev1 open for 10 days. Optional"
+      },
+      {
+        "key": "asof",
+        "label": "As of (optional)",
+        "placeholder": "YYYY-MM-DD, optional"
+      }
+    ],
+    "template": "Analyse hypercare from the defect export {{defects}} as of {{asof}} (if blank, today), against these exit criteria: {{criteria}} (if not specified, use the defaults).\n\n1. Call hypercare_trends (each criterion as one item of exitCriteria) and analyze_defects, and base everything on them.\n2. Lead with the verdict and each exit criterion with Pass/Fail and its evidence. Show the weekly trend as a table (week, opened, closed, open at week end, average age) and the open defects by severity with owners.\n3. Draft the closure report: period and scope, trend, exit criteria, open defects and owners, recurring themes by area, the handover to business-as-usual support, and a recommendation (close, or extend until the failing criteria pass). Save it with save_draft_document as \"Hypercare closure report (draft).md\" with word: true, listing the export as the source.\n\nSay Not ready to close while any criterion fails."
   }
 ]

@@ -751,7 +751,7 @@ async function api(req, res, url) {
   }
 
   if (resource === 'schedules') {
-    if (m === 'GET' && !rid) return send(res, 200, store.schedules.all().map((s) => ({ ...s, nextRunAt: s.enabled ? scheduler.nextDue(s, scheduler.dueFrom(s)).getTime() : null, running: scheduleRunner.isPending(s.id) })));
+    if (m === 'GET' && !rid) return send(res, 200, store.schedules.all().map((s) => ({ ...s, nextRunAt: s.enabled ? scheduler.nextDue(s, scheduler.dueFrom(s))?.getTime() ?? null : null, running: scheduleRunner.isPending(s.id) })));
     if (m === 'POST' && rid && action === 'run-now') {
       if (!store.schedules.get(rid)) return send(res, 404, { error: 'Schedule not found.' });
       if (!scheduleRunner.runNow(rid)) return send(res, 409, { error: 'This schedule is already running or waiting to run.' });

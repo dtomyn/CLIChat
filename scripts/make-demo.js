@@ -1,6 +1,7 @@
 // Generates the "Contoso CRM Migration" demo pack in ./demo:
 //   - a Microsoft Project plan (Project XML / MSPDI — opens directly in Microsoft Project)
 //   - a budget tracker, RAID log, timesheets and a weekly progress update (Excel)
+//   - release and cutover: a readiness checklist with Evidence/, a cutover run-sheet and a hypercare defect export
 // Run:  node scripts/make-demo.js
 
 const fs = require('fs');
@@ -432,6 +433,91 @@ async function capacity() {
   await cw.xlsx.writeFile(path.join(OUT, 'Team Capacity - Q4 2026.xlsx'));
 }
 
+// Release and cutover (Plan 15). Times are wall-clock times, written as UTC so Excel shows them as typed.
+const DT = (x) => new Date(`${x.replace(' ', 'T')}:00Z`);
+
+// Readiness checklist: go-live 5 Jan 2027. PRD-04 is marked Done but its evidence file is missing (the check reports Red).
+async function readiness() {
+  const ev = path.join(OUT, 'Evidence');
+  fs.mkdirSync(ev, { recursive: true });
+  const notes = {
+    'UAT sign-off - Sales leadership.md': '# UAT sign-off\n\nSigned off by Sales leadership on 18 Dec 2026. 212 of 214 UAT cases passed; 2 low-severity defects deferred to hypercare.\n',
+    'Performance test results.md': '# Performance test results (STG)\n\nPipeline and dashboard pages under 2 s at 150 concurrent users. ERP sync throughput 4,800 records an hour.\n',
+    'Rollback rehearsal - 19 Dec.md': '# Rollback rehearsal (STG), 19 Dec 2026\n\nRestored SalesTrack from the freeze point and re-pointed the ERP integration in 52 minutes (target 60).\n',
+    'Trial migration reconciliation.md': '# Trial migration reconciliation\n\nAccounts 48,210 / 48,210; contacts 131,904 / 131,911 (7 rejected, logged); opportunities 22,388 / 22,388.\n',
+  };
+  for (const [f, body] of Object.entries(notes)) fs.writeFileSync(path.join(ev, f), body, 'utf8');
+  const wb = new ExcelJS.Workbook(); wb.creator = 'Priya Shah';
+  const about = wb.addWorksheet('About');
+  about.columns = [{ width: 18 }, { width: 44 }];
+  about.addRows([['Release', 'Contoso CRM go-live (Enterprise sales)'], ['Go-live date', new Date('2027-01-05T00:00:00Z')], ['Checklist owner', 'Priya Shah']]);
+  about.getCell('B2').numFmt = 'yyyy-mm-dd'; about.getColumn(1).font = { bold: true };
+  const D = (x) => new Date(x + 'T00:00:00Z');
+  sheet(wb, 'Readiness', [{ h: 'ID', w: 8 }, { h: 'Gate', w: 14 }, { h: 'Gate item', w: 46 }, { h: 'Environment', w: 12 }, { h: 'Owner', w: 14 }, { h: 'Due', w: 12, fmt: 'yyyy-mm-dd' }, { h: 'Evidence', w: 44 }, { h: 'Status', w: 12 }, { h: 'Must have', w: 10 }], [
+    ['STE-01', 'Test', 'System test exit criteria met', 'STE', 'Grace Kim', D('2026-12-04'), 'CRM Migration - RAID Log.xlsx', 'Done', 'Yes'],
+    ['UAT-01', 'Test', 'UAT signed off by Sales leadership', 'UAT', 'Grace Kim', D('2026-12-18'), 'Evidence/UAT sign-off - Sales leadership.md', 'Done', 'Yes'],
+    ['UAT-02', 'Change', 'End-user training complete (120 sales reps)', 'UAT', 'Marcus Lee', D('2026-12-23'), '', 'In progress', 'Yes'],
+    ['STG-01', 'Test', 'Performance test passed', 'STG', 'Elena Rossi', D('2026-12-16'), 'Evidence/Performance test results.md', 'Done', 'Yes'],
+    ['STG-02', 'Cutover', 'Rollback rehearsed end to end', 'STG', 'Tom Becker', D('2026-12-19'), 'Evidence/Rollback rehearsal - 19 Dec.md', 'Done', 'Yes'],
+    ['STG-03', 'Data', 'Trial migration reconciled', 'STG', 'Ben Carter', D('2026-12-11'), 'Evidence/Trial migration reconciliation.md', 'Done', 'Yes'],
+    ['PRD-01', 'Cutover', 'Cutover run-sheet approved', 'PRD', 'Priya Shah', D('2026-12-30'), 'Cutover Run-sheet - Go-live weekend.xlsx', 'Done', 'Yes'],
+    ['PRD-02', 'Support', 'Support model and hypercare rota agreed', 'PRD', 'Priya Shah', D('2026-12-30'), '', 'Open', 'Yes'],
+    ['PRD-03', 'Integration', 'ERP production credentials issued', 'PRD', 'Aisha Khan', D('2027-01-02'), '', 'Open', 'Yes'],
+    ['PRD-04', 'Security', 'Production access review completed', 'PRD', 'Elena Rossi', D('2026-12-22'), 'Evidence/PRD access review.pdf', 'Done', 'Yes'],
+    ['PRD-05', 'Change', 'Go-live communications sent to sales reps', 'PRD', 'Marcus Lee', D('2027-01-04'), '', 'Not started', 'No'],
+    ['PRD-06', 'Support', 'Known-issues page published', 'PRD', '', D('2027-01-04'), '', 'Not started', 'No'],
+  ]);
+  await wb.xlsx.writeFile(path.join(OUT, 'Release Readiness Checklist - Go-live.xlsx'));
+}
+
+// Cutover run-sheet for the go-live weekend, as updated at 23:30 on Sat 2 Jan 2027: C04 (load accounts and contacts) is
+// running an hour past its planned end, which pushes the projected finish from 05:00 to 06:45.
+async function cutover() {
+  const wb = new ExcelJS.Workbook(); wb.creator = 'Priya Shah';
+  const t = 'yyyy-mm-dd hh:mm';
+  const rows = [
+    ['C01', 'Go / no-go call', 'Priya Shah', '2027-01-02 18:00', '2027-01-02 18:30', '', '2027-01-02 18:00', '2027-01-02 18:25', '', 'Done', 'Go confirmed by the steering committee'],
+    ['C02', 'Freeze SalesTrack (read-only)', 'Tom Becker', '2027-01-02 18:30', '2027-01-02 19:00', 'C01', '2027-01-02 18:30', '2027-01-02 18:55', '', 'Done', ''],
+    ['C03', 'Final extract from SalesTrack', 'Ben Carter', '2027-01-02 19:00', '2027-01-02 20:00', 'C02', '2027-01-02 19:05', '2027-01-02 20:10', '', 'Done', ''],
+    ['C04', 'Load accounts and contacts', 'Ben Carter', '2027-01-02 20:00', '2027-01-02 22:30', 'C03', '2027-01-02 20:15', '', '2027-01-03 00:15', 'In progress', 'Duplicate check slower than in the rehearsal'],
+    ['C05', 'Load opportunities', 'Ben Carter', '2027-01-02 22:30', '2027-01-03 00:30', 'C04', '', '', '', 'Not started', ''],
+    ['C06', 'Switch ERP integration to production', 'Aisha Khan', '2027-01-02 20:00', '2027-01-02 21:00', 'C02', '2027-01-02 20:05', '2027-01-02 20:50', '', 'Done', ''],
+    ['C07', 'Turn on single sign-on in production', 'Tom Becker', '2027-01-02 21:00', '2027-01-02 22:00', 'C02', '2027-01-02 21:00', '2027-01-02 21:40', '', 'Done', ''],
+    ['C08', 'Reconcile migrated records', 'Grace Kim', '2027-01-03 00:30', '2027-01-03 02:30', 'C05', '', '', '', 'Not started', ''],
+    ['C09', 'Business smoke test', 'Grace Kim', '2027-01-03 02:30', '2027-01-03 04:00', 'C08, C06, C07', '', '', '', 'Not started', 'Sales Ops SMEs on call'],
+    ['C10', 'Turn on marketing automation sync', 'Aisha Khan', '2027-01-03 04:00', '2027-01-03 04:30', 'C09', '', '', '', 'Not started', ''],
+    ['C11', 'Confirm go-live and send communications', 'Priya Shah', '2027-01-03 04:30', '2027-01-03 05:00', 'C09, C10', '', '', '', 'Not started', 'Rollback decision point if not reached by 06:00'],
+  ].map((r) => r.map((v, i) => ([3, 4, 6, 7, 8].includes(i) && v ? DT(v) : v)));
+  sheet(wb, 'Run-sheet', [{ h: 'ID', w: 6 }, { h: 'Step', w: 38 }, { h: 'Owner', w: 13 }, { h: 'Planned start', w: 16, fmt: t }, { h: 'Planned end', w: 16, fmt: t }, { h: 'Depends on', w: 14 }, { h: 'Actual start', w: 16, fmt: t }, { h: 'Actual end', w: 16, fmt: t }, { h: 'Forecast end', w: 16, fmt: t }, { h: 'Status', w: 12 }, { h: 'Notes', w: 40 }], rows);
+  await wb.xlsx.writeFile(path.join(OUT, 'Cutover Run-sheet - Go-live weekend.xlsx'));
+}
+
+// Hypercare defect export (Azure DevOps query) as of 1 Feb 2027. The last Sev1 closed on 14 Jan; one Sev2 is still open,
+// so "No Sev2 open" fails and hypercare can't close yet.
+async function hypercare() {
+  const wb = new ExcelJS.Workbook(); wb.creator = 'Grace Kim';
+  const D = (x) => (x ? new Date(x + 'T00:00:00Z') : null);
+  const rows = [
+    [5101, 'Opportunity totals wrong after currency conversion', 'Closed', '1 - Critical', 1, 'CRM\\Sales', 'Tom Becker', '2027-01-05', '2027-01-07', '2027-01-07'],
+    [5102, 'ERP order sync stops after 500 records', 'Closed', '1 - Critical', 1, 'CRM\\Integration', 'Aisha Khan', '2027-01-06', '2027-01-14', '2027-01-14'],
+    [5103, 'Sales reps cannot see their territory accounts', 'Closed', '2 - High', 1, 'CRM\\Security', 'Elena Rossi', '2027-01-05', '2027-01-06', '2027-01-06'],
+    [5104, 'Pipeline dashboard slow to load', 'Closed', '3 - Medium', 2, 'CRM\\Reporting', 'Tom Becker', '2027-01-06', '2027-01-15', '2027-01-15'],
+    [5105, 'Duplicate contacts after migration', 'Closed', '2 - High', 2, 'CRM\\Data', 'Ben Carter', '2027-01-06', '2027-01-20', '2027-01-20'],
+    [5106, 'Email tracking button missing in Outlook', 'Closed', '3 - Medium', 3, 'CRM\\Sales', 'Tom Becker', '2027-01-07', '2027-01-12', '2027-01-12'],
+    [5107, 'Quote PDF shows the wrong logo', 'Closed', '4 - Low', 4, 'CRM\\Sales', 'Tom Becker', '2027-01-08', '2027-01-19', '2027-01-19'],
+    [5108, 'Marketing list sync misses unsubscribed flag', 'Active', '2 - High', 2, 'CRM\\Integration', 'Aisha Khan', '2027-01-12', '2027-01-29', ''],
+    [5109, 'Account owner change not sent to ERP', 'Resolved', '2 - High', 2, 'CRM\\Integration', 'Aisha Khan', '2027-01-11', '2027-01-25', '2027-01-25'],
+    [5110, 'Report export cuts off long account names', 'Active', '4 - Low', 4, 'CRM\\Reporting', '', '2027-01-14', '2027-01-14', ''],
+    [5111, 'Activity timeline shows times in UTC', 'Closed', '3 - Medium', 3, 'CRM\\Sales', 'Tom Becker', '2027-01-13', '2027-01-22', '2027-01-22'],
+    [5112, 'Lead conversion loses the campaign source', 'Active', '3 - Medium', 3, 'CRM\\Sales', 'Tom Becker', '2027-01-19', '2027-01-28', ''],
+    [5113, 'Mobile app logs out every hour', 'Closed', '3 - Medium', 2, 'CRM\\Security', 'Elena Rossi', '2027-01-20', '2027-01-27', '2027-01-27'],
+    [5114, 'Forecast view rounding differs from Excel', 'Active', '4 - Low', 4, 'CRM\\Reporting', 'Tom Becker', '2027-01-26', '2027-01-26', ''],
+  ].map((r) => r.map((v, i) => (i >= 7 ? D(v) : v)));
+  sheet(wb, 'Hypercare defects', [{ h: 'ID', w: 8 }, { h: 'Work Item Type', w: 12 }, { h: 'Title', w: 46 }, { h: 'State', w: 10 }, { h: 'Severity', w: 13 }, { h: 'Priority', w: 9 }, { h: 'Area Path', w: 18 }, { h: 'Assigned To', w: 14 }, { h: 'Created Date', w: 12, fmt: 'yyyy-mm-dd' }, { h: 'Changed Date', w: 12, fmt: 'yyyy-mm-dd' }, { h: 'Closed Date', w: 12, fmt: 'yyyy-mm-dd' }],
+    rows.map(([id, ...rest]) => [id, 'Bug', ...rest]));
+  await wb.xlsx.writeFile(path.join(OUT, 'Hypercare Defects - 1 Feb 2027.xlsx'));
+}
+
 // The 10:30 huddle on 30 Oct, as a Teams WebVTT transcript, for the "Huddle → RAID log" quick start.
 function huddle() {
   const turns = [
@@ -461,6 +547,7 @@ function huddle() {
 
 (async () => {
   await budget(); await raid(); await timesheets(); await backlog(); await capacity(); huddle();
+  await readiness(); await cutover(); await hypercare();
   const { recalc } = require('../tools/excel');
   for (const f of fs.readdirSync(OUT).filter((x) => x.endsWith('.xlsx'))) process.stdout.write(`${f}: ${recalc(path.join(OUT, f)) ? 'calculated in Excel' : 'Excel not available — values calculate on open'}
 `);
@@ -478,6 +565,9 @@ A fictional project used to try Lumen's project-management assistants.
 | **ADO Backlog Export - 30 Oct 2026.xlsx** | Azure DevOps work items tagged MPP-<task ID> — use it to propose plan progress and see the data-quality gaps |
 | **Team Capacity - Q4 2026.xlsx** | Hours, availability, leave and sprint dates per person — use it to check who is overloaded and whose leave clashes with the plan |
 | **Huddle 10-30 - 30 Oct 2026.vtt** | Teams transcript of the daily 10:30 huddle — use it to update the RAID log |
+| **Release Readiness Checklist - Go-live.xlsx** | Go-live gates by environment (STE/UAT/STG/PRD) with owners, due dates and evidence. The evidence files are in **Evidence/**; one is missing on purpose |
+| **Cutover Run-sheet - Go-live weekend.xlsx** | The go-live weekend steps with dependencies, as updated at 23:30 on 2 Jan 2027 (one step running late) |
+| **Hypercare Defects - 1 Feb 2027.xlsx** | Defects raised since go-live — use it for hypercare trends and the closure report |
 
 ## Things to try
 - *"Give me a health check of the project plan."*
@@ -490,6 +580,9 @@ A fictional project used to try Lumen's project-management assistants.
 - *"Update the plan from the ADO backlog export, and tell me what is wrong with the data."*
 - *"What if ERP integration slips another two weeks? Compare that with adding a tester."*
 - *"Check capacity against the plan and the backlog. Who's overloaded, and whose leave clashes with critical work?"*
+- *"Are we ready for go-live? Check the readiness checklist as of 2026-12-31."*
+- *"Give me a cutover status update from the run-sheet as of 2027-01-02 23:30."*
+- *"Can we close hypercare? Use the hypercare defects as of 2027-02-01."*
 `);
   console.log(`Demo written to ${OUT}`);
   console.log(`Plan: ${tasks.length} tasks, ${iso(projStart)} → ${iso(projFinish)} (baseline finish ${iso(new Date(Math.max(...tasks.map((t) => t.bFinish))))})`);

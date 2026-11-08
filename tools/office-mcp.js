@@ -19,6 +19,7 @@ const scenario = require('./scenario');
 const capacity = require('./capacity');
 const change = require('./change');
 const glossary = require('./glossary');
+const release = require('./release');
 
 const ROOT = path.resolve(process.env.OFFICE_MCP_ROOT || process.cwd());
 const READ_ONLY = process.env.OFFICE_MCP_READONLY === '1';
@@ -344,6 +345,44 @@ const TOOLS = [
     run: write((a) => { const out = outputIn(a.path); if (!out) throw Object.assign(new Error('A file path is required.'), { friendly: true }); fs.mkdirSync(path.dirname(out), { recursive: true }); return change.saveDraft(out, a.markdown, { label: a.label, sources: a.sources, word: !!a.word, template: a.template ? resolveIn(a.template) : undefined, title: a.title }); }),
   },
   {
+    name: 'check_readiness',
+    description: 'Release readiness check of a checklist workbook (columns like Gate item, Environment STE/UAT/STG/PRD, Owner, Due, Evidence, Status, Must have; an optional "Go-live date" cell). Checks that every evidence reference is a file in the project folder (by path, then by file name; links are not checked). Rates Red/Amber/Green with the rule: Red if a must-have item is marked complete without its evidence, a must-have item is overdue, or must-have items are open 10 days or fewer before go-live; Amber if anything is open, missing evidence or unowned. Returns findings by environment, each citing its Sheet!Cell. Read-only.',
+    inputSchema: { type: 'object', properties: {
+      path: { type: 'string', description: 'The readiness checklist (.xlsx/.csv)' },
+      goLive: { type: 'string', description: 'YYYY-MM-DD; default the checklist\'s "Go-live date" cell' },
+      asOf: { type: 'string', description: 'YYYY-MM-DD (default today)' },
+      redDays: { type: 'number', description: 'Open must-have items this many days or fewer before go-live make it Red (default 10)' },
+    }, required: ['path'] },
+    run: (a) => release.readinessCheck(resolveIn(a.path), { root: ROOT, goLive: a.goLive, asOf: a.asOf, redDays: a.redDays }),
+  },
+  {
+    name: 'cutover_status',
+    description: 'Live cutover status from a run-sheet workbook (ID, Step, Owner, Planned start, Planned end or Duration, Depends on, Actual start, Actual end, optional Forecast end, Status). Reports late steps, steps that should have started, blocked steps, the critical path to the projected finish (worked out from the dependencies and actuals), the next steps due, and the projected vs. planned finish with a Red/Amber/Green rating. Times are read as typed. With snapshot: true (needs "Create & edit files") it also saves the summary as Cutover/<date time>.md. The run-sheet is never changed.',
+    inputSchema: { type: 'object', properties: {
+      path: { type: 'string', description: 'The cutover run-sheet' },
+      asOf: { type: 'string', description: 'YYYY-MM-DD HH:MM (default now)' },
+      aheadMinutes: { type: 'number', description: 'List steps planned to start within this many minutes (default 60)' },
+      toleranceMinutes: { type: 'number', description: 'A projected finish later than plan by more than this is Red (default 30)' },
+      snapshot: { type: 'boolean', description: 'Also save Cutover/<date time>.md' },
+    }, required: ['path'] },
+    run: async (a) => {
+      const r = await release.cutoverStatus(resolveIn(a.path), { asOf: a.asOf, aheadMinutes: a.aheadMinutes, toleranceMinutes: a.toleranceMinutes, snapshotDir: a.snapshot && !READ_ONLY ? path.join(ROOT, 'Cutover') : undefined });
+      if (a.snapshot && READ_ONLY) r.warnings.push('The snapshot was not saved because editing files is turned off for this chat. Switch "What can Lumen do?" to "Create & edit files" to save it.');
+      return r;
+    },
+  },
+  {
+    name: 'hypercare_trends',
+    description: 'Hypercare trends from a defect export (Azure DevOps query as .xlsx/.csv, with Created Date and ideally Closed Date): weekly opened, closed, open at week end and average age, by severity, plus a Pass/Fail for each exit criterion, e.g. "No Sev1 open for 10 days", "No Sev2 open" (SevN means N or worse), "Fewer than 10 open defects", "No open defect older than 14 days", "Open defects falling for 2 weeks". Includes the analyze_defects triage headline. Every defect cites its Sheet!Cell. Read-only.',
+    inputSchema: { type: 'object', properties: {
+      path: { type: 'string', description: 'The defect export' },
+      exitCriteria: { type: 'array', items: { type: 'string' }, description: 'Hypercare exit criteria in plain words (default: no Sev1 open for 10 days, no Sev2 open, fewer than 10 open, open defects falling for 2 weeks)' },
+      asOf: { type: 'string', description: 'YYYY-MM-DD (default today)' },
+      start: { type: 'string', description: 'Hypercare start date YYYY-MM-DD (default the first defect)' },
+    }, required: ['path'] },
+    run: (a) => release.hypercareTrends(resolveIn(a.path), { exitCriteria: a.exitCriteria, asOf: a.asOf, start: a.start }),
+  },
+  {
     name: 'write_test_cases',
     description: 'Save test cases as an Excel workbook in the Azure DevOps Test Plans import layout: one row per step (ID, Work Item Type, Title, Test Step, Step Action, Step Expected, Traces To, Priority, Type SIT/UAT, Preconditions), with the case fields on its first step row, plus a Coverage sheet with one row per case. Cases without an ID get TC-001, TC-002… An existing file is never overwritten; a numbered copy is saved instead. Returns warnings for cases without steps, expected results or traces.',
     inputSchema: {
@@ -438,7 +477,7 @@ const TOOLS = [
 
 // ------------------------------------------------------------------ JSON-RPC over stdio
 if (require.main === module) {
-  require('./mcp-stdio').serve({ name: 'office', instructions: 'Tools for Excel workbooks, Microsoft Project plans (including delivery scenarios and team capacity), Word documents, requirements traceability, test cases, defect triage, change impacts and training needs, bilingual QA and knowledge publishing in the project folder.', tools: TOOLS });
+  require('./mcp-stdio').serve({ name: 'office', instructions: 'Tools for Excel workbooks, Microsoft Project plans (including delivery scenarios and team capacity), Word documents, requirements traceability, test cases, defect triage, change impacts and training needs, bilingual QA, release readiness, cutover and hypercare, and knowledge publishing in the project folder.', tools: TOOLS });
 }
 
 module.exports = { TOOLS };

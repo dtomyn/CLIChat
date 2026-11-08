@@ -107,6 +107,7 @@ const DEFECT_HEADERS = {
   assigned: [/^assigned to$/i, /^owner$/i, /^assignee$/i],
   created: [/^created date$/i, /^created$/i, /^opened/i, /^raised/i],
   changed: [/^changed date$/i, /state change date/i, /^last updated/i],
+  closed: [/^closed date$/i, /^resolved date$/i, /^(date )?(closed|resolved)$/i],
   tags: [/^tags?$/i],
   found: [/found in|environment|^env$/i],
 };
@@ -161,7 +162,7 @@ async function readDefects(file) {
     const get = (f) => (map[f] ? cellText(row.getCell(map[f])).trim() : '');
     const id = get('id');
     if (!id) return;
-    rows.push({ id, type: get('type'), title: get('title'), state: get('state'), severity: get('severity'), priority: get('priority'), area: get('area'), assigned: get('assigned'), created: toDate(get('created')), changed: toDate(get('changed')), tags: get('tags'), found: get('found'), row: r, at: `${ws.name}!${colLetter(map.id)}${r}` });
+    rows.push({ id, type: get('type'), title: get('title'), state: get('state'), severity: get('severity'), priority: get('priority'), area: get('area'), assigned: get('assigned'), created: toDate(get('created')), changed: toDate(get('changed')), closed: toDate(get('closed')), tags: get('tags'), found: get('found'), row: r, at: `${ws.name}!${colLetter(map.id)}${r}` });
   });
   return { wb, ws, map, headers, rows };
 }

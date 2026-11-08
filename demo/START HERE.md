@@ -12,6 +12,9 @@ A fictional project used to try Lumen's project-management assistants.
 | **ADO Backlog Export - 30 Oct 2026.xlsx** | Azure DevOps work items tagged MPP-<task ID> — use it to propose plan progress and see the data-quality gaps |
 | **Team Capacity - Q4 2026.xlsx** | Hours, availability, leave and sprint dates per person — use it to check who is overloaded and whose leave clashes with the plan |
 | **Huddle 10-30 - 30 Oct 2026.vtt** | Teams transcript of the daily 10:30 huddle — use it to update the RAID log |
+| **Release Readiness Checklist - Go-live.xlsx** | Go-live gates by environment (STE/UAT/STG/PRD) with owners, due dates and evidence. The evidence files are in **Evidence/**; one is missing on purpose |
+| **Cutover Run-sheet - Go-live weekend.xlsx** | The go-live weekend steps with dependencies, as updated at 23:30 on 2 Jan 2027 (one step running late) |
+| **Hypercare Defects - 1 Feb 2027.xlsx** | Defects raised since go-live — use it for hypercare trends and the closure report |
 
 ## Things to try
 - *"Give me a health check of the project plan."*
@@ -24,3 +27,6 @@ A fictional project used to try Lumen's project-management assistants.
 - *"Update the plan from the ADO backlog export, and tell me what is wrong with the data."*
 - *"What if ERP integration slips another two weeks? Compare that with adding a tester."*
 - *"Check capacity against the plan and the backlog. Who's overloaded, and whose leave clashes with critical work?"*
+- *"Are we ready for go-live? Check the readiness checklist as of 2026-12-31."*
+- *"Give me a cutover status update from the run-sheet as of 2027-01-02 23:30."*
+- *"Can we close hypercare? Use the hypercare defects as of 2027-02-01."*

@@ -110,3 +110,43 @@ test('a live weekly slot runs once at its due time and is not repeated on restar
     await new Promise((resolve) => setTimeout(resolve, 10)); assert.equal(calls, 1);
   } finally { runner.stop(); }
 });
+
+test('interval schedules run every N minutes, only inside their window', async () => {
+  const { validateWhen, inWindow } = require('../lib/scheduler');
+  const when = { kind: 'interval', minutes: 30, start: '2027-01-02T18:00', end: '2027-01-02T20:00' };
+  const at = (h, m = 0) => new Date(2027, 0, 2, h, m);
+  assert.equal(+nextDue({ when }, at(9)), +at(18));
+  assert.equal(+nextDue({ when }, at(18)), +at(18, 30));
+  assert.equal(+nextDue({ when }, at(18, 40)), +at(19));
+  assert.equal(+nextDue({ when }, at(19, 30)), +at(20));
+  assert.equal(nextDue({ when }, at(20)), null, 'no runs after the window');
+  assert.equal(inWindow(when, at(17, 59)), false); assert.equal(inWindow(when, at(19)), true); assert.equal(inWindow(when, at(20, 1)), false);
+  assert.equal(inWindow({ kind: 'daily', time: '09:00' }, at(3)), true);
+  assert.throws(() => validateWhen({ ...when, end: '2027-01-02T17:00' }), /end after it starts/);
+  assert.throws(() => validateWhen({ ...when, minutes: 2 }), /every 5 minutes/);
+  assert.throws(() => validateWhen({ ...when, start: '' }), /starts and ends/);
+  assert.throws(() => validateWhen({ ...when, end: '2027-02-02T17:00' }), /14 days/);
+
+  const recipe = store.recipes.upsert({ name: 'Cutover check', access: 'chat', fields: [], template: 'Status' });
+  for (const s of store.schedules.all()) store.schedules.upsert({ id: s.id, enabled: false });
+  let clock = +at(17, 50);
+  const item = store.schedules.upsert({ recipeId: recipe.id, values: {}, workspace, when, enabled: true, allowEdit: false });
+  store.schedules.upsert({ id: item.id, createdAt: clock });
+  let calls = 0;
+  const options = { store, now: () => clock, workspaceFile: () => true, runTurn: async () => { calls++; return { message: {} }; } };
+  const settle = async () => { for (let i = 0; i < 100 && runner.isPending(item.id); i++) await new Promise((resolve) => setTimeout(resolve, 5)); await new Promise((resolve) => setTimeout(resolve, 5)); };
+  let runner = start(options);
+  try {
+    await settle(); assert.equal(calls, 0, 'nothing before the window opens');
+    clock = +at(18); runner.tick(); await settle(); assert.equal(calls, 1);
+    clock = +at(18, 20); runner.tick(); await settle(); assert.equal(calls, 1);
+    clock = +at(18, 30); runner.tick(); await settle(); assert.equal(calls, 2);
+    // Lumen closed from 18:40 and reopened after the window: the missed 19:00-20:00 runs are not made up.
+    runner.stop();
+    clock = +at(21); runner = start(options); await settle();
+    runner.tick(); await settle(); assert.equal(calls, 2);
+    assert.equal(store.schedules.get(item.id).lastStatus, 'ok');
+    assert.equal(runner.runNow(item.id), true, 'Run now still works after the window');
+    await settle(); assert.equal(calls, 3);
+  } finally { runner.stop(); }
+});
