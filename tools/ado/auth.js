@@ -27,8 +27,8 @@ function azToken() {
   const bin = az();
   if (!bin.found) return Promise.reject(friendly('The Azure CLI isn\'t installed on this computer. Install it and run "az login", or use an access token instead.', { code: 'NO_AZ' }));
   return new Promise((resolve, reject) => {
-    execFile(bin.command, [...bin.prefix, 'account', 'get-access-token', '--resource', ADO_RESOURCE, '--output', 'json'],
-      { shell: bin.shell, windowsHide: true, timeout: 60000, maxBuffer: 1024 * 1024 }, (err, stdout, stderr) => {
+    const c = cli.command(bin, ['account', 'get-access-token', '--resource', ADO_RESOURCE, '--output', 'json']);
+    execFile(c.command, c.args, { ...c.options, windowsHide: true, timeout: 60000, maxBuffer: 1024 * 1024 }, (err, stdout, stderr) => {
         if (err) {
           const e = String(stderr || err.message);
           if (/az login|not logged in|no subscription|AADSTS|refresh token|expired/i.test(e)) return reject(friendly('Your Azure sign-in has expired or isn\'t set up. Run "az login" once, then choose Check again.', { code: 'AZ_LOGIN' }));

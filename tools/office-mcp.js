@@ -29,17 +29,32 @@ const drift = require('./drift');
 const ROOT = path.resolve(process.env.OFFICE_MCP_ROOT || process.cwd());
 const READ_ONLY = process.env.OFFICE_MCP_READONLY === '1';
 
+/**
+ * Where `full` really is on disk: the nearest existing ancestor with links and junctions resolved, plus the parts
+ * that don't exist yet. So "linked-folder/new/report.xlsx" counts as wherever "linked-folder" points.
+ */
+function realOf(full) {
+  const rest = [];
+  let dir = full;
+  for (;;) {
+    try { return path.join(fs.realpathSync(dir), ...rest); } catch {}
+    const up = path.dirname(dir);
+    if (up === dir) return full;
+    rest.unshift(path.basename(dir)); dir = up;
+  }
+}
+const outsideRoot = (full) => {
+  const rel = path.relative(ROOT, full);
+  if (rel.startsWith('..') || path.isAbsolute(rel)) return true;
+  let realRoot = ROOT; try { realRoot = fs.realpathSync(ROOT); } catch {}
+  const realRel = path.relative(realRoot, realOf(full));
+  return realRel.startsWith('..') || path.isAbsolute(realRel); // a link inside the folder that points outside it counts as outside
+};
+
 function resolveIn(p, { mustExist = true } = {}) {
   if (!p) throw Object.assign(new Error('A file path is required.'), { friendly: true });
   const full = path.resolve(ROOT, String(p).replace(/^["']|["']$/g, ''));
-  const rel = path.relative(ROOT, full);
-  // A link inside the folder that points outside it counts as outside.
-  let realRel = rel;
-  try {
-    const real = fs.existsSync(full) ? fs.realpathSync(full) : path.join(fs.realpathSync(path.dirname(full)), path.basename(full));
-    realRel = path.relative(fs.realpathSync(ROOT), real);
-  } catch {} // a folder that doesn't exist yet: the lexical check above applies
-  if (rel.startsWith('..') || path.isAbsolute(rel) || realRel.startsWith('..') || path.isAbsolute(realRel)) throw Object.assign(new Error(`"${p}" is outside the project folder (${ROOT}).`), { friendly: true });
+  if (outsideRoot(full)) throw Object.assign(new Error(`"${p}" is outside the project folder (${ROOT}).`), { friendly: true });
   if (mustExist && !fs.existsSync(full)) {
     // Be forgiving: match by file name anywhere in the folder.
     const want = path.basename(full).toLowerCase();
@@ -53,8 +68,7 @@ function resolveIn(p, { mustExist = true } = {}) {
 function outputIn(p, base = ROOT) {
   if (p == null || p === '') return undefined;
   const full = path.resolve(base, String(p).replace(/^["']|["']$/g, ''));
-  const rel = path.relative(ROOT, full);
-  if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) throw Object.assign(new Error(`"${p}" is outside the project folder (${ROOT}).`), { friendly: true });
+  if (!path.relative(ROOT, full) || outsideRoot(full)) throw Object.assign(new Error(`"${p}" is outside the project folder (${ROOT}).`), { friendly: true });
   return full;
 }
 function walk(dir, depth = 0, out = []) {

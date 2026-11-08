@@ -19,7 +19,7 @@ const ACCESS_TOOLS = {
 const BIN = cli.resolve('claude', process.platform === 'win32'
   ? [path.join(os.homedir(), '.local', 'bin', 'claude.exe'), path.join(process.env.APPDATA || '', 'npm', 'claude.cmd')]
   : [path.join(os.homedir(), '.local', 'bin', 'claude'), '/usr/local/bin/claude', '/opt/homebrew/bin/claude'], process.env.CLAUDE_CLI_PATH);
-const launch = (args, opts) => spawn(BIN.command, [...BIN.prefix, ...args], { shell: BIN.shell, windowsHide: true, ...opts });
+const launch = (args, opts) => { const c = cli.command(BIN, args); return spawn(c.command, c.args, { windowsHide: true, ...c.options, ...opts }); };
 
 function friendlyTool(name, input = {}) {
   const base = (p) => (p ? path.basename(String(p)) : '');
@@ -62,7 +62,8 @@ module.exports = {
 
   detect() {
     return new Promise((resolve) => {
-      execFile(BIN.command, [...BIN.prefix, '--version'], { shell: BIN.shell, timeout: 15000, windowsHide: true }, (err, stdout) => {
+      const c = cli.command(BIN, ['--version']);
+      execFile(c.command, c.args, { ...c.options, timeout: 15000, windowsHide: true }, (err, stdout) => {
         if (err) return resolve({ available: false, message: 'Claude Code CLI not found. Install it from https://claude.com/claude-code and run `claude` once to sign in.' });
         resolve({ available: true, version: String(stdout).trim() });
       });
