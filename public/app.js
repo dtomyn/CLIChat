@@ -674,6 +674,31 @@ function demoBanner() {
         </div>
       </div></div>`;
   }
+  if (inDemo && S.settings.demoPack === 'security') {
+    return `<div class="demo-banner active">
+      <div class="demo-icon">🛡️</div>
+      <div class="demo-text"><b>You're in the Permit Renewal security sample</b><span>A synthetic control catalogue, a partly filled SCTM, the security design and an evidence folder with a missing, a stale and an orphan file. Try one:</span>
+        <div class="demo-actions">
+          <button class="btn soft sm" data-recipe="security-draft-sctm">🛡️ Draft the SCTM</button>
+          <button class="btn soft sm" data-recipe="security-evidence-gaps">🗂️ Evidence gap check</button>
+          <button class="btn soft sm" data-recipe="security-design-document">📘 Security design document</button>
+          <button class="btn ghost sm" data-open-drawer>${icon('folder')}See the files</button>
+        </div>
+      </div></div>`;
+  }
+  if (inDemo && S.settings.demoPack === 'change') {
+    return `<div class="demo-banner active">
+      <div class="demo-icon">🔄</div>
+      <div class="demo-text"><b>You're in the Permit Renewal change sample</b><span>Two interview transcripts, change impact assessments, a role list, an English/French glossary and a guide in both languages. Try one:</span>
+        <div class="demo-actions">
+          <button class="btn soft sm" data-recipe="change-interview-impacts">🔄 Interview → change impacts</button>
+          <button class="btn soft sm" data-recipe="change-consolidate-cia">🧩 Consolidate the CIA</button>
+          <button class="btn soft sm" data-recipe="change-training-materials">🎓 Training materials</button>
+          <button class="btn soft sm" data-recipe="bilingual-qa">🔍 Bilingual QA</button>
+          <button class="btn ghost sm" data-open-drawer>${icon('folder')}See the files</button>
+        </div>
+      </div></div>`;
+  }
   if (inDemo) {
     return `<div class="demo-banner active">
       <div class="demo-icon">📦</div>
@@ -689,8 +714,8 @@ function demoBanner() {
   }
   return `<div class="demo-banner">
     <div class="demo-icon">📦</div>
-    <div class="demo-text"><b>Try it on sample data</b><span>A project manager demo (Microsoft Project plan with Excel budget, RAID log and timesheets), a delivery-lifecycle sample (BRD, design and a traceability workbook) for the requirements, design, story and traceability agents, or a data sample (source extract, schemas and a data dictionary) for profiling, mapping and pipeline code.</span></div>
-    <div class="demo-cta"><button class="btn grad sm" data-install-demo="crm">${icon('package')}PM demo</button><button class="btn grad sm" data-install-demo="aidlc">${icon('package')}AIDLC sample</button><button class="btn grad sm" data-install-demo="data">${icon('package')}Data sample</button><button class="icon-btn" data-dismiss-demo title="Hide">${icon('x')}</button></div>
+    <div class="demo-text"><b>Try it on sample data</b><span>A project manager demo (Microsoft Project plan with Excel budget, RAID log and timesheets), a delivery-lifecycle sample (BRD, design and a traceability workbook) for the requirements, design, story and traceability agents, a data sample (source extract, schemas and a data dictionary) for profiling, mapping and pipeline code, a security sample (controls, SCTM and evidence) or a change sample (interviews, impact assessments and an English/French guide).</span></div>
+    <div class="demo-cta"><button class="btn grad sm" data-install-demo="crm">${icon('package')}PM demo</button><button class="btn grad sm" data-install-demo="aidlc">${icon('package')}AIDLC sample</button><button class="btn grad sm" data-install-demo="data">${icon('package')}Data sample</button><button class="btn grad sm" data-install-demo="security">${icon('package')}Security sample</button><button class="btn grad sm" data-install-demo="change">${icon('package')}Change sample</button><button class="icon-btn" data-dismiss-demo title="Hide">${icon('x')}</button></div>
   </div>`;
 }
 
@@ -701,7 +726,7 @@ async function installDemo(btn) {
   try {
     const r = await api('/api/demo/install', { method: 'POST', body: { pack } });
     const st = await api('/api/status'); S.settings = st.settings;
-    S.draft.assistantId = { aidlc: 'traceability-analyst', data: 'data-profiler' }[pack] || 'schedule-analyst'; S.draft.access = 'read';
+    S.draft.assistantId = { aidlc: 'traceability-analyst', data: 'data-profiler', security: 'security-control-mapper', change: 'change-impact-analyst' }[pack] || 'schedule-analyst'; S.draft.access = 'read';
     celebrate(); toast(`${pack === 'crm' ? 'Demo' : 'Sample'} ready — your project folder is now “${baseName(r.path)}”`, 'package');
     renderHome();
   } catch (e) { toast(e.message, 'alert'); if (btn) { btn.disabled = false; btn.innerHTML = label; } }
@@ -874,7 +899,7 @@ function assistantInner(m, a, live) {
     ${(m.approvals || []).length ? `<div class="approval-cards">${m.approvals.map((id) => approvalCard(id, m)).join('')}</div>` : ''}
     ${m.error ? `<div class="error-card">${icon('alert')}<div><b>Something went wrong.</b><div style="color:var(--text-2);font-size:13.5px">${esc(friendlyError(m.error))}</div><button class="btn soft sm" data-retry="${m.id}">${icon('retry')}Try again</button></div></div>` : ''}
     ${m.stopped ? `<div class="msg-meta" style="margin:6px 0 0">Stopped</div>` : ''}
-    ${!live && (m.content || m.error) ? `<div class="msg-actions"><button data-copy-msg="${m.id}">${icon('copy')}Copy</button>${m.error ? '' : `<button data-retry="${m.id}" title="Replace this reply with a new one">${icon('retry')}Retry</button>`}<button data-branch="${m.id}" title="Continue from here in a new chat">${icon('branch')}Branch</button>${m.content ? `<button data-save-as title="Export this reply to Word, Excel or PowerPoint">${icon('save')}Export</button>${feedbackButtons(m)}` : ''}${usageMeta(m)}${m.content ? '<span class="ai-note">AI-generated content may be incorrect</span>' : ''}</div>` : ''}
+    ${!live && (m.content || m.error) ? `<div class="msg-actions"><button data-copy-msg="${m.id}">${icon('copy')}Copy</button>${m.error ? '' : `<button data-retry="${m.id}" title="Replace this reply with a new one">${icon('retry')}Retry</button>`}<button data-branch="${m.id}" title="Continue from here in a new chat">${icon('branch')}Branch</button>${m.content ? `<button data-save-as title="Export this reply to Word, Excel, PowerPoint or Markdown">${icon('save')}Export</button>${feedbackButtons(m)}` : ''}${usageMeta(m)}${m.content ? '<span class="ai-note">AI-generated content may be incorrect</span>' : ''}</div>` : ''}
     ${steps.length ? `<div class="suggest-chips">${steps.map((s) => `<button class="suggest-chip" data-suggest="${esc(s)}" title="${esc(s)}&#10;&#10;Click to send · Shift-click to edit first">${esc(s.length > 140 ? `${s.slice(0, 139)}…` : s)}</button>`).join('')}</div>` : ''}`;
 }
 
@@ -1045,7 +1070,7 @@ function rerenderMsg(c, m) {
   highlight($(`[data-mid="${m.id}"]`));
 }
 
-// --- save a reply as Word / Excel / PowerPoint
+// --- save a reply as Word / Excel / PowerPoint / Markdown
 function saveReplyMenu(c, mid, anchor) {
   const m = c.messages.find((x) => x.id === mid); if (!m?.content || !c.id) return;
   openMenu(anchor, [
@@ -1053,6 +1078,7 @@ function saveReplyMenu(c, mid, anchor) {
     { icon: 'file', label: 'Word document (.docx)', hint: 'Headings, lists and tables, ready to edit', run: () => exportReply(c, m, 'docx') },
     ...(hasMdTable(m.content) ? [{ icon: 'sheet', label: 'Excel workbook (.xlsx)', hint: 'One sheet per table', run: () => exportReply(c, m, 'xlsx') }] : []),
     ...(hasMdSlides(m.content) ? [{ icon: 'file', label: 'PowerPoint deck (.pptx)', hint: 'One slide per ## heading, speaker notes from Notes:', run: () => exportReply(c, m, 'pptx') }] : []),
+    { icon: 'file', label: 'Markdown (.md)', hint: 'The reply as plain text with its formatting marks', run: () => exportReply(c, m, 'md') },
   ]);
 }
 
@@ -2007,7 +2033,7 @@ async function openAdoSettings() {
         <div class="help" id="adoAuthHelp"></div><div id="adoPat"></div></div>
       <div class="row" style="align-items:center;gap:10px;margin:2px 0 14px"><button class="btn soft sm" id="adoCheck">${icon('refresh')}Check connection</button><span id="adoStatus" class="help" style="margin:0"></span></div>
       <div id="adoPick"></div>`,
-    leftAction: conn.orgUrl ? { label: 'Disconnect', run: async () => { await api('/api/connections/ado', { method: 'PUT', body: { orgUrl: '', enabled: false } }); S.settings.ado = { enabled: false }; toast('Azure DevOps disconnected'); } } : null,
+    leftAction: conn.orgUrl ? { label: 'Disconnect', run: async () => { await api('/api/connections/ado', { method: 'PUT', body: { orgUrl: '', enabled: false } }); await api('/api/connections/ado/pat', { method: 'DELETE' }); S.settings.ado = { enabled: false }; toast('Azure DevOps disconnected. Any saved token was removed.'); } } : null,
     actions: [{ label: 'Cancel' }, { label: 'Save', primary: true, run: async (el) => {
       readForm(el);
       if (f.orgUrl && !f.project) throw new Error('Choose a project first (click Check connection).');

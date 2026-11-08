@@ -230,7 +230,7 @@ async function analyzeDefects(file, opts = {}) {
 }
 
 const FIELD_ALIASES = { severity: 'severity', priority: 'priority', state: 'state', status: 'state', owner: 'assigned', assigned: 'assigned', 'assigned to': 'assigned', area: 'area', 'area path': 'area', tags: 'tags', title: 'title' };
-const outPath = (file, tag) => path.join(path.dirname(file), `${path.basename(file, path.extname(file)).replace(/\s*\((proposed|updated)\)\s*$/i, '')} (${tag}).xlsx`);
+const outPath = (file, tag) => path.join(path.dirname(file), `${path.basename(file, path.extname(file)).replace(/\s*\((proposed|updated)\)(\s*\(\d+\))?\s*$/i, '')} (${tag}).xlsx`);
 
 /** changes: [{ id, field: 'severity'|'priority'|'state'|'owner'|'area'|'tags', value, reason }] */
 async function proposeDefectChanges(file, changes = []) {
@@ -269,7 +269,7 @@ async function proposeDefectChanges(file, changes = []) {
     for (const x of rejected) rs.addRow(['', '', x.id, '', '', '', x.reason]);
   }
   wb.views = [{ activeTab: wb.worksheets.indexOf(rs) }];
-  const out = outPath(file, 'proposed');
+  const out = freeName(outPath(file, 'proposed')); // never replace a review copy that may already be marked up
   await wb.xlsx.writeFile(out);
   return {
     saved: out, proposed: accepted.length, notProposed: rejected, changes: accepted.map(({ row, ...a }) => a),

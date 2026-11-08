@@ -1,5 +1,5 @@
 // Starts Lumen for the browser tests on 127.0.0.1 only, with throw-away data and a stand-in engine.
-// The stand-in "engine" has no AI: it recognises which quick start was run, calls the real plan tools from
+// The stand-in "engine" has no AI: it recognises which prompt was run, calls the real plan tools from
 // tools/*.js on the files named in the prompt, and streams their results back the way a real engine would.
 // So the tests exercise the UI and the real tool code, but not the quality of an AI's wording.
 
@@ -50,7 +50,7 @@ async function answer(prompt, cwd) {
     const r = await backlog.progressFromBacklog(plan, backlogFile, { statusDate: date });
     return { tool: ['plan_progress_from_backlog', { path: plan, backlog: backlogFile }], text: `**${r.summary}**\n\n${table(['ID', 'Task', 'Now', 'Proposed'], r.proposals.map((p) => [p.taskId, p.task, `${p.currentPercent}%`, `${p.percentComplete}%`]))}\n\nHeld back: ${r.heldBack.map((h) => `#${h.taskId}`).join(', ') || 'none'}` };
   }
-  return { text: 'This is the test engine. It only answers the new project-plan quick starts.' };
+  return { text: 'This is the test engine. It only answers the new project-plan prompts.' };
 }
 
 const registry = require('../providers');

@@ -550,13 +550,14 @@ details.advanced[open] summary { margin-bottom: 14px; }
 /* Demo banner */
 .demo-banner { display: flex; align-items: center; gap: 16px; margin-top: 26px; padding: 16px 18px; border-radius: 18px; border: 1px solid var(--border); background: linear-gradient(120deg, color-mix(in srgb, #3b6cf5 9%, var(--panel)), color-mix(in srgb, #2f9e54 7%, var(--panel))); animation: rise .6s .14s cubic-bezier(.2,.8,.2,1) both; }
 .demo-banner.active { align-items: flex-start; }
+.demo-banner:not(.active) { flex-wrap: wrap; } /* five sample buttons: they move under the text when space is short */
 .demo-icon { font-size: 26px; width: 48px; height: 48px; border-radius: 14px; background: var(--panel); display: flex; align-items: center; justify-content: center; flex: none; box-shadow: var(--shadow-sm); }
-.demo-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.demo-text { flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .demo-text b { font-size: 14.5px; }
 .demo-text > span { color: var(--text-2); font-size: 13.5px; line-height: 1.5; }
 .demo-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .demo-actions .btn.soft { background: var(--panel); }
-.demo-cta { display: flex; align-items: center; gap: 6px; flex: none; flex-wrap: wrap; justify-content: flex-end; }
+.demo-cta { display: flex; align-items: center; gap: 6px; flex: 0 1 auto; flex-wrap: wrap; justify-content: flex-end; }
 @media (max-width: 640px) { .demo-banner { flex-wrap: wrap; } }
 
 /* In-app folder picker */

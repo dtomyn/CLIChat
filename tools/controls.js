@@ -435,7 +435,7 @@ async function proposeSctm(sctmFile, rows = [], { catalogue, documents = [], rem
   if (!changes.length && !hasRemediation) throw friendly(`Nothing to propose: ${rejected.length ? `${plural(rejected.length, 'row')} rejected (${rejected.map((r) => `${r.control || '?'}: ${r.reason}`).join('; ')})` : 'every row already matches the SCTM'}.`);
 
   const dir = sctmFile ? path.dirname(sctmFile) : catalogue ? path.dirname(catalogue) : root || process.cwd();
-  const stem = sctmFile ? path.basename(sctmFile, path.extname(sctmFile)).replace(/\s*\((proposed|updated)\)\s*$/i, '') : 'SCTM';
+  const stem = sctmFile ? path.basename(sctmFile, path.extname(sctmFile)).replace(/\s*\((proposed|updated)\)(\s*\(\d+\))?\s*$/i, '') : 'SCTM';
   // With no SCTM change (remediation items only), no "(proposed)" copy is written.
   let out = null;
   if (changes.length) {
@@ -451,8 +451,7 @@ async function proposeSctm(sctmFile, rows = [], { catalogue, documents = [], rem
       if (/^Needs input/.test(c.check)) r.getCell(8).fill = NEEDS_INPUT;
     });
     wb.views = [{ activeTab: wb.worksheets.indexOf(rs) }];
-    out = path.join(dir, `${stem} (proposed).xlsx`);
-    if (sctmFile && path.resolve(out) === path.resolve(sctmFile)) out = freeName(out);
+    out = freeName(path.join(dir, `${stem} (proposed).xlsx`)); // never replace a review copy that may already be marked up
     await wb.xlsx.writeFile(out);
   }
 

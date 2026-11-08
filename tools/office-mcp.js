@@ -362,8 +362,10 @@ const TOOLS = [
       template: { type: 'string', description: 'Optional Word template (.dotx/.docx)' },
       deckTemplate: { type: 'string', description: 'Optional PowerPoint template (.potx/.pptx). Default: the project\'s Templates/… Deck Template.potx when there is one' },
       title: { type: 'string' },
+      version: { type: 'string', description: 'Version for a Word template {{version}} field (default "Draft")' },
+      approver: { type: 'string', description: 'Only when the person tells you who approved it (default "Not yet approved")' },
     }, required: ['path', 'markdown'] },
-    run: write((a) => { const out = outputIn(a.path); if (!out) throw Object.assign(new Error('A file path is required.'), { friendly: true }); fs.mkdirSync(path.dirname(out), { recursive: true }); return change.saveDraft(out, a.markdown, { label: a.label, sources: a.sources, word: !!a.word, powerpoint: !!a.powerpoint, template: a.template ? resolveIn(a.template) : undefined, deckTemplate: a.deckTemplate ? resolveIn(a.deckTemplate) : undefined, root: ROOT, title: a.title }); }),
+    run: write((a) => { const out = outputIn(a.path); if (!out) throw Object.assign(new Error('A file path is required.'), { friendly: true }); fs.mkdirSync(path.dirname(out), { recursive: true }); return change.saveDraft(out, a.markdown, { label: a.label, sources: a.sources, word: !!a.word, powerpoint: !!a.powerpoint, template: a.template ? resolveIn(a.template) : undefined, deckTemplate: a.deckTemplate ? resolveIn(a.deckTemplate) : undefined, root: ROOT, title: a.title, version: a.version, approver: a.approver }); }),
   },
   {
     name: 'check_readiness',

@@ -66,7 +66,7 @@ function level(v) {
   return null;
 }
 const statusOf = (s) => (/reject|withdrawn|^no$|declin|cancel/i.test(s || '') ? 'rejected' : /propos|draft|pending|review/i.test(s || '') ? 'proposed' : 'approved');
-const outPath = (file, tag) => path.join(path.dirname(file), `${path.basename(file, path.extname(file)).replace(/\s*\((proposed|updated)\)\s*$/i, '')} (${tag}).xlsx`);
+const outPath = (file, tag) => path.join(path.dirname(file), `${path.basename(file, path.extname(file)).replace(/\s*\((proposed|updated)\)(\s*\(\d+\))?\s*$/i, '')} (${tag}).xlsx`);
 
 function freeName(file) {
   if (!fs.existsSync(file)) return file;
@@ -164,7 +164,8 @@ async function proposeImpacts(transcripts, cia, impacts = [], { interviewDate } 
     for (const x of rejected) rs.addRow(['', '', '', '', '', x.impact, '', x.reason]).alignment = { wrapText: true, vertical: 'top' };
   }
   wb.views = [{ activeTab: wb.worksheets.indexOf(rs) }];
-  const out = cia ? outPath(cia, 'proposed') : path.join(path.dirname(files[0]), 'Change impacts (proposed).xlsx');
+  // A review copy someone may already be marking up is never replaced: a re-run gets a numbered copy.
+  const out = freeName(cia ? outPath(cia, 'proposed') : path.join(path.dirname(files[0]), 'Change impacts (proposed).xlsx'));
   await wb.xlsx.writeFile(out);
   return {
     saved: out, proposed: accepted.length, notProposed: rejected, warnings,
@@ -403,9 +404,11 @@ function findDeckTemplate(root) {
  * slide in a deck). Never overwrites: a numbered copy is saved instead.
  * opts: { label, sources: [..], word: true|false, powerpoint: true|false, template (a Word template, or a .potx/.pptx
  * deck template), deckTemplate, root (the project folder: its Templates/"… Deck Template.potx" is used when no deck
- * template is given), title }
+ * template is given), title, version, approver, now }
+ * A Word template's {{version}}, {{date}} and {{approver}} are always filled: a draft is "Draft" and "Not yet approved"
+ * unless told otherwise, so no literal placeholder is left on the cover or in the footer.
  */
-async function saveDraft(file, markdown, { label = 'Draft (AI) for review', sources = [], word = false, powerpoint = false, template, deckTemplate, root, title } = {}) {
+async function saveDraft(file, markdown, { label = 'Draft (AI) for review', sources = [], word = false, powerpoint = false, template, deckTemplate, root, title, version, approver, now = new Date() } = {}) {
   if (!String(markdown || '').trim()) throw friendly('There is nothing to save.');
   const ext = path.extname(file).toLowerCase();
   if (!['.md', '.docx', '.pptx'].includes(ext)) throw friendly('Save drafts as .md (Markdown), .docx (Word) or .pptx (PowerPoint).');
@@ -427,7 +430,9 @@ async function saveDraft(file, markdown, { label = 'Draft (AI) for review', sour
     const sameTitle = h1 && (!title || h1[1].trim().toLowerCase() === String(title).trim().toLowerCase());
     const wordTitle = sameTitle ? h1[1].trim() : title || path.basename(target, '.docx');
     const wordBody = sameTitle && !wordTemplate ? body.replace(h1[0].trim(), '').replace(/\n{3,}/, '\n\n') : body;
-    const r = await require('./md-export').toDocx(wordBody, { title: wordTitle, template: wordTemplate, properties: { Status: label } });
+    const day = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const fields = { version: String(version || '').trim() || 'Draft', date: day, approver: String(approver || '').trim() || 'Not yet approved' };
+    const r = await require('./md-export').toDocx(wordBody, { title: wordTitle, template: wordTemplate, fields: wordTemplate ? fields : {}, properties: { Status: label } });
     fs.writeFileSync(target, r.buffer);
     if (r.warning) warnings.push(r.warning);
     if (ext === '.docx') out.saved = target; else out.word = target;

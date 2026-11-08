@@ -622,7 +622,7 @@ async function diffInventory(inventory, sources = {}, { root } = {}) {
     r.getCell(2).dataValidation = { type: 'list', allowBlank: true, formulae: ['"Yes,No"'] };
   });
   wb.views = [{ activeTab: wb.worksheets.indexOf(rs) }];
-  const out = path.join(path.dirname(inventory), `${path.basename(inventory, path.extname(inventory)).replace(/\s*\((proposed|updated)\)\s*$/i, '')} (proposed).xlsx`);
+  const out = freeName(path.join(path.dirname(inventory), `${path.basename(inventory, path.extname(inventory)).replace(/\s*\((proposed|updated)\)(\s*\(\d+\))?\s*$/i, '')} (proposed).xlsx`)); // never replace a review copy that may already be marked up
   await wb.xlsx.writeFile(out);
   const count = (a) => live.filter((p) => p.action === a).length;
   return {

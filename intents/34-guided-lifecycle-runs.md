@@ -1,0 +1,97 @@
+# 34 — Run the lifecycle as stages with approval gates
+
+## Intent
+As a delivery lead, I want to run requirements → functional design → technical design → stories → test cases as one
+guided run, where each stage is reviewed and approved by a named person before the next one starts, so that the
+hand-offs are visible, auditable and never built on unapproved work without saying so.
+
+## Where
+- **Lifecycle** in the left rail (`#/runs`, **Lifecycle runs**, marked **Lumen only**); also the home screen's
+  **Guided delivery** section ("🧬 Requirements to stories: guided stages with approval gates", **View lifecycle runs**).
+- **🧬 Start requirements to stories** opens the **Start requirements to stories** dialog.
+- The run page (`#/run/<id>`): a stepper with one step per stage and its status, and the selected stage's actions.
+
+## Inputs & controls
+| Control | Effect |
+|---|---|
+| **Run name** | Up to 80 characters; `<>:"/\|?*` and control characters are removed, trailing dots/spaces trimmed. Names the folder `Lifecycle/<run name>/`. |
+| **Source files** | Checkboxes for every file in the current project folder; at least one is required. |
+| **Start stage** / **Run again** | Starts a `pending` or `rework` stage in its own chat. |
+| **Start anyway** (dialog "Use unapproved inputs?") | Overrides the gate when the previous stage isn't approved. |
+| **Open stage chat** / **Open output** | Opens the stage's chat, or its Markdown output in its app. |
+| **Traceability check** | Advisory read-only check of a stage in review (shows **Checking…** while it runs). |
+| **Approve** | Approves a stage in review. |
+| **Send back** | Returns a stage in review or approved to `rework` and opens its chat. |
+| **Save as Word** / **Save as Word (program template)** | On approved stages; see [36](36-save-in-program-templates.md). |
+| **Publish to the Azure DevOps wiki** / **Create work items in Azure DevOps** | On approved stages when connected; see [39](39-approve-ado-changes.md). |
+
+## Behaviour (as implemented)
+- **Pipeline** `aidlc` ("Requirements to stories", from `defaults/pipelines.json`):
+  | Stage | Agent | Output |
+  |---|---|---|
+  | Refine requirements | **Requirements Refiner** | `01-requirements.md` |
+  | Functional design | **Functional Designer** | `02-functional-design.md` (Word template `Templates/FDD Template.dotx`) |
+  | Technical design | **Technical Designer** | `03-technical-design.md` (Word template `Templates/TDD Template.dotx`) |
+  | Stories | **Story Writer** | `04-stories.md` |
+  | Test cases (optional) | **Test Designer** | `05-test-cases.md` |
+  The gate check uses **Traceability Analyst**.
+- **Creating a run** (`POST /api/runs`): sources must be existing files inside the project folder; a run folder that
+  already exists is refused (409); the `Lifecycle` folder must resolve inside the project folder. Runs are saved under
+  `data/runs/` and survive a restart.
+- **Starting a stage**: allowed only from `pending` or `rework`. If the previous stage isn't approved the server
+  refuses (409, "Approve the previous stage or explicitly override the approval gate") unless `override` is sent; it
+  also waits for a previous stage that is still running, and needs the previous output and all sources to exist. The
+  stage chat (title `<run>: <stage>`) runs with **Create & edit files** and pins the sources plus the previous output.
+  The prompt fills `{{sources}}` / `{{prev}}` and adds "Save your final output as a Markdown file at …" (and "Clearly
+  label it as based on unapproved inputs" when overridden).
+- **Statuses**: `pending` → `running` → `review` when the reply ends and the output file exists; otherwise `rework`
+  with the reason ("The stage did not create its output file", stopped, or the error). A stage still `running` when
+  its chat is no longer active becomes `rework` ("The stage was interrupted…"). The page polls every 2 s while a
+  stage or check runs.
+- **Unapproved inputs**: an overridden stage's output gets `> Based on unapproved inputs` at the top; the label is
+  removed when the stage is redone from approved inputs.
+- **Traceability check**: only on a stage in `review`; a new **read**-access chat with **Traceability Analyst**,
+  pinned to the inputs (previous output, or the sources for the first stage) and the output. Prompt: "Report gaps and
+  findings only; do not change any files." The reply shows under **Traceability findings** with **Open check chat**. It
+  is advisory: approving doesn't depend on it. A new message in the stage chat clears the findings.
+- **Approve**: needs your name in Settings (400 "Set your name in Settings before approving."). Records `approvedBy`,
+  `approvedAt`, increments `version`, and writes `> Approved by <name> on <ISO time>` as the output's first line
+  (replacing an earlier stamp).
+- **Send back**: removes the stamp; every later stage that has started goes to `rework`, loses its stamp and is
+  labelled as based on unapproved inputs. Refused while a later stage or check is running. A reply in the stage chat
+  that leaves the output in place moves the stage back to `review`.
+- **Chat guards**: an approved stage's chat refuses new messages ("Send this approved stage back before changing
+  it."); a stage in review whose later stages have started refuses them too ("Send this stage back before changing
+  inputs used by later stages.").
+- Saved pipelines from before the **Test cases** stage get it once, after **Stories**; a stage the user removed is
+  not added back (`lib/pipeline-migrate.js`).
+
+## Outputs
+- `Lifecycle/<run name>/01-requirements.md` … `05-test-cases.md`, each stamped when approved.
+- One chat per stage and per check; the run list shows "<name> · <approved>/<stages> approved".
+
+## Acceptance criteria
+- `test/lifecycle-context.test.js` › lifecycle gates, checks, override, rework and persisted approvals: a later stage
+  can't start before approval (409); the check runs read-only; an overridden stage is labelled; approval stamps the
+  file once; an approved stage's chat refuses messages; send back resets later stages; all 5 stages approve and the
+  state survives a server restart.
+- `test/pipeline-migrate.test.js` › a saved pipeline from before the tests stage gets it once, after Stories, without
+  touching other stages; › a stage the user removed is not added back; › only built-in pipelines are touched, and odd
+  data is tolerated; › the store applies the migration to a saved pipelines file on start-up.
+
+## Decisions
+- Outputs are Markdown files in the project folder; approval is a click in Lumen recorded with name and time;
+  the traceability check is advisory, not blocking (`docs/plans/06-guided-lifecycle-pipeline.md`).
+
+## Limits
+- One pipeline: the UI always starts `aidlc`. Stages, prompts and templates can only be changed by editing
+  `data/pipelines.json`; there is no pipeline editor.
+- The optional **Test cases** stage is only labelled optional; there is no skip action.
+- Single-user approval; no external sign-off, branching pipelines or Jira sync.
+
+## Source
+`server.js` (`/api/pipelines`, `/api/runs`, stage actions `start`/`approve`/`rework`/`check`/`word`/`azure-devops`,
+`reconcileRun`, `startRunTurn`, `stampOutput`, `labelUnapproved`, `clearUnapproved`, `handleChat` guards),
+`public/app.js` (`renderRuns`, `startNewRun`, `renderRun`), `public/index.html` (rail item **Lifecycle**),
+`defaults/pipelines.json`, `lib/pipeline-migrate.js` (`migratePipelines`, `FIRST_RELEASE_STAGES`), `lib/store.js`
+(`runs`, `pipelines`).

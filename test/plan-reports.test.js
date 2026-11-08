@@ -17,6 +17,15 @@ function workspace() {
   return { root, plan };
 }
 
+test('updating an (updated) copy again keeps its name instead of stacking "(updated) (updated)"', () => {
+  const { root, plan } = workspace();
+  const first = project.updatePlan(plan, { statusDate: '2026-11-06' }, root);
+  assert.equal(path.basename(first.saved), 'Plan (updated).xml');
+  const second = project.updatePlan(first.saved, { statusDate: '2026-11-13' }, root);
+  assert.equal(second.saved, first.saved);
+  assert.ok(fs.existsSync(plan), 'the original plan is untouched');
+});
+
 test('change log without an earlier version explains itself', () => {
   const root = fs.mkdtempSync(path.join(temp, 'ws-'));
   const plan = path.join(root, 'Plan.xml');
