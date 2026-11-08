@@ -9,6 +9,7 @@ const crypto = require('crypto');
 const ExcelJS = require('exceljs');
 const project = require('./project');
 const raidTools = require('./raid');
+const backlogTools = require('./backlog');
 
 const iso = project.iso;
 const sha = (file) => crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex').slice(0, 16);
@@ -75,6 +76,49 @@ function severity(kind, score, priority) {
   return /crit|high|^h$/.test(p) ? 'High' : /med|^m$/.test(p) ? 'Medium' : p ? 'Low' : 'Unrated';
 }
 
+// ------------------------------------------------------------------ delivery progress (Azure DevOps backlog export)
+/**
+ * Delivery progress from a backlog export: items by state per epic (the Parent/Epic column, else the plan workstream of the
+ * linked task), story points done, items linked to late or behind plan tasks, and critical-path tasks that should be moving
+ * but have linked items not started. Every row cites its cell in the export.
+ */
+async function deliveryProgress(backlogFile, p, a, opts = {}) {
+  const { items, sheet, removed } = await backlogTools.linkedItems(backlogFile, { tagPrefix: opts.tagPrefix });
+  const status = project.toDate(a.statusDate);
+  const cite = (it) => ({ type: 'backlog', ref: `${sheet}!A${it.row}` });
+  const byId = new Map(p.tasks.map((t) => [t.id, t]));
+  const late = new Map(a.lateTasks.map((t) => [t.id, 'late']));
+  for (const t of a.behindSchedule) late.set(t.id, 'behind');
+  const critical = new Set(a.criticalPath.map((t) => t.id));
+  const row = (it) => ({ id: it.id, title: it.title, state: it.state, points: it.points, assigned: it.assigned || null, source: cite(it) });
+
+  const epics = new Map();
+  const linkedToLate = [], criticalNotStarted = [];
+  let linked = 0;
+  for (const it of items) {
+    const t = it.taskId != null ? byId.get(it.taskId) : null;
+    if (t) linked++;
+    const ws = t ? project.workstreamOf(p, t) : null;
+    const epic = it.parent || (ws ? `${ws.wbs} ${ws.name}` : '(no epic or plan task)');
+    if (!epics.has(epic)) epics.set(epic, { epic, items: 0, byState: {}, pointsDone: 0, pointsTotal: 0, done: 0 });
+    const e = epics.get(epic);
+    e.items++; e.byState[it.state || '(blank)'] = (e.byState[it.state || '(blank)'] || 0) + 1;
+    if (it.pct >= 100) e.done++;
+    if (it.points != null) { e.pointsTotal += it.points; if (it.pct >= 100) e.pointsDone += it.points; }
+    if (!t || t.summary) continue;
+    if (late.has(t.id) && it.pct < 100) linkedToLate.push({ ...row(it), taskId: t.id, task: t.name, taskStatus: late.get(t.id) });
+    if (critical.has(t.id) && it.knownState && it.pct === 0 && t.start && t.start <= status) criticalNotStarted.push({ ...row(it), taskId: t.id, task: t.name, taskStart: project.iso(t.start) });
+  }
+  const list = [...epics.values()].sort((x, y) => x.epic.localeCompare(y.epic, undefined, { numeric: true }));
+  const pointsDone = list.reduce((s, e) => s + e.pointsDone, 0), pointsTotal = list.reduce((s, e) => s + e.pointsTotal, 0);
+  return {
+    file: path.basename(backlogFile), sheet, items: items.length, linked, removedIgnored: removed,
+    pointsDone, pointsTotal, percentPointsDone: pointsTotal ? Math.round((pointsDone / pointsTotal) * 100) : null,
+    byEpic: list, linkedToLateTasks: linkedToLate, criticalNotStarted,
+    source: { type: 'backlog', ref: `${sheet} (whole export)` },
+  };
+}
+
 // ------------------------------------------------------------------ status model
 /**
  * Build the status model. Every number and list comes from the plan and RAID log; nothing here is written by the AI.
@@ -125,8 +169,11 @@ async function buildModel(planFile, opts = {}) {
   const topRisks = risks.filter((x) => (x.score ?? 0) >= 9);
   if (highIssues.length) reasons.push(`${highIssues.length} high-priority issue${highIssues.length === 1 ? '' : 's'} open.`);
   if (topRisks.length) reasons.push(`${topRisks.length} risk${topRisks.length === 1 ? '' : 's'} at the highest score (9).`);
+  const delivery = opts.backlog ? await deliveryProgress(opts.backlog, p, a, { tagPrefix: opts.tagPrefix }) : null;
+  const cnsTasks = delivery ? [...new Set(delivery.criticalNotStarted.map((x) => x.taskId))] : [];
+  if (cnsTasks.length) reasons.push(`${cnsTasks.length} critical-path task${cnsTasks.length === 1 ? ' has' : 's have'} linked backlog items that haven't started (${cnsTasks.map((id) => `#${id}`).join(', ')}).`);
   let rag = a.suggestedRag;
-  if (rag === 'Green' && (highIssues.length || topRisks.length)) rag = 'Amber';
+  if (rag === 'Green' && (highIssues.length || topRisks.length || cnsTasks.length)) rag = 'Amber';
   if (!reasons.length) reasons.push('On baseline, nothing late, no severe open risks or issues.');
   const narrative = opts.narrative ? String(opts.narrative).trim() : null;
   const warnings = [];
@@ -136,11 +183,12 @@ async function buildModel(planFile, opts = {}) {
   const sources = [{ kind: 'plan', file: path.basename(planFile), statusDate: a.statusDate, modified: fs.statSync(planFile).mtime.toISOString(), sha256: sha(planFile) }];
   if (prev) sources.push({ kind: 'plan (previous version)', file: path.relative(root, versions[0]).replace(/\\/g, '/'), statusDate: iso(prev.statusDate), sha256: sha(versions[0]) });
   if (raidFile) sources.push({ kind: 'RAID log', file: path.basename(raidFile), modified: fs.statSync(raidFile).mtime.toISOString(), sha256: sha(raidFile) });
+  if (delivery) sources.push({ kind: 'Backlog export', file: path.basename(opts.backlog), modified: fs.statSync(opts.backlog).mtime.toISOString(), sha256: sha(opts.backlog) });
 
   return {
     schemaVersion: 1,
     project: a.project, statusDate: a.statusDate, generatedAt: new Date().toISOString(),
-    rag: { rating: rag, planSuggested: a.suggestedRag, reasons, rule: 'Red if forecast slips more than 10 working days or more than 3 tasks are late; Amber if any slip, late task or over-allocation, or a high-priority issue or top-scored risk is open; otherwise Green.' },
+    rag: { rating: rag, planSuggested: a.suggestedRag, reasons, rule: 'Red if forecast slips more than 10 working days or more than 3 tasks are late; Amber if any slip, late task or over-allocation, a high-priority issue or top-scored risk is open, or a started critical-path task has backlog items not yet started; otherwise Green.' },
     schedule: { ...a.schedule, percentComplete: a.progress.percentComplete, expectedByNow: a.progress.expectedByNow, tasks: a.progress.tasks, complete: a.progress.complete, source: { type: 'plan', ref: 'whole plan' } },
     cost: a.cost || null,
     milestones,
@@ -152,6 +200,7 @@ async function buildModel(planFile, opts = {}) {
       overdueRaid: overdueRaid.map((x) => ({ id: x.id, kind: x.kind, title: x.title, owner: x.owner, due: x.due, source: x.source })),
     },
     raidInput: raidInput && { requested: raidInput.requested, used: path.basename(raidInput.used), notes: raidInput.notes, pending: raidInput.pending },
+    delivery,
     risks, issues,
     decisions: raid.filter((x) => x.kind === 'decision').slice(-5),
     dependencies: open.filter((x) => x.kind === 'dependency'),
@@ -192,6 +241,13 @@ function renderMarkdown(m) {
   if (m.attention.behind.length) t(m.attention.behind.map((x) => [`#${x.id}`, x.task, `${x.percentComplete}%`, `${x.expectedPercent}%`, x.resources]), ['ID', 'Behind schedule', 'Done', 'Expected', 'Owner']);
   if (m.attention.overallocated.length) t(m.attention.overallocated.map((x) => [x.resource, x.peakLoad, `${x.firstDay} to ${x.lastDay}`, x.tasks.join('; ')]), ['Person', 'Peak load', 'When', 'Tasks']);
   if (m.attention.overdueRaid.length) t(m.attention.overdueRaid.map((x) => [x.id, x.title, x.owner, x.due]), ['RAID item', 'Overdue for review or action', 'Owner', 'Due']);
+  if (m.delivery) {
+    const d = m.delivery;
+    L.push('## Delivery progress (Azure DevOps)', '', `${d.items} backlog items in ${d.file}, ${d.linked} linked to plan tasks${d.pointsTotal ? `; ${d.pointsDone} of ${d.pointsTotal} story points done (${d.percentPointsDone}%)` : ''}.`, '');
+    t(d.byEpic.map((e) => [e.epic, e.items, e.done, Object.entries(e.byState).map(([s, n]) => `${s} ${n}`).join(', '), e.pointsTotal ? `${e.pointsDone} / ${e.pointsTotal}` : '—']), ['Epic or workstream', 'Items', 'Done', 'By state', 'Points done']);
+    if (d.criticalNotStarted.length) { L.push('**Critical-path work with items not started**', ''); t(d.criticalNotStarted.map((x) => [x.id, x.title, x.state, `#${x.taskId} ${x.task}`, x.assigned || '—', x.source.ref]), ['Item', 'Title', 'State', 'Plan task', 'Assigned to', 'Source']); }
+    if (d.linkedToLateTasks.length) { L.push('**Open items on late or behind plan tasks**', ''); t(d.linkedToLateTasks.map((x) => [x.id, x.title, x.state, `#${x.taskId} ${x.task} (${x.taskStatus})`, x.assigned || '—', x.source.ref]), ['Item', 'Title', 'State', 'Plan task', 'Assigned to', 'Source']); }
+  }
   if (m.risks.length || m.issues.length) {
     L.push('## Risks and issues', '');
     t([...m.issues, ...m.risks].map((x) => [x.id, x.kind, x.title, x.severity + (x.score ? ` (${x.score})` : ''), x.owner, x.status, x.action]), ['ID', 'Type', 'Description', 'Severity', 'Owner', 'Status', 'Mitigation / action']);
@@ -210,7 +266,15 @@ function renderMarkdown(m) {
 function renderHtml(m) {
   const rag = RAG[m.rag.rating];
   const pill = (cls, icon, label) => `<span class="pill ${cls}"><span aria-hidden="true">${icon}</span> ${esc(label)}</span>`;
-  const src = (s) => (s ? `<span class="src" title="Source">${esc(s.type === 'raid' ? `RAID ${s.ref}` : `Plan ${s.ref}`)}</span>` : '');
+  const src = (s) => (s ? `<span class="src" title="Source">${esc(s.type === 'raid' ? `RAID ${s.ref}` : s.type === 'backlog' ? `ADO ${s.ref}` : `Plan ${s.ref}`)}</span>` : '');
+  const d = m.delivery;
+  const itemRows = (rows, taskLabel) => rows.slice(0, 10).map((x) => `<tr><td>${esc(x.id)}</td><td>${esc(x.title)}</td><td>${esc(x.state)}</td><td>#${x.taskId} ${esc(x.task)}${taskLabel(x)}</td><td>${esc(x.assigned || '—')}</td><td>${src(x.source)}</td></tr>`).join('');
+  const itemTable = (title, rows, taskLabel) => (rows.length ? `<h3 class="small">${esc(title)}</h3><table><thead><tr><th>Item</th><th>Title</th><th>State</th><th>Plan task</th><th>Assigned to</th><th>Source</th></tr></thead><tbody>${itemRows(rows, taskLabel)}</tbody></table>${rows.length > 10 ? `<p class="muted small">and ${rows.length - 10} more in the status report.</p>` : ''}` : '');
+  const delivery = d ? `<section><h2>Delivery progress (Azure DevOps)</h2><p class="muted small" style="margin-top:-6px">${d.items} backlog items in ${esc(d.file)}, ${d.linked} linked to plan tasks${d.pointsTotal ? `; ${d.pointsDone} of ${d.pointsTotal} story points done (${d.percentPointsDone}%)` : ''}.</p>
+<table><thead><tr><th>Epic or workstream</th><th class="num">Items</th><th class="num">Done</th><th>By state</th><th class="num">Points done</th></tr></thead><tbody>${d.byEpic.map((e) => `<tr><td>${esc(e.epic)}</td><td class="num">${e.items}</td><td class="num">${e.done}</td><td>${esc(Object.entries(e.byState).map(([s, n]) => `${s} ${n}`).join(', '))}</td><td class="num">${e.pointsTotal ? `${e.pointsDone} / ${e.pointsTotal}` : '—'}</td></tr>`).join('')}</tbody></table>
+${itemTable('Critical-path work with items not started', d.criticalNotStarted, () => '')}
+${itemTable('Open items on late or behind plan tasks', d.linkedToLateTasks, (x) => ` <span class="muted">(${esc(x.taskStatus)})</span>`)}
+<div class="srcrow">${src(d.source)}</div></section>` : '';
   const maxVar = Math.max(5, ...m.milestones.map((x) => Math.abs(x.varianceDays || 0)));
   const behindPts = m.schedule.expectedByNow - m.schedule.percentComplete;
   const tile = (label, value, sub, cls = '') => `<div class="tile"><div class="label">${esc(label)}</div><div class="value ${cls}">${esc(value)}</div><div class="sub">${sub}</div></div>`;
@@ -249,7 +313,7 @@ function renderHtml(m) {
 main{max-width:1100px;margin:0 auto;padding:24px}
 .draft{background:color-mix(in srgb,var(--warning) 22%,var(--surface));border:1px solid var(--warning);border-radius:8px;padding:8px 12px;margin-bottom:16px;font-weight:600}
 header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:16px}
-h1{font-size:22px;margin:0}h2{font-size:15px;margin:0 0 10px}.sub,.muted{color:var(--muted)}.small{font-size:12px}
+h1{font-size:22px;margin:0}h2{font-size:15px;margin:0 0 10px}h3{font-size:13px;margin:14px 0 6px}.sub,.muted{color:var(--muted)}.small{font-size:12px}
 section{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
 .hero{display:flex;gap:24px;align-items:center;flex-wrap:wrap}
 .hero .rating{font-size:48px;font-weight:600;line-height:1;display:flex;align-items:center;gap:12px}
@@ -307,6 +371,8 @@ ${changes}
 
 <section><h2>Needs attention</h2>${att.length ? `<ul class="list">${att.join('')}</ul>` : '<p class="muted">Nothing late, behind or overloaded.</p>'}</section>
 
+${delivery}
+
 ${raidRows ? `<section><h2>Top risks and issues</h2><table><thead><tr><th>ID</th><th>Type</th><th>Description</th><th>Severity</th><th>Owner</th><th>Status</th><th>Source</th></tr></thead><tbody>${raidRows}</tbody></table></section>` : ''}
 
 ${m.ai.decisionsNeeded.length ? `<section class="ai"><div class="tag">AI-written · decisions needed · check before sending</div><ul>${m.ai.decisionsNeeded.map((d) => `<li>${esc(d)}</li>`).join('')}</ul></section>` : ''}
@@ -339,4 +405,4 @@ async function buildReport(planFile, opts = {}) {
   };
 }
 
-module.exports = { readRaid, buildModel, buildReport, renderMarkdown, renderHtml };
+module.exports = { readRaid, deliveryProgress, buildModel, buildReport, renderMarkdown, renderHtml };

@@ -130,7 +130,7 @@
     "name": "Who's overloaded?",
     "emoji": "👥",
     "category": "Project plans",
-    "description": "Find over-allocated people in the next 6 weeks and get options to fix it.",
+    "description": "Find over-allocated people in the next 6 weeks, and (with a capacity workbook) leave clashes, sprint overloads and estimate outliers, with options to fix them.",
     "assistantId": "schedule-analyst",
     "builtin": true,
     "access": "read",
@@ -140,9 +140,23 @@
         "label": "Project plan",
         "type": "file",
         "accept": ".mpp,.xml"
+      },
+      {
+        "key": "capacity",
+        "label": "Team capacity workbook (optional)",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv",
+        "optional": true
+      },
+      {
+        "key": "backlog",
+        "label": "Azure DevOps backlog export (optional)",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv",
+        "optional": true
       }
     ],
-    "template": "Check resource loading in {{plan}} for the next six weeks. For each over-allocated person, show the peak load, the dates and the clashing tasks, then give two or three options to resolve it, with the schedule impact of each."
+    "template": "Check resource loading in {{plan}} for the next six weeks. Team capacity workbook: {{capacity}}. Azure DevOps backlog export: {{backlog}}. (Leave out any that are blank.)\n\nIf there is a capacity workbook, call analyze_capacity with it, the plan and the backlog (weeks: 6) and base the answer on it: lead with anyone on leave during critical-path work, then overloaded weeks per person (Person · Week · Capacity · Demand · Over by · Tasks), overloaded sprints, and estimate outliers worth a second look. Mention data-quality gaps such as people missing from the capacity file. Without a capacity workbook, use analyze_project_plan and show each over-allocated person's peak load, dates and clashing tasks.\n\nFor each problem give two or three options to resolve it (move work, reassign, add help, change the leave cover), and for the most important one check the schedule impact with model_scenario. Do not change any files."
   },
   {
     "id": "budget-variance",
@@ -781,7 +795,7 @@
     "name": "Weekly executive status",
     "emoji": "🧭",
     "category": "Project plans",
-    "description": "A draft status report and a one-page executive dashboard from your plan and RAID log, with every fact traced to its source.",
+    "description": "A draft status report and a one-page executive dashboard from your plan, RAID log and (optionally) Azure DevOps backlog export, with every fact traced to its source.",
     "assistantId": "project-partner",
     "builtin": true,
     "access": "edit",
@@ -798,9 +812,16 @@
         "type": "file",
         "accept": ".xlsx,.xlsm,.csv",
         "optional": true
+      },
+      {
+        "key": "backlog",
+        "label": "Azure DevOps backlog export (optional)",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv",
+        "optional": true
       }
     ],
-    "template": "Build this week's executive status pack for the project plan {{plan}} with the RAID log {{raid}} (if no RAID log is given, leave it out).\n\n1. Call get_status_facts first and base everything on it.\n2. Write a 3 to 5 sentence narrative for executives: the overall rating and why, what moved since last time, the biggest threat to the next milestone, and what is being done. Use the calculated rating; if you think it should be different, say so as a recommendation, not as the rating.\n3. List up to 3 decisions or support needed from leadership, each citing the task or RAID ID.\n4. Call build_status_report with the narrative and decisions.\n\nThen reply with the overall rating, the top 3 points, any warnings the tool returned, and links to the saved files. The tools read the newest approved RAID log automatically, so if raidInput has notes or pending huddle changes, tell me plainly which file was used and how many proposed RAID changes are still waiting for review (they are not in the pack). Remind me that the pack is a draft for PMO review."
+    "template": "Build this week's executive status pack for the project plan {{plan}} with the RAID log {{raid}} and the Azure DevOps backlog export {{backlog}} (leave out either if it is blank; pass the backlog export as backlog to both tools).\n\n1. Call get_status_facts first and base everything on it.\n2. Write a 3 to 5 sentence narrative for executives: the overall rating and why, what moved since last time, the biggest threat to the next milestone, delivery progress from the backlog if given, and what is being done. Use the calculated rating; if you think it should be different, say so as a recommendation, not as the rating.\n3. List up to 3 decisions or support needed from leadership, each citing the task or RAID ID.\n4. Call build_status_report with the narrative and decisions.\n\nThen reply with the overall rating, the top 3 points, any warnings the tool returned, and links to the saved files. The tools read the newest approved RAID log automatically, so if raidInput has notes or pending huddle changes, tell me plainly which file was used and how many proposed RAID changes are still waiting for review (they are not in the pack). Remind me that the pack is a draft for PMO review."
   },
   {
     "id": "huddle-to-raid",
@@ -910,6 +931,31 @@
       }
     ],
     "template": "Compare the Azure DevOps backlog {{backlog}} with the project plan {{plan}} (status date {{status}}; if blank, use the plan's).\n\n1. Call plan_progress_from_backlog and base everything on it.\n2. Show the proposed % complete changes as a table (ID · Task · Now · Proposed · Items done/total), and any that were held back because the backlog shows less progress than the plan.\n3. Show the data-quality findings: unlinked items, links to missing or summary tasks, stale in-progress items, unknown states, and plan tasks that should be moving but have no backlog items. Say who needs to fix what.\n4. Ask me to approve before changing anything. If I approve, call update_project_plan with only the approved rows and summarise what moved."
+  },
+  {
+    "id": "delivery-scenarios",
+    "name": "Delivery scenarios",
+    "emoji": "🔀",
+    "category": "Project plans",
+    "description": "Compare two or three \"what if\" scenarios (a slip, extra people, a dropped dependency) side by side: milestone movement, critical path and who gets overloaded.",
+    "assistantId": "schedule-analyst",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "plan",
+        "label": "Project plan",
+        "type": "file",
+        "accept": ".mpp,.xml"
+      },
+      {
+        "key": "scenarios",
+        "label": "Scenarios to compare",
+        "type": "textarea",
+        "placeholder": "e.g. A: UAT slips two weeks. B: ERP integration takes 10 more days but we add a half-time tester. C: start training before UAT sign-off."
+      }
+    ],
+    "template": "Compare these delivery scenarios for the project plan {{plan}}:\n\n{{scenarios}}\n\n1. Turn each scenario into model_scenario changes (durationDelta, startNoEarlierThan, resource + unitsDelta, removeDependency), naming tasks by ID. If a scenario is ambiguous, state the assumption you made.\n2. Call model_scenario once per scenario, with its name. Base everything on what it returns.\n3. Show a side-by-side table: Scenario · Go-live · Project finish · Milestones that move (working days) · Critical path changes · Newly over-allocated people. Then two or three lines per scenario on what drives the result.\n4. Save the comparison with create_spreadsheet to \"Scenarios/<today's date>.xlsx\": a Comparison sheet (one row per scenario), a Milestones sheet (Scenario, Milestone, Before, After, Moved) and a Changes sheet (Scenario, Change).\n5. Recommend one scenario and say why, as a recommendation. Nothing in the plan changes; if I approve a scenario, call update_project_plan with its planUpdates, which saves an \"(updated)\" copy."
   },
   {
     "id": "knowledge-freshness",

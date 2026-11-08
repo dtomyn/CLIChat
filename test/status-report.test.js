@@ -130,3 +130,40 @@ test('the status model reads the approved RAID log and says what the huddle left
   assert.match(md, /1 awaiting review/);
   assert.match(status.renderHtml(m), /<b>RAID log:<\/b>/);
 });
+
+test('a backlog export adds delivery progress with row citations and an amber reason', async () => {
+  const root = workspace();
+  fs.copyFileSync(path.join(DEMO, 'ADO Backlog Export - 30 Oct 2026.xlsx'), path.join(root, 'Backlog.xlsx'));
+  const plan = path.join(root, 'Plan.xml');
+  const m = await status.buildModel(plan, { raid: path.join(root, 'RAID.xlsx'), backlog: path.join(root, 'Backlog.xlsx'), root });
+  const d = m.delivery;
+  assert.equal(d.removedIgnored, 1);
+  assert.ok(d.linked > 0 && d.linked <= d.items);
+  assert.ok(d.pointsDone > 0 && d.pointsDone < d.pointsTotal);
+  const erp = d.byEpic.find((e) => e.epic === 'ERP integration');
+  assert.ok(erp.byState.Closed >= 2 && erp.byState.Active >= 2);
+  assert.ok(d.byEpic.some((e) => e.epic === '(no epic or plan task)'));
+  const cns = d.criticalNotStarted.find((x) => x.id === '1009');
+  assert.equal(cns.taskId, 18);
+  assert.deepEqual(cns.source, { type: 'backlog', ref: 'Query 1!A10' });
+  assert.ok(d.linkedToLateTasks.every((x) => /^Query 1!A\d+$/.test(x.source.ref)));
+  assert.ok(m.rag.reasons.some((r) => /critical-path task has linked backlog items that haven't started \(#18\)/.test(r)));
+  assert.equal(m.provenance.sources.find((s) => s.kind === 'Backlog export').file, 'Backlog.xlsx');
+
+  const md = status.renderMarkdown(m);
+  assert.match(md, /## Delivery progress \(Azure DevOps\)/);
+  assert.match(md, /Query 1!A10/);
+  const html = status.renderHtml(m);
+  assert.match(html, /Delivery progress \(Azure DevOps\)/);
+  assert.match(html, /ADO Query 1!A10/);
+  assert.doesNotMatch(html, /<script/);
+});
+
+test('the status pack still works without a backlog file', async () => {
+  const root = workspace();
+  const m = await status.buildModel(path.join(root, 'Plan.xml'), { root });
+  assert.equal(m.delivery, null);
+  assert.ok(!m.rag.reasons.some((r) => /backlog/.test(r)));
+  assert.doesNotMatch(status.renderMarkdown(m), /Delivery progress/);
+  assert.doesNotMatch(status.renderHtml(m), /Delivery progress/);
+});

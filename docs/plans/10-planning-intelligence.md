@@ -40,3 +40,16 @@ The status pack covers the plan and RAID but not delivery progress from ADO. PMs
 
 ## Out of scope
 Monte-Carlo forecasting, and live ADO queries (Plan 08).
+
+## Status: implemented (7 Nov 2026)
+
+Shipped: the *Delivery progress* block in `tools/status.js` (`deliveryProgress`, `backlog` option on `get_status_facts` and `build_status_report`, Markdown and dashboard sections, new RAG reason), `tools/scenario.js` with the read-only `model_scenario` tool, `tools/capacity.js` with the `analyze_capacity` tool, labels for both, the **Delivery scenarios** prompt, an optional capacity workbook and backlog on **Who's overloaded?**, an optional backlog on **Weekly executive status**, ms-project skill and Schedule Analyst updates, the sample `Team Capacity - Q4 2026.xlsx`, and `test/scenario.test.js`, `test/capacity.test.js` and new cases in `test/status-report.test.js`.
+
+Deviations from the design:
+- **Backlog columns.** `tools/backlog.js` now also reads *Iteration Path*, *Remaining Work* and *Parent* (or *Epic*), and has a shared `linkedItems` helper. The sample ADO export gained those three columns. When there is no Parent column, items are grouped by the plan workstream of their linked task.
+- **The Amber reason only counts critical-path tasks that have already started** (start on or before the status date) and items in a known "not started" state such as New. Without that limit, every future critical task would raise it. Unknown states such as Blocked don't count.
+- **Scenario maths.** The plan is rescheduled as soon as possible on a Monday-to-Friday calendar (the same one `project.js` uses; public holidays and resource calendars aren't modelled). Completed tasks keep their dates, and started tasks keep their start. Movement is measured against the same recalculation with no changes, so constraints or levelling in a real plan don't distort the deltas. If that recalculation differs from the file, a warning says so. A capacity change (`resource` + `unitsDelta`) shortens the remaining work in proportion to the units on the task. `removeDependency` takes `{from, to}` or `"from->to"`.
+- **Saving a scenario.** `model_scenario` returns `planUpdates` (start, finish, duration) for `update_project_plan`. Microsoft Project still recalculates dependent dates when the copy is opened.
+- **Capacity.** Plan demand (assignment units × hours per day) and sprint demand (Remaining Work, or story points × `hoursPerPoint` only when given) are reported separately, so the same work isn't counted twice. Sprint dates come from a *Sprints* sheet in the capacity workbook, because ADO exports don't include them. An estimate outlier is at least double or at most half the median for its work item type, with three or more estimates.
+- **Scenarios/<date>.xlsx** is written by the prompt through `create_spreadsheet`. There is no dedicated writer.
+- **Not verified in the running app.** The prompts haven't been run with the AI engine. Coverage comes from unit tests and MCP round-trip tests only.

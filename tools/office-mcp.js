@@ -15,6 +15,8 @@ const status = require('./status');
 const raid = require('./raid');
 const publish = require('./publish');
 const qe = require('./tests');
+const scenario = require('./scenario');
+const capacity = require('./capacity');
 
 const ROOT = path.resolve(process.env.OFFICE_MCP_ROOT || process.cwd());
 const READ_ONLY = process.env.OFFICE_MCP_READONLY === '1';
@@ -179,16 +181,52 @@ const TOOLS = [
     run: (a) => backlog.progressFromBacklog(resolveIn(a.path), resolveIn(a.backlog), a),
   },
   {
+    name: 'model_scenario',
+    description: 'Model a "what if" delivery scenario on a copy of a Microsoft Project plan, without changing it. Changes: add or take off working days on a task (durationDelta), hold a task until a date (startNoEarlierThan), add or take away capacity for a person (resource + unitsDelta, e.g. 0.5 = another person at half time, optionally on one task), or remove a dependency (removeDependency {from, to}). The plan is rescheduled forward through its links (FS/SS/FF/SF with lags, Monday to Friday) and compared with the same calculation without the changes: milestone and project-finish movement in working days, tasks that move, the new critical path (who joined and left it), and people newly over-allocated. Returns planUpdates in the shape update_project_plan takes, for saving an approved scenario as an "(updated)" copy. Call it once per named scenario. Read-only.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'The project plan' },
+        name: { type: 'string', description: 'Scenario name, e.g. "UAT slips two weeks"' },
+        changes: { type: 'array', items: { type: 'object', properties: {
+          task: { type: 'string', description: 'Task ID or name' },
+          durationDelta: { type: 'number', description: 'Working days added (negative to shorten). On a milestone it moves the milestone' },
+          startNoEarlierThan: { type: 'string', description: 'YYYY-MM-DD' },
+          resource: { type: 'string', description: 'Person, for a capacity change' },
+          unitsDelta: { type: 'number', description: 'Capacity added to that person\'s unfinished tasks (1 = one more full-time person, -0.5 = half a person fewer)' },
+          removeDependency: { type: 'object', properties: { from: { type: 'string', description: 'Predecessor task ID or name' }, to: { type: 'string', description: 'Successor task ID or name' } }, required: ['from', 'to'] },
+        } } },
+        statusDate: { type: 'string', description: 'YYYY-MM-DD; defaults to the plan status date' },
+      },
+      required: ['path', 'changes'],
+    },
+    run: (a) => scenario.runScenario(resolveIn(a.path), a.changes || [], { name: a.name, statusDate: a.statusDate }),
+  },
+  {
+    name: 'analyze_capacity',
+    description: 'Check team capacity against demand. Reads a capacity workbook (a sheet with Person, Role, Hours per week and Availability %; optional Leave sheet with Person, From, To, Reason; optional Sprints sheet with Sprint, Start, End), the plan\'s assignments and, optionally, an Azure DevOps backlog export (Iteration Path, Assigned To, Remaining Work, Story Points). Returns weekly demand vs. capacity per person and role, conflicts (overloaded weeks, leave during assigned work with critical-path tasks first, overloaded sprints), estimate outliers (story points at least double or half the median for the same work item type), open items without an estimate, and data-quality gaps (people in the plan or backlog but not in the capacity file). Every row cites its cell or plan task. Read-only.',
+    inputSchema: { type: 'object', properties: {
+      capacity: { type: 'string', description: 'The team capacity workbook' },
+      plan: { type: 'string', description: 'Optional Microsoft Project plan, for weekly demand and leave clashes' },
+      backlog: { type: 'string', description: 'Optional Azure DevOps work-item export, for sprint demand and estimate outliers' },
+      from: { type: 'string', description: 'YYYY-MM-DD; default the plan status date (the window starts on that Monday)' },
+      weeks: { type: 'number', description: 'Weeks to cover (default 8, max 26)' },
+      hoursPerPoint: { type: 'number', description: 'Hours per story point for items with no Remaining Work (default: not converted)' },
+      tagPrefix: { type: 'string' },
+    }, required: ['capacity'] },
+    run: (a) => capacity.analyzeCapacity(resolveIn(a.capacity), { plan: a.plan ? resolveIn(a.plan) : null, backlog: a.backlog ? resolveIn(a.backlog) : null, from: a.from, weeks: a.weeks, hoursPerPoint: a.hoursPerPoint, tagPrefix: a.tagPrefix }),
+  },
+  {
     name: 'get_status_facts',
-    description: 'Calculate the weekly status facts for a Microsoft Project plan, optionally with a RAID log: overall RAG with the rule-based reasons, schedule and cost vs. baseline, milestones with variance and movement since the last saved version (plus the unfinished work each depends on), what changed since then, late and behind tasks, over-allocation, overdue RAID items, and the top open risks and issues. The RAID log is read from the newest approved copy next to the one you pass (an "(updated)" file from the huddle flow, never a "(proposed)" review copy); raidInput says which file was used and lists huddle changes still pending review, which are not in the facts. Every fact has a source reference. Read-only. Use it before writing a status summary, then pass your summary to build_status_report.',
-    inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'The project plan' }, raid: { type: 'string', description: 'Optional RAID log workbook (.xlsx/.csv)' }, statusDate: { type: 'string', description: 'YYYY-MM-DD; defaults to the plan status date' } }, required: ['path'] },
-    run: async (a) => { const m = await status.buildModel(resolveIn(a.path), { raid: a.raid ? resolveIn(a.raid) : null, root: ROOT, statusDate: a.statusDate }); delete m.ai; return m; },
+    description: 'Calculate the weekly status facts for a Microsoft Project plan, optionally with a RAID log: overall RAG with the rule-based reasons, schedule and cost vs. baseline, milestones with variance and movement since the last saved version (plus the unfinished work each depends on), what changed since then, late and behind tasks, over-allocation, overdue RAID items, and the top open risks and issues. The RAID log is read from the newest approved copy next to the one you pass (an "(updated)" file from the huddle flow, never a "(proposed)" review copy); raidInput says which file was used and lists huddle changes still pending review, which are not in the facts. With an Azure DevOps backlog export it adds delivery progress: items by state per epic (Parent/Epic column, else plan workstream), story points done, open items on late or behind plan tasks, and started critical-path tasks with items not yet started (which raises the rating to at least Amber). Every fact has a source reference (plan task, RAID cell or backlog cell). Read-only. Use it before writing a status summary, then pass your summary to build_status_report.',
+    inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'The project plan' }, raid: { type: 'string', description: 'Optional RAID log workbook (.xlsx/.csv)' }, backlog: { type: 'string', description: 'Optional Azure DevOps work-item export (.xlsx/.csv), items tagged MPP-<task ID>' }, tagPrefix: { type: 'string', description: 'Tag prefix linking items to plan tasks (default MPP)' }, statusDate: { type: 'string', description: 'YYYY-MM-DD; defaults to the plan status date' } }, required: ['path'] },
+    run: async (a) => { const m = await status.buildModel(resolveIn(a.path), { raid: a.raid ? resolveIn(a.raid) : null, backlog: a.backlog ? resolveIn(a.backlog) : null, tagPrefix: a.tagPrefix, root: ROOT, statusDate: a.statusDate }); delete m.ai; return m; },
   },
   {
     name: 'build_status_report',
-    description: 'Write the weekly status pack into "Status reports/<status date>/": status.json (the status model), a detailed status report (Markdown, which can be saved as Word) and a one-page executive dashboard (HTML, with milestones you can open to see the work they depend on). All facts are calculated from the files. Your narrative and decisionsNeeded are shown separately and labelled as AI-written; if the narrative names a different RAG rating from the calculated one, the pack flags it. Everything is saved as a Draft for PMO review.',
-    inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'The project plan' }, raid: { type: 'string', description: 'Optional RAID log workbook' }, statusDate: { type: 'string' }, narrative: { type: 'string', description: '3 to 5 sentences for executives, based only on get_status_facts' }, decisionsNeeded: { type: 'array', items: { type: 'string' }, description: 'Decisions or support needed from leadership, each citing the task or RAID ID' } }, required: ['path'] },
-    run: write((a) => status.buildReport(resolveIn(a.path), { raid: a.raid ? resolveIn(a.raid) : null, root: ROOT, statusDate: a.statusDate, narrative: a.narrative, decisionsNeeded: a.decisionsNeeded })),
+    description: 'Write the weekly status pack into "Status reports/<status date>/": status.json (the status model, with a Delivery progress block when a backlog export is given), a detailed status report (Markdown, which can be saved as Word) and a one-page executive dashboard (HTML, with milestones you can open to see the work they depend on). All facts are calculated from the files. Your narrative and decisionsNeeded are shown separately and labelled as AI-written; if the narrative names a different RAG rating from the calculated one, the pack flags it. Everything is saved as a Draft for PMO review.',
+    inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'The project plan' }, raid: { type: 'string', description: 'Optional RAID log workbook' }, backlog: { type: 'string', description: 'Optional Azure DevOps work-item export, for the Delivery progress section' }, tagPrefix: { type: 'string' }, statusDate: { type: 'string' }, narrative: { type: 'string', description: '3 to 5 sentences for executives, based only on get_status_facts' }, decisionsNeeded: { type: 'array', items: { type: 'string' }, description: 'Decisions or support needed from leadership, each citing the task or RAID ID' } }, required: ['path'] },
+    run: write((a) => status.buildReport(resolveIn(a.path), { raid: a.raid ? resolveIn(a.raid) : null, backlog: a.backlog ? resolveIn(a.backlog) : null, tagPrefix: a.tagPrefix, root: ROOT, statusDate: a.statusDate, narrative: a.narrative, decisionsNeeded: a.decisionsNeeded })),
   },
   {
     name: 'read_transcript',
@@ -326,7 +364,7 @@ const TOOLS = [
 
 // ------------------------------------------------------------------ JSON-RPC over stdio
 if (require.main === module) {
-  require('./mcp-stdio').serve({ name: 'office', instructions: 'Tools for Excel workbooks, Microsoft Project plans, Word documents, requirements traceability, test cases, defect triage and knowledge publishing in the project folder.', tools: TOOLS });
+  require('./mcp-stdio').serve({ name: 'office', instructions: 'Tools for Excel workbooks, Microsoft Project plans (including delivery scenarios and team capacity), Word documents, requirements traceability, test cases, defect triage and knowledge publishing in the project folder.', tools: TOOLS });
 }
 
 module.exports = { TOOLS };

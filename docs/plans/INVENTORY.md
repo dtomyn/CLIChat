@@ -10,9 +10,9 @@ Last reviewed: 2026-11-07 (branch `feature/ideas-for-pm`, commit `82b234d`)
 
 | Status | Count |
 |---|---|
-| ✅ Done | 10 |
-| 🟡 Partial | 5 |
-| 📝 Planned | 27 |
+| ✅ Done | 13 |
+| 🟡 Partial | 4 |
+| 📝 Planned | 25 |
 | ⬜ Not started | 0 |
 
 Lumen runs on one computer and works on files in the notebook folder. Where the catalogue names a cloud target (SharePoint, Teams, Power BI, Fabric, ADO Test Plans), Lumen produces the file or proposal locally, and a person publishes it. "Done" means the use case works end to end in that model. Live system connections are tracked separately in Plan 08 (Azure DevOps) and in the "Live targets" column.
@@ -23,9 +23,9 @@ Lumen runs on one computer and works on files in the notebook folder. Where the 
 |---|---|---|---|---|---|---|
 | 1 | Integrated Planning | Query the integrated plan in natural language | High | ✅ | Ask the Plan agent, `query_plan`, ms-project skill | — |
 | 2 | Integrated Planning | Synchronize ADO progress with MPP | High | 🟡 | `plan_progress_from_backlog` + prompt from an ADO export file. Missing: live ADO query | 08 |
-| 3 | Planning / Reporting | Program status report from source data | High | 🟡 | Weekly executive status pack (plan + RAID, `build_status_report`). Missing: ADO backlog section | 10 |
+| 3 | Planning / Reporting | Program status report from source data | High | ✅ | Weekly executive status pack (plan + RAID, `build_status_report`), now with a **Delivery progress** block from an ADO backlog export (`backlog` on `get_status_facts` / `build_status_report`): items by state per epic, points done, open items on late tasks, critical-path tasks with items not started (an Amber reason), each row citing its export cell (2026-11-07). Live ADO query: Plan 08 | 10 |
 | 4 | Integrated Planning | Identify and explain schedule variance | High | ✅ | `analyze_project_plan`, `plan_change_log`, variance Gantt, plan history | — |
-| 5 | Integrated Planning | Model alternative delivery scenarios | Medium | 📝 | Nothing yet | 10 |
+| 5 | Integrated Planning | Model alternative delivery scenarios | Medium | ✅ | `tools/scenario.js`, read-only `model_scenario` (task slips, start-no-earlier-than, capacity changes, removed dependencies; milestone deltas, new critical path, newly over-allocated people, `planUpdates` for `update_project_plan`), prompt **Delivery scenarios** (side by side, saved to `Scenarios/<date>.xlsx`) (2026-11-07) | 10 |
 | 6 | Governance / RAID | RAID updates from meeting transcripts | High | ✅ | Huddle → RAID log, `propose_raid_updates`, `apply_raid_updates` | — |
 | 7 | Functional / Requirements | Refine BRDs into functional requirements | High | ✅ | Requirements Refiner, lifecycle stage 1, `read_document` | — |
 | 8 | Functional Design | Draft and review FDD | High | ✅ | Functional Designer, lifecycle stage; **Save as Word (program template)** on the approved stage (`wordTemplate`, `md-export.js` `toDocx`), sample `Templates/FDD Template.dotx` (2026-11-07) | 18 |
@@ -59,7 +59,7 @@ Lumen runs on one computer and works on files in the notebook folder. Where the 
 | 36 | Development / Engineering | Developer Copilot skill pack | High | 📝 | "Use in VS Code" export exists to reuse | 17 |
 | 37 | Cross-Functional / Knowledge | ADO Wiki → SharePoint publishing, freshness | Foundational | 🟡 | `tools/publish.js`: `publish_snapshot`, `check_freshness`, `Published/publishing-log.xlsx`, **Knowledge freshness** prompt (2026-11-07). Missing: live ADO Wiki source (Plan 08 phase 2) | 18, 08 |
 | 38 | Architecture / Governance | ADRs and reuse vs. build | High | 📝 | — | 16 |
-| 39 | Planning / Resources | Estimates and resource capacity | High | 🟡 → 📝 | "Who's overloaded?" works from plan assignments. Missing: capacity workbook and sprint demand | 10 |
+| 39 | Planning / Resources | Estimates and resource capacity | High | ✅ | `tools/capacity.js`, `analyze_capacity` (weekly demand vs. capacity per person and role, leave clashes with critical work, sprint overloads from an ADO export, story-point outliers vs. the team median), **Who's overloaded?** takes an optional capacity workbook and backlog, sample `Team Capacity - Q4 2026.xlsx` (2026-11-07) | 10 |
 | 40 | Architecture / Governance | Stage-gate packs | High | 📝 | — | 16 |
 | 41 | DevOps / Environments | Pipeline assets and environment drift | High | 📝 | — | 17 |
 | 42 | Architecture / Knowledge | Technical catalogues from delivery changes | High | 📝 | — | 16 |
@@ -72,7 +72,7 @@ Lumen runs on one computer and works on files in the notebook folder. Where the 
 |---|---|---|---|---|
 | [08 Azure DevOps](08-azure-devops.md) | 2, 10, 11, 33 (live ADO) | L | — | 📝 |
 | [09 Quality engineering](09-quality-engineering.md) | 11 (test layer), 19, 20, 34 | M | — (08 for ADO Test Plans) | ✅ 2026-11-07 |
-| [10 Planning intelligence](10-planning-intelligence.md) | 3, 5, 39 | M | — | 📝 |
+| [10 Planning intelligence](10-planning-intelligence.md) | 3, 5, 39 | M | — | ✅ 2026-11-07 |
 | [11 Data engineering](11-data-engineering.md) | 13, 14, 15, 18 | L | — | 📝 |
 | [12 Integration and APIs](12-integration-and-apis.md) | 16, 17 | M | 11 (schema reader) | 📝 |
 | [13 Security and SA&A](13-security-saa.md) | 21, 22, 23 | M | 18 (templates) helps | 📝 |
@@ -101,3 +101,4 @@ These extend the [ground rules](README.md#ground-rules-for-every-plan):
 |---|---|
 | 2026-11-07 | Inventory created from AIThemes.pdf; plans 09–18 written |
 | 2026-11-07 | Plan 09 implemented: #19, #20, #34 done; #11 gains the test-case layer |
+| 2026-11-07 | Plan 10 implemented: #3, #5, #39 done |

@@ -358,7 +358,7 @@ async function timesheets() {
 // Items link to plan tasks with an MPP-<task ID> tag. A few are deliberately messy so the data-quality findings have something to show.
 async function backlog() {
   const bw = new ExcelJS.Workbook(); bw.creator = 'Azure DevOps';
-  const cols = [{ h: 'ID', w: 8 }, { h: 'Work Item Type', w: 16 }, { h: 'Title', w: 52 }, { h: 'State', w: 14 }, { h: 'Tags', w: 22 }, { h: 'Story Points', w: 12 }, { h: 'Assigned To', w: 16 }, { h: 'State Change Date', w: 16, fmt: 'yyyy-mm-dd' }];
+  const cols = [{ h: 'ID', w: 8 }, { h: 'Work Item Type', w: 16 }, { h: 'Title', w: 52 }, { h: 'State', w: 14 }, { h: 'Tags', w: 22 }, { h: 'Story Points', w: 12 }, { h: 'Assigned To', w: 16 }, { h: 'State Change Date', w: 16, fmt: 'yyyy-mm-dd' }, { h: 'Iteration Path', w: 22 }, { h: 'Remaining Work', w: 14 }, { h: 'Parent', w: 22 }];
   const D = (x) => (x ? new Date(x + 'T00:00:00Z') : null);
   const items = [
     // Task 17 Configure sales pipeline: nearly done
@@ -392,9 +392,44 @@ async function backlog() {
     ['User Story', 'Renewal reminder emails', 'Closed', 'MPP-99', 3, 'Marcus Lee', '2026-10-23'],
     ['Feature', 'Sales pipeline (whole feature)', 'Active', 'MPP-16', 0, 'Tom Becker', '2026-10-26'],
     ['User Story', 'Vendor sandbox access', 'Blocked', 'MPP-18', 2, 'Aisha Khan', '2026-10-24'],
-  ].map((r, i) => [1001 + i, ...r.slice(0, 6), D(r[6])]);
+  ].map((r, i) => {
+    // Sprint, remaining hours and parent epic, so the status pack and the capacity check have something to show.
+    const task = +(/MPP-(\d+)/.exec(r[3]) || [])[1];
+    const done = r[2] === 'Closed' || r[2] === 'Removed';
+    const iteration = `Contoso CRM\\${done ? (r[6] <= '2026-10-16' ? 'Sprint 6' : 'Sprint 7') : [20, 27].includes(task) ? 'Sprint 9' : 'Sprint 8'}`;
+    const remaining = done ? 0 : r[1] === 'ERP write-back: orders' ? 36 : r[4] * 4;
+    const parent = { 17: 'Sales pipeline', 18: 'ERP integration', 20: 'Reporting', 21: 'Data migration', 22: 'Data migration', 25: 'Testing', 27: 'Data migration' }[task] || '';
+    return [1001 + i, ...r.slice(0, 6), D(r[6]), iteration, remaining, parent];
+  });
   sheet(bw, 'Query 1', cols, items);
   await bw.xlsx.writeFile(path.join(OUT, 'ADO Backlog Export - 30 Oct 2026.xlsx'));
+}
+
+// Team capacity for Q4: hours, availability and leave per person, plus sprint dates, for the "Who's overloaded?" capacity check.
+// Aisha Khan is on leave 2 to 6 Nov, in the middle of #18 Build ERP integration, which is on the critical path.
+async function capacity() {
+  const cw = new ExcelJS.Workbook(); cw.creator = 'Priya Shah';
+  sheet(cw, 'Team', [{ h: 'Person', w: 18 }, { h: 'Role', w: 20 }, { h: 'Hours per week', w: 14 }, { h: 'Availability %', w: 14, fmt: '0%' }, { h: 'Notes', w: 44 }], [
+    ['Priya Shah', 'Project management', 40, 1, ''],
+    ['Marcus Lee', 'Business analysis', 40, 0.8, 'One day a week on the billing programme'],
+    ['Elena Rossi', 'Architecture', 40, 0.5, 'Shared with the data platform team'],
+    ['Tom Becker', 'Development', 40, 1, ''],
+    ['Aisha Khan', 'Development', 40, 1, ''],
+    ['Ben Carter', 'Data', 40, 1, ''],
+    ['Grace Kim', 'Testing', 40, 1, ''],
+    ['Sales Ops SMEs', 'Business', 80, 0.5, 'Two SMEs, half time each'],
+  ]);
+  const D = (x) => new Date(x + 'T00:00:00Z');
+  sheet(cw, 'Leave', [{ h: 'Person', w: 18 }, { h: 'From', w: 12, fmt: 'yyyy-mm-dd' }, { h: 'To', w: 12, fmt: 'yyyy-mm-dd' }, { h: 'Reason', w: 20 }], [
+    ['Aisha Khan', D('2026-11-02'), D('2026-11-06'), 'Annual leave'],
+    ['Marcus Lee', D('2026-11-26'), D('2026-11-27'), 'Training course'],
+    ['Priya Shah', D('2026-12-28'), D('2026-12-31'), 'Annual leave'],
+  ]);
+  sheet(cw, 'Sprints', [{ h: 'Sprint', w: 12 }, { h: 'Start', w: 12, fmt: 'yyyy-mm-dd' }, { h: 'End', w: 12, fmt: 'yyyy-mm-dd' }], [
+    ['Sprint 6', D('2026-10-05'), D('2026-10-16')], ['Sprint 7', D('2026-10-19'), D('2026-10-30')], ['Sprint 8', D('2026-11-02'), D('2026-11-13')],
+    ['Sprint 9', D('2026-11-16'), D('2026-11-27')], ['Sprint 10', D('2026-11-30'), D('2026-12-11')],
+  ]);
+  await cw.xlsx.writeFile(path.join(OUT, 'Team Capacity - Q4 2026.xlsx'));
 }
 
 // The 10:30 huddle on 30 Oct, as a Teams WebVTT transcript, for the "Huddle → RAID log" quick start.
@@ -425,7 +460,7 @@ function huddle() {
 }
 
 (async () => {
-  await budget(); await raid(); await timesheets(); await backlog(); huddle();
+  await budget(); await raid(); await timesheets(); await backlog(); await capacity(); huddle();
   const { recalc } = require('../tools/excel');
   for (const f of fs.readdirSync(OUT).filter((x) => x.endsWith('.xlsx'))) process.stdout.write(`${f}: ${recalc(path.join(OUT, f)) ? 'calculated in Excel' : 'Excel not available — values calculate on open'}
 `);
@@ -441,6 +476,7 @@ A fictional project used to try Lumen's project-management assistants.
 | **Team Timesheets - October 2026.xlsx** | Hours booked per person per task |
 | **Weekly Progress Update - 30 Oct 2026.xlsx** | Team leads' latest % complete — use it to update the plan |
 | **ADO Backlog Export - 30 Oct 2026.xlsx** | Azure DevOps work items tagged MPP-<task ID> — use it to propose plan progress and see the data-quality gaps |
+| **Team Capacity - Q4 2026.xlsx** | Hours, availability, leave and sprint dates per person — use it to check who is overloaded and whose leave clashes with the plan |
 | **Huddle 10-30 - 30 Oct 2026.vtt** | Teams transcript of the daily 10:30 huddle — use it to update the RAID log |
 
 ## Things to try
@@ -452,6 +488,8 @@ A fictional project used to try Lumen's project-management assistants.
 - *"Turn the plan into an Excel tracker with a Gantt chart."*
 - *"Update the RAID log from this morning's huddle transcript."*
 - *"Update the plan from the ADO backlog export, and tell me what is wrong with the data."*
+- *"What if ERP integration slips another two weeks? Compare that with adding a tester."*
+- *"Check capacity against the plan and the backlog. Who's overloaded, and whose leave clashes with critical work?"*
 `);
   console.log(`Demo written to ${OUT}`);
   console.log(`Plan: ${tasks.length} tasks, ${iso(projStart)} → ${iso(projFinish)} (baseline finish ${iso(new Date(Math.max(...tasks.map((t) => t.bFinish))))})`);
