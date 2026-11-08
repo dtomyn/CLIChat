@@ -1,0 +1,36 @@
+# Exported from OpenShift: oc get deployment,configmap -o yaml (STE, synthetic)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: permit-api
+  namespace: permit-ste
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: api
+          image: acrcontoso.azurecr.io/permit/permit-api:1.4.2
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: permit-db
+                  key: password
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+        - name: photo-check
+          image: acrcontoso.azurecr.io/permit/photo-validation:2.0.0
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: permit-api-config
+  namespace: permit-ste
+data:
+  FEATURE_SMS: "false"
+  RENEWAL_WINDOW_DAYS: "90"

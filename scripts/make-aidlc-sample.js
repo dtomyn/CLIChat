@@ -133,6 +133,40 @@ const BL = [
   ['US-110', 'Story', 'Choose a paper permit', 'FT-1.2', 'As an applicant, I want a paper permit mailed so that I have a physical copy.', 'Given I tick the option, then a mailing request is created.', 'FD-017', 'Ready', '2026-10-01'],
 ];
 
+// Test cases (SIT/UAT). BR-007 (notifications) has no test at all, TC-011 still tests the withdrawn paper-permit
+// requirement, and TC-006 was written against the old 12-month photo rule.
+// [id, title, type, priority, traces to, status, last changed]
+const TESTS = [
+  ['TC-001', 'Renew from My permits inside the renewal window', 'SIT', 2, 'US-101', 'Passed', '2026-10-10'],
+  ['TC-002', 'Renew is not offered 91 days after expiry (boundary)', 'SIT', 1, 'US-101, BR-002.1', 'Passed', '2026-10-10'],
+  ['TC-003', 'Resume a saved draft within 30 days', 'SIT', 2, 'US-102', 'Not run', '2026-10-10'],
+  ['TC-004', 'Eligibility blocks a permit expired 91 days ago', 'SIT', 1, 'US-103', 'Failed', '2026-10-12'],
+  ['TC-005', 'Active hold blocks renewal without showing hold details (negative)', 'SIT', 1, 'US-103, BR-002.2', 'Passed', '2026-10-12'],
+  ['TC-006', 'Photo taken 11 months ago is accepted', 'SIT', 2, 'US-104', 'Passed', '2026-10-12'],
+  ['TC-007', 'Pay by card, then submit the renewal', 'SIT', 1, 'US-105', 'Not run', '2026-10-12'],
+  ['TC-008', 'Failed check creates an agent work item with the reason', 'SIT', 2, 'US-107', 'Not run', '2026-10-12'],
+  ['TC-009', 'Renewal journey passes WCAG 2.1 AA checks', 'UAT', 1, 'BR-006.1', 'Not run', '2026-10-14'],
+  ['TC-010', 'Every screen switches between English and French', 'UAT', 2, 'BR-006.2', 'Not run', '2026-10-14'],
+  ['TC-011', 'Paper permit request is mailed to a Canadian address', 'UAT', 3, 'BR-008', 'Not run', '2026-10-14'],
+];
+
+// Defect export in the Azure DevOps query layout. Two duplicate pairs (1201/1204 payment time-outs, 1203/1206 PNG
+// photos, each in the same area), one severity–priority mismatch (1207), one unowned defect (1203), and a closed
+// look-alike of 1203 in a different area (1210) that is not a duplicate.
+// [id, title, state, severity, priority, area, assigned to, created, changed]
+const DEFECTS = [
+  [1201, 'Payment page times out when submitting the renewal', 'Active', '2 - High', 2, 'Permit Renewal\\Payments', 'Grace Kim', '2026-10-12', '2026-11-02'],
+  [1202, 'Eligibility check allows a permit expired 91 days ago', 'Active', '1 - Critical', 1, 'Permit Renewal\\Eligibility', 'Ben Carter', '2026-10-14', '2026-11-04'],
+  [1203, 'Photo upload rejects valid PNG files', 'New', '3 - Medium', 3, 'Permit Renewal\\Portal', '', '2026-10-20', '2026-10-20'],
+  [1204, 'Renewal payment page timing out on submit', 'New', '2 - High', 2, 'Permit Renewal\\Payments', 'Aisha Khan', '2026-10-25', '2026-10-25'],
+  [1205, 'French text missing from the receipt email', 'Active', '3 - Medium', 3, 'Permit Renewal\\Notifications', 'Priya Shah', '2026-10-18', '2026-10-30'],
+  [1206, 'PNG photo rejected on upload', 'Active', '3 - Medium', 3, 'Permit Renewal\\Portal', 'Ben Carter', '2026-10-27', '2026-10-29'],
+  [1207, 'Enforcement hold details shown to the applicant', 'New', '1 - Critical', 4, 'Permit Renewal\\Eligibility', 'Grace Kim', '2026-11-03', '2026-11-03'],
+  [1208, 'Screen reader skips the Renew button', 'Active', '3 - Medium', 2, 'Permit Renewal\\Portal', 'Grace Kim', '2026-09-15', '2026-09-20'],
+  [1209, 'Draft renewal deleted after 20 days instead of 30', 'Closed', '2 - High', 2, 'Permit Renewal\\Portal', 'Ben Carter', '2026-09-28', '2026-10-09'],
+  [1210, 'Photo upload rejects valid PNG files', 'Closed', '3 - Medium', 3, 'Permit Renewal\\Agent Console', 'Aisha Khan', '2026-09-30', '2026-10-05'],
+];
+
 const CHANGES = [
   ['2026-10-15', 'BR-008', 'Withdrawn: paper permits descoped from Release 1 (steering committee decision SC-14).', 'Business owner', 'BRD v1.3'],
   ['2026-10-28', 'BR-004', 'Changed: photo must be taken within the last 6 months (was 12 months), following the updated photo standard.', 'Business owner', 'BRD v1.3'],
@@ -165,6 +199,8 @@ async function traceabilityWorkbook() {
     TD.map((r) => [...r.slice(0, 7), date(r[7])]), 'FFC757D6');
   const bl = sheet(wb, 'Backlog', [['Item ID', 9], ['Type', 9], ['Title', 32], ['Parent', 9], ['Description', 55], ['Acceptance Criteria', 55], ['Implements', 20], ['Status', 10], ['Last Changed', 14]],
     BL.map((r) => [...r.slice(0, 8), date(r[8])]), 'FFFF8A5B');
+  sheet(wb, 'Tests', [['Test ID', 9], ['Title', 50], ['Type', 7], ['Priority', 9], ['Traces To', 22], ['Status', 10], ['Last Changed', 14]],
+    TESTS.map((r) => [...r.slice(0, 6), date(r[6])]), 'FF2E9E6B');
   sheet(wb, 'Change Log', [['Date', 12], ['Req ID', 10], ['Change', 80], ['Changed By', 16], ['Version', 10]], CHANGES.map(([d, ...r]) => [date(d), ...r]), 'FF888888');
   for (const ws of [br, rr, fd, td, bl]) {
     const statusCol = ws.getRow(1).values.indexOf('Status');
@@ -172,6 +208,14 @@ async function traceabilityWorkbook() {
   }
   for (const ws of wb.worksheets) ws.eachRow((row, i) => { if (i > 1) row.eachCell((c) => { if (c.value instanceof Date) c.numFmt = 'yyyy-mm-dd'; }); });
   await wb.xlsx.writeFile(path.join(OUT, 'Requirements Traceability (sample).xlsx'));
+}
+
+async function defectExport() {
+  const wb = new ExcelJS.Workbook(); wb.creator = 'Azure DevOps query export (sample)';
+  sheet(wb, 'Defects', [['ID', 7], ['Work Item Type', 14], ['Title', 50], ['State', 9], ['Severity', 12], ['Priority', 9], ['Area Path', 30], ['Assigned To', 14], ['Created Date', 13], ['Changed Date', 13]],
+    DEFECTS.map(([id, t, st, sev, pri, area, who, c, ch]) => [id, 'Bug', t, st, sev, pri, area, who, date(c), date(ch)]));
+  wb.worksheets[0].eachRow((row, i) => { if (i > 1) row.eachCell((c) => { if (c.value instanceof Date) c.numFmt = 'yyyy-mm-dd'; }); });
+  await wb.xlsx.writeFile(path.join(OUT, 'Defects export.xlsx'));
 }
 
 async function dataModel() {
@@ -242,7 +286,14 @@ function documents() {
     tableXml([['ID', 'Requirement', 'Priority', 'Section'], ...BR.map(([id, t, p, s, st]) => [id, st === 'Withdrawn' ? `[WITHDRAWN 2026-10-15] ${t}` : t, p, s])]),
     para('4. Non-functional requirements', 'Heading1'),
     para('See BR-006. Pages load in under 3 seconds for 95% of requests. The service is available 99.5% of the time outside maintenance windows.'),
-    para('5. Change history', 'Heading1'),
+    para('5. Interfaces', 'Heading1'),
+    para('The renewal journey exchanges data with these systems. Each interface needs an interface control document (ICD) before build, and new APIs follow the program API standards.'),
+    tableXml([['Interface', 'From', 'To', 'Data', 'Requirements'],
+      ['Case API', 'Applicant portal', 'Case management platform', 'Permit, renewal application, eligibility decision, photo', 'BR-001, BR-002, BR-004'],
+      ['Payment webhook', 'Enterprise payment gateway', 'Case management platform', 'Payment result and receipt reference', 'BR-003'],
+      ['Notification API', 'Case management platform', 'Enterprise notification service', 'Status message, language, channel', 'BR-007']]),
+    para('Expected volumes: about 180,000 renewals a year, peaking at 1,500 a day in March and April. Interfaces carry Protected B data.'),
+    para('6. Change history', 'Heading1'),
     tableXml([['Version', 'Date', 'Change'], ['1.2', '2026-09-01', 'Approved baseline'], ['1.3', '2026-10-15', 'BR-008 withdrawn (paper permits descoped, decision SC-14)'], ['1.3', '2026-10-28', 'BR-004 photo age changed from 12 months to 6 months (updated photo standard)']]),
   ]);
   fs.writeFileSync(path.join(KB, 'Solution Blueprint - Permit Renewal.md'), `# ${PROGRAM} — Solution Blueprint
@@ -269,6 +320,9 @@ ${AGENCY} · Version 0.9 · 2026-09-18 · Owner: Solution Architect (fictional) 
 
 ## Open architecture decisions
 - AD-07: Where to run photo validation (portal vs. a new service). Leaning toward a server-side service called by the portal.
+
+## Build stack
+New APIs are written in C# on .NET 8 with ASP.NET Core controllers, and contract-tested with xUnit. API specs are OpenAPI 3.0 and follow Knowledge/API Standards.md.
 `);
   fs.writeFileSync(path.join(KB, 'Ways of Working - Delivery.md'), `# Ways of Working — Delivery
 
@@ -300,22 +354,710 @@ A changed or withdrawn requirement is logged in the TRM Change Log. All linked d
 `);
 }
 
+// ------------------------------------------------------------------ architecture and governance (Plan 16)
+// Seeded defects: the TDD names an "Address lookup service" the blueprint never mentions, cites the superseded
+// ADR-002, uses an entity (Renewal Fee) and a field (Permit.renewalCount) the data model doesn't have; the
+// interface catalogue has an approved v1.0 and a newer unapproved v1.1; the security assessment is missing.
+async function architecture() {
+  const ARCH = path.join(OUT, 'Architecture');
+  const ADRS = path.join(ARCH, 'ADRs');
+  const DESIGN = path.join(ARCH, 'Design');
+  for (const d of [ADRS, DESIGN]) fs.mkdirSync(d, { recursive: true });
+  fs.writeFileSync(path.join(ADRS, 'ADR-001-eligibility-rules-in-case-management.md'), `# ADR-001: Run eligibility rules in the case management rules engine
+
+## Status
+Accepted (2026-09-12, Design Authority)
+
+## Context
+Renewal eligibility (expiry window, enforcement holds) must be checked before payment. The rules change a few times a year and the case management platform already holds permits and holds.
+
+## Decision
+We will run the eligibility rules in the case management rules engine and expose them to the portal through the Case API. No separate rules service will be built.
+
+## Consequences
+- Rule changes follow the case management release cycle.
+- The Eligibility service in the TDD is a thin API over the rules engine.
+`);
+  fs.writeFileSync(path.join(ADRS, 'ADR-002-photo-validation-in-the-portal.md'), `---
+status: superseded
+date: 2026-09-20
+superseded-by: ADR-003
+---
+# ADR-002: Validate photos in the applicant portal
+
+## Context and Problem Statement
+Uploaded photos must meet the photo standard (type, size, capture date) before the renewal can be submitted.
+
+## Decision Outcome
+Chosen option: validate the photo in the browser, inside the existing applicant portal.
+
+### Consequences
+- No new component.
+- Checks can be bypassed by a modified browser, so the case worker re-checks the photo.
+`);
+  fs.writeFileSync(path.join(ADRS, 'ADR-003-photo-validation-service.md'), `---
+status: accepted
+date: 2026-10-14
+---
+# ADR-003: Photo validation as a server-side service
+
+Supersedes ADR-002.
+
+## Context and Problem Statement
+Browser-only checks (ADR-002) can be bypassed, and the photo standard changed (BR-004: 6 months). The enterprise reusable-asset register lists a photo standard checker library.
+
+## Decision Outcome
+Chosen option: build a photo validation service called by the portal, using the photo standard checker library. Photos are stored in the enterprise document store only after they pass.
+
+### Consequences
+- One new component to run and support.
+- The portal keeps a quick browser check for usability only.
+`);
+  fs.writeFileSync(path.join(KB, 'Technical Design - Permit Renewal.md'), `# ${PROGRAM} — Technical Design
+
+${AGENCY} · Version 1.1 · Owner: Solution Architect (fictional)
+
+**Status:** Approved · Approved by: Solution Architect (fictional) · 2026-10-20
+
+## Components
+| Component | Responsibility | Decision |
+|---|---|---|
+| Existing applicant portal | Renewal journey, EN/FR, WCAG 2.1 AA | Extend |
+| Enterprise sign-in | Applicant sign-in | Reuse |
+| Case management platform | Permits, renewals, agent work items | Reuse |
+| Case management rules engine | Eligibility rules (ADR-001) | Reuse |
+| Enterprise payment gateway | Hosted payment page and webhook | Reuse |
+| Enterprise notification service | Email notifications | Reuse |
+| Enterprise document store | Photos and receipts | Reuse |
+| Photo validation | Type, size and capture-date checks | Build |
+| Address lookup service | Validates the mailing address on the summary page | Build |
+
+## Photo validation
+Photo validation follows ADR-002: the checks run in the browser before upload.
+
+## Endpoints
+- POST /renewals — start a renewal
+- POST /renewals/{id}/eligibility — run the eligibility check
+- POST /renewals/{id}/photo — upload and validate the photo
+
+## Data
+| Entity | Attributes used |
+|---|---|
+| Permit | permitNumber, expiryDate, renewalCount |
+| Renewal Application | status, draftExpiresOn |
+| Eligibility Decision | reasonCode |
+| Renewal Fee | amount |
+
+Notifications record Notification.channel and Notification.language.
+`);
+  fs.writeFileSync(path.join(DESIGN, 'Interface Catalogue v1.0.md'), `> Approved by Solution Architect (fictional) on 2026-10-12T15:00:00.000Z
+
+# Interface Catalogue
+
+| Interface | From | To | Pattern |
+|---|---|---|---|
+| Case API | Existing applicant portal | Case management platform | REST, idempotent writes |
+| Payment webhook | Enterprise payment gateway | Case management platform | Webhook |
+| Notification API | Case management platform | Enterprise notification service | REST |
+`);
+  fs.writeFileSync(path.join(DESIGN, 'Interface Catalogue v1.1.md'), `# Interface Catalogue
+
+Draft: adds the address lookup interface. Not yet reviewed.
+
+| Interface | From | To | Pattern |
+|---|---|---|---|
+| Case API | Existing applicant portal | Case management platform | REST, idempotent writes |
+| Payment webhook | Enterprise payment gateway | Case management platform | Webhook |
+| Notification API | Case management platform | Enterprise notification service | REST |
+| Address lookup API | Existing applicant portal | Address lookup service | REST |
+`);
+  fs.writeFileSync(path.join(ARCH, 'Design gate.json'), `${JSON.stringify({
+    gate: 'Design gate',
+    artefacts: [
+      { name: 'Solution Blueprint', path: 'Knowledge/Solution Blueprint - Permit Renewal.md' },
+      { name: 'Technical Design', path: 'Knowledge/Technical Design - Permit Renewal.md' },
+      { name: 'Interface Catalogue', path: 'Architecture/Design/Interface Catalogue v1.0.md' },
+      { name: 'Security Assessment', path: 'Architecture/Design/Security Assessment.md' },
+    ],
+    approvals: [{ role: 'Design Authority', artefact: 'Technical Design' }, { role: 'Business Owner' }],
+    openItems: ['AD-07 photo validation location: confirm ADR-003 closes it'],
+  }, null, 2)}\n`);
+  fs.writeFileSync(path.join(ARCH, 'Delivery changes - git log.txt'), `commit 9f3c2a1d4e5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d
+Author: Dev One <dev.one@example.com>
+Date:   Mon Oct 26 10:00:00 2026 -0500
+
+    Add photo validation service (ADR-003)
+
+services/photo-validation/src/index.js
+services/photo-validation/src/checks.js
+services/photo-validation/package.json
+
+commit 7a1b2c3d4e5f60718293a4b5c6d7e8f901234567
+Author: Dev Two <dev.two@example.com>
+Date:   Tue Oct 27 14:30:00 2026 -0500
+
+    Eligibility: block renewals expired more than 90 days
+
+services/eligibility-service/rules/expiry.js
+services/eligibility-service/test/expiry.test.js
+
+commit 5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f
+Author: Dev One <dev.one@example.com>
+Date:   Wed Oct 28 09:15:00 2026 -0500
+
+    Retire the legacy kiosk interface (kiosk integration is out of scope)
+
+integrations/legacy-kiosk/README.md
+integrations/legacy-kiosk/kiosk-sync.js
+
+commit 3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d
+Author: Dev Two <dev.two@example.com>
+Date:   Thu Oct 29 16:45:00 2026 -0500
+
+    Case API client: retry with back-off
+
+apis/case-api/client.js
+`);
+  const wb = new ExcelJS.Workbook(); wb.creator = 'Architecture practice';
+  sheet(wb, 'Components', [['Name', 30], ['Type', 14], ['Owner', 18], ['Platform', 30], ['Status', 12], ['Last changed', 14], ['Notes', 40]], [
+    ['Applicant portal', 'Web app', 'Client Services', 'Existing applicant portal', 'Active', '2026-06-01', ''],
+    ['Eligibility service', 'Service', 'Licensing', 'Case management rules engine', 'Active', '2026-09-12', 'ADR-001'],
+    ['Document store', 'Platform', 'Enterprise IT', 'Enterprise document store', 'Active', '2025-03-01', ''],
+    ['Legacy kiosk interface', 'Interface', 'Licensing', 'Kiosk system', 'Active', '2024-11-01', 'Out of scope for Release 1 (PID §3)'],
+  ], 'FF2F3B8F');
+  sheet(wb, 'APIs', [['Name', 26], ['Owner', 18], ['Version', 10], ['Status', 12], ['Last changed', 14], ['Notes', 40]], [
+    ['Case API', 'Case management', 'v2', 'Active', '2026-08-15', ''],
+    ['Notification API', 'Enterprise IT', 'v1', 'Active', '2025-10-01', 'Email channel only'],
+    ['Payment webhook', 'Finance', 'v1', 'Active', '2026-02-01', ''],
+  ], 'FF3A7BD5');
+  sheet(wb, 'Integrations', [['Name', 40], ['From', 26], ['To', 26], ['Pattern', 16], ['Status', 12], ['Last changed', 14], ['Notes', 30]], [
+    ['Portal to payment gateway', 'Applicant portal', 'Enterprise payment gateway', 'Redirect + webhook', 'Active', '2026-02-01', ''],
+    ['Case management to notification service', 'Case management platform', 'Enterprise notification service', 'REST', 'Active', '2025-10-01', ''],
+  ], 'FF7C5CFF');
+  sheet(wb, 'Dependencies', [['Name', 30], ['Version', 10], ['Used by', 30], ['Status', 12], ['Last changed', 14], ['Notes', 30]], [
+    ['Photo standard checker library', '2.3', 'Not yet used', 'Active', '2026-04-01', 'From the reusable-asset register'],
+  ], 'FFC757D6');
+  await wb.xlsx.writeFile(path.join(ARCH, 'Technical Inventory.xlsx'));
+  const ra = new ExcelJS.Workbook(); ra.creator = 'Architecture practice';
+  sheet(ra, 'Reusable assets', [['Asset', 32], ['Type', 14], ['Owner', 18], ['Status', 12], ['What it does', 56], ['How to reuse', 46]], [
+    ['Enterprise address lookup API', 'API', 'Enterprise IT', 'Active', 'Validates and completes Canadian mailing addresses.', 'Subscribe through the API catalogue; REST, OAuth client credentials'],
+    ['Photo standard checker library', 'Library', 'Identity programme', 'Active', 'Checks photo type, size, dimensions and capture date against the photo standard.', 'Package from the internal registry; configurable age limit'],
+    ['Enterprise notification service', 'Platform', 'Enterprise IT', 'Active', 'Email (SMS in 2027) with EN/FR templates.', 'Onboard through the platform team'],
+    ['Enterprise document store', 'Platform', 'Enterprise IT', 'Active', 'Stores documents and images with retention rules.', 'Onboard through the platform team'],
+    ['Case API', 'API', 'Case management', 'Active', 'Read and write cases, permits and work items.', 'Request access from the case management team'],
+  ], 'FF2E9E6B');
+  await ra.xlsx.writeFile(path.join(ARCH, 'Reusable assets.xlsx'));
+}
+
+// ------------------------------------------------------------------ integration and APIs (Plan 12)
+// API standards and HIP pattern notes in Knowledge/, a flawed OpenAPI spec (one broken $ref, one missing error
+// response) and a draft ICD with empty sections in Integration/.
+const API_SPEC = `# Permit Renewal API (synthetic sample). Seeded for review: one broken $ref and one missing error response.
+openapi: 3.0.3
+info:
+  title: Permit Renewal API
+  version: 1.0.0
+  description: Renewal journey API between the applicant portal and the case management platform (synthetic).
+servers:
+  - url: https://api.example.test/permit-renewal
+security:
+  - bearerAuth: []
+tags:
+  - name: Renewals
+  - name: Eligibility
+  - name: Photos
+paths:
+  /v1/renewals:
+    post:
+      tags: [Renewals]
+      operationId: startRenewal
+      summary: Start a renewal for a permit inside the renewal window
+      x-traces-to: [BR-001.1, FD-010, FD-011]
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RenewalRequest'
+      responses:
+        '201':
+          description: Renewal started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Renewal'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /v1/renewals/{renewalId}:
+    parameters:
+      - $ref: '#/components/parameters/RenewalId'
+    get:
+      tags: [Renewals]
+      operationId: getRenewal
+      summary: Get a renewal and its status
+      x-traces-to: [BR-001.2, FD-011]
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+      responses:
+        '200':
+          description: The renewal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Renewal'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /v1/renewals/{renewalId}/eligibility:
+    parameters:
+      - $ref: '#/components/parameters/RenewalId'
+    post:
+      tags: [Eligibility]
+      operationId: checkEligibility
+      summary: Run the eligibility check and record the decision on the case
+      x-traces-to: [BR-002.1, BR-002.2, BR-002.3, FD-012]
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+      responses:
+        '200':
+          description: The eligibility decision
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EligibilityResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /v1/renewals/{renewalId}/photo:
+    parameters:
+      - $ref: '#/components/parameters/RenewalId'
+    post:
+      tags: [Photos]
+      operationId: uploadPhoto
+      summary: Upload and validate the applicant photo
+      x-traces-to: [BR-004.1, FD-014]
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Photo accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Photo'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  parameters:
+    CorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: true
+      description: Unique ID for tracing the request across systems
+      schema:
+        type: string
+        format: uuid
+    RenewalId:
+      name: renewalId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^RN[0-9]{7}$'
+        example: RN0001234
+  responses:
+    BadRequest:
+      description: The request is not valid
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthorized:
+      description: The caller is not signed in
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: No renewal with that ID
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    ServerError:
+      description: Something went wrong; retry with the same correlation ID
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  schemas:
+    RenewalRequest:
+      type: object
+      required: [permitNumber, language]
+      properties:
+        permitNumber:
+          type: string
+          example: PR-2024-00123
+        language:
+          type: string
+          enum: [en, fr]
+    Renewal:
+      type: object
+      required: [renewalId, permitNumber, status]
+      properties:
+        renewalId:
+          type: string
+          example: RN0001234
+        permitNumber:
+          type: string
+          example: PR-2024-00123
+        status:
+          type: string
+          enum: [Draft, Submitted, In review, Approved, Refused]
+        draftExpiresOn:
+          type: string
+          format: date
+    EligibilityDecision:
+      type: object
+      required: [eligible, reasonCode]
+      properties:
+        eligible:
+          type: boolean
+        reasonCode:
+          type: string
+          enum: [OK, EXPIRED_OVER_90_DAYS, ACTIVE_HOLD]
+        decidedAt:
+          type: string
+          format: date-time
+    Photo:
+      type: object
+      required: [photoId, accepted]
+      properties:
+        photoId:
+          type: string
+        accepted:
+          type: boolean
+        reason:
+          type: string
+    Problem:
+      type: object
+      required: [type, title, status, correlationId]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        correlationId:
+          type: string
+          format: uuid
+`;
+
+function integration() {
+  fs.writeFileSync(path.join(KB, 'API Standards.md'), `# API Standards
+
+${AGENCY} · Version 2.0 · Owner: Integration Architect (fictional) · Status: Approved by the Design Authority
+
+APIs between program systems go through the Hybrid Integration Platform (HIP). Every new API is described in OpenAPI 3.0 before it is built.
+
+## Rules Lumen checks
+| Rule | Value | Why |
+|---|---|---|
+| Versioning | Every path starts with \`/v1/\` (major version in the path) | Consumers can pin a version |
+| Path naming | kebab-case plural nouns | Consistent URLs |
+| Property naming | camelCase | Matches the canonical model |
+| Operation IDs | Required and unique, camelCase verbs | Generated clients |
+| Error model | \`Problem\` (RFC 7807: type, title, status, detail, correlationId) | One error format everywhere |
+| Error responses | 400, 401 and 500 on every operation | Predictable failures |
+| Required headers | \`X-Correlation-ID\` on every operation | Tracing across HIP |
+| Traceability | \`x-traces-to\` on every operation, with the BR/FD IDs it implements | Requirements coverage |
+
+## Other guidance
+- Writes are idempotent: clients send the same X-Correlation-ID when they retry.
+- Dates are ISO 8601 (\`2026-11-07\`, \`2026-11-07T09:00:00Z\`).
+- Protected B data stays in Canadian regions and is only sent over TLS 1.2 or higher.
+`);
+  fs.writeFileSync(path.join(KB, 'HIP Patterns.md'), `# Hybrid Integration Platform (HIP) patterns
+
+${AGENCY} · Integration Architecture (fictional) · Synthetic summary for the sample
+
+Every interface control document (ICD) names the pattern it uses. The two approved patterns for Release 1 are:
+
+## ARO P4: synchronous request/response through the API gateway
+- REST over HTTPS through the HIP API gateway; OAuth 2.0 client credentials; mutual TLS between zones.
+- For reads and short writes that need an immediate answer (under 2 seconds at p95).
+- Errors are returned as the \`Problem\` model; the caller retries 5xx with the same correlation ID, up to 3 times.
+
+## ARO P5: asynchronous events through the HIP message broker
+- Publish/subscribe topics; at-least-once delivery; consumers must be idempotent.
+- For notifications, status changes and anything that can wait (minutes).
+- Failed messages go to a dead-letter queue after 5 attempts and raise an alert to the integration support team.
+
+## Choosing
+| Need | Pattern |
+|---|---|
+| An answer is needed now (eligibility, start a renewal) | ARO P4 |
+| Fire and forget, or fan-out to several systems (notifications) | ARO P5 |
+`);
+  const INT = path.join(OUT, 'Integration');
+  fs.mkdirSync(INT, { recursive: true });
+  fs.writeFileSync(path.join(INT, 'permit-renewal-api.yaml'), API_SPEC);
+  fs.writeFileSync(path.join(INT, 'ICD - Case API (draft).md'), `# Interface Control Document: Case API
+
+${AGENCY} · Draft 0.2 · Owner: Integration Analyst (fictional)
+
+## 1. Purpose and scope
+The Case API lets the applicant portal start renewals, run eligibility checks and upload photos in the case management platform (BRD §5, BR-001, BR-002, BR-004).
+
+## 2. Parties
+| Role | System | Contact |
+|---|---|---|
+| Consumer | Existing applicant portal | Portal team |
+| Provider | Case management platform | Case management team |
+
+## 3. Protocol
+REST over HTTPS, JSON bodies, OpenAPI 3.0 spec \`permit-renewal-api.yaml\`.
+
+## 4. Integration pattern
+TBD
+
+## 5. Message schemas
+See the OpenAPI spec: RenewalRequest, Renewal, EligibilityDecision, Photo and Problem.
+
+## 6. Error handling
+- TBD
+
+## 7. Security
+Bearer token from the enterprise sign-in; Protected B data over TLS 1.2+.
+
+## 8. Service levels
+| Measure | Target |
+|---|---|
+| Availability | TBD |
+| Response time (p95) | TBD |
+`);
+}
+
+// ------------------------------------------------------------------ engineering (Plan 17): environment configs, a pipeline, test cases
+const ENVS = path.join(OUT, 'Environments');
+const QUALITY = path.join(OUT, 'Quality');
+const ENV_CONFIG = {
+  STE: { host: 'sql-permit-ste.contoso.internal', url: 'https://permit-ste.contoso.example', log: 'Debug', tag: '1.4.2', replicas: 1, password: '@Microsoft.KeyVault(SecretUri=https://kv-permit-ste.vault.azure.net/secrets/db-password)', photo: 6, queue: true },
+  UAT: { host: 'sql-permit-uat.contoso.internal', url: 'https://permit-uat.contoso.example', log: 'Information', tag: '1.4.1', replicas: 2, password: '@Microsoft.KeyVault(SecretUri=https://kv-permit-uat.vault.azure.net/secrets/db-password)', photo: 6, queue: true },
+  // Seeded for compare_configs: NOTIFY_QUEUE_NAME is missing, the image tag 1.3.9-hotfix never ran in STE or UAT,
+  // DB_PASSWORD is a plain-text secret, and PHOTO_MAX_AGE_MONTHS still has the old 12-month rule (BR-004).
+  PRD: { host: 'sql-permit-prd.contoso.internal', url: 'https://permit.contoso.example', log: 'Warning', tag: '1.3.9-hotfix', replicas: 4, password: 'Pr0d-Renew4l!2026', photo: 12, queue: false },
+};
+async function engineering() {
+  for (const [env, c] of Object.entries(ENV_CONFIG)) {
+    const dir = path.join(ENVS, env);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'app-settings.env'), `# Permit renewal API settings: ${env} (synthetic)
+ASPNETCORE_ENVIRONMENT=${env}
+API_BASE_URL=${c.url}
+DB_HOST=${c.host}
+DB_NAME=permit_renewal
+DB_USER=svc_permit_api
+DB_PASSWORD=${c.password}
+CASE_API_TIMEOUT_SECONDS=30
+PHOTO_MAX_AGE_MONTHS=${c.photo}
+PAYMENT_PROVIDER=Moneris
+${c.queue ? 'NOTIFY_QUEUE_NAME=permit-notifications\n' : ''}LOG_LEVEL=${c.log}
+`);
+    fs.writeFileSync(path.join(dir, 'deployment.yaml'), `# Exported from OpenShift: oc get deployment,configmap -o yaml (${env}, synthetic)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: permit-api
+  namespace: permit-${env.toLowerCase()}
+spec:
+  replicas: ${c.replicas}
+  template:
+    spec:
+      containers:
+        - name: api
+          image: acrcontoso.azurecr.io/permit/permit-api:${c.tag}
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: permit-db
+                  key: password
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+        - name: photo-check
+          image: acrcontoso.azurecr.io/permit/photo-validation:2.0.0
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: permit-api-config
+  namespace: permit-${env.toLowerCase()}
+data:
+  FEATURE_SMS: "false"
+  RENEWAL_WINDOW_DAYS: "90"
+`);
+  }
+  fs.writeFileSync(path.join(ENVS, 'Config rules.md'), `# Environment config rules
+
+Settings not listed here must match in every environment. Values for env-specific settings are expected to differ.
+
+| Key | Rule |
+|---|---|
+| ASPNETCORE_ENVIRONMENT | env-specific |
+| API_BASE_URL | env-specific |
+| DB_HOST | env-specific |
+| DB_PASSWORD | env-specific |
+| LOG_LEVEL | env-specific |
+| namespace | env-specific |
+| replicas | env-specific |
+`);
+  fs.writeFileSync(path.join(ENVS, 'azure-pipelines.yml'), `# Permit renewal API release pipeline (synthetic). Seeded for lint_pipeline: no UAT stage, the PRD stage
+# has no environment or manual validation (no approval gate), and two tasks have no version.
+trigger:
+  branches:
+    include: [main]
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+  - stage: Build
+    jobs:
+      - job: build
+        steps:
+          - task: UseDotNet@2
+            inputs:
+              version: 8.x
+          - task: DotNetCoreCLI
+            inputs:
+              command: test
+          - task: Docker@2
+            inputs:
+              command: buildAndPush
+              repository: permit/permit-api
+
+  - stage: DeploySTE
+    displayName: Deploy to STE
+    dependsOn: Build
+    jobs:
+      - deployment: deploy_ste
+        environment: permit-ste
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: OpenShiftCommandLine@3
+                  inputs:
+                    cmd: oc apply -f Environments/STE/deployment.yaml
+
+  - stage: DeployPRD
+    displayName: Deploy to PRD
+    dependsOn: DeploySTE
+    jobs:
+      - job: deploy_prd
+        steps:
+          - task: AzureCLI
+            inputs:
+              scriptType: bash
+              inlineScript: oc apply -f Environments/PRD/deployment.yaml
+`);
+  // A Plan 09 test-case workbook for "Turn test cases into Playwright tests".
+  const tc = path.join(QUALITY, 'Test cases - Photo upload (SIT).xlsx');
+  fs.rmSync(tc, { force: true });
+  await require('../tools/tests').writeTestCases(tc, [
+    { id: 'TC-101', title: 'Upload a recent photo', type: 'SIT', priority: 1, tracesTo: 'US-104, BR-004', preconditions: 'Signed in as a permit holder with a renewal in progress', steps: [
+      { action: 'Open the renewal and choose Upload photo', expected: 'The photo upload page shows the 6-month rule' },
+      { action: 'Upload a JPEG taken 2 months ago', expected: 'The photo is accepted and a preview is shown' },
+      { action: 'Choose Continue', expected: 'The payment step opens' },
+    ] },
+    { id: 'TC-102', title: 'Reject a photo older than 6 months', type: 'SIT', priority: 1, tracesTo: 'US-104, BR-004', technique: 'Boundary', steps: [
+      { action: 'Upload a JPEG taken 6 months and 1 day ago', expected: 'The photo is rejected with "Your photo must be less than 6 months old"' },
+      { action: 'Upload a JPEG taken exactly 6 months ago', expected: 'The photo is accepted' },
+    ] },
+    { id: 'TC-103', title: 'Reject an unsupported file type', type: 'SIT', priority: 2, tracesTo: 'US-104', technique: 'Negative', steps: [
+      { action: 'Upload a .gif file', expected: 'The upload is refused with the list of accepted types (JPEG, PNG)' },
+    ] },
+    { id: 'TC-104', title: 'Pay the renewal fee', type: 'UAT', priority: 1, tracesTo: 'US-105, BR-003', steps: [
+      { action: 'Complete the photo step and choose Pay', expected: 'The payment page shows the fee' },
+      { action: 'Pay with the test card', expected: 'A confirmation number is shown and an email is sent' },
+    ] },
+  ], { title: 'Photo upload and payment: SIT and UAT cases' });
+}
+
 (async () => {
   documents();
+  integration();
+  await architecture();
   await dataModel();
   await traceabilityWorkbook();
+  await defectExport();
+  await engineering();
   fs.writeFileSync(path.join(OUT, 'START HERE.md'), `# ${PROGRAM} — AIDLC sample
 
-Synthetic data for trying Lumen's delivery-lifecycle assistants locally: Requirements Refiner, Functional Designer, Technical Designer, Story Writer and Traceability Analyst. Everything here is fictional.
+Synthetic data for trying Lumen's delivery-lifecycle assistants locally: Requirements Refiner, Functional Designer, Technical Designer, Story Writer, Traceability Analyst, Test Designer, Test Planner and Defect Triage. Everything here is fictional.
 
 | File | What it is |
 |---|---|
-| **Requirements Traceability (sample).xlsx** | The traceability workbook (TRM): Business Requirements → Refined Requirements → Functional Design → Technical Design → Backlog, plus a Change Log |
+| **Requirements Traceability (sample).xlsx** | The traceability workbook (TRM): Business Requirements → Refined Requirements → Functional Design → Technical Design → Backlog, Tests (SIT/UAT cases tracing to stories and requirements), plus a Change Log |
+| **Defects export.xlsx** | An Azure DevOps defect query export, for **Triage defects** |
 | **Knowledge/PID - Online Permit Renewal v1.2.docx** | Scope, objectives and constraints (Word) |
 | **Knowledge/BRD - Online Permit Renewal v1.3.docx** | Business requirements BR-001 to BR-008 (Word) |
 | **Knowledge/Solution Blueprint - Permit Renewal.md** | Target architecture and principles |
 | **Knowledge/Ways of Working - Delivery.md** | Artifact ownership, Definition of Ready/Done, change control |
 | **Knowledge/Data Model - Permit Renewal.xlsx** | Entities and attributes |
+| **Templates/FDD Template.dotx**, **Templates/TDD Template.dotx** | Program Word templates: styles, cover page, header and footer. Approved Functional and Technical design stages offer **Save as Word (program template)** |
+| **Knowledge/Technical Design - Permit Renewal.md** | The approved technical design: components, endpoints and the data it uses |
+| **Architecture/ADRs/** | Three architecture decision records (ADR-002 is superseded by ADR-003) |
+| **Architecture/Design/** | Interface catalogue v1.0 (approved) and v1.1 (draft) |
+| **Architecture/Design gate.json** | The design gate definition: required artefacts and approvals |
+| **Architecture/Technical Inventory.xlsx**, **Architecture/Reusable assets.xlsx** | The technical catalogue and the reusable-asset register |
+| **Architecture/Delivery changes - git log.txt** | \`git log --name-only\` output, for **Update technical inventory** |
+| **Knowledge/API Standards.md**, **Knowledge/HIP Patterns.md** | The program API rules (versioning, naming, error model, headers, traceability) and the HIP integration patterns (ARO P4/P5) |
+| **Integration/permit-renewal-api.yaml** | An OpenAPI 3.0 spec for the Case API, for **Review an OpenAPI spec** |
+| **Integration/ICD - Case API (draft).md** | A draft interface control document, for **Draft an ICD** |
+| **Environments/STE, UAT, PRD/** | App settings (.env) and OpenShift deployment exports per environment, with **Environments/Config rules.md** (the env-specific keys), for **Compare environment configs** |
+| **Environments/azure-pipelines.yml** | The release pipeline, for **Check a pipeline** |
+| **Quality/Test cases - Photo upload (SIT).xlsx** | Test cases in the Azure DevOps import layout, for **Turn test cases into Playwright tests** |
 
 ## Built-in scenarios
 - **One-to-many and many-to-many links:** BR-002 has three refined requirements, and FD-012 realises all three.
@@ -324,6 +1066,11 @@ Synthetic data for trying Lumen's delivery-lifecycle assistants locally: Require
 - **Conflicting sources:** BR-007 asks for SMS, but the PID and the Solution Blueprint put SMS out of Release 1.
 - **Ambiguity:** BR-005 says "in a timely manner".
 - **Traceability defects:** FD-016 links to a requirement that doesn't exist (BR-009.1), US-106 is used twice, US-108 traces straight to BR-003 without a design element, US-109 traces to nothing, and BR-006 (accessibility, bilingual) has no design.
+- **Test coverage:** BR-007 (notifications) has no test, TC-011 still tests the withdrawn BR-008, TC-006 was written for the old 12-month photo rule, and US-106, US-108 and US-109 have no test.
+- **Defect triage:** 1201/1204 (payment time-outs) and 1203/1206 (PNG photos) are probable duplicates, 1207 is critical but priority 4, and 1203 has no owner. 1210 looks like 1203 but is in a different area.
+- **Architecture:** the TDD names an *Address lookup service* the blueprint never mentions (and the reusable-asset register already has an address lookup API), cites ADR-002 although ADR-003 superseded it, and uses an entity (Renewal Fee) and a field (Permit.renewalCount) the data model doesn't have. For the design gate, the blueprint has no approval, the security assessment is missing, and interface catalogue v1.1 is a newer draft that isn't approved yet. The git log adds a photo validation service, changes the eligibility service and the Case API, and retires the legacy kiosk interface.
+- **Integration:** in \`permit-renewal-api.yaml\` the eligibility response points to a schema that does not exist (\`EligibilityResult\`; the schema is \`EligibilityDecision\`), and the photo upload has no 400 error response although the API standards require 400, 401 and 500. The draft Case API ICD has no volumes section, and its integration pattern, error handling and service levels are still TBD.
+- **Environments:** PRD has no NOTIFY_QUEUE_NAME, runs permit-api 1.3.9-hotfix (STE 1.4.2, UAT 1.4.1, and the hotfix never ran in either), keeps DB_PASSWORD as plain text (STE and UAT use Key Vault references), and still has PHOTO_MAX_AGE_MONTHS=12. The pipeline has no UAT stage, deploys to PRD with no approval gate, and two tasks have no version.
 
 ## Things to try
 - *"Inventory the program knowledge in this folder."*
@@ -331,8 +1078,14 @@ Synthetic data for trying Lumen's delivery-lifecycle assistants locally: Require
 - *"Run a traceability check on the traceability workbook."*
 - *"BR-004 has changed. What is affected downstream?"*
 - *"Write stories for FD-012 and FD-018."*
+- **Coverage gaps** on the traceability workbook, **Generate test cases from stories** for US-103, and **Triage defects** on the defect export.
 
-Regenerate with \`node scripts/make-aidlc-sample.js\`.
+- *"Publish the approved lifecycle outputs to the Design library."* then edit one and run **Knowledge freshness**.
+- **Architecture review** on the blueprint and the TDD (with the ADR folder and the data model), **Reuse vs. build assessment** for the address lookup, **Assemble a gate pack** from \`Architecture/Design gate.json\`, and **Update technical inventory** from the git log.
+- **Review an OpenAPI spec** on \`Integration/permit-renewal-api.yaml\` with \`Knowledge/API Standards.md\`, **Draft an ICD** for the Case API (or check the draft one), **Design an API** for the notification interface, and **Generate API scaffolding** once a spec has no errors.
+- **Compare environment configs** on \`Environments/\` with \`Environments/Config rules.md\`, **Check a pipeline** on \`Environments/azure-pipelines.yml\`, and **Turn test cases into Playwright tests** on \`Quality/Test cases - Photo upload (SIT).xlsx\`.
+
+Regenerate with \`node scripts/make-aidlc-sample.js\` (templates: \`node scripts/make-word-templates.js\`).
 `);
   console.log(`AIDLC sample written to ${OUT}`);
 })();

@@ -77,6 +77,23 @@ function locateQuote(segments, quote) {
   return null;
 }
 
+const QUOTE_REJECTED = 'The quote was not found in the transcript (quotes must be copied word for word, at least 4 words).';
+
+/**
+ * Check AI proposals against one or more transcripts. Shared by the RAID and change-impact flows.
+ * transcript: a file path, an array of file paths, or segments from readTranscript (segments may carry `file`).
+ * Returns { results: [{ n, p, seg|null, reason? }] in proposal order, verified, rejected }.
+ */
+function verifyQuotes(transcript, proposals = [], quoteOf = (p) => p?.evidence?.quote) {
+  const files = typeof transcript === 'string' ? [transcript] : Array.isArray(transcript) && transcript.every((t) => typeof t === 'string') ? transcript : null;
+  const segments = files ? files.flatMap((f) => readTranscript(f).map((s) => ({ ...s, file: path.basename(f) }))) : transcript || [];
+  const results = proposals.map((p, i) => {
+    const seg = locateQuote(segments, quoteOf(p));
+    return seg ? { n: i + 1, p, seg } : { n: i + 1, p, seg: null, reason: QUOTE_REJECTED };
+  });
+  return { results, verified: results.filter((r) => r.seg), rejected: results.filter((r) => !r.seg) };
+}
+
 // ------------------------------------------------------------------ RAID workbook structure
 const KIND_SHEETS = { risk: /risk/i, issue: /issue/i, action: /action/i, decision: /decision/i, dependency: /depend/i, assumption: /assum/i };
 const FIELD_HEADERS = {
@@ -215,13 +232,12 @@ async function propose(raidFile, transcriptFile, proposals = [], { meetingDate }
   const wb = new ExcelJS.Workbook();
   await wb.xlsx.readFile(raidFile);
   const accepted = [], rejected = [];
-  for (const [i, p] of proposals.entries()) {
-    const seg = locateQuote(segments, p.evidence?.quote);
-    if (!seg) { rejected.push({ n: i + 1, proposal: summary(p), reason: 'The quote was not found in the transcript (quotes must be copied word for word, at least 4 words).' }); continue; }
+  for (const { n, p, seg, reason } of verifyQuotes(segments, proposals).results) {
+    if (!seg) { rejected.push({ n, proposal: summary(p), reason }); continue; }
     try {
       const done = applyOne(wb, { ...p, meetingDate });
       accepted.push({ n: accepted.length + 1, p, seg, done });
-    } catch (e) { rejected.push({ n: i + 1, proposal: summary(p), reason: e.message }); }
+    } catch (e) { rejected.push({ n, proposal: summary(p), reason: e.message }); }
   }
 
   // Review sheet: one row per proposed change, with evidence and an approval column.
@@ -358,4 +374,4 @@ async function latestRaid(file) {
   return { requested: name(file), used: use, notes, pending };
 }
 
-module.exports = { readTranscript, parseVtt, parsePlain, locateQuote, propose, applyApproved, huddleChecks, columns, latestRaid };
+module.exports = { readTranscript, parseVtt, parsePlain, locateQuote, verifyQuotes, propose, applyApproved, huddleChecks, columns, latestRaid };

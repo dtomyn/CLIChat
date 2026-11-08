@@ -6,12 +6,11 @@ const fs = require('fs');
 const path = require('path');
 const project = require('../tools/project');
 const raid = require('../tools/raid');
+const { ENGINE, SHOTS, openPrompt, pick, run } = require('./real-engine-helpers');
 
-const ENGINE = process.env.E2E_ENGINE;
 test.skip(!['copilot', 'claude'].includes(ENGINE), 'Set E2E_ENGINE=copilot or claude to run against a real engine');
 test.setTimeout(480_000);
 
-const SHOTS = path.join(__dirname, 'screenshots');
 const DEMO_FILES = path.join(__dirname, '..', 'demo');
 let demo;
 
@@ -21,37 +20,6 @@ test.beforeAll(async ({ request }) => {
   expect(res.ok()).toBeTruthy();
   demo = (await res.json()).path;
 });
-
-async function openPrompt(page, id) {
-  await page.goto('/');
-  await expect(page.getByText(/Checking/)).toHaveCount(0, { timeout: 90_000 }); // the app checks which engines are installed
-  await expect(async () => {
-    await page.locator('.nav-item[data-nav="recipes"]').click();
-    await expect(page.locator('.page-head h1')).toHaveText('Prompt gallery', { timeout: 1500 });
-  }).toPass({ timeout: 15_000 });
-  await page.locator(`[data-recipe="${id}"]`).click();
-  await expect(page.locator('.modal-head h2')).toBeVisible();
-}
-
-async function pick(page, key, label) {
-  const sel = page.locator(`[data-file-select="${key}"]`);
-  await expect(sel.locator('option')).not.toHaveCount(1);
-  await sel.selectOption({ label });
-}
-
-// Start, wait for the reply to finish, then save its text, steps and a screenshot.
-async function run(page, shot) {
-  await page.locator('.btn.grad', { hasText: 'Start' }).click();
-  const reply = page.locator('.msg.assistant').last();
-  await expect(reply).toBeVisible({ timeout: 60_000 });
-  await expect(reply.locator('.msg-actions')).toBeVisible({ timeout: 420_000 }); // actions appear when the reply is complete
-  const text = await reply.innerText();
-  const steps = await reply.locator('.step').allInnerTexts();
-  fs.writeFileSync(path.join(SHOTS, `real-${ENGINE}-${shot}.txt`), `STEPS\n${steps.join('\n')}\n\nREPLY\n${text}\n`);
-  await reply.screenshot({ path: path.join(SHOTS, `real-${ENGINE}-${shot}.png`) });
-  expect(await page.locator('.msg.assistant .msg-error, .msg.assistant [data-error]').count()).toBe(0);
-  return { text, steps };
-}
 
 test('Weekly look-ahead', async ({ page }) => {
   await openPrompt(page, 'plan-lookahead');

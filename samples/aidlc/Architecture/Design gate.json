@@ -1,0 +1,33 @@
+{
+  "gate": "Design gate",
+  "artefacts": [
+    {
+      "name": "Solution Blueprint",
+      "path": "Knowledge/Solution Blueprint - Permit Renewal.md"
+    },
+    {
+      "name": "Technical Design",
+      "path": "Knowledge/Technical Design - Permit Renewal.md"
+    },
+    {
+      "name": "Interface Catalogue",
+      "path": "Architecture/Design/Interface Catalogue v1.0.md"
+    },
+    {
+      "name": "Security Assessment",
+      "path": "Architecture/Design/Security Assessment.md"
+    }
+  ],
+  "approvals": [
+    {
+      "role": "Design Authority",
+      "artefact": "Technical Design"
+    },
+    {
+      "role": "Business Owner"
+    }
+  ],
+  "openItems": [
+    "AD-07 photo validation location: confirm ADR-003 closes it"
+  ]
+}

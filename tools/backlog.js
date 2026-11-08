@@ -16,6 +16,9 @@ const HEADERS = {
   changed: [/state change date|^changed date$|^last updated/i],
   assigned: [/^assigned to$/i],
   plan: [/^plan task( id)?$|^mpp( task)?( id)?$/i], // optional custom column holding the plan task ID
+  iteration: [/^iteration( path)?$|^sprint$/i],
+  remaining: [/^remaining work$|^remaining( hours)?$/i],
+  parent: [/^parent( title)?$|^epic( title)?$/i],
 };
 
 // Share of an item that counts as done, by state name. Anything not listed counts as 0. "Removed" items are left out entirely.
@@ -59,7 +62,12 @@ async function readBacklog(file) {
     if (!id) return;
     const pts = parseFloat(get('points'));
     const ch = get('changed');
-    items.push({ id, type: get('type'), title: get('title'), state: get('state'), tags: get('tags'), points: Number.isFinite(pts) ? pts : null, changed: /^\d{4}-\d{2}-\d{2}/.test(ch) ? new Date(ch.slice(0, 10) + 'T00:00:00') : null, assigned: get('assigned'), planTask: get('plan'), row: r });
+    const rem = parseFloat(get('remaining'));
+    items.push({
+      id, type: get('type'), title: get('title'), state: get('state'), tags: get('tags'), points: Number.isFinite(pts) ? pts : null,
+      changed: /^\d{4}-\d{2}-\d{2}/.test(ch) ? new Date(ch.slice(0, 10) + 'T00:00:00') : null, assigned: get('assigned'), planTask: get('plan'),
+      iteration: get('iteration'), remaining: Number.isFinite(rem) ? rem : null, parent: get('parent'), row: r,
+    });
   });
   // Optional mapping sheet: one column with the Azure DevOps ID, one with the plan task ID.
   const mapping = new Map();
@@ -72,6 +80,33 @@ async function readBacklog(file) {
   return { items, mapping, sheet: main.name, mappingSheet: ms?.name || null };
 }
 
+/** How an item names its plan task: a Plan task column, the mapping sheet, or a <prefix>-<task ID> tag (or title). */
+function linker(mapping, tagPrefix) {
+  const prefix = String(tagPrefix || 'MPP').replace(/[^\w-]/g, '');
+  const tagRe = new RegExp(`(?:^|[^\\w])${prefix}[-_ ]?(\\d+)(?![\\w])`, 'i');
+  return { prefix, ref: (it) => it.planTask || mapping.get(it.id) || tagRe.exec(it.tags)?.[1] || tagRe.exec(it.title)?.[1] || null };
+}
+const stateMapFor = (over) => ({ ...DEFAULT_STATE_PERCENT, ...Object.fromEntries(Object.entries(over || {}).map(([k, v]) => [k.toLowerCase(), +v])) });
+
+/**
+ * Read a backlog export and link each item to its plan task (by ID). Removed items are left out.
+ * Returns { items: [{ ...item, taskId|null, pct }], sheet, mappingSheet, removed }.
+ */
+async function linkedItems(backlogFile, opts = {}) {
+  const { items, mapping, sheet, mappingSheet } = await readBacklog(backlogFile);
+  const { ref } = linker(mapping, opts.tagPrefix);
+  const stateMap = stateMapFor(opts.stateMap);
+  let removed = 0;
+  const out = [];
+  for (const it of items) {
+    const st = it.state.toLowerCase();
+    if (EXCLUDED_STATES.has(st)) { removed++; continue; }
+    const r = ref(it);
+    out.push({ ...it, taskId: r ? +String(r).replace(/\D/g, '') || null : null, pct: stateMap[st] ?? 0, knownState: st in stateMap });
+  }
+  return { items: out, sheet, mappingSheet, removed };
+}
+
 /**
  * Propose % complete for plan tasks from a backlog export.
  * opts: { tagPrefix: 'MPP' (items tagged MPP-23 belong to plan task #23), basis: 'state'|'points', stateMap: {state: percent},
@@ -81,9 +116,8 @@ async function progressFromBacklog(planFile, backlogFile, opts = {}) {
   const p = project.load(planFile);
   const status = project.toDate(opts.statusDate) || p.statusDate || project.toDate(project.iso(new Date()));
   const { items, mapping, sheet, mappingSheet } = await readBacklog(backlogFile);
-  const prefix = String(opts.tagPrefix || 'MPP').replace(/[^\w-]/g, '');
-  const tagRe = new RegExp(`(?:^|[^\\w])${prefix}[-_ ]?(\\d+)(?![\\w])`, 'i');
-  const stateMap = { ...DEFAULT_STATE_PERCENT, ...Object.fromEntries(Object.entries(opts.stateMap || {}).map(([k, v]) => [k.toLowerCase(), +v])) };
+  const { prefix, ref: linkRef } = linker(mapping, opts.tagPrefix);
+  const stateMap = stateMapFor(opts.stateMap);
   const byPoints = opts.basis === 'points';
   const staleDays = opts.staleDays != null ? +opts.staleDays : 14;
   const dq = { unmappedItems: [], unknownTaskRefs: [], summaryTargets: [], unknownStates: [], staleItems: [], noPoints: [], ignoredRemoved: 0 };
@@ -92,7 +126,7 @@ async function progressFromBacklog(planFile, backlogFile, opts = {}) {
   for (const it of items) {
     const st = it.state.toLowerCase();
     if (EXCLUDED_STATES.has(st)) { dq.ignoredRemoved++; continue; }
-    const ref = it.planTask || mapping.get(it.id) || tagRe.exec(it.tags)?.[1] || tagRe.exec(it.title)?.[1];
+    const ref = linkRef(it);
     const label = `${it.type ? it.type + ' ' : ''}${it.id} "${it.title}"`.trim();
     if (!ref) { dq.unmappedItems.push({ item: label, state: it.state }); continue; }
     const taskId = +String(ref).replace(/\D/g, '');
@@ -136,4 +170,4 @@ async function progressFromBacklog(planFile, backlogFile, opts = {}) {
   };
 }
 
-module.exports = { progressFromBacklog, readBacklog, DEFAULT_STATE_PERCENT };
+module.exports = { progressFromBacklog, readBacklog, linkedItems, DEFAULT_STATE_PERCENT };

@@ -4,7 +4,7 @@ title: Microsoft Project plans
 emoji: 📅
 description: Read, analyze and update Microsoft Project plans (.mpp and Project XML) — schedule health, critical path, slippage, resource over-allocation, and progress updates.
 extensions: .mpp, .xml
-readTools: list_office_files, read_project_plan, analyze_project_plan, query_plan, plan_change_log, plan_lookahead, plan_progress_from_backlog, get_status_facts
+readTools: list_office_files, read_project_plan, analyze_project_plan, query_plan, plan_change_log, plan_lookahead, plan_progress_from_backlog, get_status_facts, model_scenario, analyze_capacity
 writeTools: update_project_plan, project_plan_to_spreadsheet, build_status_report
 ---
 
@@ -21,6 +21,8 @@ You have tools for Microsoft Project plans in the user's project folder. **Alway
 | `plan_lookahead` | The weekly forward-looking readout by workstream: starting, finishing, milestones, late carry-overs and what each workstream is waiting on. Lead with milestones and dependencies, since those are what teams need on their radar |
 | `plan_progress_from_backlog` | Propose % complete from an Azure DevOps work-item export. Items link to tasks by an `MPP-<task ID>` tag (or a mapping sheet). Show the proposed changes as a table (ID · Task · Now · Proposed · Items done), then the data-quality findings (unlinked items, bad links, stale items, tasks with no items) because the proposals are only as good as that data. Held-back decreases need a person's decision. Apply nothing until the user approves, then use `update_project_plan` with the approved rows |
 | `get_status_facts` | The weekly status model for a plan and optional RAID log: rule-based RAG with reasons, milestones with variance and movement since last time, changes, late/behind work, overdue RAID items, top risks and issues. Every fact has a source. It reads the newest approved RAID log (the huddle's "(updated)" copy, never a "(proposed)" one); `raidInput` says which file it used and how many huddle changes are still waiting for review. Always tell the user about pending changes, because the status leaves them out. Use it before writing any status summary |
+| `model_scenario` | "What if" questions: a task slips or is shortened (`durationDelta`), a task can't start before a date (`startNoEarlierThan`), someone is added or leaves (`resource` + `unitsDelta`), or a dependency is dropped (`removeDependency`). It reschedules a copy and reports milestone and finish movement in working days, the new critical path and anyone newly over-allocated. Call it once per named scenario and compare them side by side. Nothing is saved: to keep an approved scenario, pass its `planUpdates` to `update_project_plan` |
+| `analyze_capacity` | Capacity vs. demand from a team capacity workbook (Person, Role, Hours per week, Availability %, plus Leave and Sprints sheets), the plan and optionally an ADO backlog export: weekly load per person and role, overloaded weeks, **leave during assigned work** (critical-path clashes first), overloaded sprints, and story-point estimates far from the team median. Lead with leave clashes on the critical path |
 | `build_status_report` | Save the status pack (status.json, a detailed Markdown report, a one-page HTML executive dashboard) under "Status reports/<date>/" as a Draft. Pass your narrative and decisions needed; they are labelled AI-written. Never contradict the calculated rating in the narrative; recommend a change instead |
 | `read_project_plan` | Full task list (IDs, WBS, dates, % complete, predecessors, resources) when you need details |
 | `update_project_plan` | Record progress (% complete, dates, durations, notes) and move the status date. Saves a new "(updated)" copy, so the original is never overwritten |
@@ -32,6 +34,8 @@ You have tools for Microsoft Project plans in the user's project folder. **Alway
 - Explain the *knock-on effect*: if a late task is on the critical path, say which milestones move and by how much.
 - Separate **facts from the plan** from **your recommendations**.
 - Use tables for lists of tasks: ID · Task · Finish · Baseline · Slip · Owner.
+- Scenarios: show a side-by-side table (Scenario · Go-live · Project finish · Milestones moved · Critical path changes · Newly over-allocated), state the calendar assumption (Monday to Friday, no public holidays), and say which scenario you recommend and why. Never present a scenario as the plan.
+- Status with a backlog: pass the ADO export as `backlog` to `get_status_facts` / `build_status_report` to add *Delivery progress* (items by state per epic, points done, open items on late tasks, critical-path tasks with items not started). Cite backlog rows as *Query 1!A8*.
 - Over-allocation: name the person, the peak load (e.g. 200%), the dates and the clashing tasks, and suggest a fix (re-sequence, split, reassign or level).
 
 ## Updating a plan

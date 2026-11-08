@@ -1,0 +1,49 @@
+# Permit renewal API release pipeline (synthetic). Seeded for lint_pipeline: no UAT stage, the PRD stage
+# has no environment or manual validation (no approval gate), and two tasks have no version.
+trigger:
+  branches:
+    include: [main]
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+  - stage: Build
+    jobs:
+      - job: build
+        steps:
+          - task: UseDotNet@2
+            inputs:
+              version: 8.x
+          - task: DotNetCoreCLI
+            inputs:
+              command: test
+          - task: Docker@2
+            inputs:
+              command: buildAndPush
+              repository: permit/permit-api
+
+  - stage: DeploySTE
+    displayName: Deploy to STE
+    dependsOn: Build
+    jobs:
+      - deployment: deploy_ste
+        environment: permit-ste
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: OpenShiftCommandLine@3
+                  inputs:
+                    cmd: oc apply -f Environments/STE/deployment.yaml
+
+  - stage: DeployPRD
+    displayName: Deploy to PRD
+    dependsOn: DeploySTE
+    jobs:
+      - job: deploy_prd
+        steps:
+          - task: AzureCLI
+            inputs:
+              scriptType: bash
+              inlineScript: oc apply -f Environments/PRD/deployment.yaml

@@ -597,4 +597,4 @@ function lookahead(file, opts = {}) {
   };
 }
 
-module.exports = { load, readPlan, analyze, updatePlan, queryPlan, changeLog, lookahead, hasMsProject, iso, toDate, addWorkdays, workdaysBetween, isWorkday, recordVersion, earlierVersions, historyKey };
+module.exports = { load, readPlan, analyze, updatePlan, queryPlan, changeLog, lookahead, hasMsProject, iso, toDate, addWorkdays, workdaysBetween, isWorkday, recordVersion, earlierVersions, historyKey, criticalPath, workstreamOf };

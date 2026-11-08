@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Writes the sample program Word templates for the AIDLC sample: samples/aidlc/Templates/FDD Template.dotx and
-// TDD Template.dotx. They show what a program template looks like to Lumen: its own styles (found by name), a cover
+// Writes the sample program Word templates for the AIDLC sample: samples/aidlc/Templates/FDD Template.dotx,
+// TDD Template.dotx and ICD Template.dotx. They show what a program template looks like to Lumen: its own styles (found by name), a cover
 // page with a "title" content control and {{version}} / {{date}} / {{approver}} placeholders, a header and footer,
 // and a {{content}} paragraph where the document body goes.
 
@@ -105,4 +105,5 @@ async function make(file, kind) {
 (async () => {
   await make('FDD Template.dotx', 'Functional Design Document');
   await make('TDD Template.dotx', 'Technical Design Document');
+  await make('ICD Template.dotx', 'Interface Control Document');
 })();

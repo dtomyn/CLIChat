@@ -4,8 +4,8 @@
 // simple event stream every Lumen provider speaks (see providers/README.md).
 //
 // - The prompt goes in on stdin, so long prompts and quotes survive on Windows.
-// - Conversation memory: Lumen picks the session UUID and passes it with --session-id, which creates the
-//   session on the first turn and resumes it afterwards.
+// - Conversation memory: Lumen picks the session UUID and passes it with --session-id (or --resume=<id> on
+//   older CLIs), which creates the session on the first turn and resumes it afterwards.
 // - Copilot has no "append system prompt" flag, so the assistant's instructions are sent at the top of the
 //   first message of a session (and again only if they change).
 
@@ -25,6 +25,23 @@ const launch = (args, opts) => spawn(BIN.command, [...BIN.prefix, ...args], { sh
 // Flags every run shares: machine-readable output, no prompts, no self-update, no GitHub MCP server
 // (Lumen users work with documents, not repositories).
 const COMMON = ['--output-format', 'json', '--no-color', '--no-auto-update', '--no-ask-user', '--disable-builtin-mcps'];
+
+// With --no-auto-update the launcher may run an older bundled CLI than `copilot --version` reports.
+// Newer CLIs set or resume a session with --session-id; older ones (e.g. 1.0.10) only have --resume=<id>,
+// which also starts a new session with that UUID. Ask the CLI that will actually run which one it knows.
+function sessionArgs(helpText, id) {
+  return /--session-id\b/.test(String(helpText || '')) ? ['--session-id', id] : [`--resume=${id}`];
+}
+let helpText = null;
+function runHelp() {
+  if (!helpText) {
+    helpText = new Promise((resolve) => {
+      execFile(BIN.command, [...BIN.prefix, '--no-auto-update', '--help'], { shell: BIN.shell, timeout: 15000, windowsHide: true },
+        (err, stdout) => resolve(err ? '' : String(stdout)));
+    });
+  }
+  return helpText;
+}
 
 // Plain-language access levels → Copilot permission flags. Denials win over --allow-all-tools.
 const ACCESS_FLAGS = {
@@ -98,10 +115,11 @@ module.exports = {
     { id: 'auto', label: 'Auto', hint: 'Copilot picks the best model for each request' },
   ],
   supportsResume: true,
+  sessionArgs, // exported for tests
 
   detect() {
     return new Promise((resolve) => {
-      execFile(BIN.command, [...BIN.prefix, '--version'], { shell: BIN.shell, timeout: 15000, windowsHide: true }, (err, stdout) => {
+      execFile(BIN.command, [...BIN.prefix, '--no-auto-update', '--version'], { shell: BIN.shell, timeout: 15000, windowsHide: true }, (err, stdout) => {
         if (err) return resolve({ available: false, message: 'GitHub Copilot CLI not found. Install it (`winget install GitHub.Copilot` or `npm i -g @github/copilot`), then run `copilot` and `/login` once — or sign in with `gh auth login`.' });
         const version = String(stdout).trim().split('\n')[0];
         const major = Number((/(\d+)\.\d+/.exec(version) || [])[1]);
@@ -112,7 +130,7 @@ module.exports = {
   },
 
   run({ prompt, sessionId, systemPrompt, cwd, model, access = 'read', signal, tools: extra }, emit) {
-    return new Promise((resolve) => {
+    return runHelp().then((help) => new Promise((resolve) => {
       const session = sessionId || crypto.randomUUID();
       emit({ type: 'session', id: session });
 
@@ -121,7 +139,7 @@ module.exports = {
         full = `Follow these instructions for the whole conversation:\n<instructions>\n${systemPrompt}\n</instructions>\n\n${prompt}`;
       }
 
-      const args = [...COMMON, '--session-id', session, ...(ACCESS_FLAGS[access] || ACCESS_FLAGS.read)];
+      const args = [...COMMON, ...sessionArgs(help, session), ...(ACCESS_FLAGS[access] || ACCESS_FLAGS.read)];
       if (model && model !== 'default' && module.exports.models.some((m) => m.id === model)) args.push('--model', model);
       // Skills' tools: hand Copilot the same MCP server Claude gets, limited to the allowed tools.
       if (extra?.servers) {
@@ -225,7 +243,7 @@ module.exports = {
         }
         resolve();
       });
-    });
+    }));
   },
 
   /** One-shot, tool-less completion used for small helper tasks (titles, drafting assistants). */

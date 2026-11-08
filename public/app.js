@@ -655,6 +655,19 @@ function demoBanner() {
         </div>
       </div></div>`;
   }
+  if (inDemo && S.settings.demoPack === 'data') {
+    return `<div class="demo-banner active">
+      <div class="demo-icon">📊</div>
+      <div class="demo-text"><b>You're in the Permit Applications data sample</b><span>A synthetic source extract with seeded data quality problems, the source tables, a Silver canonical model, a Gold model and a data dictionary. Try them in order:</span>
+        <div class="demo-actions">
+          <button class="btn soft sm" data-recipe="data-profile">📊 Profile a dataset</button>
+          <button class="btn soft sm" data-recipe="data-compare-schemas">🔀 Compare schemas</button>
+          <button class="btn soft sm" data-recipe="data-draft-sttm">🗺️ Draft the STTM</button>
+          <button class="btn soft sm" data-recipe="data-generate-code">🧱 Generate pipeline code</button>
+          <button class="btn ghost sm" data-open-drawer>${icon('folder')}See the files</button>
+        </div>
+      </div></div>`;
+  }
   if (inDemo) {
     return `<div class="demo-banner active">
       <div class="demo-icon">📦</div>
@@ -670,8 +683,8 @@ function demoBanner() {
   }
   return `<div class="demo-banner">
     <div class="demo-icon">📦</div>
-    <div class="demo-text"><b>Try it on sample data</b><span>A project manager demo (Microsoft Project plan with Excel budget, RAID log and timesheets), or a delivery-lifecycle sample (BRD, design and a traceability workbook) for the requirements, design, story and traceability agents.</span></div>
-    <div class="demo-cta"><button class="btn grad sm" data-install-demo="crm">${icon('package')}PM demo</button><button class="btn grad sm" data-install-demo="aidlc">${icon('package')}AIDLC sample</button><button class="icon-btn" data-dismiss-demo title="Hide">${icon('x')}</button></div>
+    <div class="demo-text"><b>Try it on sample data</b><span>A project manager demo (Microsoft Project plan with Excel budget, RAID log and timesheets), a delivery-lifecycle sample (BRD, design and a traceability workbook) for the requirements, design, story and traceability agents, or a data sample (source extract, schemas and a data dictionary) for profiling, mapping and pipeline code.</span></div>
+    <div class="demo-cta"><button class="btn grad sm" data-install-demo="crm">${icon('package')}PM demo</button><button class="btn grad sm" data-install-demo="aidlc">${icon('package')}AIDLC sample</button><button class="btn grad sm" data-install-demo="data">${icon('package')}Data sample</button><button class="icon-btn" data-dismiss-demo title="Hide">${icon('x')}</button></div>
   </div>`;
 }
 
@@ -682,8 +695,8 @@ async function installDemo(btn) {
   try {
     const r = await api('/api/demo/install', { method: 'POST', body: { pack } });
     const st = await api('/api/status'); S.settings = st.settings;
-    S.draft.assistantId = pack === 'aidlc' ? 'traceability-analyst' : 'schedule-analyst'; S.draft.access = 'read';
-    celebrate(); toast(`${pack === 'aidlc' ? 'Sample' : 'Demo'} ready — your project folder is now “${baseName(r.path)}”`, 'package');
+    S.draft.assistantId = { aidlc: 'traceability-analyst', data: 'data-profiler' }[pack] || 'schedule-analyst'; S.draft.access = 'read';
+    celebrate(); toast(`${pack === 'crm' ? 'Demo' : 'Sample'} ready — your project folder is now “${baseName(r.path)}”`, 'package');
     renderHome();
   } catch (e) { toast(e.message, 'alert'); if (btn) { btn.disabled = false; btn.innerHTML = label; } }
 }
@@ -1258,13 +1271,13 @@ function stopConv(conv) {
 // ---------------------------------------------------------------- folder
 // In-app folder browser. (A native dialog started by the server can open behind the browser or on another
 // screen, which looks like a dead button, so Lumen browses folders itself.)
-function pickFolder(start = currentWorkspace()) {
+function pickFolder(start = currentWorkspace(), opts = {}) {
   return new Promise((resolve) => {
     let current = '';
     let settled = false;
     const finish = (p) => { if (!settled) { settled = true; resolve(p); } };
     modal({
-      title: 'Choose a project folder', sub: 'Open the folder Lumen should work in, then choose “Use this folder”.', wide: true,
+      title: opts.title || 'Choose a project folder', sub: opts.sub || 'Open the folder Lumen should work in, then choose “Use this folder”.', wide: true,
       body: `<div class="fp">
         <div class="fp-places" id="fpPlaces"></div>
         <div class="fp-main">
@@ -1272,7 +1285,7 @@ function pickFolder(start = currentWorkspace()) {
           <div class="fp-list" id="fpList"><div class="fp-empty"><span class="spinner"></span></div></div>
           <div class="row" style="gap:6px;align-items:center"><input class="input" id="fpNew" placeholder="New folder name (optional)"><button class="btn soft sm" id="fpMk" style="flex:0 0 auto">${icon('plus')}Create folder</button></div>
         </div></div>`,
-      actions: [{ label: 'Cancel', run: () => finish(null) }, { label: 'Use this folder', primary: true, run: () => {
+      actions: [{ label: 'Cancel', run: () => finish(null) }, { label: opts.action || 'Use this folder', primary: true, run: () => {
         if (!current) { toast('Open a folder first', 'alert'); return false; }
         finish(current);
       } }],
@@ -1390,7 +1403,7 @@ async function renderRun(id, selected = null) {
     const index = run.stages.indexOf(stage), prev = run.stages[index - 1];
     $('#view').innerHTML = `<div class="page"><div class="page-inner">
       <a data-back-runs>← Lifecycle runs</a><h1>${esc(run.name)}</h1><p>${esc(pipeline.name)} · ${esc(run.workspace)}</p>
-      <div class="run-stepper">${run.stages.map((s, i) => `<button class="run-step ${s.id === stage.id ? 'selected' : ''}" data-stage="${esc(s.id)}"><b>${i + 1}. ${esc(pipeline.stages[i].name)}</b><span>${esc(s.status)}</span></button>`).join('')}</div>
+      <div class="run-stepper">${run.stages.map((s, i) => `<button class="run-step ${s.id === stage.id ? 'selected' : ''}" data-stage="${esc(s.id)}"><b>${i + 1}. ${esc(pipeline.stages[i]?.name || s.id)}${pipeline.stages[i]?.optional ? ' (optional)' : ''}</b><span>${esc(s.status)}</span></button>`).join('')}</div>
       <h2>${esc(def.name)}</h2><p>Status: <b>${esc(stage.status)}</b>${stage.unapprovedInputs ? ' · Based on unapproved inputs' : ''}</p>
       ${stage.error ? `<p class="run-error">${esc(stage.error)}</p>` : ''}
       ${stage.approvedAt ? `<p>Approved by ${esc(stage.approvedBy)} on ${esc(new Date(stage.approvedAt).toLocaleString())}</p>` : ''}
@@ -1470,7 +1483,7 @@ function renderAssistantsPage() {
     <div class="page"><div class="page-inner">
       <div class="page-head">
         <div><h1>Agents</h1><p>Agents are helpers with their own expertise and instructions, the same idea as agents in Microsoft 365 Copilot. Pick one to start a chat, or create your own in under a minute.</p></div>
-        <div class="row" style="flex:0 0 auto;gap:8px"><button class="btn soft" data-export-all title="Save every agent in a form Microsoft 365 Copilot can use">${icon('external')}Export all to Copilot</button><button class="btn grad" data-new-assistant>${icon('plus')}Create agent</button></div>
+        <div class="row" style="flex:0 0 auto;gap:8px"><button class="btn soft" data-export-engineering title="Save the developer, test automation and pipeline packs into a code repository for VS Code">${icon('code')}Engineering packs</button><button class="btn soft" data-export-all title="Save every agent in a form Microsoft 365 Copilot can use">${icon('external')}Export all to Copilot</button><button class="btn grad" data-new-assistant>${icon('plus')}Create agent</button></div>
       </div>
       <div class="card-grid">
         ${S.assistants.map((a, i) => `
@@ -1491,8 +1504,9 @@ function renderAssistantsPage() {
       </div>
     </div></div>`;
   $('#view').firstElementChild.addEventListener('click', (e) => {
-    const t = e.target.closest('[data-new-assistant],[data-chat-with],[data-edit-assistant],[data-assistant-menu],[data-export-all]'); if (!t) return;
+    const t = e.target.closest('[data-new-assistant],[data-chat-with],[data-edit-assistant],[data-assistant-menu],[data-export-all],[data-export-engineering]'); if (!t) return;
     if ('exportAll' in t.dataset) exportToCopilot(null, t);
+    else if ('exportEngineering' in t.dataset) exportEngineeringPacks();
     else if ('newAssistant' in t.dataset) openAssistantBuilder();
     else if (t.dataset.chatWith) { S.draft.assistantId = t.dataset.chatWith; S.draft.access = assistantById(t.dataset.chatWith).access || null; go(''); }
     else if (t.dataset.editAssistant) openAssistantBuilder(assistantById(t.dataset.editAssistant));
@@ -1520,10 +1534,28 @@ async function exportAssistant(a) {
     title: `${a.name} is ready for VS Code`,
     sub: 'Open your project folder in VS Code and this assistant will be available as a custom agent.',
     body: `<div class="option-cards">
-      <div class="option-card"><span class="oc-icon">🟣</span><div class="oc-text"><div class="oc-title">Claude Code</div><div class="oc-desc" style="word-break:break-all">${esc(r.files[0])}</div></div></div>
-      <div class="option-card"><span class="oc-icon">🐙</span><div class="oc-text"><div class="oc-title">GitHub Copilot</div><div class="oc-desc" style="word-break:break-all">${esc(r.files[1])}</div></div></div>
+      <div class="option-card"><span class="oc-icon">🟣</span><div class="oc-text"><div class="oc-title">Claude Code</div><div class="oc-desc" style="word-break:break-all">${esc(r.claude || r.files[0])}</div></div></div>
+      <div class="option-card"><span class="oc-icon">🐙</span><div class="oc-text"><div class="oc-title">GitHub Copilot</div><div class="oc-desc" style="word-break:break-all">${esc(r.github || r.files[1])}</div></div></div>
     </div>`,
     actions: [{ label: 'Open folder', icon: 'external', run: () => api('/api/folder/open', { method: 'POST', body: { workspace: r.workspace } }) }, { label: 'Done', primary: true }],
+  });
+}
+
+// The developer, test automation and pipeline skill packs, saved into a code repository for VS Code.
+async function exportEngineeringPacks() {
+  const folder = await pickFolder(currentWorkspace(), { title: 'Choose the code repository', sub: 'The packs are saved in its .github and .claude folders, ready to commit for the whole team.', action: 'Save packs here' });
+  if (!folder) return;
+  let r;
+  try { r = await api('/api/assistants/export-engineering', { method: 'POST', body: { folder } }); } catch (e) { toast(e.message, 'alert'); return; }
+  modal({
+    title: 'Engineering packs are ready for VS Code',
+    sub: `${r.agents.join(', ')}: saved with their skills and reference files. Commit the .github and .claude folders so every developer gets the same standards.`,
+    body: `<div class="option-cards">
+      <div class="option-card"><span class="oc-icon">🐙</span><div class="oc-text"><div class="oc-title">GitHub Copilot</div><div class="oc-desc">Open the folder in VS Code, open Copilot Chat and pick the agent from the agent list.</div></div></div>
+      <div class="option-card"><span class="oc-icon">🟣</span><div class="oc-text"><div class="oc-title">Claude Code</div><div class="oc-desc">The same agents and skills are in the .claude folder.</div></div></div>
+    </div>
+    <div class="help" style="margin-top:12px;word-break:break-all">${esc(r.readme)}</div>`,
+    actions: [{ label: 'Open folder', icon: 'external', run: () => { api('/api/folder/open', { method: 'POST', body: { workspace: r.folder } }); return false; } }, { label: 'Done', primary: true }],
   });
 }
 
@@ -1666,7 +1698,7 @@ function renderRecipesPage() {
       <div class="schedule-list">${S.schedules.length ? S.schedules.map((s) => {
         const r = S.recipes.find((x) => x.id === s.recipeId);
         const result = s.running ? 'Running or waiting' : s.lastStatus === 'error' ? `Error: ${s.lastError || 'The check failed.'}` : s.lastStatus === 'late' ? 'Ran late' : s.lastStatus === 'ok' ? 'Ready' : 'Not run yet';
-        return `<div class="schedule-card"><div><strong>${esc(r?.name || 'Deleted prompt')}</strong><div class="help">${s.enabled ? `Next run: ${esc(new Date(s.nextRunAt).toLocaleString())}` : 'Paused'} · ${esc(result)}</div>${s.lastConversationId ? `<button class="schedule-link" data-schedule-chat="${esc(s.lastConversationId)}">Open last chat</button>` : ''}</div>
+        return `<div class="schedule-card"><div><strong>${esc(r?.name || 'Deleted prompt')}</strong><div class="help">${!s.enabled ? 'Paused' : s.nextRunAt ? `Next run: ${esc(new Date(s.nextRunAt).toLocaleString())}` : 'Window finished'} · ${esc(result)}</div>${s.lastConversationId ? `<button class="schedule-link" data-schedule-chat="${esc(s.lastConversationId)}">Open last chat</button>` : ''}</div>
           <div class="schedule-actions"><button class="btn soft sm" data-schedule-toggle="${esc(s.id)}">${s.enabled ? 'Pause' : 'Resume'}</button><button class="btn soft sm" data-schedule-run="${esc(s.id)}" ${s.running ? 'disabled' : ''}>Run now</button><button class="btn soft sm" data-schedule-delete="${esc(s.id)}">Delete</button></div></div>`;
       }).join('') : '<div class="conv-empty">No scheduled prompts yet. Open a prompt and choose Repeat…</div>'}</div>` : `<div class="recipe-grid" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr))">
         ${list.map(recipeCard).join('')}
@@ -1774,21 +1806,24 @@ function openRecipeRunner(id) {
 function openScheduleForm(recipe, values, onSaved) {
   const m = modal({
     title: `Repeat ${recipe.name}`, sub: 'Scheduled prompts run only while Lumen is running. Missed runs happen once when Lumen starts again.',
-    body: `<div class="field"><label>Repeat</label><select class="select" id="scheduleKind"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></div>
+    body: `<div class="field"><label>Repeat</label><select class="select" id="scheduleKind"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="interval">Every few minutes, between two times</option></select></div>
+      <div id="scheduleWindow" hidden><div class="field"><label>Every</label><select class="select" id="scheduleEvery"><option value="15">15 minutes</option><option value="30" selected>30 minutes</option><option value="45">45 minutes</option><option value="60">Hour</option></select></div>
+        <div class="field"><label>From</label><input class="input" type="datetime-local" id="scheduleStart"></div>
+        <div class="field"><label>Until</label><input class="input" type="datetime-local" id="scheduleEnd"><div class="help">For a cutover or other busy window. It runs only between these times, and runs missed while Lumen was closed are not made up after the window ends.</div></div></div>
       <div class="field" id="scheduleDays" hidden><label>Days</label><div class="schedule-days">${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => `<label><input type="checkbox" value="${i}" ${i === 1 ? 'checked' : ''}> ${d}</label>`).join('')}</div></div>
       <div class="field" id="scheduleMonth" hidden><label>Day of month</label><input class="input" type="number" min="1" max="31" value="1" id="scheduleDay"><div class="help">Months without this date are skipped.</div></div>
-      <div class="field"><label>Time (local)</label><input class="input" type="time" value="09:00" id="scheduleTime"></div>
+      <div class="field" id="scheduleTimeField"><label>Time (local)</label><input class="input" type="time" value="09:00" id="scheduleTime"></div>
       ${recipe.access === 'edit' ? '<label class="schedule-permission"><input type="checkbox" id="scheduleAllow"> Allow this schedule to save files</label>' : ''}`,
     actions: [{ label: 'Cancel' }, { label: 'Save schedule', primary: true, run: async (el) => {
       const kind = $('#scheduleKind', el).value, time = $('#scheduleTime', el).value;
-      const when = { kind, time };
+      const when = kind === 'interval' ? { kind, minutes: Number($('#scheduleEvery', el).value), start: $('#scheduleStart', el).value, end: $('#scheduleEnd', el).value } : { kind, time };
       if (kind === 'weekly') when.days = $$('#scheduleDays input:checked', el).map((x) => Number(x.value));
       if (kind === 'monthly') when.day = Number($('#scheduleDay', el).value);
       await api('/api/schedules', { method: 'POST', body: { recipeId: recipe.id, values, workspace: S.settings.workspace, when, allowEdit: !!$('#scheduleAllow', el)?.checked } });
       S.schedules = await api('/api/schedules'); onSaved(); toast('Schedule saved');
     } }],
   });
-  $('#scheduleKind', m.el).addEventListener('change', (e) => { $('#scheduleDays', m.el).hidden = e.target.value !== 'weekly'; $('#scheduleMonth', m.el).hidden = e.target.value !== 'monthly'; });
+  $('#scheduleKind', m.el).addEventListener('change', (e) => { $('#scheduleDays', m.el).hidden = e.target.value !== 'weekly'; $('#scheduleMonth', m.el).hidden = e.target.value !== 'monthly'; $('#scheduleWindow', m.el).hidden = e.target.value !== 'interval'; $('#scheduleTimeField', m.el).hidden = e.target.value === 'interval'; });
 }
 
 function fieldInput(f) {

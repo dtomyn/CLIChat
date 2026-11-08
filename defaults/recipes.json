@@ -130,7 +130,7 @@
     "name": "Who's overloaded?",
     "emoji": "👥",
     "category": "Project plans",
-    "description": "Find over-allocated people in the next 6 weeks and get options to fix it.",
+    "description": "Find over-allocated people in the next 6 weeks, and (with a capacity workbook) leave clashes, sprint overloads and estimate outliers, with options to fix them.",
     "assistantId": "schedule-analyst",
     "builtin": true,
     "access": "read",
@@ -140,9 +140,23 @@
         "label": "Project plan",
         "type": "file",
         "accept": ".mpp,.xml"
+      },
+      {
+        "key": "capacity",
+        "label": "Team capacity workbook (optional)",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv",
+        "optional": true
+      },
+      {
+        "key": "backlog",
+        "label": "Azure DevOps backlog export (optional)",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv",
+        "optional": true
       }
     ],
-    "template": "Check resource loading in {{plan}} for the next six weeks. For each over-allocated person, show the peak load, the dates and the clashing tasks, then give two or three options to resolve it, with the schedule impact of each."
+    "template": "Check resource loading in {{plan}} for the next six weeks. Team capacity workbook: {{capacity}}. Azure DevOps backlog export: {{backlog}}. (Leave out any that are blank.)\n\nIf there is a capacity workbook, call analyze_capacity with it, the plan and the backlog (weeks: 6) and base the answer on it: lead with anyone on leave during critical-path work, then overloaded weeks per person (Person · Week · Capacity · Demand · Over by · Tasks), overloaded sprints, and estimate outliers worth a second look. Mention data-quality gaps such as people missing from the capacity file. Without a capacity workbook, use analyze_project_plan and show each over-allocated person's peak load, dates and clashing tasks.\n\nFor each problem give two or three options to resolve it (move work, reassign, add help, change the leave cover), and for the most important one check the schedule impact with model_scenario. Do not change any files."
   },
   {
     "id": "budget-variance",
@@ -781,7 +795,7 @@
     "name": "Weekly executive status",
     "emoji": "🧭",
     "category": "Project plans",
-    "description": "A draft status report and a one-page executive dashboard from your plan and RAID log, with every fact traced to its source.",
+    "description": "A draft status report and a one-page executive dashboard from your plan, RAID log and (optionally) Azure DevOps backlog export, with every fact traced to its source.",
     "assistantId": "project-partner",
     "builtin": true,
     "access": "edit",
@@ -798,9 +812,16 @@
         "type": "file",
         "accept": ".xlsx,.xlsm,.csv",
         "optional": true
+      },
+      {
+        "key": "backlog",
+        "label": "Azure DevOps backlog export (optional)",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv",
+        "optional": true
       }
     ],
-    "template": "Build this week's executive status pack for the project plan {{plan}} with the RAID log {{raid}} (if no RAID log is given, leave it out).\n\n1. Call get_status_facts first and base everything on it.\n2. Write a 3 to 5 sentence narrative for executives: the overall rating and why, what moved since last time, the biggest threat to the next milestone, and what is being done. Use the calculated rating; if you think it should be different, say so as a recommendation, not as the rating.\n3. List up to 3 decisions or support needed from leadership, each citing the task or RAID ID.\n4. Call build_status_report with the narrative and decisions.\n\nThen reply with the overall rating, the top 3 points, any warnings the tool returned, and links to the saved files. The tools read the newest approved RAID log automatically, so if raidInput has notes or pending huddle changes, tell me plainly which file was used and how many proposed RAID changes are still waiting for review (they are not in the pack). Remind me that the pack is a draft for PMO review."
+    "template": "Build this week's executive status pack for the project plan {{plan}} with the RAID log {{raid}} and the Azure DevOps backlog export {{backlog}} (leave out either if it is blank; pass the backlog export as backlog to both tools).\n\n1. Call get_status_facts first and base everything on it.\n2. Write a 3 to 5 sentence narrative for executives: the overall rating and why, what moved since last time, the biggest threat to the next milestone, delivery progress from the backlog if given, and what is being done. Use the calculated rating; if you think it should be different, say so as a recommendation, not as the rating.\n3. List up to 3 decisions or support needed from leadership, each citing the task or RAID ID.\n4. Call build_status_report with the narrative and decisions.\n\nThen reply with the overall rating, the top 3 points, any warnings the tool returned, and links to the saved files. The tools read the newest approved RAID log automatically, so if raidInput has notes or pending huddle changes, tell me plainly which file was used and how many proposed RAID changes are still waiting for review (they are not in the pack). Remind me that the pack is a draft for PMO review."
   },
   {
     "id": "huddle-to-raid",
@@ -912,6 +933,31 @@
     "template": "Compare the Azure DevOps backlog {{backlog}} with the project plan {{plan}} (status date {{status}}; if blank, use the plan's).\n\n1. Call plan_progress_from_backlog and base everything on it.\n2. Show the proposed % complete changes as a table (ID · Task · Now · Proposed · Items done/total), and any that were held back because the backlog shows less progress than the plan.\n3. Show the data-quality findings: unlinked items, links to missing or summary tasks, stale in-progress items, unknown states, and plan tasks that should be moving but have no backlog items. Say who needs to fix what.\n4. Ask me to approve before changing anything. If I approve, call update_project_plan with only the approved rows and summarise what moved."
   },
   {
+    "id": "delivery-scenarios",
+    "name": "Delivery scenarios",
+    "emoji": "🔀",
+    "category": "Project plans",
+    "description": "Compare two or three \"what if\" scenarios (a slip, extra people, a dropped dependency) side by side: milestone movement, critical path and who gets overloaded.",
+    "assistantId": "schedule-analyst",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "plan",
+        "label": "Project plan",
+        "type": "file",
+        "accept": ".mpp,.xml"
+      },
+      {
+        "key": "scenarios",
+        "label": "Scenarios to compare",
+        "type": "textarea",
+        "placeholder": "e.g. A: UAT slips two weeks. B: ERP integration takes 10 more days but we add a half-time tester. C: start training before UAT sign-off."
+      }
+    ],
+    "template": "Compare these delivery scenarios for the project plan {{plan}}:\n\n{{scenarios}}\n\n1. Turn each scenario into model_scenario changes (durationDelta, startNoEarlierThan, resource + unitsDelta, removeDependency), naming tasks by ID. If a scenario is ambiguous, state the assumption you made.\n2. Call model_scenario once per scenario, with its name. Base everything on what it returns.\n3. Show a side-by-side table: Scenario · Go-live · Project finish · Milestones that move (working days) · Critical path changes · Newly over-allocated people. Then two or three lines per scenario on what drives the result.\n4. Save the comparison with create_spreadsheet to \"Scenarios/<today's date>.xlsx\": a Comparison sheet (one row per scenario), a Milestones sheet (Scenario, Milestone, Before, After, Moved) and a Changes sheet (Scenario, Change).\n5. Recommend one scenario and say why, as a recommendation. Nothing in the plan changes; if I approve a scenario, call update_project_plan with its planUpdates, which saves an \"(updated)\" copy."
+  },
+  {
     "id": "knowledge-freshness",
     "name": "Knowledge freshness",
     "emoji": "🗞️",
@@ -930,5 +976,1041 @@
       }
     ],
     "template": "Check the freshness of the published knowledge in my project folder. Folders that should be published: {{sources}} (if blank, leave sources out).\n\nCall check_freshness and base everything on it. Lead with one line: how many snapshots are stale, never published and orphaned. Then a table of stale snapshots (Snapshot · Source · Published version · Approved by · Published at · Source last changed), the approved sources never published, orphan snapshots, and anything missing. End with the actions to take and who should take them (re-approve then republish, publish, or remove). Do not change any files."
+  },
+  {
+    "id": "qe-test-cases",
+    "name": "Generate test cases from stories",
+    "emoji": "🧪",
+    "category": "Quality engineering",
+    "description": "SIT and UAT test cases (positive, negative and boundary) from the stories' acceptance criteria, each tracing to its story and requirement, saved in the Azure DevOps Test Plans layout.",
+    "assistantId": "test-designer",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "stories",
+        "label": "Stories (traceability workbook, backlog export or stories document)",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.md,.docx"
+      },
+      {
+        "key": "scope",
+        "label": "Which stories (optional)",
+        "type": "text",
+        "placeholder": "e.g. US-101 to US-105, or leave blank for all",
+        "optional": true
+      }
+    ],
+    "template": "Design test cases for the stories in {{stories}}, limited to {{scope}} (if blank, all live stories).\n\n1. Read the stories, their Given/When/Then acceptance criteria and the design rules they implement.\n2. For each criterion write a positive case, then negative and boundary cases for every limit and failure path. Each case: title, SIT or UAT, priority 1-4, preconditions and test data, numbered steps with one expected result each, and tracesTo with the story ID (and refined requirement where useful).\n3. Show the cases as a table (ID, Title, Type, Priority, Traces to, Steps), then list acceptance criteria that can't be tested as written with a measurable rewording.\n4. Save them with write_test_cases to \"Test cases.xlsx\" and tell me the file name and how many cases and steps it holds."
+  },
+  {
+    "id": "qe-coverage-gaps",
+    "name": "Coverage gaps",
+    "emoji": "🕳️",
+    "category": "Quality engineering",
+    "description": "Requirements and stories with no test, and tests that trace to withdrawn items, from the Tests sheet of your traceability workbook.",
+    "assistantId": "test-designer",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "trm",
+        "label": "Traceability workbook",
+        "type": "file",
+        "accept": ".xlsx,.xlsm"
+      }
+    ],
+    "template": "Check test coverage in {{trm}}.\n\nCall analyze_traceability and base everything on it. Lead with test coverage per layer (requirements with tests, stories with tests) as a small table. Then list: requirements with no test, stories with no test, and tests tracing to withdrawn items (these should be retired or re-pointed), each with its ID and Sheet!Cell reference. Also list tests affected by changed requirements, which need review. End with the five most important tests to add, with the story or requirement each would cover. Do not change any files."
+  },
+  {
+    "id": "qe-test-strategy",
+    "name": "Draft the test strategy",
+    "emoji": "🗺️",
+    "category": "Quality engineering",
+    "description": "Test Strategy / Master Test Plan from scope, requirements, plan and RAID: levels, environments, entry/exit criteria, test data and risk-based priority.",
+    "assistantId": "test-planner",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "scope",
+        "label": "Scope document (PID or charter)",
+        "type": "file",
+        "accept": ".docx,.md,.txt"
+      },
+      {
+        "key": "trm",
+        "label": "Requirements or traceability workbook",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.docx,.md"
+      },
+      {
+        "key": "plan",
+        "label": "Project plan (optional)",
+        "type": "file",
+        "accept": ".mpp,.xml",
+        "optional": true
+      },
+      {
+        "key": "raid",
+        "label": "RAID log (optional)",
+        "type": "file",
+        "accept": ".xlsx,.xlsm",
+        "optional": true
+      }
+    ],
+    "template": "Draft the Test Strategy and Master Test Plan from the scope {{scope}}, the requirements {{trm}}, the plan {{plan}} and the RAID log {{raid}} (skip any that are blank).\n\nSections: 1 Scope and out of scope; 2 Test levels and who runs them (unit, SIT, UAT, performance, accessibility, security); 3 Environments (STE, UAT, STG, PRD) and what runs where; 4 Entry and exit criteria per level; 5 Test data needs (synthetic or masked, never real personal data); 6 Defect management and severity definitions; 7 Schedule from the plan's test tasks and milestones; 8 Risk-based priority: a table of requirements with business impact, likelihood of failure, change impact (new, changed, or affected by a change) and the resulting priority (High/Medium/Low); 9 Testing risks from the RAID log; 10 Assumptions and open questions.\n\nCite the source for every fact. Label it 'Draft (AI) for review'. Do not save any files unless I ask."
+  },
+  {
+    "id": "qe-triage-defects",
+    "name": "Triage defects",
+    "emoji": "🐞",
+    "category": "Quality engineering",
+    "description": "Probable duplicates, severity–priority mismatches, ageing and unowned defects from a defect export, with changes proposed for your approval.",
+    "assistantId": "defect-triage",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "defects",
+        "label": "Defect export",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv"
+      },
+      {
+        "key": "asof",
+        "label": "As-of date (optional)",
+        "type": "text",
+        "placeholder": "e.g. 2026-11-06",
+        "optional": true
+      }
+    ],
+    "template": "Triage the defect export {{defects}} as of {{asof}} (if blank, today).\n\n1. Call analyze_defects and base everything on it.\n2. Lead with the summary line and counts by severity and state. Then tables: probable duplicates (Keep, Probable duplicate, Similarity, Area), severity-priority mismatches (Defect, Severity, Priority, Why it matters), the oldest open defects, and defects with no owner. Cite IDs and cells.\n3. Show the proposed changes as a table (Defect, Field, Now, Proposed, Why) and ask me which to record. Only after I agree, call propose_defect_changes with the agreed rows and tell me how to approve them. Never change the original export."
+  },
+  {
+    "id": "change-interview-impacts",
+    "name": "Interview → change impacts",
+    "emoji": "🔄",
+    "category": "Change & training",
+    "description": "Propose change impacts from stakeholder interviews, each backed by a word-for-word quote, into a CIA workbook for you to approve.",
+    "assistantId": "change-impact-analyst",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "transcript",
+        "label": "Interview transcript",
+        "type": "file",
+        "accept": ".vtt,.docx,.txt,.md"
+      },
+      {
+        "key": "cia",
+        "label": "CIA workbook or template (optional)",
+        "type": "file",
+        "accept": ".xlsx,.xlsm",
+        "optional": true
+      }
+    ],
+    "template": "Read the CIA {{cia}} (if blank, there is none yet) and the interview transcript {{transcript}}. Take the interview date from the file name.\n\n1. List the change impacts the interview supports: stakeholder group, roles if named, business process, the change in one sentence, level H/M/L, and a skill gap where it is clear. Skip impacts already in the CIA.\n2. Propose them with propose_change_impacts (the CIA as cia if given). Quote the transcript word for word for each one; do not invent roles, headcounts or dates.\n\nThen show me a table (ID, group, process, change, level, who said it and when), anything that was rejected and why, and the worries or risks raised that are not impacts. Tell me how to approve them."
+  },
+  {
+    "id": "change-consolidate-cia",
+    "name": "Consolidate the CIA",
+    "emoji": "🧩",
+    "category": "Change & training",
+    "description": "Merge several Change Impact Assessments: duplicates merged, a heat map by stakeholder group and impact level, and the training needs.",
+    "assistantId": "change-impact-analyst",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "cia1",
+        "label": "CIA workbook",
+        "type": "file",
+        "accept": ".xlsx,.xlsm"
+      },
+      {
+        "key": "cia2",
+        "label": "Another CIA workbook",
+        "type": "file",
+        "accept": ".xlsx,.xlsm"
+      },
+      {
+        "key": "cia3",
+        "label": "A third CIA workbook (optional)",
+        "type": "file",
+        "accept": ".xlsx,.xlsm",
+        "optional": true
+      },
+      {
+        "key": "roles",
+        "label": "Role list (optional)",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv",
+        "optional": true
+      }
+    ],
+    "template": "Consolidate these Change Impact Assessments: {{cia1}}, {{cia2}} and {{cia3}} (skip any that are blank), plus any other CIA workbooks I name, with the role list {{roles}} (skip it if blank).\n\nCall consolidate_cia and base everything on it. Lead with the summary line. Then show: the duplicates merged (which IDs, and the level kept), the heat map as a table (group × High/Medium/Low with totals), the groups with the most high impacts, impacts still waiting for approval, and anything rejected or flagged in the notes. Give me links to the consolidated workbook and the training actions file, and remind me that the source workbooks were not changed."
+  },
+  {
+    "id": "change-tna",
+    "name": "Training needs analysis",
+    "emoji": "📚",
+    "category": "Change & training",
+    "description": "Training needs by role from the consolidated CIA: skill gaps, training type, priority and headcount, with the training actions ready for Azure DevOps.",
+    "assistantId": "change-impact-analyst",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "cia",
+        "label": "Consolidated CIA",
+        "type": "file",
+        "accept": ".xlsx,.xlsm"
+      }
+    ],
+    "template": "Read the TNA and Consolidated impacts sheets of {{cia}}.\n\nWrite the Training Needs Analysis: 1 Summary (people affected by role and priority, using headcounts where given); 2 A table by role (role, group, headcount, skill gaps, training type, priority, impacts it comes from); 3 Recommended sequence (High first, and what must be ready before go-live); 4 Gaps: roles with no headcount, impacts with no skill gap, impacts not yet approved. Cite the sheet and row for every line. Then say how to bring the training actions into Azure DevOps (import the 'Training actions - ADO import.xlsx' file, or ask the Backlog Helper to propose them). Label it 'Draft (AI) for review'. Do not change any files."
+  },
+  {
+    "id": "change-training-materials",
+    "name": "Draft training materials",
+    "emoji": "🎓",
+    "category": "Change & training",
+    "description": "A role-based deck outline, job aid, FAQ and knowledge check from the approved impacts and TNA, each section citing its source.",
+    "assistantId": "training-content",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "cia",
+        "label": "Consolidated CIA (with TNA)",
+        "type": "file",
+        "accept": ".xlsx,.xlsm"
+      },
+      {
+        "key": "role",
+        "label": "Role",
+        "type": "text",
+        "placeholder": "e.g. Processing officer"
+      },
+      {
+        "key": "process",
+        "label": "Approved process document (optional)",
+        "type": "file",
+        "accept": ".docx,.md,.txt",
+        "optional": true
+      }
+    ],
+    "template": "Draft training materials for the role {{role}} from the approved impacts and TNA in {{cia}} and the process document {{process}} (skip it if blank).\n\nProduce: 1 a deck outline (one ## per slide, 3 to 5 bullets and speaker notes, 8 to 12 slides); 2 a one-page job aid (numbered steps for the new way of working); 3 an FAQ (8 to 12 questions); 4 a knowledge check (5 to 10 multiple-choice questions with the answer and why). End every section with 'Source:' and the sheet and row or document heading it is based on, and leave out anything you can't source.\n\nShow the drafts, then save each one with save_draft_document under 'Training/{{role}}/' with word: true, listing its sources. Tell me the file names. Everything is a draft for the change lead."
+  },
+  {
+    "id": "bilingual-draft-french",
+    "name": "Draft French version",
+    "emoji": "🍁",
+    "category": "Change & training",
+    "description": "A French draft of an approved English document using the EN/FR glossary, labelled machine-drafted for translator review, then checked.",
+    "assistantId": "bilingual-reviewer",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "english",
+        "label": "Approved English document",
+        "type": "file",
+        "accept": ".docx,.md,.txt"
+      },
+      {
+        "key": "glossary",
+        "label": "EN/FR glossary",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv"
+      }
+    ],
+    "template": "Read the glossary {{glossary}} and the approved English document {{english}}.\n\nDraft the French version paragraph by paragraph: same headings and paragraphs in the same order, the glossary's French term every time, Do-not-translate terms kept, and numbers, dates, amounts and IDs copied exactly in French format. Save it with save_draft_document next to the English document, as '<name> (FR draft).docx', label 'Machine-drafted, needs translator review', sources = the English document. Then run check_terminology on the English document and your draft with the glossary, fix what it finds and save again if needed.\n\nReply with the file name, the check's headline, and any terms you were unsure about for the translator."
+  },
+  {
+    "id": "bilingual-qa",
+    "name": "Bilingual QA",
+    "emoji": "🔍",
+    "category": "Change & training",
+    "description": "Check an English/French pair against the glossary: inconsistent terms, English left in the French, numbers and dates that differ, and missing paragraphs.",
+    "assistantId": "bilingual-reviewer",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "english",
+        "label": "English document",
+        "type": "file",
+        "accept": ".docx,.md,.txt"
+      },
+      {
+        "key": "french",
+        "label": "French document",
+        "type": "file",
+        "accept": ".docx,.md,.txt"
+      },
+      {
+        "key": "glossary",
+        "label": "EN/FR glossary",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv"
+      }
+    ],
+    "template": "Check {{french}} against {{english}} with the glossary {{glossary}}.\n\nCall check_terminology and base everything on it. Lead with the headline. Then a table (Type · EN ¶ · FR ¶ · What differs · Suggested fix) with the excerpts, in this order: missing paragraphs, numbers/dates/IDs, terminology, untranslated English. End with a note that this is a machine check and a translator still reviews the French. Do not change either document."
+  },
+  {
+    "id": "release-cutover-checklist",
+    "name": "Generate cutover checklist",
+    "emoji": "🗒️",
+    "category": "Release",
+    "description": "Draft the cutover and rollback run-sheet from the deployment approach and the plan, in a layout the cutover status check can read.",
+    "assistantId": "release-readiness",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "approach",
+        "label": "Deployment approach or release plan",
+        "type": "file",
+        "accept": ".docx,.md,.txt,.pdf"
+      },
+      {
+        "key": "plan",
+        "label": "Project plan (optional)",
+        "type": "file",
+        "accept": ".mpp,.xml",
+        "optional": true
+      },
+      {
+        "key": "window",
+        "label": "Cutover window",
+        "placeholder": "e.g. Sat 2 Jan 18:00 to Sun 3 Jan 06:00"
+      }
+    ],
+    "template": "Draft the cutover and rollback checklist for the window {{window}}, from the deployment approach {{approach}} and the project plan {{plan}} (skip the plan if blank).\n\n1. List the cutover steps in order: ID (C01, C02…), step, owner, planned start, planned end, depends on (step IDs), and how each step is verified. Include the go/no-go call, the freeze, data migration, integrations, smoke tests and the go-live confirmation.\n2. List the rollback steps (R01…) with the trigger and the latest time the rollback decision can be made.\n3. Save them with create_spreadsheet as \"Cutover Run-sheet (draft).xlsx\" with sheets Run-sheet and Rollback, using the columns ID, Step, Owner, Planned start, Planned end, Depends on, Actual start, Actual end, Forecast end, Status, Notes (times as YYYY-MM-DD HH:MM, Status Not started).\n\nTake owners and times only from the documents; leave them blank where the documents don't say, and list those gaps at the end. Cite the section each step comes from."
+  },
+  {
+    "id": "release-readiness-check",
+    "name": "Readiness check",
+    "emoji": "🚦",
+    "category": "Release",
+    "description": "Check the go-live readiness checklist: status by environment, missing evidence, overdue items and a Red/Amber/Green rating.",
+    "assistantId": "release-readiness",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "checklist",
+        "label": "Readiness checklist",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv"
+      },
+      {
+        "key": "asof",
+        "label": "As of (optional)",
+        "placeholder": "YYYY-MM-DD, optional"
+      }
+    ],
+    "template": "Check release readiness using {{checklist}} as of {{asof}} (if blank, today).\n\nCall check_readiness and base everything on it. Lead with the rating, its reasons and the rule. Then: missing evidence (item, the file it points to, cell), open must-have items, overdue items and items with no owner, and a table by environment (STE, UAT, STG, PRD: items, complete, open, missing evidence). End with what has to happen before go-live and who owns it. Do not mark anything as done."
+  },
+  {
+    "id": "release-runbook",
+    "name": "Draft the runbook",
+    "emoji": "📗",
+    "category": "Release",
+    "description": "Draft the operational runbook from the design, the deployment procedures and the support model, each section citing its source.",
+    "assistantId": "runbook-writer",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "design",
+        "label": "Technical or solution design",
+        "type": "file",
+        "accept": ".docx,.md,.txt,.pdf"
+      },
+      {
+        "key": "deploy",
+        "label": "Deployment procedures (optional)",
+        "type": "file",
+        "accept": ".docx,.md,.txt,.pdf",
+        "optional": true
+      },
+      {
+        "key": "support",
+        "label": "Support model (optional)",
+        "type": "file",
+        "accept": ".docx,.md,.txt,.pdf",
+        "optional": true
+      },
+      {
+        "key": "system",
+        "label": "System name",
+        "placeholder": "e.g. Contoso CRM"
+      }
+    ],
+    "template": "Draft the operational runbook for {{system}} from the design {{design}}, the deployment procedures {{deploy}} and the support model {{support}} (skip any that are blank, and read other design documents in the notebook if they help).\n\nSections: overview and contacts, system context, routine operations (daily, weekly, monthly checks), monitoring and alerts, start-up and shut-down, backup and restore, common incidents and fixes, escalation and support hours, change and release steps. End each section with \"Source:\" and the document heading. Mark anything you can't source as To be confirmed.\n\nSave it with save_draft_document as \"Runbook - {{system}} (draft).md\" with word: true, listing the source documents. Then tell me which sections still need input and from whom."
+  },
+  {
+    "id": "release-cutover-status",
+    "name": "Cutover status update",
+    "emoji": "⏱️",
+    "category": "Release",
+    "description": "A short status update from the cutover run-sheet: late steps, critical path, next steps and the projected finish. Repeat it every 30 minutes during the window.",
+    "assistantId": "cutover-coordinator",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "runsheet",
+        "label": "Cutover run-sheet",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv"
+      },
+      {
+        "key": "asof",
+        "label": "As of (optional)",
+        "placeholder": "YYYY-MM-DD HH:MM, optional (default now)"
+      }
+    ],
+    "template": "Give me a cutover status update from {{runsheet}} as of {{asof}} (if blank, now).\n\nCall cutover_status with snapshot: true and base everything on it. Start with one line: the rating, steps done out of the total, and the projected finish against the planned finish. Then: late and blocked steps (step, owner, how late, cell), the critical path to the finish, and the next steps due in the next hour with who is waiting on whom. Keep it short enough to paste into the cutover bridge chat, and give me the link to the saved snapshot."
+  },
+  {
+    "id": "release-hypercare-closure",
+    "name": "Hypercare closure report",
+    "emoji": "📉",
+    "category": "Release",
+    "description": "Hypercare defect trends against the exit criteria, and a draft closure report with a recommendation.",
+    "assistantId": "hypercare-analyst",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "defects",
+        "label": "Hypercare defect export",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv"
+      },
+      {
+        "key": "criteria",
+        "label": "Exit criteria (optional)",
+        "type": "textarea",
+        "placeholder": "One per line, e.g. No Sev1 open for 10 days. Optional"
+      },
+      {
+        "key": "asof",
+        "label": "As of (optional)",
+        "placeholder": "YYYY-MM-DD, optional"
+      }
+    ],
+    "template": "Analyse hypercare from the defect export {{defects}} as of {{asof}} (if blank, today), against these exit criteria: {{criteria}} (if not specified, use the defaults).\n\n1. Call hypercare_trends (each criterion as one item of exitCriteria) and analyze_defects, and base everything on them.\n2. Lead with the verdict and each exit criterion with Pass/Fail and its evidence. Show the weekly trend as a table (week, opened, closed, open at week end, average age) and the open defects by severity with owners.\n3. Draft the closure report: period and scope, trend, exit criteria, open defects and owners, recurring themes by area, the handover to business-as-usual support, and a recommendation (close, or extend until the failing criteria pass). Save it with save_draft_document as \"Hypercare closure report (draft).md\" with word: true, listing the export as the source.\n\nSay Not ready to close while any criterion fails."
+  },
+  {
+    "id": "architecture-review",
+    "name": "Architecture review",
+    "emoji": "🏛️",
+    "category": "Architecture",
+    "description": "Review a design against the blueprint, the standards and the ADRs: a findings and deviation log, and a remediation backlog to import into Azure DevOps.",
+    "assistantId": "architecture-reviewer",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "blueprint",
+        "label": "Solution blueprint or standards",
+        "type": "file",
+        "accept": ".docx,.md,.txt"
+      },
+      {
+        "key": "design",
+        "label": "Design to review (FDD, TDD or API spec)",
+        "type": "file",
+        "accept": ".docx,.md,.txt"
+      },
+      {
+        "key": "adrs",
+        "label": "ADR folder (optional)",
+        "placeholder": "e.g. Architecture/ADRs"
+      },
+      {
+        "key": "model",
+        "label": "Data model (optional)",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv",
+        "optional": true
+      }
+    ],
+    "template": "Review the design {{design}} against the blueprint {{blueprint}}, the ADRs in {{adrs}} and the data model {{model}} (skip any that are blank).\n\n1. Call check_consistency with both documents (and the ADR folder and data model when given). Then read the sections the findings point to and check the design against the blueprint's principles and standards.\n2. Lead with a short verdict and the three most important findings.\n3. Findings and deviation log as a table: ID (AR-01…) · Finding · Type (Inconsistency, Deviation from standard, Superseded decision, Data model mismatch, Gap) · Severity · Evidence (file and heading, or ADR ID) · Recommendation.\n4. Save the log with create_spreadsheet as \"Architecture review - findings.xlsx\", and the remediation backlog as \"Architecture review - remediation (ADO import).xlsx\" with columns ID, Work Item Type (Task), Title, Description (finding ID and evidence), Priority (1-4), Tags (Architecture).\n\nConfirm each pattern-based finding in the text before you list it, and say when a document explains it. Do not change the design documents."
+  },
+  {
+    "id": "architecture-draft-adr",
+    "name": "Draft an ADR",
+    "emoji": "🧭",
+    "category": "Architecture",
+    "description": "Draft an architecture decision record (MADR layout, status Proposed) from a decision discussion, numbered after the existing ADRs.",
+    "assistantId": "adr-advisor",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "notes",
+        "label": "Decision discussion (notes or transcript)",
+        "type": "file",
+        "accept": ".docx,.md,.txt,.vtt"
+      },
+      {
+        "key": "adrs",
+        "label": "ADR folder",
+        "placeholder": "e.g. Architecture/ADRs"
+      },
+      {
+        "key": "topic",
+        "label": "Decision",
+        "placeholder": "e.g. Where to validate photos"
+      }
+    ],
+    "template": "Draft an ADR for \"{{topic}}\" from the discussion in {{notes}}.\n\n1. Call index_adrs on {{adrs}} to find the next number and any ADR this decision replaces.\n2. Write it in the MADR layout: title, status Proposed, date, context and problem statement, considered options (with pros and cons from the discussion), decision outcome, consequences (good and bad), and links. If it replaces an ADR, add \"Supersedes ADR-nnn\" and list the documents that still cite the old one.\n3. Save it with save_draft_document as \"{{adrs}}/ADR-nnn-<short-title>.md\", listing the discussion as its source.\n\nUse only what the discussion says; mark anything it doesn't settle as an open question. Leave the status as Proposed."
+  },
+  {
+    "id": "architecture-reuse",
+    "name": "Reuse vs. build assessment",
+    "emoji": "♻️",
+    "category": "Architecture",
+    "description": "Check the reusable-asset register before building something new: fit, gaps, effort and a recommendation.",
+    "assistantId": "adr-advisor",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "register",
+        "label": "Reusable-asset register",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv"
+      },
+      {
+        "key": "need",
+        "label": "What do we need?",
+        "type": "textarea",
+        "placeholder": "e.g. Validate the mailing address on the renewal summary page"
+      },
+      {
+        "key": "design",
+        "label": "Design that proposes the build (optional)",
+        "type": "file",
+        "accept": ".docx,.md,.txt",
+        "optional": true
+      }
+    ],
+    "template": "We need: {{need}}\n\nRead the reusable-asset register {{register}} and the design {{design}} (skip if blank). For each candidate asset give a table: Asset (cell) · What it does · Fit (Full, Partial, None) · Gaps · Effort to reuse · Effort to build. Then recommend reuse or build in one paragraph, preferring reuse unless a must-have gap rules it out, and name that gap. Cite the register cell or document heading for every fact. If the design proposes a build, say whether an ADR is needed to record the decision."
+  },
+  {
+    "id": "architecture-gate-pack",
+    "name": "Assemble a gate pack",
+    "emoji": "📦",
+    "category": "Architecture",
+    "description": "Build the stage-gate pack from the approved artefacts: a combined Word pack, the index with approval status and the open-item log.",
+    "assistantId": "gate-pack-assembler",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "gate",
+        "label": "Gate definition",
+        "type": "file",
+        "accept": ".json"
+      },
+      {
+        "key": "template",
+        "label": "Word template (optional)",
+        "type": "file",
+        "accept": ".dotx,.docx",
+        "optional": true
+      },
+      {
+        "key": "raid",
+        "label": "RAID log (optional)",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv",
+        "optional": true
+      }
+    ],
+    "template": "Assemble the gate pack from the gate definition {{gate}}, with the Word template {{template}} and the RAID log {{raid}} (skip any that are blank).\n\nCall assemble_gate_pack and base everything on it. Lead with one line: ready or not ready for the gate, and why. Then a table of the artefacts (included or missing, file, version, approved by, date), the approvals still open, newer drafts that were left out because they are not approved, and the other open items. End with what has to happen before the gate and who owns it, where the documents say. Do not record any approval yourself."
+  },
+  {
+    "id": "architecture-inventory",
+    "name": "Update technical inventory",
+    "emoji": "🗃️",
+    "category": "Architecture",
+    "description": "Propose additions, changes and retirements to the technical inventory from delivery changes, for the owner to approve.",
+    "assistantId": "inventory-keeper",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "inventory",
+        "label": "Technical inventory",
+        "type": "file",
+        "accept": ".xlsx,.xlsm"
+      },
+      {
+        "key": "gitlog",
+        "label": "git log --name-only output (optional)",
+        "type": "file",
+        "accept": ".txt,.log",
+        "optional": true
+      },
+      {
+        "key": "ado",
+        "label": "Azure DevOps export (optional)",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv",
+        "optional": true
+      },
+      {
+        "key": "adrs",
+        "label": "ADR folder (optional)",
+        "placeholder": "e.g. Architecture/ADRs"
+      }
+    ],
+    "template": "Propose updates to the technical inventory {{inventory}} from the git log {{gitlog}}, the Azure DevOps export {{ado}} and the ADRs in {{adrs}} (skip any that are blank; you may add the design documents in the notebook).\n\nCall propose_inventory_updates. Summarise the result as three short tables (to add, changed, to retire) with the evidence for each row (commit, work item, ADR or document heading). Point out anything that looks like a false match. End by reminding me to set Approve? on every row of the (proposed) copy; the inventory itself has not been changed."
+  },
+  {
+    "id": "security-draft-sctm",
+    "name": "Draft the SCTM",
+    "emoji": "🛡️",
+    "category": "Security",
+    "description": "Map the control catalogue to the design: implementation statements that cite real FDD/TDD headings, saved as a (proposed) SCTM for the assessor, with remediation items for gaps.",
+    "assistantId": "security-control-mapper",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "catalogue",
+        "label": "Control catalogue",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv"
+      },
+      {
+        "key": "sctm",
+        "label": "Current SCTM (optional)",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv",
+        "optional": true
+      },
+      {
+        "key": "design",
+        "label": "Design document (FDD or TDD)",
+        "type": "file",
+        "accept": ".docx,.md,.txt"
+      }
+    ],
+    "template": "Draft SCTM rows for the controls in {{catalogue}}, based on the design {{design}} and the current SCTM {{sctm}} (skip it if blank).\n\n1. Call analyze_controls with the catalogue, the SCTM and the design document. List the controls not yet mapped and the statements that need input.\n2. Read the design and, for each control that is not mapped or needs input, draft an implementation statement only from what the design says, with the design reference set to the document and heading (e.g. \"Technical Design - Security.md > 3.2 Encryption at rest\"). If no heading covers it, write the question that needs answering and leave the design reference blank.\n3. Call write_sctm with the rows, the catalogue and the design document, plus remediation items for any gaps.\n4. Summarise: rows proposed, rows marked Needs input (with the question), rejected controls, and the remediation items.\n\nDo not mark any control Implemented unless the documents say it is in place. The original SCTM must not change."
+  },
+  {
+    "id": "security-design-document",
+    "name": "Security design document",
+    "emoji": "📘",
+    "category": "Security",
+    "description": "Draft the Security Design Document from the architecture, the TDD and the SCTM, saved as Markdown and Word in the program template.",
+    "assistantId": "security-documentation",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "design",
+        "label": "Design document (TDD or architecture)",
+        "type": "file",
+        "accept": ".docx,.md,.txt"
+      },
+      {
+        "key": "sctm",
+        "label": "SCTM",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv"
+      },
+      {
+        "key": "template",
+        "label": "Word template (optional)",
+        "type": "file",
+        "accept": ".dotx,.docx",
+        "optional": true
+      }
+    ],
+    "template": "Draft the Security Design Document from {{design}} and the SCTM {{sctm}}, in the Word template {{template}} (skip it if blank).\n\n1. Call analyze_controls with the SCTM and the design document so you know which controls need input or are gaps.\n2. Write the document: purpose and scope, system overview, security architecture (identity and access, logging and monitoring, data protection, network boundary, configuration and patching), control implementation summary by family (from the SCTM), residual risks and open items. Use the template's sections instead when it has them.\n3. Cite the design heading or SCTM cell for each section. List controls marked Needs input or Gap as open items, not as in place.\n4. Save it with save_draft_document as \"Security Design Document.md\" with word: true and the template, listing the sources."
+  },
+  {
+    "id": "security-evidence-gaps",
+    "name": "Evidence gap check",
+    "emoji": "🗂️",
+    "category": "Security",
+    "description": "Check the evidence folder against the SCTM: evidence found per control, missing, stale and orphan files, and a remediation list to import into Azure DevOps.",
+    "assistantId": "cae-evidence",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "sctm",
+        "label": "SCTM",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv"
+      },
+      {
+        "key": "evidence",
+        "label": "Evidence folder",
+        "placeholder": "e.g. Evidence"
+      },
+      {
+        "key": "catalogue",
+        "label": "Control catalogue (optional)",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv",
+        "optional": true
+      },
+      {
+        "key": "days",
+        "label": "Evidence older than (days)",
+        "placeholder": "e.g. 365"
+      }
+    ],
+    "template": "Check the control evidence in {{evidence}} against the SCTM {{sctm}} and the catalogue {{catalogue}} (skip it if blank). Evidence older than {{days}} days is stale (365 if blank).\n\n1. Call analyze_controls with the SCTM, the evidence folder, the catalogue and staleDays.\n2. Lead with the counts: controls with evidence, missing, stale, orphan.\n3. Tables of the missing evidence (control, what is missing, SCTM cell), the stale evidence (control, file, date, age) and the orphan files (file, suggested control). Report exactly what the tool found.\n4. Save the evidence index and gap tracker with create_spreadsheet as \"Evidence gap tracker.xlsx\" (Control, Status, Evidence, Problem, Responsible party, Due), and the remediation list through write_sctm with rows: [] and remediation items (one per missing or stale item and per gap), so no SCTM change is proposed.\n\nDo not accept evidence or close gaps yourself."
+  },
+  {
+    "id": "data-profile",
+    "name": "Profile a dataset",
+    "emoji": "📊",
+    "category": "Data",
+    "description": "Profile a CSV or Excel extract against the data dictionary: types, nulls, patterns, outliers and rule breaks with example rows, saved as a DQ findings report with scripts to re-run in Fabric.",
+    "assistantId": "data-profiler",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "extract",
+        "label": "Data extract",
+        "type": "file",
+        "accept": ".csv,.xlsx,.xlsm"
+      },
+      {
+        "key": "dictionary",
+        "label": "Data dictionary or schema (optional)",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv,.sql,.json",
+        "optional": true
+      }
+    ],
+    "template": "Profile the extract {{extract}} against the data dictionary {{dictionary}} (skip it if blank).\n\n1. Call profile_data with the extract, the dictionary and scripts: true.\n2. Lead with the counts: rows, columns, findings by severity.\n3. A column profile table (column, type, null %, distinct, min, max, main pattern) and a findings table (column, rule, severity, count, example rows). Report exactly what the tool found.\n4. For each High finding, suggest a fix at the source or a DQ rule for the pipeline.\n5. Save the report with save_draft_document as \"DQ findings - <extract name>.md\" with word: true, including the PySpark and SQL profiling scripts in code blocks, and the extract and dictionary as sources.\n\nDo not read the raw rows: refer to problems by column and row number."
+  },
+  {
+    "id": "data-compare-schemas",
+    "name": "Compare schemas",
+    "emoji": "🔀",
+    "category": "Data",
+    "description": "Reconcile a source schema with a target or canonical model: matched fields with type checks, fuzzy matches to confirm, and unmatched fields on both sides.",
+    "assistantId": "mapping-analyst",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "source",
+        "label": "Source schema (DDL, JSON Schema or dictionary)",
+        "type": "file",
+        "accept": ".sql,.json,.xlsx,.xlsm,.csv"
+      },
+      {
+        "key": "target",
+        "label": "Target or canonical schema",
+        "type": "file",
+        "accept": ".sql,.json,.xlsx,.xlsm,.csv"
+      },
+      {
+        "key": "entity",
+        "label": "Source table (optional)",
+        "placeholder": "e.g. APPLICATIONS",
+        "optional": true
+      }
+    ],
+    "template": "Compare the source schema {{source}} (table {{entity}}; all tables if blank) with the target schema {{target}}.\n\n1. Call compare_schemas with the source, the target and sourceEntity.\n2. Lead with the summary: matched (exact, normalized, fuzzy), type issues, unmatched on each side.\n3. A table of matches (source field, target field, match, score, type check, note). Say for each fuzzy match whether the meaning fits.\n4. Separate lists of the unmatched source fields and unmatched target fields, with a suggested way to handle each (derive, default, not migrated).\n5. List the type conversions that need a decision."
+  },
+  {
+    "id": "data-draft-sttm",
+    "name": "Draft the STTM",
+    "emoji": "🗺️",
+    "category": "Data",
+    "description": "Draft the source-to-target mapping workbook from the schema comparison, with transformation and DQ rules, unmatched fields marked Needs input and every row left as Draft for review.",
+    "assistantId": "mapping-analyst",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "source",
+        "label": "Source schema",
+        "type": "file",
+        "accept": ".sql,.json,.xlsx,.xlsm,.csv"
+      },
+      {
+        "key": "target",
+        "label": "Target schema",
+        "type": "file",
+        "accept": ".sql,.json,.xlsx,.xlsm,.csv"
+      },
+      {
+        "key": "layer",
+        "label": "Target layer",
+        "placeholder": "e.g. Silver"
+      },
+      {
+        "key": "entity",
+        "label": "Source table (optional)",
+        "placeholder": "e.g. APPLICATIONS",
+        "optional": true
+      }
+    ],
+    "template": "Draft the STTM from {{source}} (table {{entity}}; all tables if blank) to the {{layer}} model {{target}}.\n\n1. Call compare_schemas with the source, the target and sourceEntity.\n2. For each confirmed match, write a transformation rule in plain words (direct, trim, upper, parse date format 'yyyy-MM-dd', cast to decimal(10,2), default 'X', constant 'X', or expr: / sql:) and a DQ rule where the target is required or has allowed values. Note type conversions that need a decision.\n3. Call write_sttm with path \"STTM - <source> to {{layer}}.xlsx\", the rows (target layer {{layer}}), and the source and target files with sourceEntity, so unmatched fields on both sides are added as Needs input.\n4. Summarise: rows drafted, fuzzy matches to confirm, unmatched source and target fields (ask how to handle each).\n\nEvery row stays Draft. Ask the reviewer to set Status to Approved and add their name for each row they accept."
+  },
+  {
+    "id": "data-generate-code",
+    "name": "Generate pipeline code from the STTM",
+    "emoji": "🧱",
+    "category": "Data",
+    "description": "Generate PySpark, Spark SQL, pipeline JSON, unit tests and a reconciliation query for the approved STTM rows only, ready to review and run in a lower-environment Fabric workspace.",
+    "assistantId": "data-engineer",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "sttm",
+        "label": "STTM workbook",
+        "type": "file",
+        "accept": ".xlsx,.xlsm"
+      },
+      {
+        "key": "layer",
+        "label": "Target layer (optional)",
+        "placeholder": "e.g. Silver",
+        "optional": true
+      }
+    ],
+    "template": "Generate pipeline code from the approved rows of {{sttm}} for the {{layer}} layer (all layers if blank).\n\n1. Call generate_pipeline_code with the STTM and the layer.\n2. List the files written per target table, the rows code was generated for, and the rows refused (with the reason and cell).\n3. List every TODO rule the generator could not translate, with a suggested expr: or sql: rule for the STTM.\n4. Explain how to run it in a lower-environment Fabric workspace: notebook first, then the reconciliation query (row counts and checksums per layer), then the unit tests.\n\nDo not generate code for rows that are not Approved, and do not change any row's status."
+  },
+  {
+    "id": "integration-draft-icd",
+    "name": "Draft an ICD",
+    "emoji": "🔌",
+    "category": "Integration",
+    "description": "Draft an interface control document from the approved requirements, schemas and HIP pattern notes, then check it against the ICD template and list the gaps.",
+    "assistantId": "interface-designer",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "interface",
+        "label": "Interface",
+        "placeholder": "e.g. Case API (applicant portal → case management)"
+      },
+      {
+        "key": "sources",
+        "label": "Requirements and design",
+        "type": "file",
+        "accept": ".docx,.md,.txt,.xlsx"
+      },
+      {
+        "key": "schemas",
+        "label": "Interface schemas or OpenAPI spec (optional)",
+        "type": "file",
+        "accept": ".yaml,.yml,.json,.sql,.xlsx",
+        "optional": true
+      }
+    ],
+    "template": "Draft the interface control document (ICD) for {{interface}} from {{sources}}, the interface schemas {{schemas}} (skip if blank), the interface catalogue and Knowledge/HIP Patterns.md.\n\n1. Write every ICD section: purpose and scope, parties, protocol, integration pattern (ARO P4 or P5, with the reason from the HIP notes), message schemas, error handling, security, service levels and volumes. Cite the source of each section.\n2. Where the sources do not say, write \"Needs input:\" and the question. Do not invent volumes, SLAs or fields.\n3. Save it with save_draft_document as \"Integration/ICD - <interface> (draft).md\" with word: true and the ICD template in Templates/ if there is one.\n4. Call check_icd on the saved file and finish with the completeness log: every missing, empty or incomplete section exactly as reported, the question that would close it, and who should answer."
+  },
+  {
+    "id": "integration-design-api",
+    "name": "Design an API",
+    "emoji": "🧾",
+    "category": "Integration",
+    "description": "Turn approved requirements and interface schemas into an OpenAPI 3.0 spec that passes the program API standards, with x-traces-to on every operation.",
+    "assistantId": "api-designer",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "api",
+        "label": "API",
+        "placeholder": "e.g. Notification API for status messages"
+      },
+      {
+        "key": "requirements",
+        "label": "Approved requirements and design",
+        "type": "file",
+        "accept": ".docx,.md,.xlsx"
+      },
+      {
+        "key": "schemas",
+        "label": "Schemas or data model (optional)",
+        "type": "file",
+        "accept": ".sql,.json,.xlsx",
+        "optional": true
+      },
+      {
+        "key": "standards",
+        "label": "API standards",
+        "type": "file",
+        "accept": ".md,.txt,.docx,.json"
+      }
+    ],
+    "template": "Design an OpenAPI 3.0 spec for {{api}} from {{requirements}} and the schemas {{schemas}} (skip if blank), following the API standards in {{standards}}.\n\n1. List the operations you will define and the BR/FD IDs each implements.\n2. Write the spec: version prefix, camelCase operationIds, the required header, request and response schemas in components.schemas, the required error responses with the program error model, and x-traces-to on every operation.\n3. Save it with write_openapi under Integration/ (with standards {{standards}}, and schemas when given). If it reports errors, fix them and save again until there are none.\n4. Report the saved file, the operations with their x-traces-to, any warnings you kept, and the questions for the business or the provider team. Do not invent fields the schemas do not have."
+  },
+  {
+    "id": "integration-review-openapi",
+    "name": "Review an OpenAPI spec",
+    "emoji": "🔍",
+    "category": "Integration",
+    "description": "Check an OpenAPI spec for broken references, missing responses and schemas, and the program API standards, with the JSON path and line of each finding.",
+    "assistantId": "api-designer",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "spec",
+        "label": "OpenAPI spec",
+        "type": "file",
+        "accept": ".yaml,.yml,.json"
+      },
+      {
+        "key": "standards",
+        "label": "API standards (optional)",
+        "type": "file",
+        "accept": ".md,.txt,.docx,.json",
+        "optional": true
+      }
+    ],
+    "template": "Review the OpenAPI spec {{spec}} against the API standards {{standards}} (structure only if blank).\n\n1. Call validate_openapi with the spec and the standards.\n2. Lead with the summary: operations, errors, warnings, and operations without x-traces-to.\n3. A table of findings: severity, JSON path, line, problem, and the exact fix. Group them as broken references, missing responses, missing schemas, standards and traceability.\n4. Say whether the spec is ready for scaffolding (no errors).\n\nReport exactly what the tool found. Do not change the spec."
+  },
+  {
+    "id": "integration-generate-scaffold",
+    "name": "Generate API scaffolding",
+    "emoji": "🏗️",
+    "category": "Integration",
+    "description": "From a spec with no errors, generate a static mock (example responses) and controller stubs, DTOs and contract tests in the stack the Solution Blueprint names.",
+    "assistantId": "api-designer",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "spec",
+        "label": "OpenAPI spec",
+        "type": "file",
+        "accept": ".yaml,.yml,.json"
+      },
+      {
+        "key": "blueprint",
+        "label": "Solution Blueprint (for the stack)",
+        "type": "file",
+        "accept": ".md,.docx,.txt",
+        "optional": true
+      },
+      {
+        "key": "standards",
+        "label": "API standards (optional)",
+        "type": "file",
+        "accept": ".md,.txt,.docx,.json",
+        "optional": true
+      }
+    ],
+    "template": "Generate a static mock and scaffolding from the OpenAPI spec {{spec}}, in the stack named in {{blueprint}} (ask me which stack if blank), checked against {{standards}}.\n\n1. Call validate_openapi first. If there are errors, list them with their JSON paths and stop: no scaffolding until they are fixed.\n2. Call generate_api_scaffold with the spec, the blueprint and the standards.\n3. List the files written (mock responses, controller stubs, DTOs, contract tests) and the operations with their x-traces-to IDs.\n4. Explain the next steps: implement each stub (they return 501), enable its contract test, and point API_BASE_URL at a test environment. Lumen does not run a mock server."
+  },
+  {
+    "id": "engineering-pr-description",
+    "name": "Write a PR description",
+    "emoji": "👩‍💻",
+    "category": "Engineering",
+    "description": "A pull request description from the program template, tracing the change to the story (AB#id) and the design (TD-###), with the acceptance criteria mapped to tests.",
+    "assistantId": "developer-copilot",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "story",
+        "label": "Story",
+        "placeholder": "e.g. AB#1234 Reject photos older than 6 months"
+      },
+      {
+        "key": "design",
+        "label": "Technical design",
+        "type": "file",
+        "accept": ".md,.docx"
+      },
+      {
+        "key": "changes",
+        "label": "What changed (optional)",
+        "placeholder": "e.g. PhotoValidator age rule, 4 unit tests",
+        "optional": true
+      }
+    ],
+    "template": "Write the pull request description for {{story}}, using the technical design {{design}} and these changes: {{changes}} (ask me what changed if blank).\n\n1. Find the TD-### sections in the design that the story implements, and the BR/FD IDs they trace to.\n2. Fill in the PR template from the dev-pack skill: what and why, traceability (AB#id, TD-###, BR/FD), acceptance criteria to tests, how it was verified, risks and rollback, and the checklist.\n3. Save it with save_draft_document as \"Pull requests/<story> - PR description.md\".\n4. List anything the reviewer will ask about that I have not told you (tests for a criterion, config changes per environment, differences from the TDD)."
+  },
+  {
+    "id": "engineering-playwright-tests",
+    "name": "Turn test cases into Playwright tests",
+    "emoji": "🤖",
+    "category": "Engineering",
+    "description": "Generate Playwright regression specs from a test-case workbook: one test per case, tagged by test case and story, with steps, evidence and a CI-ready config.",
+    "assistantId": "test-automation-copilot",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "workbook",
+        "label": "Test-case workbook",
+        "type": "file",
+        "accept": ".xlsx"
+      }
+    ],
+    "template": "Turn the test cases in {{workbook}} into Playwright regression tests.\n\n1. Read the workbook and list any case with no steps, no expected result or no trace: those need a tester before they can be automated.\n2. Call generate_playwright_tests with {{workbook}}.\n3. List the spec files written, each test with its tags, and the commands to run one story (--grep @US-###) or one case.\n4. Explain the next steps for an automation engineer: write the page objects and assertions from the expected results, remove .fixme, and publish the JUnit and HTML reports in the pipeline."
+  },
+  {
+    "id": "engineering-compare-configs",
+    "name": "Compare environment configs",
+    "emoji": "🔧",
+    "category": "Engineering",
+    "description": "Find settings missing per environment, values that should match but differ, image tag drift and plain-text secrets across STE, UAT and PRD.",
+    "assistantId": "pipeline-readiness",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "folder",
+        "label": "Folder with the environment configs",
+        "placeholder": "e.g. Environments"
+      },
+      {
+        "key": "rules",
+        "label": "Config rules (optional)",
+        "type": "file",
+        "accept": ".md,.txt,.json",
+        "optional": true
+      }
+    ],
+    "template": "Compare the environment configs in the {{folder}} folder, with the rules in {{rules}} (none if blank).\n\n1. Call compare_configs with the folder and the rules.\n2. Report the blockers first: missing keys (and where they are set), settings that must match but differ, and any PRD image tag or version that no lower environment runs.\n3. Then the warnings: other tag and version drift, and plain-text secrets (say where; never show the value).\n4. End with a short readiness verdict for PRD and the owner to ask about each blocker."
+  },
+  {
+    "id": "engineering-lint-pipeline",
+    "name": "Check a pipeline",
+    "emoji": "🚦",
+    "category": "Engineering",
+    "description": "Check an Azure Pipelines or GitHub Actions file for missing environment stages, no approval gate before PRD and unpinned task versions.",
+    "assistantId": "pipeline-readiness",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "pipeline",
+        "label": "Pipeline YAML",
+        "type": "file",
+        "accept": ".yml,.yaml"
+      }
+    ],
+    "template": "Check the release pipeline {{pipeline}}.\n\n1. Call lint_pipeline on it (required environments STE, UAT, PRD).\n2. List every error and warning with its line: missing stages, no approval gate before PRD, PRD not waiting for UAT, unpinned tasks or actions, images without a fixed tag.\n3. For each, show the YAML fix.\n4. Remind me what to confirm outside the YAML: approvals on the PRD environment and where the secrets come from."
   }
 ]

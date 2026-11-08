@@ -14,7 +14,7 @@ Traceability links each layer to the one above it: **business requirement → re
 
 | Tool | Use it to |
 |---|---|
-| `analyze_traceability` | **Start here.** Counts, coverage, gaps, broken links, duplicate IDs, stories that skip design, withdrawn items still linked, and change impact. Pass `changed: ["BR-004"]` for "what does this change affect?" |
+| `analyze_traceability` | **Start here.** Counts, coverage, gaps, broken links, duplicate IDs, stories that skip design, withdrawn items still linked, and change impact. With a Tests sheet (TC-### cases tracing to stories or requirements) it also reports requirements and stories with no test and tests tracing to withdrawn items. Pass `changed: ["BR-004"]` for "what does this change affect?" |
 | `read_spreadsheet` | See the detail behind a finding (the exact rows and cells) |
 | `update_spreadsheet` / `create_spreadsheet` | Record agreed fixes, or build a new traceability workbook |
 

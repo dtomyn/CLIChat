@@ -14,6 +14,17 @@ const traceability = require('./traceability');
 const status = require('./status');
 const raid = require('./raid');
 const publish = require('./publish');
+const qe = require('./tests');
+const scenario = require('./scenario');
+const capacity = require('./capacity');
+const change = require('./change');
+const glossary = require('./glossary');
+const release = require('./release');
+const governance = require('./governance');
+const controls = require('./controls');
+const data = require('./data');
+const openapi = require('./openapi');
+const drift = require('./drift');
 
 const ROOT = path.resolve(process.env.OFFICE_MCP_ROOT || process.cwd());
 const READ_ONLY = process.env.OFFICE_MCP_READONLY === '1';
@@ -61,10 +72,10 @@ const write = (fn) => (READ_ONLY ? () => { throw Object.assign(new Error('Editin
 const TOOLS = [
   {
     name: 'list_office_files',
-    description: 'List the documents (.docx/.md/.txt/.pdf), Excel workbooks (.xlsx/.xlsm/.csv) and Microsoft Project plans (.mpp/.xml) in the project folder, with size and last-modified date.',
+    description: 'List the documents (.docx/.md/.txt/.pdf), Excel workbooks (.xlsx/.xlsm/.csv) and Microsoft Project plans (.mpp/.xml) and OpenAPI specs (.yaml/.yml) in the project folder, with size and last-modified date.',
     inputSchema: { type: 'object', properties: {} },
     run: () => {
-      const files = walk(ROOT).filter((f) => /\.(xlsx|xlsm|csv|mpp|xml|docx|docm|md|txt|pdf|vtt)$/i.test(f) && !/[\\/]\.?(claude|github|vscode)[\\/]/i.test(f));
+      const files = walk(ROOT).filter((f) => /\.(xlsx|xlsm|csv|mpp|xml|docx|docm|md|txt|pdf|vtt|yaml|yml|env|properties)$/i.test(f) && !/[\\/]\.?(claude|github|vscode)[\\/]/i.test(f));
       return files.map((f) => `${path.relative(ROOT, f)}  (${Math.round(fs.statSync(f).size / 1024)} KB, modified ${new Date(fs.statSync(f).mtimeMs).toISOString().slice(0, 10)})`).join('\n') || 'No documents, workbooks or plans found.';
     },
   },
@@ -76,7 +87,7 @@ const TOOLS = [
   },
   {
     name: 'analyze_traceability',
-    description: 'Check a requirements traceability workbook (TRM/RTM). Recognises sheets for business requirements, refined requirements, functional design, technical design and the delivery backlog (epics/features/stories), or a single trace-matrix sheet. Reports item counts, coverage per layer, coverage gaps, untraced items, broken links to IDs that do not exist, duplicate IDs, stories that trace straight to requirements without a design element, withdrawn requirements still linked downstream, and the downstream impact of changed requirements. Every finding has a Sheet!Cell reference. Read-only.',
+    description: 'Check a requirements traceability workbook (TRM/RTM). Recognises sheets for business requirements, refined requirements, functional design, technical design, the delivery backlog (epics/features/stories) and test cases (a Tests sheet whose cases trace to stories or requirements), or a single trace-matrix sheet. Reports item counts, coverage per layer, coverage gaps, untraced items, broken links to IDs that do not exist, duplicate IDs, stories that trace straight to requirements without a design element, withdrawn requirements still linked downstream, requirements and stories with no test, tests tracing to withdrawn items, and the downstream impact of changed requirements. Every finding has a Sheet!Cell reference. Read-only.',
     inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'The traceability workbook' }, changed: { type: 'array', items: { type: 'string' }, description: 'Optional requirement or design IDs that have changed, for impact analysis (e.g. ["BR-004"]). Items whose Status says Changed are always included.' } }, required: ['path'] },
     run: (a) => traceability.analyze(resolveIn(a.path), { changed: Array.isArray(a.changed) ? a.changed : [] }),
   },
@@ -178,20 +189,56 @@ const TOOLS = [
     run: (a) => backlog.progressFromBacklog(resolveIn(a.path), resolveIn(a.backlog), a),
   },
   {
+    name: 'model_scenario',
+    description: 'Model a "what if" delivery scenario on a copy of a Microsoft Project plan, without changing it. Changes: add or take off working days on a task (durationDelta), hold a task until a date (startNoEarlierThan), add or take away capacity for a person (resource + unitsDelta, e.g. 0.5 = another person at half time, optionally on one task), or remove a dependency (removeDependency {from, to}). The plan is rescheduled forward through its links (FS/SS/FF/SF with lags, Monday to Friday) and compared with the same calculation without the changes: milestone and project-finish movement in working days, tasks that move, the new critical path (who joined and left it), and people newly over-allocated. Returns planUpdates in the shape update_project_plan takes, for saving an approved scenario as an "(updated)" copy. Call it once per named scenario. Read-only.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'The project plan' },
+        name: { type: 'string', description: 'Scenario name, e.g. "UAT slips two weeks"' },
+        changes: { type: 'array', items: { type: 'object', properties: {
+          task: { type: 'string', description: 'Task ID or name' },
+          durationDelta: { type: 'number', description: 'Working days added (negative to shorten). On a milestone it moves the milestone' },
+          startNoEarlierThan: { type: 'string', description: 'YYYY-MM-DD' },
+          resource: { type: 'string', description: 'Person, for a capacity change' },
+          unitsDelta: { type: 'number', description: 'Capacity added to that person\'s unfinished tasks (1 = one more full-time person, -0.5 = half a person fewer)' },
+          removeDependency: { type: 'object', properties: { from: { type: 'string', description: 'Predecessor task ID or name' }, to: { type: 'string', description: 'Successor task ID or name' } }, required: ['from', 'to'] },
+        } } },
+        statusDate: { type: 'string', description: 'YYYY-MM-DD; defaults to the plan status date' },
+      },
+      required: ['path', 'changes'],
+    },
+    run: (a) => scenario.runScenario(resolveIn(a.path), a.changes || [], { name: a.name, statusDate: a.statusDate }),
+  },
+  {
+    name: 'analyze_capacity',
+    description: 'Check team capacity against demand. Reads a capacity workbook (a sheet with Person, Role, Hours per week and Availability %; optional Leave sheet with Person, From, To, Reason; optional Sprints sheet with Sprint, Start, End), the plan\'s assignments and, optionally, an Azure DevOps backlog export (Iteration Path, Assigned To, Remaining Work, Story Points). Returns weekly demand vs. capacity per person and role, conflicts (overloaded weeks, leave during assigned work with critical-path tasks first, overloaded sprints), estimate outliers (story points at least double or half the median for the same work item type), open items without an estimate, and data-quality gaps (people in the plan or backlog but not in the capacity file). Every row cites its cell or plan task. Read-only.',
+    inputSchema: { type: 'object', properties: {
+      capacity: { type: 'string', description: 'The team capacity workbook' },
+      plan: { type: 'string', description: 'Optional Microsoft Project plan, for weekly demand and leave clashes' },
+      backlog: { type: 'string', description: 'Optional Azure DevOps work-item export, for sprint demand and estimate outliers' },
+      from: { type: 'string', description: 'YYYY-MM-DD; default the plan status date (the window starts on that Monday)' },
+      weeks: { type: 'number', description: 'Weeks to cover (default 8, max 26)' },
+      hoursPerPoint: { type: 'number', description: 'Hours per story point for items with no Remaining Work (default: not converted)' },
+      tagPrefix: { type: 'string' },
+    }, required: ['capacity'] },
+    run: (a) => capacity.analyzeCapacity(resolveIn(a.capacity), { plan: a.plan ? resolveIn(a.plan) : null, backlog: a.backlog ? resolveIn(a.backlog) : null, from: a.from, weeks: a.weeks, hoursPerPoint: a.hoursPerPoint, tagPrefix: a.tagPrefix }),
+  },
+  {
     name: 'get_status_facts',
-    description: 'Calculate the weekly status facts for a Microsoft Project plan, optionally with a RAID log: overall RAG with the rule-based reasons, schedule and cost vs. baseline, milestones with variance and movement since the last saved version (plus the unfinished work each depends on), what changed since then, late and behind tasks, over-allocation, overdue RAID items, and the top open risks and issues. The RAID log is read from the newest approved copy next to the one you pass (an "(updated)" file from the huddle flow, never a "(proposed)" review copy); raidInput says which file was used and lists huddle changes still pending review, which are not in the facts. Every fact has a source reference. Read-only. Use it before writing a status summary, then pass your summary to build_status_report.',
-    inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'The project plan' }, raid: { type: 'string', description: 'Optional RAID log workbook (.xlsx/.csv)' }, statusDate: { type: 'string', description: 'YYYY-MM-DD; defaults to the plan status date' } }, required: ['path'] },
-    run: async (a) => { const m = await status.buildModel(resolveIn(a.path), { raid: a.raid ? resolveIn(a.raid) : null, root: ROOT, statusDate: a.statusDate }); delete m.ai; return m; },
+    description: 'Calculate the weekly status facts for a Microsoft Project plan, optionally with a RAID log: overall RAG with the rule-based reasons, schedule and cost vs. baseline, milestones with variance and movement since the last saved version (plus the unfinished work each depends on), what changed since then, late and behind tasks, over-allocation, overdue RAID items, and the top open risks and issues. The RAID log is read from the newest approved copy next to the one you pass (an "(updated)" file from the huddle flow, never a "(proposed)" review copy); raidInput says which file was used and lists huddle changes still pending review, which are not in the facts. With an Azure DevOps backlog export it adds delivery progress: items by state per epic (Parent/Epic column, else plan workstream), story points done, open items on late or behind plan tasks, and started critical-path tasks with items not yet started (which raises the rating to at least Amber). Every fact has a source reference (plan task, RAID cell or backlog cell). Read-only. Use it before writing a status summary, then pass your summary to build_status_report.',
+    inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'The project plan' }, raid: { type: 'string', description: 'Optional RAID log workbook (.xlsx/.csv)' }, backlog: { type: 'string', description: 'Optional Azure DevOps work-item export (.xlsx/.csv), items tagged MPP-<task ID>' }, tagPrefix: { type: 'string', description: 'Tag prefix linking items to plan tasks (default MPP)' }, statusDate: { type: 'string', description: 'YYYY-MM-DD; defaults to the plan status date' } }, required: ['path'] },
+    run: async (a) => { const m = await status.buildModel(resolveIn(a.path), { raid: a.raid ? resolveIn(a.raid) : null, backlog: a.backlog ? resolveIn(a.backlog) : null, tagPrefix: a.tagPrefix, root: ROOT, statusDate: a.statusDate }); delete m.ai; return m; },
   },
   {
     name: 'build_status_report',
-    description: 'Write the weekly status pack into "Status reports/<status date>/": status.json (the status model), a detailed status report (Markdown, which can be saved as Word) and a one-page executive dashboard (HTML, with milestones you can open to see the work they depend on). All facts are calculated from the files. Your narrative and decisionsNeeded are shown separately and labelled as AI-written; if the narrative names a different RAG rating from the calculated one, the pack flags it. Everything is saved as a Draft for PMO review.',
-    inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'The project plan' }, raid: { type: 'string', description: 'Optional RAID log workbook' }, statusDate: { type: 'string' }, narrative: { type: 'string', description: '3 to 5 sentences for executives, based only on get_status_facts' }, decisionsNeeded: { type: 'array', items: { type: 'string' }, description: 'Decisions or support needed from leadership, each citing the task or RAID ID' } }, required: ['path'] },
-    run: write((a) => status.buildReport(resolveIn(a.path), { raid: a.raid ? resolveIn(a.raid) : null, root: ROOT, statusDate: a.statusDate, narrative: a.narrative, decisionsNeeded: a.decisionsNeeded })),
+    description: 'Write the weekly status pack into "Status reports/<status date>/": status.json (the status model, with a Delivery progress block when a backlog export is given), a detailed status report (Markdown, which can be saved as Word) and a one-page executive dashboard (HTML, with milestones you can open to see the work they depend on). All facts are calculated from the files. Your narrative and decisionsNeeded are shown separately and labelled as AI-written; if the narrative names a different RAG rating from the calculated one, the pack flags it. Everything is saved as a Draft for PMO review.',
+    inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'The project plan' }, raid: { type: 'string', description: 'Optional RAID log workbook' }, backlog: { type: 'string', description: 'Optional Azure DevOps work-item export, for the Delivery progress section' }, tagPrefix: { type: 'string' }, statusDate: { type: 'string' }, narrative: { type: 'string', description: '3 to 5 sentences for executives, based only on get_status_facts' }, decisionsNeeded: { type: 'array', items: { type: 'string' }, description: 'Decisions or support needed from leadership, each citing the task or RAID ID' } }, required: ['path'] },
+    run: write((a) => status.buildReport(resolveIn(a.path), { raid: a.raid ? resolveIn(a.raid) : null, backlog: a.backlog ? resolveIn(a.backlog) : null, tagPrefix: a.tagPrefix, root: ROOT, statusDate: a.statusDate, narrative: a.narrative, decisionsNeeded: a.decisionsNeeded })),
   },
   {
     name: 'read_transcript',
-    description: 'Read a meeting transcript (Teams .vtt, a Teams transcript saved as Word .docx, or a .txt/.md file) as numbered turns with time, speaker and text. Use it before proposing RAID log updates, and quote from it word for word.',
+    description: 'Read a meeting transcript (Teams .vtt, a Teams transcript saved as Word .docx, or a .txt/.md file) as numbered turns with time, speaker and text. Use it before proposing RAID log updates or change impacts from an interview, and quote from it word for word.',
     inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'The transcript file' } }, required: ['path'] },
     run: (a) => { const segs = raid.readTranscript(resolveIn(a.path)); return { file: path.basename(a.path), turns: segs.length, speakers: [...new Set(segs.map((s) => s.speaker).filter(Boolean))], transcript: segs.map((s) => `[${s.n}] ${s.time ? s.time + ' ' : ''}${s.speaker ? s.speaker + ': ' : ''}${s.text}`).join('\n') }; },
   },
@@ -229,6 +276,400 @@ const TOOLS = [
     description: 'Apply only the approved changes from a reviewed "<RAID log> (proposed).xlsx" (rows marked Yes in "Approve?") to "<RAID log> (updated).xlsx". Refuses if any row is not marked Yes or No. Only call this after the person says they have reviewed the proposed workbook. The original RAID log is never overwritten.',
     inputSchema: { type: 'object', properties: { proposed: { type: 'string', description: 'The reviewed "(proposed)" workbook' } }, required: ['proposed'] },
     run: write((a) => raid.applyApproved(resolveIn(a.proposed))),
+  },
+  {
+    name: 'propose_change_impacts',
+    description: 'Propose change impacts from stakeholder interview transcripts, for a change lead to approve. Each impact needs a stakeholder group, business process, change description, impact level (H/M/L) and evidence.quote copied word for word from a transcript (at least 4 words); impacts whose quote cannot be found are rejected, and the speaker and time are taken from the transcript. Saves "<CIA> (proposed).xlsx" (or "Change impacts (proposed).xlsx" next to the first transcript when no CIA workbook is given) with the new rows highlighted, Status Proposed, and a "Proposed changes" sheet with an "Approve? (Yes/No)" column. The original CIA workbook is not changed.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        transcripts: { type: 'array', items: { type: 'string' }, description: 'Interview transcripts (.vtt, .docx or .txt)' },
+        cia: { type: 'string', description: 'Optional CIA workbook to add to (e.g. the CIA template)' },
+        interviewDate: { type: 'string', description: 'YYYY-MM-DD, recorded with the source' },
+        impacts: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              stakeholderGroup: { type: 'string' },
+              role: { type: 'string', description: 'Affected roles, comma-separated, if the interview names them' },
+              process: { type: 'string', description: 'Business process that changes' },
+              change: { type: 'string', description: 'What changes for these people, in one sentence' },
+              level: { type: 'string', enum: ['H', 'M', 'L'], description: 'H = new skills or way of working; M = changed steps or tools; L = awareness only' },
+              skillGap: { type: 'string', description: 'Optional skill gap or training need' },
+              trainingType: { type: 'string', description: 'Optional, e.g. instructor-led, job aid' },
+              evidence: { type: 'object', properties: { quote: { type: 'string', description: 'At least 4 words copied exactly from a transcript' } }, required: ['quote'] },
+              reason: { type: 'string' },
+            },
+            required: ['stakeholderGroup', 'process', 'change', 'level', 'evidence'],
+          },
+        },
+      },
+      required: ['transcripts', 'impacts'],
+    },
+    run: write((a) => change.proposeImpacts([].concat(a.transcripts || a.transcript || []).map((t) => resolveIn(t)), a.cia ? resolveIn(a.cia) : null, a.impacts || [], { interviewDate: a.interviewDate })),
+  },
+  {
+    name: 'apply_change_impacts',
+    description: 'Write only the approved impacts (rows marked Yes in "Approve?") from a reviewed "(proposed)" CIA workbook to "<CIA> (updated).xlsx" with Status Approved. Refuses if any row is not marked Yes or No. Only call this after the person says they have reviewed the proposed workbook. The original is never overwritten.',
+    inputSchema: { type: 'object', properties: { proposed: { type: 'string', description: 'The reviewed "(proposed)" workbook' } }, required: ['proposed'] },
+    run: write((a) => change.applyImpacts(resolveIn(a.proposed))),
+  },
+  {
+    name: 'consolidate_cia',
+    description: 'Consolidate several Change Impact Assessment workbooks (every sheet with Stakeholder group, Change description and Impact level columns). Merges duplicate impacts (same stakeholder group and process, similar description; the higher level is kept), leaves out Rejected impacts, builds a heat map of stakeholder group by impact level, and derives training needs (TNA: group, role, headcount, skill gap, training type, priority) from approved impacts, using an optional role list for groups without named roles. Saves "CIA - consolidated.xlsx" (sheets Consolidated impacts, Heat map, TNA, Merged duplicates, Sources) and "Training actions - ADO import.xlsx" (one Task per role and training type). Never overwrites; source workbooks are not changed. Every impact cites its file and cell.',
+    inputSchema: { type: 'object', properties: {
+      files: { type: 'array', items: { type: 'string' }, description: 'CIA workbooks to consolidate' },
+      roles: { type: 'string', description: 'Optional role list workbook (Role, Stakeholder group, Headcount)' },
+      output: { type: 'string', description: 'Optional output path (default "CIA - consolidated.xlsx" next to the first file)' },
+    }, required: ['files'] },
+    run: write((a) => change.consolidateCia((a.files || []).map((f) => resolveIn(f)), { roles: a.roles ? resolveIn(a.roles) : undefined, output: outputIn(a.output) })),
+  },
+  {
+    name: 'check_terminology',
+    description: 'Bilingual QA: compare an English document with its French version (.docx, .md or .txt) against an EN/FR terminology sheet (columns English and Français; optional Do not translate). Paragraphs are aligned first. Reports glossary terms translated differently from the approved French term, English left in the French text, numbers, dates, amounts and IDs that differ between the versions, and paragraphs missing from either version, each with paragraph numbers and excerpts. Read-only. It is a machine check: a translator still reviews the French.',
+    inputSchema: { type: 'object', properties: {
+      english: { type: 'string', description: 'The approved English document' },
+      french: { type: 'string', description: 'The French version or draft' },
+      glossary: { type: 'string', description: 'The EN/FR terminology workbook' },
+    }, required: ['english', 'french'] },
+    run: (a) => glossary.checkTerminology(resolveIn(a.english), resolveIn(a.french), a.glossary ? resolveIn(a.glossary) : null),
+  },
+  {
+    name: 'save_draft_document',
+    description: 'Save AI-written Markdown (training material, job aids, FAQs, knowledge checks, a French draft) as a draft document: .md, .docx (Word), or .md with a Word copy (word: true). The label is put at the top (default "Draft (AI) for review"; for French drafts use "Machine-drafted, needs translator review") and the sources it cites are listed at the end. An optional Word template gives the program styles. Never overwrites: a numbered copy is saved instead. Warns when nothing cites a source.',
+    inputSchema: { type: 'object', properties: {
+      path: { type: 'string', description: 'Output path ending in .md or .docx, e.g. "Training/Processing officer - job aid.md"' },
+      markdown: { type: 'string' },
+      label: { type: 'string' },
+      sources: { type: 'array', items: { type: 'string' }, description: 'Approved sections this draft is based on, e.g. "CIA - consolidated.xlsx › TNA!A3"' },
+      word: { type: 'boolean', description: 'Also save a Word copy of a .md draft' },
+      template: { type: 'string', description: 'Optional Word template (.dotx/.docx)' },
+      title: { type: 'string' },
+    }, required: ['path', 'markdown'] },
+    run: write((a) => { const out = outputIn(a.path); if (!out) throw Object.assign(new Error('A file path is required.'), { friendly: true }); fs.mkdirSync(path.dirname(out), { recursive: true }); return change.saveDraft(out, a.markdown, { label: a.label, sources: a.sources, word: !!a.word, template: a.template ? resolveIn(a.template) : undefined, title: a.title }); }),
+  },
+  {
+    name: 'check_readiness',
+    description: 'Release readiness check of a checklist workbook (columns like Gate item, Environment STE/UAT/STG/PRD, Owner, Due, Evidence, Status, Must have; an optional "Go-live date" cell). Checks that every evidence reference is a file in the project folder (by path, then by file name; links are not checked). Rates Red/Amber/Green with the rule: Red if a must-have item is marked complete without its evidence, a must-have item is overdue, or must-have items are open 10 days or fewer before go-live; Amber if anything is open, missing evidence or unowned. Returns findings by environment, each citing its Sheet!Cell. Read-only.',
+    inputSchema: { type: 'object', properties: {
+      path: { type: 'string', description: 'The readiness checklist (.xlsx/.csv)' },
+      goLive: { type: 'string', description: 'YYYY-MM-DD; default the checklist\'s "Go-live date" cell' },
+      asOf: { type: 'string', description: 'YYYY-MM-DD (default today)' },
+      redDays: { type: 'number', description: 'Open must-have items this many days or fewer before go-live make it Red (default 10)' },
+    }, required: ['path'] },
+    run: (a) => release.readinessCheck(resolveIn(a.path), { root: ROOT, goLive: a.goLive, asOf: a.asOf, redDays: a.redDays }),
+  },
+  {
+    name: 'cutover_status',
+    description: 'Live cutover status from a run-sheet workbook (ID, Step, Owner, Planned start, Planned end or Duration, Depends on, Actual start, Actual end, optional Forecast end, Status). Reports late steps, steps that should have started, blocked steps, the critical path to the projected finish (worked out from the dependencies and actuals), the next steps due, and the projected vs. planned finish with a Red/Amber/Green rating. Times are read as typed. With snapshot: true (needs "Create & edit files") it also saves the summary as Cutover/<date time>.md. The run-sheet is never changed.',
+    inputSchema: { type: 'object', properties: {
+      path: { type: 'string', description: 'The cutover run-sheet' },
+      asOf: { type: 'string', description: 'YYYY-MM-DD HH:MM (default now)' },
+      aheadMinutes: { type: 'number', description: 'List steps planned to start within this many minutes (default 60)' },
+      toleranceMinutes: { type: 'number', description: 'A projected finish later than plan by more than this is Red (default 30)' },
+      snapshot: { type: 'boolean', description: 'Also save Cutover/<date time>.md' },
+    }, required: ['path'] },
+    run: async (a) => {
+      const r = await release.cutoverStatus(resolveIn(a.path), { asOf: a.asOf, aheadMinutes: a.aheadMinutes, toleranceMinutes: a.toleranceMinutes, snapshotDir: a.snapshot && !READ_ONLY ? path.join(ROOT, 'Cutover') : undefined });
+      if (a.snapshot && READ_ONLY) r.warnings.push('The snapshot was not saved because editing files is turned off for this chat. Switch "What can Lumen do?" to "Create & edit files" to save it.');
+      return r;
+    },
+  },
+  {
+    name: 'hypercare_trends',
+    description: 'Hypercare trends from a defect export (Azure DevOps query as .xlsx/.csv, with Created Date and ideally Closed Date): weekly opened, closed, open at week end and average age, by severity, plus a Pass/Fail for each exit criterion, e.g. "No Sev1 open for 10 days", "No Sev2 open" (SevN means N or worse), "Fewer than 10 open defects", "No open defect older than 14 days", "Open defects falling for 2 weeks". Includes the analyze_defects triage headline. Every defect cites its Sheet!Cell. Read-only.',
+    inputSchema: { type: 'object', properties: {
+      path: { type: 'string', description: 'The defect export' },
+      exitCriteria: { type: 'array', items: { type: 'string' }, description: 'Hypercare exit criteria in plain words (default: no Sev1 open for 10 days, no Sev2 open, fewer than 10 open, open defects falling for 2 weeks)' },
+      asOf: { type: 'string', description: 'YYYY-MM-DD (default today)' },
+      start: { type: 'string', description: 'Hypercare start date YYYY-MM-DD (default the first defect)' },
+    }, required: ['path'] },
+    run: (a) => release.hypercareTrends(resolveIn(a.path), { exitCriteria: a.exitCriteria, asOf: a.asOf, start: a.start }),
+  },
+  {
+    name: 'index_adrs',
+    description: 'Index the architecture decision records (ADRs) in a folder (MADR or Nygard style Markdown: title, status, date, context, decision, consequences, supersedes / superseded by). Flags ADRs with no status, superseded ADRs that are still referenced (by other ADRs or by the documents you pass), supersede links that disagree with the status, references to ADRs that do not exist, and decisions that look duplicated. Read-only.',
+    inputSchema: { type: 'object', properties: {
+      folder: { type: 'string', description: 'The ADR folder, e.g. "Architecture/ADRs"' },
+      referencedIn: { type: 'array', items: { type: 'string' }, description: 'Optional design documents to scan for references to superseded ADRs' },
+    }, required: ['folder'] },
+    run: (a) => governance.readAdrs(resolveIn(a.folder), { root: ROOT, referencedIn: (a.referencedIn || []).map((p) => resolveIn(p)) }),
+  },
+  {
+    name: 'check_consistency',
+    description: 'Architecture consistency check across design documents (solution blueprint, FDD, TDD, API specs; .md/.docx/.txt). Pulls out named components, APIs and integrations (from table columns like Component/Platform/Service/API and from component sections), endpoints (GET /path…) and standards (WCAG, ISO, PCI DSS…), and reports names one document uses that the others never mention, standards cited with different versions, references to unknown or superseded ADRs (with adrs), and entities or fields the data model does not have (with dataModel). Each finding cites the file and heading. Pattern-based evidence for your review, not a verdict. Read-only.',
+    inputSchema: { type: 'object', properties: {
+      documents: { type: 'array', items: { type: 'string' }, description: 'Design documents to compare (two or more)' },
+      adrs: { type: 'string', description: 'Optional ADR folder' },
+      dataModel: { type: 'string', description: 'Optional data model workbook (Entities sheet with Entity; Attributes sheet with Entity and Attribute)' },
+    }, required: ['documents'] },
+    run: (a) => governance.checkConsistency((a.documents || []).map((p) => resolveIn(p)), { root: ROOT, adrs: a.adrs ? resolveIn(a.adrs) : undefined, dataModel: a.dataModel ? resolveIn(a.dataModel) : undefined }),
+  },
+  {
+    name: 'assemble_gate_pack',
+    description: 'Assemble a stage-gate pack. For each required artefact it takes the latest APPROVED version (Lumen\'s lifecycle approval stamp, a "Status: Approved" line, or Approver properties on a Word file; versioned siblings like "v1.0"/"v1.1" are compared) and leaves newer unapproved drafts out. Writes only into "Gate packs/<gate>/": a combined Word pack, an index (artefacts, approval status, open items), an open-item log workbook and copies of the included artefacts. Lists missing artefacts and open approvals. Give the gate definition inline or as a JSON file (manifest).',
+    inputSchema: { type: 'object', properties: {
+      manifest: { type: 'string', description: 'Optional gate definition JSON file, e.g. "Architecture/Design gate.json" ({ gate, artefacts: [{ name, path, required }], approvals: [{ role, artefact }], openItems })' },
+      gate: { type: 'string', description: 'Gate name, e.g. "Design gate"' },
+      artefacts: { type: 'array', items: { type: 'object', properties: { name: { type: 'string' }, path: { type: 'string', description: 'File or folder' }, required: { type: 'boolean' } } }, description: 'Required artefacts' },
+      approvals: { type: 'array', items: { type: 'object', properties: { role: { type: 'string' }, artefact: { type: 'string', description: 'Artefact whose approval counts for this role' }, approver: { type: 'string' }, date: { type: 'string' } } }, description: 'Required approvals. Only give approver and date when the person tells you they were recorded.' },
+      openItems: { type: 'array', items: { type: 'string' } },
+      raid: { type: 'string', description: 'Optional RAID log: its open Medium/High items are added to the open items' },
+      template: { type: 'string', description: 'Optional Word template, e.g. "Templates/TDD Template.dotx"' },
+    } },
+    run: write(async (a) => {
+      let m = {};
+      if (a.manifest) { try { m = JSON.parse(fs.readFileSync(resolveIn(a.manifest), 'utf8')); } catch (e) { throw Object.assign(new Error(e.friendly ? e.message : `The gate definition "${a.manifest}" is not valid JSON: ${e.message}`), { friendly: true }); } }
+      const manifest = { gate: a.gate || m.gate, artefacts: a.artefacts || m.artefacts, approvals: a.approvals || m.approvals, openItems: a.openItems || m.openItems };
+      for (const x of manifest.artefacts || []) if (x && x.path) resolveIn(x.path, { mustExist: false });
+      return governance.assembleGatePack(manifest, { root: ROOT, raid: a.raid ? resolveIn(a.raid) : undefined, template: a.template ? resolveIn(a.template) : undefined });
+    }),
+  },
+  {
+    name: 'propose_inventory_updates',
+    description: 'Propose updates to a technical inventory workbook (solution components, APIs, integrations, dependencies) from delivery changes: an Azure DevOps export (.xlsx/.csv with Title), git log --name-only output saved as a text file, an ADR folder (accepted decisions) and design documents. Proposes rows to add (new components), change (last changed date, or a review) and retire (retire/decommission/replace wording), each with its evidence. Writes "<inventory> (proposed).xlsx" with the rows highlighted and a "Proposed changes" sheet with an "Approve? (Yes/No)" column. The inventory itself is never changed.',
+    inputSchema: { type: 'object', properties: {
+      inventory: { type: 'string', description: 'The technical inventory workbook' },
+      adoExports: { type: 'array', items: { type: 'string' } },
+      gitLogs: { type: 'array', items: { type: 'string' }, description: 'Text files with git log --name-only output' },
+      adrs: { type: 'string', description: 'ADR folder' },
+      documents: { type: 'array', items: { type: 'string' }, description: 'Design documents' },
+    }, required: ['inventory'] },
+    run: write((a) => governance.diffInventory(resolveIn(a.inventory), { adoExports: (a.adoExports || []).map((p) => resolveIn(p)), gitLogs: (a.gitLogs || []).map((p) => resolveIn(p)), adrs: a.adrs ? resolveIn(a.adrs) : undefined, documents: (a.documents || []).map((p) => resolveIn(p)) }, { root: ROOT })),
+  },
+  {
+    name: 'analyze_controls',
+    description: 'Security control analysis for SA&A. Reads the program\'s control catalogue workbook (Control ID, Family, Title, Statement, Baseline/Profile) and the SCTM (Control ID, Applicability, Implementation statement, Responsible party, Design reference, Evidence references, Status Planned/Implemented/Gap). Reports catalogue coverage (controls in the profile not yet in the SCTM), statements whose design reference is not a real heading in the FDD/TDD you pass (needs input), applicable controls with no statement, gaps, and with an evidence folder: per control the evidence found (by control ID in the file name, an evidence index workbook in the folder, or the SCTM reference), missing evidence (named but not there, or an implemented control with none), stale evidence (older than staleDays, from the date in the index or file name) and orphan files. Every finding cites its Sheet!Cell or file. Read-only.',
+    inputSchema: { type: 'object', properties: {
+      catalogue: { type: 'string', description: 'Control catalogue workbook' },
+      sctm: { type: 'string', description: 'SCTM workbook' },
+      evidence: { type: 'string', description: 'Optional evidence folder, e.g. "Evidence"' },
+      documents: { type: 'array', items: { type: 'string' }, description: 'Optional FDD/TDD documents whose headings the design references must cite' },
+      staleDays: { type: 'number', description: 'Evidence older than this many days is stale (default 365)' },
+      asOf: { type: 'string', description: 'Date to check against, YYYY-MM-DD (default today)' },
+    } },
+    run: (a) => controls.analyzeControls({ catalogue: a.catalogue ? resolveIn(a.catalogue) : undefined, sctm: a.sctm ? resolveIn(a.sctm) : undefined, evidence: a.evidence ? resolveIn(a.evidence) : undefined, documents: (a.documents || []).map((p) => resolveIn(p)) }, { root: ROOT, asOf: a.asOf, staleDays: a.staleDays }),
+  },
+  {
+    name: 'write_sctm',
+    description: 'Propose SCTM rows (implementation statements, applicability, responsible party, design reference, evidence references, status) for an assessor to approve. Saves "<SCTM> (proposed).xlsx" (or "SCTM (proposed).xlsx" next to the catalogue when no SCTM is given) with changed cells highlighted, new rows in green, and a "Proposed changes" sheet with an "Approve? (Yes/No)" column and a design citation check. A statement whose design reference is missing or is not a real heading in the FDD/TDD you pass is marked Status "Needs input". Controls not in the catalogue are rejected. Remediation items (and every Gap row) are saved as "<SCTM> - remediation (ADO import).xlsx". For remediation items only, pass rows: [] with the remediation list: then no "(proposed)" copy is written. The original SCTM is never changed.',
+    inputSchema: { type: 'object', properties: {
+      sctm: { type: 'string', description: 'The SCTM to propose changes to (optional when starting one)' },
+      catalogue: { type: 'string', description: 'Control catalogue workbook (controls not in it are rejected)' },
+      documents: { type: 'array', items: { type: 'string' }, description: 'FDD/TDD documents the design references must cite' },
+      rows: { type: 'array', items: { type: 'object', properties: {
+        control: { type: 'string' }, applicability: { type: 'string', description: 'Applicable, Not applicable, Inherited or Shared' },
+        statement: { type: 'string', description: 'Implementation statement, drafted only from the design' }, responsible: { type: 'string' },
+        designReference: { type: 'string', description: 'Document and heading the statement is based on, e.g. "Technical Design - Security.md > 3.2 Encryption at rest"' },
+        evidence: { type: 'array', items: { type: 'string' } }, status: { type: 'string', description: 'Planned, Implemented, Partially implemented or Gap' }, notes: { type: 'string' },
+      }, required: ['control'] } },
+      remediation: { type: 'array', items: { type: 'object', properties: { control: { type: 'string' }, title: { type: 'string' }, description: { type: 'string' }, priority: { type: 'number', description: '1 (highest) to 4' }, owner: { type: 'string' } } }, description: 'Optional remediation items for the Azure DevOps import workbook' },
+    } },
+    run: write((a) => controls.proposeSctm(a.sctm ? resolveIn(a.sctm) : null, a.rows || [], { catalogue: a.catalogue ? resolveIn(a.catalogue) : undefined, documents: (a.documents || []).map((p) => resolveIn(p)), remediation: a.remediation || [], root: ROOT })),
+  },
+  {
+    name: 'profile_data',
+    description: 'Profile a data extract saved in the notebook (.csv or .xlsx, up to 200,000 rows). Per column: inferred type, nulls and null %, distinct count, min/max, top values, pattern classes (e.g. AA9999) and numeric outliers. With a data dictionary (workbook, SQL DDL or JSON Schema) it also checks each field\'s rules: required, type (bad dates and numbers), allowed values, pattern, maximum length, unique, and foreign keys into another extract (found next to the file by entity name, or given in lookups). Each finding has a severity, a count and at most 5 example rows; values in columns that look personal are masked. scripts: true adds PySpark and Spark SQL to re-run the profile on the full table in Fabric. Read-only.',
+    inputSchema: { type: 'object', properties: {
+      path: { type: 'string', description: 'The extract to profile, e.g. "Applications - source extract.csv"' },
+      dictionary: { type: 'string', description: 'Optional data dictionary workbook, SQL DDL or JSON Schema with the rules' },
+      entity: { type: 'string', description: 'Dictionary entity for this file (default: by file name or matching columns)' },
+      sheet: { type: 'string', description: 'Sheet to profile in a workbook (default the first)' },
+      lookups: { type: 'object', additionalProperties: { type: 'string' }, description: 'Optional files for foreign keys, e.g. { "CLIENTS": "Clients - source extract.csv" }' },
+      scripts: { type: 'boolean', description: 'Also return PySpark and Spark SQL profiling scripts' },
+      table: { type: 'string', description: 'Lakehouse table name for the scripts, e.g. "bronze.applications"' },
+    }, required: ['path'] },
+    run: (a) => data.profileTable(resolveIn(a.path), { dictionary: a.dictionary ? resolveIn(a.dictionary) : undefined, entity: a.entity, sheet: a.sheet, lookups: Object.fromEntries(Object.entries(a.lookups || {}).map(([k, v]) => [k, resolveIn(v)])), scripts: !!a.scripts, table: a.table, root: ROOT }),
+  },
+  {
+    name: 'read_schema',
+    description: 'Read a schema: SQL DDL (CREATE TABLE, with NOT NULL, PRIMARY KEY, REFERENCES, CHECK IN and -- comments), a JSON Schema (properties, required, enum, pattern, format, $defs) or a data dictionary / data model workbook (Entity, Field, Type, Required, Allowed values, Pattern, Unique, References, Description). Returns each entity with its fields: name, type, type family, nullable, description and rules. Read-only.',
+    inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'The .sql, .json or .xlsx schema file' } }, required: ['path'] },
+    run: (a) => data.readSchema(resolveIn(a.path)).then((s) => ({ ...s, file: path.relative(ROOT, s.file) })),
+  },
+  {
+    name: 'compare_schemas',
+    description: 'Compare a source schema with a target schema (SQL DDL, JSON Schema or data dictionary; e.g. source extract → Silver canonical model, or Silver → Gold). Finds exact, normalized (case and underscores) and fuzzy name matches (abbreviations such as DT, CD, AMT, ADDR expanded), checks type compatibility (compatible, widening, narrowing, conversion, incompatible) and blanks into required fields, and lists the unmatched fields on both sides. Fuzzy matches are suggestions to confirm. Read-only.',
+    inputSchema: { type: 'object', properties: {
+      source: { type: 'string', description: 'Source schema file' },
+      target: { type: 'string', description: 'Target schema file' },
+      sourceEntity: { type: 'string', description: 'Source table/entity to compare (default all of them)' },
+      targetEntity: { type: 'string', description: 'Target table/entity to compare (default all of them)' },
+      threshold: { type: 'number', description: 'Fuzzy name similarity, 0 to 1 (default 0.55)' },
+    }, required: ['source', 'target'] },
+    run: (a) => data.compareSchemas(resolveIn(a.source), resolveIn(a.target), { sourceEntity: a.sourceEntity, targetEntity: a.targetEntity, threshold: a.threshold }),
+  },
+  {
+    name: 'write_sttm',
+    description: 'Save a source-to-target mapping (STTM) workbook: ID, source entity/field/type, transformation rule, target layer (Bronze/Silver/Gold), target entity/field/type, match, DQ rule, Status, Reviewer, notes. Every row is saved as Draft with no reviewer; only a person sets Approved. With source and target schemas, the match evidence is filled in, every unmatched source and target field is added as a "Needs input" row, and "Unmatched fields" and "Match evidence" sheets are added. Never overwrites: a numbered copy is saved instead.',
+    inputSchema: { type: 'object', properties: {
+      path: { type: 'string', description: 'Output .xlsx path, e.g. "STTM - Applications to Silver.xlsx"' },
+      source: { type: 'string', description: 'Optional source schema file (to list unmatched fields)' },
+      target: { type: 'string', description: 'Optional target schema file' },
+      sourceEntity: { type: 'string' }, targetEntity: { type: 'string' },
+      rows: { type: 'array', items: { type: 'object', properties: {
+        sourceEntity: { type: 'string' }, sourceField: { type: 'string' }, sourceType: { type: 'string' },
+        rule: { type: 'string', description: 'Transformation rule in plain words: direct, trim, upper, parse date format \'yyyy-MM-dd\', cast to decimal(10,2), default \'X\', constant \'X\', or "expr: <PySpark>" / "sql: <Spark SQL>"' },
+        targetLayer: { type: 'string', description: 'Bronze, Silver or Gold' }, targetEntity: { type: 'string' }, targetField: { type: 'string' }, targetType: { type: 'string' },
+        match: { type: 'string' }, dqRule: { type: 'string', description: 'e.g. not null, in NEW, RENEWAL, AMEND, > 0' }, notes: { type: 'string' },
+      } } },
+    }, required: ['path'] },
+    run: write(async (a) => {
+      const out = outputIn(a.path);
+      if (!out || !/\.xlsx$/i.test(out)) throw Object.assign(new Error('Save the STTM as an .xlsx file.'), { friendly: true });
+      const comparison = a.source && a.target ? await data.compareSchemas(resolveIn(a.source), resolveIn(a.target), { sourceEntity: a.sourceEntity, targetEntity: a.targetEntity }) : undefined;
+      const r = await data.writeSttm(out, a.rows || [], { comparison });
+      return { ...r, saved: path.relative(ROOT, r.saved) };
+    }),
+  },
+  {
+    name: 'generate_pipeline_code',
+    description: 'Generate pipeline code from the APPROVED rows of an STTM workbook (Status = Approved). For each target layer and table it writes, under "Pipelines/<layer> - <table>/": a PySpark notebook (.py), Spark SQL (CREATE TABLE and INSERT … SELECT), a Data Factory / Fabric pipeline JSON, pytest unit tests and a reconciliation query (row counts and checksums per layer). Plain-word rules are turned into code; any rule it can\'t translate is marked TODO and listed. Rows that are not Approved are refused and listed, and no code is written for them. Never overwrites: numbered copies are saved instead.',
+    inputSchema: { type: 'object', properties: {
+      sttm: { type: 'string', description: 'The STTM workbook' },
+      layer: { type: 'string', description: 'Only rows for this target layer (Bronze, Silver, Gold)' },
+      entity: { type: 'string', description: 'Only rows for this target table' },
+      outDir: { type: 'string', description: 'Output folder (default "Pipelines")' },
+      sourceTables: { type: 'object', additionalProperties: { type: 'string' }, description: 'Lakehouse table per source entity, e.g. { "APPLICATIONS": "bronze.src_applications" }' },
+    }, required: ['sttm'] },
+    run: write((a) => data.generatePipelineCode(resolveIn(a.sttm), { layer: a.layer, entity: a.entity, outDir: outputIn(a.outDir), sourceTables: a.sourceTables, root: ROOT })),
+  },
+  {
+    name: 'validate_openapi',
+    description: 'Validate an OpenAPI 3.0 spec (.yaml, .yml or .json). Checks the structure: info, paths, operations, every $ref resolves, valid response codes with a success response, a schema for every request and response body, path parameters declared and required, unique operation IDs. With the program API standards (e.g. "Knowledge/API Standards.md", a Rule | Value table) it also checks the version prefix (/v1/), path and property naming, operation IDs, the error model, the required error responses, required headers (X-Correlation-ID) and x-traces-to on every operation. Every finding has a JSON path (and a line number for YAML). Read-only.',
+    inputSchema: { type: 'object', properties: {
+      path: { type: 'string', description: 'The OpenAPI file, e.g. "Integration/permit-renewal-api.yaml"' },
+      standards: { type: 'string', description: 'Optional API standards (Markdown with a Rule | Value table, or JSON)' },
+      requireTraces: { type: 'boolean', description: 'Report operations without x-traces-to as errors even without standards' },
+    }, required: ['path'] },
+    run: (a) => openapi.validateOpenApi(resolveIn(a.path), { standards: a.standards ? resolveIn(a.standards) : undefined, requireTraces: !!a.requireTraces, root: ROOT }),
+  },
+  {
+    name: 'check_icd',
+    description: 'Check an interface control document (ICD; Markdown, text or Word) against the ICD template sections: purpose and scope, parties, protocol, integration pattern (HIP / ARO P4 or P5), message schemas, error handling, security, service levels (SLAs) and volumes. Returns each section as ok, empty (only TBD or placeholders), incomplete (e.g. no P4/P5 named, or lines still marked Needs input) or missing, with the heading and line, and a completeness log. Read-only.',
+    inputSchema: { type: 'object', properties: {
+      path: { type: 'string', description: 'The ICD, e.g. "Integration/ICD - Case API (draft).md"' },
+      sections: { type: 'array', items: { type: 'string' }, description: 'Optional section names to check instead of the standard ICD template list' },
+    }, required: ['path'] },
+    run: (a) => openapi.checkIcd(resolveIn(a.path), { sections: a.sections, root: ROOT }),
+  },
+  {
+    name: 'write_openapi',
+    description: 'Save an OpenAPI 3.0 spec you designed as .yaml, .yml or .json, then validate it like validate_openapi (x-traces-to is required on every operation). Give the spec as an object or as YAML/JSON text. With schemas (SQL DDL, JSON Schema or data dictionary files), entities not yet in components.schemas are added from them (PascalCase names, camelCase properties, required, enum and pattern kept). Never overwrites: a numbered copy is saved instead. Call again with the fixes until it reports no errors.',
+    inputSchema: { type: 'object', properties: {
+      path: { type: 'string', description: 'Output file, e.g. "Integration/notification-api.yaml"' },
+      spec: { description: 'The OpenAPI document (object) or its YAML/JSON text' },
+      standards: { type: 'string', description: 'API standards file to validate against' },
+      schemas: { type: 'array', items: { type: 'string' }, description: 'Optional schema files to add component schemas from' },
+    }, required: ['path', 'spec'] },
+    run: write(async (a) => {
+      const out = outputIn(a.path);
+      if (!out) throw Object.assign(new Error('A file path is required.'), { friendly: true });
+      const models = [];
+      for (const f of a.schemas || []) models.push(await data.readSchema(resolveIn(f)));
+      const r = openapi.writeOpenApi(out, a.spec, { standards: a.standards ? resolveIn(a.standards) : undefined, models });
+      return { ...r, saved: path.relative(ROOT, r.saved) };
+    }),
+  },
+  {
+    name: 'generate_api_scaffold',
+    description: 'From an OpenAPI spec with no validation errors, generate a static mock (one example response per operation and status, plus mock/index.json) and scaffolding in the chosen stack: controller or route stubs that return 501, DTOs from components.schemas, and contract tests (status codes and required fields, skipped until implemented), each carrying the operation\'s x-traces-to IDs. Stacks: dotnet (C# / ASP.NET Core, xUnit), node (Express, node:test) or python (FastAPI, pytest); or pass the Solution Blueprint as blueprint and the stack it names is used. A spec with errors is refused and nothing is written. Writes to "<spec folder>/API/<title>/" (a numbered folder if that one has files). No mock server is started.',
+    inputSchema: { type: 'object', properties: {
+      spec: { type: 'string', description: 'The OpenAPI file' },
+      stack: { type: 'string', description: 'dotnet, node or python (or words like "C# on .NET 8")' },
+      blueprint: { type: 'string', description: 'Optional Solution Blueprint to read the stack from when stack is not given' },
+      standards: { type: 'string', description: 'API standards file the spec must pass' },
+      outDir: { type: 'string', description: 'Output folder (default "<spec folder>/API/<API title>")' },
+    }, required: ['spec'] },
+    run: write((a) => openapi.generateScaffold(resolveIn(a.spec), { stack: a.stack, stackText: !a.stack && a.blueprint ? governance.readText(resolveIn(a.blueprint)) : '', standards: a.standards ? resolveIn(a.standards) : undefined, outDir: outputIn(a.outDir), root: ROOT })),
+  },
+  {
+    name: 'compare_configs',
+    description: 'Compare config files across environments (STE, UAT, PRD…): .env / .properties (KEY=value), JSON, and YAML including Kubernetes / OpenShift manifests exported as YAML (several documents per file). The environment comes from the folder or file name (Environments/UAT/app.env, app.prd.env) or is given per file. Reports keys missing per environment, values that differ where they should match, image tag and version drift (and a PRD tag no lower environment runs), and secrets stored as plain text. With a rules file (Markdown "Key | Rule" table, "KEY: rule" lines or JSON; rules env-specific, must-match, optional, ignore) every setting not listed as env-specific must match. Secret-looking values are always hidden. Read-only.',
+    inputSchema: { type: 'object', properties: {
+      files: { type: 'array', items: { anyOf: [{ type: 'string' }, { type: 'object', properties: { path: { type: 'string' }, environment: { type: 'string' } }, required: ['path'] }] }, description: 'Config files, e.g. ["Environments/STE/app-settings.env", "Environments/UAT/app-settings.env"]' },
+      folder: { type: 'string', description: 'Or a folder: every config file under it whose folder or name says its environment' },
+      rules: { type: 'string', description: 'Optional rules file listing env-specific keys, e.g. "Environments/Config rules.md"' },
+      environments: { type: 'array', items: { type: 'string' }, description: 'Promotion order, default DEV, STE, QA, UAT, PREPROD, PRD' },
+    } },
+    run: (a) => {
+      let files = (a.files || []).map((f) => (typeof f === 'string' ? resolveIn(f) : { ...f, path: resolveIn(f.path) }));
+      if (!files.length && a.folder) {
+        const dir = resolveIn(a.folder);
+        const rules = a.rules ? resolveIn(a.rules) : null;
+        files = walk(dir).filter((f) => /\.(env|properties|json|ya?ml)$/i.test(f) && f !== rules && drift.envFromPath(path.relative(ROOT, f)) && !/pipeline|workflow/i.test(path.basename(f)));
+      }
+      return drift.compareConfigs(files, { rules: a.rules ? resolveIn(a.rules) : undefined, environments: a.environments, root: ROOT });
+    },
+  },
+  {
+    name: 'lint_pipeline',
+    description: 'Basic checks on an Azure Pipelines or GitHub Actions YAML file: a stage (or job) for each required environment (default STE, UAT, PRD), an approval gate before PRD (a deployment to a named environment, where approvals are set, or a manual validation step), PRD waiting for the environment before it, task versions pinned (Task@2) and actions pinned to a tag or SHA, and container images with a fixed tag. Every finding has a JSON path and line. Read-only: nothing is run.',
+    inputSchema: { type: 'object', properties: {
+      path: { type: 'string', description: 'The pipeline YAML, e.g. "azure-pipelines.yml" or ".github/workflows/deploy.yml"' },
+      environments: { type: 'array', items: { type: 'string' }, description: 'Required environments in order, default ["STE", "UAT", "PRD"]' },
+    }, required: ['path'] },
+    run: (a) => drift.lintPipeline(resolveIn(a.path), { environments: a.environments, root: ROOT }),
+  },
+  {
+    name: 'generate_playwright_tests',
+    description: 'Turn a test-case workbook (the write_test_cases layout: one row per step) into Playwright regression specs: one spec per story, one test per case tagged with its test case ID, the IDs it traces to (@US-104 @BR-004) and SIT/UAT, one test.step per step with the expected result, a screenshot attached as evidence, plus a test-data factory, a base page object, a playwright.config.js (trace and screenshots on failure, HTML and JUnit reports) and a README mapping cases to specs. Tests are marked fixme until the actions and assertions are written. Writes to "<workbook folder>/Playwright" by default (a numbered folder if that one has files); never overwrites.',
+    inputSchema: { type: 'object', properties: {
+      workbook: { type: 'string', description: 'The test-case workbook, e.g. "Quality/Test cases - Photo upload (SIT).xlsx"' },
+      outDir: { type: 'string', description: 'Output folder (default "<workbook folder>/Playwright")' },
+    }, required: ['workbook'] },
+    run: write((a) => qe.generatePlaywrightTests(resolveIn(a.workbook), { outDir: outputIn(a.outDir), root: ROOT })),
+  },
+  {
+    name: 'write_test_cases',
+    description: 'Save test cases as an Excel workbook in the Azure DevOps Test Plans import layout: one row per step (ID, Work Item Type, Title, Test Step, Step Action, Step Expected, Traces To, Priority, Type SIT/UAT, Preconditions), with the case fields on its first step row, plus a Coverage sheet with one row per case. Cases without an ID get TC-001, TC-002… An existing file is never overwritten; a numbered copy is saved instead. Returns warnings for cases without steps, expected results or traces.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'Output .xlsx path, e.g. "Test cases - Release 1.xlsx"' },
+        title: { type: 'string', description: 'Optional workbook title' },
+        cases: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', description: 'Optional, e.g. TC-001' },
+              title: { type: 'string' },
+              type: { type: 'string', enum: ['SIT', 'UAT'] },
+              priority: { type: ['string', 'number'], description: '1 (highest) to 4' },
+              tracesTo: { type: 'array', items: { type: 'string' }, description: 'Story or requirement IDs this case verifies, e.g. ["US-103", "BR-002.1"]' },
+              preconditions: { type: 'string' },
+              technique: { type: 'string', description: 'e.g. positive, negative, boundary' },
+              steps: { type: 'array', items: { type: 'object', properties: { action: { type: 'string' }, expected: { type: 'string' } }, required: ['action'] } },
+            },
+            required: ['title', 'steps'],
+          },
+        },
+      },
+      required: ['path', 'cases'],
+    },
+    run: write((a) => qe.writeTestCases(outputIn(a.path) || resolveIn(null), a.cases || [], { title: a.title })),
+  },
+  {
+    name: 'analyze_defects',
+    description: 'Triage a defect export (Azure DevOps query saved as .xlsx or .csv). Reports counts by severity, state and area; the age of open defects and the oldest ones; probable duplicates (similar titles in the same area path); severity–priority mismatches; open defects without an owner or severity; and defects not changed recently. Every defect has a Sheet!Cell reference. Returns proposed changes only and never changes the file.',
+    inputSchema: { type: 'object', properties: {
+      path: { type: 'string', description: 'The defect export' },
+      asOf: { type: 'string', description: 'YYYY-MM-DD for ages (default today)' },
+      duplicateThreshold: { type: 'number', description: 'Title similarity for a probable duplicate, 0 to 1 (default 0.6)' },
+      staleDays: { type: 'number', description: 'Open defects unchanged for longer than this are listed (default 30)' },
+    }, required: ['path'] },
+    run: (a) => qe.analyzeDefects(resolveIn(a.path), { asOf: a.asOf, duplicateThreshold: a.duplicateThreshold, staleDays: a.staleDays }),
+  },
+  {
+    name: 'propose_defect_changes',
+    description: 'Record proposed defect changes (severity, priority, state, owner, area or tags) for a person to approve. Saves "<export> (proposed).xlsx" with the changed cells highlighted and a "Proposed changes" sheet with an "Approve? (Yes/No)" column. The original export is never changed. Use it only after the person has agreed which triage proposals to record.',
+    inputSchema: { type: 'object', properties: {
+      path: { type: 'string', description: 'The defect export' },
+      changes: { type: 'array', items: { type: 'object', properties: { id: { type: 'string' }, field: { type: 'string', enum: ['severity', 'priority', 'state', 'owner', 'area', 'tags'] }, value: { type: 'string' }, reason: { type: 'string' } }, required: ['id', 'field', 'value'] } },
+    }, required: ['path', 'changes'] },
+    run: write((a) => qe.proposeDefectChanges(resolveIn(a.path), a.changes || [])),
   },
   {
     name: 'update_project_plan',
@@ -275,7 +716,7 @@ const TOOLS = [
 
 // ------------------------------------------------------------------ JSON-RPC over stdio
 if (require.main === module) {
-  require('./mcp-stdio').serve({ name: 'office', instructions: 'Tools for Excel workbooks, Microsoft Project plans, Word documents and requirements traceability and knowledge publishing in the project folder.', tools: TOOLS });
+  require('./mcp-stdio').serve({ name: 'office', instructions: 'Tools for Excel workbooks, Microsoft Project plans (including delivery scenarios and team capacity), Word documents, requirements traceability, test cases, defect triage, change impacts and training needs, bilingual QA, release readiness, cutover and hypercare, architecture reviews, ADRs, gate packs and technical inventories, security controls (SCTM and SA&A evidence), data profiling, schemas, source-to-target mappings (STTM) and pipeline code, OpenAPI specs, interface control documents (ICD) and API scaffolding, and knowledge publishing in the project folder.', tools: TOOLS });
 }
 
 module.exports = { TOOLS };

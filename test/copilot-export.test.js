@@ -69,3 +69,38 @@ test('prompts become plain text with [blanks] for each question', () => {
   assert.match(md, /Use with the \*\*Budget Controller\*\* agent/);
   assert.match(md, /\[Project name\]/);
 });
+
+test('VS Code kit copies skill reference files next to SKILL.md and points the agents to them', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lumen-skill-'));
+  fs.mkdirSync(path.join(dir, 'references'));
+  fs.writeFileSync(path.join(dir, 'references', 'standards.md'), '# Standards');
+  const skill = { id: 'dev-pack', title: 'Developer workflow', description: 'Test first', body: 'See references/standards.md', references: require('../lib/skills').referencesOf(dir) };
+  const dev = { id: 'developer-copilot', name: 'Developer Copilot', tagline: 'Codes test-first', instructions: 'You are a developer.', skills: ['dev-pack'] };
+  const files = ex.vsCodeKitFiles([dev], [skill, { id: 'unused', title: 'Unused', description: '', body: '', references: [] }]);
+  const rels = files.map((f) => f.rel.split(path.sep).join('/')).sort();
+  assert.deepEqual(rels, [
+    '.claude/agents/developer-copilot.md', '.claude/skills/dev-pack/SKILL.md', '.claude/skills/dev-pack/references/standards.md',
+    '.github/agents/developer-copilot.agent.md', '.github/skills/dev-pack/SKILL.md', '.github/skills/dev-pack/references/standards.md',
+  ]);
+  const byRel = (r) => files.find((f) => f.rel.split(path.sep).join('/') === r).content.toString();
+  assert.equal(byRel('.github/skills/dev-pack/references/standards.md'), '# Standards');
+  assert.match(byRel('.claude/skills/dev-pack/SKILL.md'), /^---\nname: dev-pack\ndescription: "Test first"\n---/);
+  assert.match(byRel('.github/agents/developer-copilot.agent.md'), /## Developer workflow[\s\S]*Reference files: `\.github\/skills\/dev-pack\/references\/standards\.md`/);
+  assert.match(byRel('.claude/agents/developer-copilot.md'), /`\.claude\/skills\/dev-pack\/references\/standards\.md`/);
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('the engineering packs bundle names three shipped agents and explains how to load them', () => {
+  const assistants = require('../defaults/assistants.json');
+  const agents = ex.ENGINEERING_PACKS.map((id) => assistants.find((a) => a.id === id));
+  assert.equal(agents.filter(Boolean).length, 3);
+  const all = require('../lib/skills').all();
+  const files = ex.vsCodeKitFiles(agents, all).map((f) => f.rel.split(path.sep).join('/'));
+  for (const id of ['dev-pack', 'test-automation', 'pipeline-readiness']) {
+    assert.ok(files.includes(`.github/skills/${id}/SKILL.md`), id);
+    assert.ok(files.some((f) => f.startsWith(`.claude/skills/${id}/references/`)), `${id} references`);
+  }
+  const readme = ex.ENGINEERING_README(agents);
+  assert.match(readme, /Developer Copilot .*\.github\/agents\/developer-copilot\.agent\.md/);
+  assert.match(readme, /GitHub Copilot:.*agent list/);
+});
