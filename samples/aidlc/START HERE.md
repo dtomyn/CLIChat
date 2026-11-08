@@ -10,6 +10,7 @@ Synthetic data for trying Lumen's delivery-lifecycle assistants locally: Require
 | **Knowledge/Solution Blueprint - Permit Renewal.md** | Target architecture and principles |
 | **Knowledge/Ways of Working - Delivery.md** | Artifact ownership, Definition of Ready/Done, change control |
 | **Knowledge/Data Model - Permit Renewal.xlsx** | Entities and attributes |
+| **Templates/FDD Template.dotx**, **Templates/TDD Template.dotx** | Program Word templates: styles, cover page, header and footer. Approved Functional and Technical design stages offer **Save as Word (program template)** |
 
 ## Built-in scenarios
 - **One-to-many and many-to-many links:** BR-002 has three refined requirements, and FD-012 realises all three.
@@ -26,4 +27,6 @@ Synthetic data for trying Lumen's delivery-lifecycle assistants locally: Require
 - *"BR-004 has changed. What is affected downstream?"*
 - *"Write stories for FD-012 and FD-018."*
 
-Regenerate with `node scripts/make-aidlc-sample.js`.
+- *"Publish the approved lifecycle outputs to the Design library."* then edit one and run **Knowledge freshness**.
+
+Regenerate with `node scripts/make-aidlc-sample.js` (templates: `node scripts/make-word-templates.js`).

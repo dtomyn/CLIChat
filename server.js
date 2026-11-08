@@ -229,6 +229,13 @@ function reconcileRun(run) {
   return changed ? store.runs.save(run) : run;
 }
 
+// The Word template for a lifecycle stage. Saved pipelines predate the setting, so fall back to the built-in one.
+const DEFAULT_PIPELINES = (() => { try { return JSON.parse(fs.readFileSync(path.join(__dirname, 'defaults', 'pipelines.json'), 'utf8')); } catch { return []; } })();
+function stageWordTemplate(pipelineId, def) {
+  if (def.wordTemplate !== undefined) return def.wordTemplate || '';
+  return DEFAULT_PIPELINES.find((p) => p.id === pipelineId)?.stages.find((s) => s.id === def.id)?.wordTemplate || '';
+}
+
 function stampOutput(stage, approvedBy, approvedAt) {
   const contents = fs.readFileSync(stage.outputPath, 'utf8').replace(/^> Approved by .* on .*\r?\n(?:\r?\n)?/, '');
   fs.writeFileSync(stage.outputPath, `> Approved by ${approvedBy.replace(/[\r\n]/g, ' ')} on ${new Date(approvedAt).toISOString()}\n\n${contents}`);
@@ -469,7 +476,7 @@ async function api(req, res, url) {
     return send(res, 200, { providers: await registry.status(url.searchParams.has('refresh')), settings: { ...s, workspace: resolveWorkspace(s.workspace) }, platform: process.platform, user: os.userInfo().username });
   }
   if (resource === 'skills' && m === 'GET') return send(res, 200, skills.all().map(({ body, raw, file, ...rest }) => rest));
-  if (resource === 'pipelines' && m === 'GET') return send(res, 200, store.pipelines.all());
+  if (resource === 'pipelines' && m === 'GET') return send(res, 200, store.pipelines.all().map((p) => ({ ...p, stages: p.stages.map((s) => ({ ...s, wordTemplate: stageWordTemplate(p.id, s) })) })));
   if (resource === 'runs') {
     if (!rid && m === 'GET') return send(res, 200, store.runs.list().map(reconcileRun));
     if (!rid && m === 'POST') {
@@ -519,7 +526,7 @@ async function api(req, res, url) {
         if (!workspaceFile(stage.outputPath, run.workspace)) return send(res, 400, { error: 'The output file is missing.' });
         const name = String(store.settings.get().userName || '').trim();
         if (!name) return send(res, 400, { error: 'Set your name in Settings before approving.' });
-        stage.approvedBy = name; stage.approvedAt = Date.now(); stampOutput(stage, name, stage.approvedAt); stage.status = 'approved';
+        stage.approvedBy = name; stage.approvedAt = Date.now(); stampOutput(stage, name, stage.approvedAt); stage.status = 'approved'; stage.version = (stage.version || 0) + 1;
         return send(res, 200, store.runs.save(run));
       }
       if (operation === 'rework') {
@@ -536,6 +543,22 @@ async function api(req, res, url) {
           downstream.status = 'rework'; downstream.unapprovedInputs = true; delete downstream.approvedBy; delete downstream.approvedAt;
         }
         return send(res, 200, store.runs.save(run));
+      }
+      if (operation === 'word') {
+        if (stage.status !== 'approved') return send(res, 409, { error: 'Approve the stage before saving it as Word.' });
+        if (!workspaceFile(stage.outputPath, run.workspace)) return send(res, 400, { error: 'The output file is missing.' });
+        const rel = stageWordTemplate(pipeline.id, def);
+        const template = rel ? path.resolve(run.workspace, rel) : null;
+        if (template && !inside(template, run.workspace)) return send(res, 400, { error: 'The Word template must be inside your project folder.' });
+        const text = fs.readFileSync(stage.outputPath, 'utf8').replace(/^> Approved by .* on .*\r?\n(?:\r?\n)?/, '');
+        const version = `${stage.version || 1}.0`, date = new Date(stage.approvedAt).toISOString().slice(0, 10);
+        const target = stage.outputPath.replace(/\.(md|markdown)$/i, '') + '.docx';
+        try {
+          const r = await mdExport.toDocx(text, { title: `${run.name}: ${def.name}`, template, fields: { version, date, approver: stage.approvedBy },
+            properties: { Version: version, Approver: stage.approvedBy, 'Approved at': new Date(stage.approvedAt).toISOString(), Source: path.relative(run.workspace, stage.outputPath).split(path.sep).join('/') } });
+          fs.writeFileSync(target, r.buffer);
+          return send(res, 200, { path: target, name: path.basename(target), template: r.template ? rel : '', warning: r.warning });
+        } catch (e) { return send(res, e.code === 'EBUSY' || e.code === 'EPERM' ? 409 : 500, { error: e.code === 'EBUSY' || e.code === 'EPERM' ? `Close ${path.basename(target)} in Word and try again.` : `Couldn't save the Word file: ${e.message}` }); }
       }
       if (operation === 'check') {
         if (stage.status !== 'review' || stage.checkRunning) return send(res, 409, { error: 'The stage must be ready for review.' });

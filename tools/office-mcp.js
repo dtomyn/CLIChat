@@ -13,6 +13,7 @@ const docx = require('./docx');
 const traceability = require('./traceability');
 const status = require('./status');
 const raid = require('./raid');
+const publish = require('./publish');
 
 const ROOT = path.resolve(process.env.OFFICE_MCP_ROOT || process.cwd());
 const READ_ONLY = process.env.OFFICE_MCP_READONLY === '1';
@@ -236,6 +237,26 @@ const TOOLS = [
     inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'The project plan' }, output: { type: 'string', description: 'Output .xlsx path' }, history: { type: 'array', items: { type: 'string' }, description: "Optional earlier versions of the same plan (.mpp/.xml), e.g. last week's copy, for the milestone slip trend" } }, required: ['path', 'output'] },
     run: write((a) => excel.projectToWorkbook(resolveIn(a.path), resolveIn(a.output, { mustExist: false }), { history: (a.history || []).map((h) => resolveIn(h)), historyRoot: ROOT })),
   },
+  {
+    name: 'check_freshness',
+    description: 'Knowledge freshness check against Published/publishing-log.xlsx: re-hashes each published source and lists stale snapshots (the source changed since it was published), sources that were never published (Markdown under the folders you pass), orphan snapshots (files under Published/ that no log row points at), and sources or snapshots that have gone missing. Read-only. Use it for "is the published knowledge up to date?" and the scheduled freshness check.',
+    inputSchema: { type: 'object', properties: { sources: { type: 'array', items: { type: 'string' }, description: 'Optional Markdown files or folders that should be published (e.g. ["Lifecycle", "Wiki export"]), to find never-published sources' } } },
+    run: (a) => publish.freshnessCheck({ root: ROOT, sources: (a.sources || []).map((s) => resolveIn(s)) }),
+  },
+  {
+    name: 'publish_snapshot',
+    description: 'Publish approved Markdown (lifecycle stage outputs, or a wiki export folder) as Word and/or HTML snapshots under "Published/<library>/", with version, approver, source and source revision in the document properties, and record each one in Published/publishing-log.xlsx (source, revision, published at, approver, version, destination). Sources without Lumen\'s approval stamp are skipped unless you pass the approver the person names; sources unchanged since their last publish are skipped. A Word template (.dotx/.docx, e.g. from the Templates folder) gives the program styles and cover page. Only publish what the person asked for.',
+    inputSchema: { type: 'object', properties: {
+      sources: { type: 'array', items: { type: 'string' }, description: 'Markdown files or folders to publish' },
+      library: { type: 'string', description: 'Published/<library> folder name (default Knowledge)' },
+      formats: { type: 'array', items: { type: 'string', enum: ['docx', 'html'] }, description: 'Default ["docx"]' },
+      approver: { type: 'string', description: 'Only when the person tells you who approved sources that have no approval stamp' },
+      version: { type: 'string', description: 'Optional version; default goes up by one per republish' },
+      template: { type: 'string', description: 'Optional Word template, e.g. "Templates/FDD Template.dotx"' },
+      force: { type: 'boolean', description: 'Republish even when the source is unchanged' },
+    }, required: ['sources'] },
+    run: write((a) => publish.publishSnapshot((a.sources || []).map((s) => resolveIn(s)), { root: ROOT, library: a.library, formats: a.formats, approver: a.approver, version: a.version, template: a.template ? resolveIn(a.template) : undefined, force: !!a.force })),
+  },
 ];
 
 // ------------------------------------------------------------------ JSON-RPC over stdio
@@ -246,7 +267,7 @@ async function handle(msg) {
   const { id, method, params } = msg;
   if (method === 'initialize') {
     return result(id, { protocolVersion: params?.protocolVersion || '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 'office', version: '1.0.0' },
-      instructions: 'Tools for Excel workbooks, Microsoft Project plans, Word documents and requirements traceability in the project folder.' });
+      instructions: 'Tools for Excel workbooks, Microsoft Project plans, Word documents, requirements traceability and knowledge publishing in the project folder.' });
   }
   if (method === 'ping') return result(id, {});
   if (method === 'tools/list') return result(id, { tools: TOOLS.map(({ name, description, inputSchema }) => ({ name, description, inputSchema })) });

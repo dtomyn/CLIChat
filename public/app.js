@@ -1312,6 +1312,7 @@ async function renderRun(id, selected = null) {
         ${stage.conversationId ? `<button class="btn soft" data-open-chat="${esc(stage.conversationId)}">Open stage chat</button>` : ''}
         ${['review', 'approved'].includes(stage.status) ? `<button class="btn soft" data-run-file="${esc(stage.outputPath)}">Open output</button>` : ''}
         ${stage.status === 'review' ? `<button class="btn soft" data-run-action="check" ${stage.checkRunning ? 'disabled' : ''}>${stage.checkRunning ? 'Checking…' : 'Traceability check'}</button><button class="btn primary" data-run-action="approve">Approve</button>` : ''}
+        ${stage.status === 'approved' ? `<button class="btn soft" data-run-word title="${def.wordTemplate ? `Uses ${esc(def.wordTemplate)}` : "Uses Lumen's built-in Word styles"}">${def.wordTemplate ? 'Save as Word (program template)' : 'Save as Word'}</button>` : ''}
         ${['review', 'approved'].includes(stage.status) ? '<button class="btn soft" data-run-action="rework">Send back</button>' : ''}
       </div>
       ${stage.checkSummary ? `<div class="run-findings"><h3>Traceability findings</h3><div class="md">${md(stage.checkSummary)}</div>${stage.gateConversationId ? `<button class="btn ghost sm" data-open-chat="${esc(stage.gateConversationId)}">Open check chat</button>` : ''}</div>` : ''}
@@ -1319,11 +1320,21 @@ async function renderRun(id, selected = null) {
       </div></div>`;
     highlight($('#view'));
     $('#view').onclick = async (e) => {
-      const b = e.target.closest('[data-back-runs],[data-stage],[data-run-action],[data-open-chat],[data-run-file]'); if (!b) return;
+      const b = e.target.closest('[data-back-runs],[data-stage],[data-run-action],[data-open-chat],[data-run-file],[data-run-word]'); if (!b) return;
       if ('backRuns' in b.dataset) return go('runs');
       if (b.dataset.stage) return renderRun(id, b.dataset.stage);
       if (b.dataset.openChat) return go(`c/${b.dataset.openChat}`);
       if (b.dataset.runFile) return api('/api/folder/open', { method: 'POST', body: { path: b.dataset.runFile, workspace: run.workspace } });
+      if ('runWord' in b.dataset) {
+        b.disabled = true;
+        try {
+          const r = await api(`/api/runs/${id}/stages/${stage.id}/word`, { method: 'POST', body: {} });
+          if (r.warning) toast(r.warning, 'alert');
+          modal({ title: 'Saved as Word', sub: `${r.name}${r.template ? ` · ${r.template}` : ''}`, actions: [{ label: 'Close' }, { label: 'Open', primary: true, run: () => api('/api/folder/open', { method: 'POST', body: { path: r.path, workspace: run.workspace } }) }] });
+        } catch (err) { toast(err.message, 'alert'); }
+        b.disabled = false;
+        return;
+      }
       const operation = b.dataset.runAction;
       const act = async (override = false) => {
         await api(`/api/runs/${id}/stages/${stage.id}/${operation}`, { method: 'POST', body: { override } });

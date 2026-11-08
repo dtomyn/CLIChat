@@ -743,5 +743,25 @@
       }
     ],
     "template": "Compare the Azure DevOps backlog {{backlog}} with the project plan {{plan}} (status date {{status}}; if blank, use the plan's).\n\n1. Call plan_progress_from_backlog and base everything on it.\n2. Show the proposed % complete changes as a table (ID · Task · Now · Proposed · Items done/total), and any that were held back because the backlog shows less progress than the plan.\n3. Show the data-quality findings: unlinked items, links to missing or summary tasks, stale in-progress items, unknown states, and plan tasks that should be moving but have no backlog items. Say who needs to fix what.\n4. Ask me to approve before changing anything. If I approve, call update_project_plan with only the approved rows and summarise what moved."
+  },
+  {
+    "id": "knowledge-freshness",
+    "name": "Knowledge freshness",
+    "emoji": "🗞️",
+    "category": "Delivery lifecycle",
+    "description": "Which published Word/HTML snapshots are out of date with their source, which approved outputs were never published, and which snapshots are orphans. Good as a weekly scheduled check.",
+    "assistantId": "traceability-analyst",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "sources",
+        "label": "Folders that should be published (optional)",
+        "type": "text",
+        "placeholder": "e.g. Lifecycle, Wiki export — leave blank to check only what was published",
+        "optional": true
+      }
+    ],
+    "template": "Check the freshness of the published knowledge in my project folder. Folders that should be published: {{sources}} (if blank, leave sources out).\n\nCall check_freshness and base everything on it. Lead with one line: how many snapshots are stale, never published and orphaned. Then a table of stale snapshots (Snapshot · Source · Published version · Approved by · Published at · Source last changed), the approved sources never published, orphan snapshots, and anything missing. End with the actions to take and who should take them (re-approve then republish, publish, or remove). Do not change any files."
   }
 ]

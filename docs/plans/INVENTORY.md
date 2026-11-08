@@ -10,9 +10,9 @@ Last reviewed: 2026-11-07 (branch `feature/ideas-for-pm`, commit `82b234d`)
 
 | Status | Count |
 |---|---|
-| ✅ Done | 5 |
-| 🟡 Partial | 6 |
-| 📝 Planned | 31 |
+| ✅ Done | 7 |
+| 🟡 Partial | 5 |
+| 📝 Planned | 30 |
 | ⬜ Not started | 0 |
 
 Lumen runs on one computer and works on files in the notebook folder. Where the catalogue names a cloud target (SharePoint, Teams, Power BI, Fabric, ADO Test Plans), Lumen produces the file or proposal locally, and a person publishes it. "Done" means the use case works end to end in that model. Live system connections are tracked separately in Plan 08 (Azure DevOps) and in the "Live targets" column.
@@ -28,8 +28,8 @@ Lumen runs on one computer and works on files in the notebook folder. Where the 
 | 5 | Integrated Planning | Model alternative delivery scenarios | Medium | 📝 | Nothing yet | 10 |
 | 6 | Governance / RAID | RAID updates from meeting transcripts | High | ✅ | Huddle → RAID log, `propose_raid_updates`, `apply_raid_updates` | — |
 | 7 | Functional / Requirements | Refine BRDs into functional requirements | High | ✅ | Requirements Refiner, lifecycle stage 1, `read_document` | — |
-| 8 | Functional Design | Draft and review FDD | High | 🟡 | Functional Designer, lifecycle stage. Missing: Word output from the program's FDD template | 18 |
-| 9 | Technical Design | Draft and review TDD | Med–High | 🟡 | Technical Designer, lifecycle stage. Missing: Word output from the TDD template | 18 |
+| 8 | Functional Design | Draft and review FDD | High | ✅ | Functional Designer, lifecycle stage; **Save as Word (program template)** on the approved stage (`wordTemplate`, `md-export.js` `toDocx`), sample `Templates/FDD Template.dotx` (2026-11-07) | 18 |
+| 9 | Technical Design | Draft and review TDD | Med–High | ✅ | Technical Designer, lifecycle stage; Word output from `Templates/TDD Template.dotx` (2026-11-07) | 18 |
 | 10 | Functional / ADO Backlog | Delivery-ready ADO backlog items | High | 🟡 | Story Writer (Markdown backlog). Missing: create items in ADO | 08 |
 | 11 | Functional / Traceability | End-to-end requirements traceability | High | 🟡 | `analyze_traceability` on the RTM workbook. Missing: ADO links, test-case layer | 08, 09 |
 | 12 | Cross-Functional / Knowledge | Common grounded program context | Foundational | ✅ | program-knowledge skill, Knowledge folder convention | — |
@@ -57,7 +57,7 @@ Lumen runs on one computer and works on files in the notebook folder. Where the 
 | 34 | Testing / QE | Test strategy, coverage model, risk priorities | High | 📝 | — | 09 |
 | 35 | Test Automation | Automated regression tests (Playwright) | High | 📝 | Lumen's own e2e suite as a pattern | 17 |
 | 36 | Development / Engineering | Developer Copilot skill pack | High | 📝 | "Use in VS Code" export exists to reuse | 17 |
-| 37 | Cross-Functional / Knowledge | ADO Wiki → SharePoint publishing, freshness | Foundational | 📝 | `md-export.js` (Markdown → Word) to reuse | 18 |
+| 37 | Cross-Functional / Knowledge | ADO Wiki → SharePoint publishing, freshness | Foundational | 🟡 | `tools/publish.js`: `publish_snapshot`, `check_freshness`, `Published/publishing-log.xlsx`, **Knowledge freshness** prompt (2026-11-07). Missing: live ADO Wiki source (Plan 08 phase 2) | 18, 08 |
 | 38 | Architecture / Governance | ADRs and reuse vs. build | High | 📝 | — | 16 |
 | 39 | Planning / Resources | Estimates and resource capacity | High | 🟡 → 📝 | "Who's overloaded?" works from plan assignments. Missing: capacity workbook and sprint demand | 10 |
 | 40 | Architecture / Governance | Stage-gate packs | High | 📝 | — | 16 |

@@ -4,7 +4,7 @@ title: Program knowledge layer
 emoji: 📚
 description: Ground answers in the program's authoritative documents (PID/scope, BRDs, Solution Blueprint, Ways of Working, data models). Reads Word and text documents, cites sources and flags conflicts between them.
 extensions: .docx, .docm
-readTools: list_office_files, read_document, read_spreadsheet
+readTools: list_office_files, read_document, read_spreadsheet, check_freshness
 writeTools:
 ---
 

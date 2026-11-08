@@ -5,8 +5,8 @@
     "emoji": "🧬",
     "stages": [
       { "id": "refine", "name": "Refine requirements", "assistantId": "requirements-refiner", "output": "01-requirements.md", "prompt": "Refine the business requirements from {{sources}}. Preserve identifiers, identify gaps and assumptions, and produce reviewable requirements." },
-      { "id": "functional", "name": "Functional design", "assistantId": "functional-designer", "output": "02-functional-design.md", "prompt": "Draft the functional design from the requirements in {{prev}}, tracing design decisions back to requirements." },
-      { "id": "technical", "name": "Technical design", "assistantId": "technical-designer", "output": "03-technical-design.md", "prompt": "Draft the technical design from the functional design in {{prev}}, retaining traceability." },
+      { "id": "functional", "name": "Functional design", "assistantId": "functional-designer", "output": "02-functional-design.md", "wordTemplate": "Templates/FDD Template.dotx", "prompt": "Draft the functional design from the requirements in {{prev}}, tracing design decisions back to requirements." },
+      { "id": "technical", "name": "Technical design", "assistantId": "technical-designer", "output": "03-technical-design.md", "wordTemplate": "Templates/TDD Template.dotx", "prompt": "Draft the technical design from the functional design in {{prev}}, retaining traceability." },
       { "id": "stories", "name": "Stories", "assistantId": "story-writer", "output": "04-stories.md", "prompt": "Write implementable stories and acceptance criteria from the technical design in {{prev}}, retaining traceability." }
     ],
     "gateCheck": { "assistantId": "traceability-analyst", "prompt": "Check traceability between {{prev}} and {{current}}. Report gaps and findings only; do not change any files." }
