@@ -559,6 +559,14 @@ details.advanced[open] summary { margin-bottom: 14px; }
 .demo-actions .btn.soft { background: var(--panel); }
 .demo-cta { display: flex; align-items: center; gap: 6px; flex: 0 1 auto; flex-wrap: wrap; justify-content: flex-end; }
 @media (max-width: 640px) { .demo-banner { flex-wrap: wrap; } }
+.sample-hint { display: flex; align-items: center; gap: 10px; margin-top: 22px; padding: 8px 8px 8px 14px; border-radius: 8px; border: 1px dashed var(--border-strong); color: var(--text-2); font-size: 13.5px; animation: rise .6s .14s cubic-bezier(.2,.8,.2,1) both; }
+.sample-hint > .ico { flex: none; color: var(--muted); }
+.sample-hint > span:not(.ico) { flex: 1; min-width: 0; }
+.sample-hint a { color: var(--accent); cursor: pointer; font-weight: 600; }
+.sample-card .sample-agent { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 13px; color: var(--muted); }
+.sample-card .sample-agent .a-badge { width: 18px; height: 18px; font-size: 10px; }
+.sample-card .demo-actions { margin-top: 0; }
+.sample-card.here { border-color: var(--accent); }
 
 /* In-app folder picker */
 .fp { display: grid; grid-template-columns: 170px 1fr; gap: 14px; min-height: 340px; }

@@ -172,6 +172,7 @@ function route() {
   if (h === 'assistants' || h === 'agents') return renderAssistantsPage();
   if (h === 'recipes' || h === 'prompts') return renderRecipesPage();
   if (h === 'insights') return renderInsightsPage();
+  if (h === 'samples') return renderSamplesPage();
   renderHome();
 }
 const go = (h) => { if (location.hash === `#/${h}`) route(); else location.hash = `/${h}`; };
@@ -645,78 +646,75 @@ function renderHome() {
   setTimeout(() => { if (!$('#modalRoot').children.length) $('#input')?.focus(); }, 50);
 }
 
+// Sample packs: one list drives the Samples page (rail) and the "You're in the …" banner on the home screen.
+const SAMPLE_PACKS = [
+  { id: 'crm', emoji: '📦', name: 'PM demo', title: 'Contoso CRM Migration demo', agent: 'schedule-analyst',
+    summary: 'A Microsoft Project plan with an Excel budget tracker, RAID log, timesheets and a weekly progress update.',
+    inside: 'A Microsoft Project plan plus a budget tracker, RAID log, timesheets and a progress update in Excel. Try one:',
+    prompts: [['plan-health-check', '🩺 Health check'], ['plan-status-report', '📣 Status report'], ['plan-update-progress', '🔄 Update the plan'], ['budget-variance', '💰 Budget review']] },
+  { id: 'aidlc', emoji: '🧬', name: 'AIDLC sample', title: 'Online Permit Renewal AIDLC sample', agent: 'traceability-analyst',
+    summary: 'Program documents (BRD, design, Ways of Working) and a traceability workbook for the requirements, design, story and traceability agents.',
+    inside: 'Synthetic program documents (PID, BRD, Solution Blueprint, Ways of Working, data model) and a traceability workbook. Try one:',
+    prompts: [['aidlc-knowledge-inventory', '📚 Knowledge inventory'], ['aidlc-refine-requirements', '🔬 Refine requirements'], ['aidlc-trace-check', '🔗 Traceability check'], ['aidlc-change-impact', '🌊 Change impact']] },
+  { id: 'data', emoji: '📊', name: 'Data sample', title: 'Permit Applications data sample', agent: 'data-profiler',
+    summary: 'A source extract, schemas and a data dictionary for profiling, mapping and pipeline code.',
+    inside: 'A synthetic source extract with seeded data quality problems, the source tables, a Silver canonical model, a Gold model and a data dictionary. Try them in order:',
+    prompts: [['data-profile', '📊 Profile a dataset'], ['data-compare-schemas', '🔀 Compare schemas'], ['data-draft-sttm', '🗺️ Draft the STTM'], ['data-generate-code', '🧱 Generate pipeline code']] },
+  { id: 'security', emoji: '🛡️', name: 'Security sample', title: 'Permit Renewal security sample', agent: 'security-control-mapper',
+    summary: 'A control catalogue, a partly filled SCTM and an evidence folder for security assessment work.',
+    inside: 'A synthetic control catalogue, a partly filled SCTM, the security design and an evidence folder with a missing, a stale and an orphan file. Try one:',
+    prompts: [['security-draft-sctm', '🛡️ Draft the SCTM'], ['security-evidence-gaps', '🗂️ Evidence gap check'], ['security-design-document', '📘 Security design document']] },
+  { id: 'change', emoji: '🔄', name: 'Change sample', title: 'Permit Renewal change sample', agent: 'change-impact-analyst',
+    summary: 'Interview transcripts, change impact assessments and an English/French guide for change, training and bilingual work.',
+    inside: 'Two interview transcripts, change impact assessments, a role list, an English/French glossary and a guide in both languages. Try one:',
+    prompts: [['change-interview-impacts', '🔄 Interview → change impacts'], ['change-consolidate-cia', '🧩 Consolidate the CIA'], ['change-training-materials', '🎓 Training materials'], ['bilingual-qa', '🔍 Bilingual QA']] },
+];
+const samplePack = (id) => SAMPLE_PACKS.find((p) => p.id === id) || SAMPLE_PACKS[0];
+const activeSamplePack = () => (S.settings.demoInstalled && S.settings.workspace === S.settings.demoInstalled ? samplePack(S.settings.demoPack || 'crm') : null);
+const samplePromptButtons = (p) => p.prompts.map(([id, label]) => `<button class="btn soft sm" data-recipe="${esc(id)}">${esc(label)}</button>`).join('');
+
+// Home: only the "You're in the …" banner while a sample is the notebook. The offer itself lives on the Samples page
+// (rail), plus a one-line hint for someone who has never chatted or tried a sample.
 function demoBanner() {
-  const inDemo = S.settings.demoInstalled && S.settings.workspace === S.settings.demoInstalled;
-  if (S.settings.demoDismissed && !inDemo) return '';
-  if (inDemo && S.settings.demoPack === 'aidlc') {
+  const p = activeSamplePack();
+  if (p) {
     return `<div class="demo-banner active">
-      <div class="demo-icon">🧬</div>
-      <div class="demo-text"><b>You're in the Online Permit Renewal AIDLC sample</b><span>Synthetic program documents (PID, BRD, Solution Blueprint, Ways of Working, data model) and a traceability workbook. Try one:</span>
+      <div class="demo-icon">${p.emoji}</div>
+      <div class="demo-text"><b>You're in the ${esc(p.title)}</b><span>${esc(p.inside)}</span>
         <div class="demo-actions">
-          <button class="btn soft sm" data-recipe="aidlc-knowledge-inventory">📚 Knowledge inventory</button>
-          <button class="btn soft sm" data-recipe="aidlc-refine-requirements">🔬 Refine requirements</button>
-          <button class="btn soft sm" data-recipe="aidlc-trace-check">🔗 Traceability check</button>
-          <button class="btn soft sm" data-recipe="aidlc-change-impact">🌊 Change impact</button>
+          ${samplePromptButtons(p)}
           <button class="btn ghost sm" data-open-drawer>${icon('folder')}See the files</button>
         </div>
       </div></div>`;
   }
-  if (inDemo && S.settings.demoPack === 'data') {
-    return `<div class="demo-banner active">
-      <div class="demo-icon">📊</div>
-      <div class="demo-text"><b>You're in the Permit Applications data sample</b><span>A synthetic source extract with seeded data quality problems, the source tables, a Silver canonical model, a Gold model and a data dictionary. Try them in order:</span>
-        <div class="demo-actions">
-          <button class="btn soft sm" data-recipe="data-profile">📊 Profile a dataset</button>
-          <button class="btn soft sm" data-recipe="data-compare-schemas">🔀 Compare schemas</button>
-          <button class="btn soft sm" data-recipe="data-draft-sttm">🗺️ Draft the STTM</button>
-          <button class="btn soft sm" data-recipe="data-generate-code">🧱 Generate pipeline code</button>
-          <button class="btn ghost sm" data-open-drawer>${icon('folder')}See the files</button>
-        </div>
-      </div></div>`;
-  }
-  if (inDemo && S.settings.demoPack === 'security') {
-    return `<div class="demo-banner active">
-      <div class="demo-icon">🛡️</div>
-      <div class="demo-text"><b>You're in the Permit Renewal security sample</b><span>A synthetic control catalogue, a partly filled SCTM, the security design and an evidence folder with a missing, a stale and an orphan file. Try one:</span>
-        <div class="demo-actions">
-          <button class="btn soft sm" data-recipe="security-draft-sctm">🛡️ Draft the SCTM</button>
-          <button class="btn soft sm" data-recipe="security-evidence-gaps">🗂️ Evidence gap check</button>
-          <button class="btn soft sm" data-recipe="security-design-document">📘 Security design document</button>
-          <button class="btn ghost sm" data-open-drawer>${icon('folder')}See the files</button>
-        </div>
-      </div></div>`;
-  }
-  if (inDemo && S.settings.demoPack === 'change') {
-    return `<div class="demo-banner active">
-      <div class="demo-icon">🔄</div>
-      <div class="demo-text"><b>You're in the Permit Renewal change sample</b><span>Two interview transcripts, change impact assessments, a role list, an English/French glossary and a guide in both languages. Try one:</span>
-        <div class="demo-actions">
-          <button class="btn soft sm" data-recipe="change-interview-impacts">🔄 Interview → change impacts</button>
-          <button class="btn soft sm" data-recipe="change-consolidate-cia">🧩 Consolidate the CIA</button>
-          <button class="btn soft sm" data-recipe="change-training-materials">🎓 Training materials</button>
-          <button class="btn soft sm" data-recipe="bilingual-qa">🔍 Bilingual QA</button>
-          <button class="btn ghost sm" data-open-drawer>${icon('folder')}See the files</button>
-        </div>
-      </div></div>`;
-  }
-  if (inDemo) {
-    return `<div class="demo-banner active">
-      <div class="demo-icon">📦</div>
-      <div class="demo-text"><b>You're in the Contoso CRM Migration demo</b><span>A Microsoft Project plan plus a budget tracker, RAID log, timesheets and a progress update in Excel. Try one:</span>
-        <div class="demo-actions">
-          <button class="btn soft sm" data-recipe="plan-health-check">🩺 Health check</button>
-          <button class="btn soft sm" data-recipe="plan-status-report">📣 Status report</button>
-          <button class="btn soft sm" data-recipe="plan-update-progress">🔄 Update the plan</button>
-          <button class="btn soft sm" data-recipe="budget-variance">💰 Budget review</button>
-          <button class="btn ghost sm" data-open-drawer>${icon('folder')}See the files</button>
-        </div>
-      </div></div>`;
-  }
-  return `<div class="demo-banner">
-    <div class="demo-icon">📦</div>
-    <div class="demo-text"><b>Try it on sample data</b><span>A project manager demo (Microsoft Project plan with Excel budget, RAID log and timesheets), a delivery-lifecycle sample (BRD, design and a traceability workbook) for the requirements, design, story and traceability agents, a data sample (source extract, schemas and a data dictionary) for profiling, mapping and pipeline code, a security sample (controls, SCTM and evidence) or a change sample (interviews, impact assessments and an English/French guide).</span></div>
-    <div class="demo-cta"><button class="btn grad sm" data-install-demo="crm">${icon('package')}PM demo</button><button class="btn grad sm" data-install-demo="aidlc">${icon('package')}AIDLC sample</button><button class="btn grad sm" data-install-demo="data">${icon('package')}Data sample</button><button class="btn grad sm" data-install-demo="security">${icon('package')}Security sample</button><button class="btn grad sm" data-install-demo="change">${icon('package')}Change sample</button><button class="icon-btn" data-dismiss-demo title="Hide">${icon('x')}</button></div>
-  </div>`;
+  if (S.settings.demoDismissed || S.settings.demoInstalled || S.convs.length) return '';
+  return `<div class="sample-hint">${icon('package')}<span>New to Lumen? <a data-go="samples">Try it on sample data</a> first. You can always find it under <b>Samples</b> on the left.</span><button class="icon-btn" data-dismiss-demo title="Hide">${icon('x')}</button></div>`;
+}
+
+function renderSamplesPage() {
+  S.view = 'samples'; setNav('samples');
+  const active = activeSamplePack();
+  $('#view').innerHTML = `
+    <div class="page"><div class="page-inner">
+      <div class="page-head"><div><h1>Sample data</h1><p>Realistic, made-up project files to try the agents and prompts on before using your own documents. Each sample is copied into a new folder inside your notebook, which then becomes your project folder.</p></div></div>
+      <div class="card-grid">
+        ${SAMPLE_PACKS.map((p, i) => {
+          const a = assistantById(p.agent), here = active?.id === p.id;
+          return `<div class="a-card sample-card${here ? ' here' : ''}" data-color="${esc(a.color)}" style="animation-delay:${i * 40}ms">
+            <div class="a-card-top"><span class="a-badge lg">${p.emoji}</span>${here ? '<span class="badge accent">You’re here</span>' : ''}</div>
+            <div><h3>${esc(p.name)}</h3></div>
+            <p class="tagline">${esc(p.summary)}</p>
+            <p class="sample-agent">Starts with <span class="a-badge sm" data-color="${esc(a.color)}">${esc(a.emoji)}</span>${esc(a.name)}</p>
+            ${here ? `<div class="demo-actions">${samplePromptButtons(p)}</div>` : ''}
+            <div class="a-card-actions">
+              ${here ? `<button class="btn soft sm" data-open-drawer>${icon('folder')}See the files</button>`
+                : `<button class="btn primary sm" data-install-demo="${esc(p.id)}">${icon('package')}Use this sample</button>`}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div></div>`;
+  $('#view').firstElementChild.addEventListener('click', homeClicks);
 }
 
 async function installDemo(btn) {
@@ -726,9 +724,9 @@ async function installDemo(btn) {
   try {
     const r = await api('/api/demo/install', { method: 'POST', body: { pack } });
     const st = await api('/api/status'); S.settings = st.settings;
-    S.draft.assistantId = { aidlc: 'traceability-analyst', data: 'data-profiler', security: 'security-control-mapper', change: 'change-impact-analyst' }[pack] || 'schedule-analyst'; S.draft.access = 'read';
+    S.draft.assistantId = samplePack(pack).agent; S.draft.access = 'read';
     celebrate(); toast(`${pack === 'crm' ? 'Demo' : 'Sample'} ready — your project folder is now “${baseName(r.path)}”`, 'package');
-    renderHome();
+    go('');
   } catch (e) { toast(e.message, 'alert'); if (btn) { btn.disabled = false; btn.innerHTML = label; } }
 }
 
