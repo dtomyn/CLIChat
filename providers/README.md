@@ -5,7 +5,7 @@ Lumen doesn't talk to any AI service directly. It drives whichever AI command-li
 | File | Engine | Conversation memory |
 |---|---|---|
 | `claude-cli.js` | Claude Code CLI (`claude -p --output-format stream-json`) | Native: resumes the CLI session |
-| `copilot-cli.js` | GitHub Copilot CLI 1.0+ (`copilot --output-format json`, prompt on stdin; also what `gh copilot` runs) | Native: Lumen picks the session UUID and passes `--session-id`, which creates the session on the first turn and resumes it afterwards. Copilot has no system-prompt flag, so the assistant's instructions open the first message of each session |
+| `copilot-cli.js` | GitHub Copilot CLI 1.0+ (`copilot --output-format json`, prompt on stdin; also what `gh copilot` runs) | Native: Lumen picks the session UUID and passes `--session-id`, which creates the session on the first turn and resumes it afterwards. Older CLIs have no `--session-id`, so Lumen asks the CLI it actually runs (`--no-auto-update --help`; this can be an older bundled copy than `copilot --version` shows) and uses `--resume=<id>` instead. **Not yet verified end to end:** the `--resume=<id>` path was only checked up to Copilot's subscription check (Nov 2026); someone with Copilot credits should confirm a two-message chat keeps its context. Copilot has no system-prompt flag, so the assistant's instructions open the first message of each session |
 
 Both providers launch their CLI through `lib/cli-bin.js`. It runs the real executable, or unwraps npm's `.cmd` shim to `node <entry.js>`, and never goes through `cmd.exe`, so multi-line prompts, quotes and JSON arguments survive on Windows.
 
