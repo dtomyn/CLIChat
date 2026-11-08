@@ -866,7 +866,7 @@ async function api(req, res, url) {
 
   if (resource === 'export' && m === 'POST') {
     const { conversationId, messageId, format } = await json(req);
-    if (!['docx', 'xlsx'].includes(format)) return send(res, 400, { error: 'Choose Word or Excel.' });
+    if (!['docx', 'xlsx', 'pptx'].includes(format)) return send(res, 400, { error: 'Choose Word, Excel or PowerPoint.' });
     const c = store.conversations.get(conversationId); if (!c) return send(res, 404, { error: 'That chat could not be found.' });
     const msg = c.messages.find((x) => x.id === messageId); if (!msg || !msg.content) return send(res, 404, { error: "That reply isn't in this chat any more." });
     const content = stripSuggestion(msg.content);
@@ -879,6 +879,7 @@ async function api(req, res, url) {
     for (let i = 2; fs.existsSync(target); i++) target = path.join(dir, `${stem} (${i}).${format}`);
     try {
       if (format === 'docx') fs.writeFileSync(target, await mdExport.markdownToDocx(content, { title: c.title }), { flag: 'wx' });
+      else if (format === 'pptx') fs.writeFileSync(target, (await require('./tools/pptx').toPptx(content, { title: c.title })).buffer, { flag: 'wx' });
       else await mdExport.markdownTablesToXlsx(content, target);
     } catch (e) { return send(res, 500, { error: `Couldn't save the file: ${e.message}` }); }
     // Keep the file card after a reload. Skip while a reply is running: handleChat writes the messages back when it ends.

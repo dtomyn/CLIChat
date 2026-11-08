@@ -1176,7 +1176,7 @@
     "name": "Draft training materials",
     "emoji": "🎓",
     "category": "Change & training",
-    "description": "A role-based deck outline, job aid, FAQ and knowledge check from the approved impacts and TNA, each section citing its source.",
+    "description": "A role-based training deck (Markdown and PowerPoint in the program template), job aid, FAQ and knowledge check from the approved impacts and TNA, each section citing its source.",
     "assistantId": "training-content",
     "builtin": true,
     "access": "edit",
@@ -1201,7 +1201,7 @@
         "optional": true
       }
     ],
-    "template": "Draft training materials for the role {{role}} from the approved impacts and TNA in {{cia}} and the process document {{process}} (skip it if blank).\n\nProduce: 1 a deck outline (one ## per slide, 3 to 5 bullets and speaker notes, 8 to 12 slides); 2 a one-page job aid (numbered steps for the new way of working); 3 an FAQ (8 to 12 questions); 4 a knowledge check (5 to 10 multiple-choice questions with the answer and why). End every section with 'Source:' and the sheet and row or document heading it is based on, and leave out anything you can't source.\n\nShow the drafts, then save each one with save_draft_document under 'Training/{{role}}/' with word: true, listing its sources. Tell me the file names. Everything is a draft for the change lead."
+    "template": "Draft training materials for the role {{role}} from the approved impacts and TNA in {{cia}} and the process document {{process}} (skip it if blank).\n\nProduce: 1 a deck outline (a # title with a one-line subtitle, then one ## per slide with 3 to 5 bullets, its 'Source:' line, then a line starting 'Notes:' with the speaker notes; 8 to 12 slides); 2 a one-page job aid (numbered steps for the new way of working); 3 an FAQ (8 to 12 questions); 4 a knowledge check (5 to 10 multiple-choice questions with the answer and why). End every section with 'Source:' and the sheet and row or document heading it is based on, and leave out anything you can't source.\n\nShow the drafts, then save each one with save_draft_document under 'Training/{{role}}/' with word: true, listing its sources. Save the deck outline with powerpoint: true as well, so it is also a PowerPoint deck (.pptx) in the program deck template (Lumen uses the deck template in the Templates folder, such as 'Templates/Training Deck Template.potx', when there is one). Tell me the file names. Everything is a draft for the change lead."
   },
   {
     "id": "bilingual-draft-french",

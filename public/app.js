@@ -887,6 +887,8 @@ function usageMeta(m) {
 }
 // A markdown pipe table: a |row| followed by a |---|---| separator row.
 const hasMdTable = (text) => /^\s*\|.*\|\s*$\n^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/m.test(text || '');
+// A deck outline: at least one "## Slide title" heading.
+const hasMdSlides = (text) => /^##\s+\S/m.test(text || '');
 
 function friendlyError(e) {
   if (/not found|ENOENT|spawn/i.test(e)) return 'The AI engine could not be started. Open Settings to check your connection.';
@@ -1037,13 +1039,14 @@ function rerenderMsg(c, m) {
   highlight($(`[data-mid="${m.id}"]`));
 }
 
-// --- save a reply as Word / Excel
+// --- save a reply as Word / Excel / PowerPoint
 function saveReplyMenu(c, mid, anchor) {
   const m = c.messages.find((x) => x.id === mid); if (!m?.content || !c.id) return;
   openMenu(anchor, [
     { heading: 'Export to your notebook' },
     { icon: 'file', label: 'Word document (.docx)', hint: 'Headings, lists and tables, ready to edit', run: () => exportReply(c, m, 'docx') },
     ...(hasMdTable(m.content) ? [{ icon: 'sheet', label: 'Excel workbook (.xlsx)', hint: 'One sheet per table', run: () => exportReply(c, m, 'xlsx') }] : []),
+    ...(hasMdSlides(m.content) ? [{ icon: 'file', label: 'PowerPoint deck (.pptx)', hint: 'One slide per ## heading, speaker notes from Notes:', run: () => exportReply(c, m, 'pptx') }] : []),
   ]);
 }
 

@@ -21,7 +21,7 @@ An interview is **evidence, not truth**. Propose impacts a change lead can appro
 | `propose_change_impacts` | Save "<CIA> (proposed).xlsx" with the new impacts highlighted and a "Proposed changes" sheet with an *Approve? (Yes/No)* column. Impacts whose quote can't be found are rejected |
 | `apply_change_impacts` | After the person has marked every row, write only the approved impacts to "<CIA> (updated).xlsx" |
 | `consolidate_cia` | Merge several CIAs: duplicates merged, Rejected impacts left out, heat map, TNA and "Training actions - ADO import.xlsx" |
-| `save_draft_document` | Save training material as Markdown and/or Word, labelled as a draft with its sources listed |
+| `save_draft_document` | Save training material as Markdown, Word and/or PowerPoint (`powerpoint: true` turns a deck outline into a .pptx in the program deck template), labelled as a draft with its sources listed |
 
 ## Interview → impacts
 1. Read the CIA (if there is one), then each transcript.
@@ -45,3 +45,26 @@ Reply with a table (ID, group, process, change, level, who said it and when), wh
 - Per role: a deck outline (one `##` per slide with 3–5 bullets and speaker notes), a one-page job aid (numbered steps for the new way of working), an FAQ (8–12 questions) and a knowledge check (5–10 multiple-choice questions with the answer and why).
 - **Every section ends with `Source:`** and the CIA/TNA cell or document heading it comes from. Leave out anything you can't source.
 - Save with `save_draft_document` (use `word: true` for a Word copy). Everything is a draft for the change lead to review.
+
+### The deck outline becomes a PowerPoint deck
+Save the deck outline with `powerpoint: true` (and `word: true` if a Word copy is wanted too). Lumen writes `<name>.pptx` next to the Markdown, in the program's deck template (`Templates/… Deck Template.potx` in the project, or `deckTemplate`), else in a plain built-in design. Write the outline in this shape:
+
+```markdown
+# Processing officers: the new review process
+Training for processing officers · 30 minutes
+
+## Why the review is changing
+- Applications are reviewed on screen, not on paper
+  - Eligibility flags are set automatically
+- Overrides need a supervisor's approval
+
+Source: CIA - consolidated.xlsx › TNA!A2
+
+Notes: Open with a renewal that waited three weeks for a paper file. Ask who has tried the new screen.
+```
+
+- `# Title` is the title slide; the first line under it is the subtitle. The draft label goes on the title slide by itself.
+- Each `##` is one slide: bullets (sub-bullets indented two spaces), numbered steps, short paragraphs, or a small table.
+- **Speaker notes:** a line starting `Notes:` (bold or in a `>` quote is fine). Everything from there to the next heading goes into the notes, not on the slide. Put `Source:` before `Notes:` so the source stays on the slide.
+- Keep to 3–5 bullets. A slide with more than 8 lines, or a long table, continues on a "(cont.)" slide.
+- The sources you pass are listed on a final "Sources" slide.
