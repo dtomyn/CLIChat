@@ -1792,5 +1792,132 @@
       }
     ],
     "template": "Generate pipeline code from the approved rows of {{sttm}} for the {{layer}} layer (all layers if blank).\n\n1. Call generate_pipeline_code with the STTM and the layer.\n2. List the files written per target table, the rows code was generated for, and the rows refused (with the reason and cell).\n3. List every TODO rule the generator could not translate, with a suggested expr: or sql: rule for the STTM.\n4. Explain how to run it in a lower-environment Fabric workspace: notebook first, then the reconciliation query (row counts and checksums per layer), then the unit tests.\n\nDo not generate code for rows that are not Approved, and do not change any row's status."
+  },
+  {
+    "id": "integration-draft-icd",
+    "name": "Draft an ICD",
+    "emoji": "🔌",
+    "category": "Integration",
+    "description": "Draft an interface control document from the approved requirements, schemas and HIP pattern notes, then check it against the ICD template and list the gaps.",
+    "assistantId": "interface-designer",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "interface",
+        "label": "Interface",
+        "placeholder": "e.g. Case API (applicant portal → case management)"
+      },
+      {
+        "key": "sources",
+        "label": "Requirements and design",
+        "type": "file",
+        "accept": ".docx,.md,.txt,.xlsx"
+      },
+      {
+        "key": "schemas",
+        "label": "Interface schemas or OpenAPI spec (optional)",
+        "type": "file",
+        "accept": ".yaml,.yml,.json,.sql,.xlsx",
+        "optional": true
+      }
+    ],
+    "template": "Draft the interface control document (ICD) for {{interface}} from {{sources}}, the interface schemas {{schemas}} (skip if blank), the interface catalogue and Knowledge/HIP Patterns.md.\n\n1. Write every ICD section: purpose and scope, parties, protocol, integration pattern (ARO P4 or P5, with the reason from the HIP notes), message schemas, error handling, security, service levels and volumes. Cite the source of each section.\n2. Where the sources do not say, write \"Needs input:\" and the question. Do not invent volumes, SLAs or fields.\n3. Save it with save_draft_document as \"Integration/ICD - <interface> (draft).md\" with word: true and the ICD template in Templates/ if there is one.\n4. Call check_icd on the saved file and finish with the completeness log: every missing, empty or incomplete section exactly as reported, the question that would close it, and who should answer."
+  },
+  {
+    "id": "integration-design-api",
+    "name": "Design an API",
+    "emoji": "🧾",
+    "category": "Integration",
+    "description": "Turn approved requirements and interface schemas into an OpenAPI 3.0 spec that passes the program API standards, with x-traces-to on every operation.",
+    "assistantId": "api-designer",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "api",
+        "label": "API",
+        "placeholder": "e.g. Notification API for status messages"
+      },
+      {
+        "key": "requirements",
+        "label": "Approved requirements and design",
+        "type": "file",
+        "accept": ".docx,.md,.xlsx"
+      },
+      {
+        "key": "schemas",
+        "label": "Schemas or data model (optional)",
+        "type": "file",
+        "accept": ".sql,.json,.xlsx",
+        "optional": true
+      },
+      {
+        "key": "standards",
+        "label": "API standards",
+        "type": "file",
+        "accept": ".md,.txt,.docx,.json"
+      }
+    ],
+    "template": "Design an OpenAPI 3.0 spec for {{api}} from {{requirements}} and the schemas {{schemas}} (skip if blank), following the API standards in {{standards}}.\n\n1. List the operations you will define and the BR/FD IDs each implements.\n2. Write the spec: version prefix, camelCase operationIds, the required header, request and response schemas in components.schemas, the required error responses with the program error model, and x-traces-to on every operation.\n3. Save it with write_openapi under Integration/ (with standards {{standards}}, and schemas when given). If it reports errors, fix them and save again until there are none.\n4. Report the saved file, the operations with their x-traces-to, any warnings you kept, and the questions for the business or the provider team. Do not invent fields the schemas do not have."
+  },
+  {
+    "id": "integration-review-openapi",
+    "name": "Review an OpenAPI spec",
+    "emoji": "🔍",
+    "category": "Integration",
+    "description": "Check an OpenAPI spec for broken references, missing responses and schemas, and the program API standards, with the JSON path and line of each finding.",
+    "assistantId": "api-designer",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "spec",
+        "label": "OpenAPI spec",
+        "type": "file",
+        "accept": ".yaml,.yml,.json"
+      },
+      {
+        "key": "standards",
+        "label": "API standards (optional)",
+        "type": "file",
+        "accept": ".md,.txt,.docx,.json",
+        "optional": true
+      }
+    ],
+    "template": "Review the OpenAPI spec {{spec}} against the API standards {{standards}} (structure only if blank).\n\n1. Call validate_openapi with the spec and the standards.\n2. Lead with the summary: operations, errors, warnings, and operations without x-traces-to.\n3. A table of findings: severity, JSON path, line, problem, and the exact fix. Group them as broken references, missing responses, missing schemas, standards and traceability.\n4. Say whether the spec is ready for scaffolding (no errors).\n\nReport exactly what the tool found. Do not change the spec."
+  },
+  {
+    "id": "integration-generate-scaffold",
+    "name": "Generate API scaffolding",
+    "emoji": "🏗️",
+    "category": "Integration",
+    "description": "From a spec with no errors, generate a static mock (example responses) and controller stubs, DTOs and contract tests in the stack the Solution Blueprint names.",
+    "assistantId": "api-designer",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "spec",
+        "label": "OpenAPI spec",
+        "type": "file",
+        "accept": ".yaml,.yml,.json"
+      },
+      {
+        "key": "blueprint",
+        "label": "Solution Blueprint (for the stack)",
+        "type": "file",
+        "accept": ".md,.docx,.txt",
+        "optional": true
+      },
+      {
+        "key": "standards",
+        "label": "API standards (optional)",
+        "type": "file",
+        "accept": ".md,.txt,.docx,.json",
+        "optional": true
+      }
+    ],
+    "template": "Generate a static mock and scaffolding from the OpenAPI spec {{spec}}, in the stack named in {{blueprint}} (ask me which stack if blank), checked against {{standards}}.\n\n1. Call validate_openapi first. If there are errors, list them with their JSON paths and stop: no scaffolding until they are fixed.\n2. Call generate_api_scaffold with the spec, the blueprint and the standards.\n3. List the files written (mock responses, controller stubs, DTOs, contract tests) and the operations with their x-traces-to IDs.\n4. Explain the next steps: implement each stub (they return 501), enable its contract test, and point API_BASE_URL at a test environment. Lumen does not run a mock server."
   }
 ]

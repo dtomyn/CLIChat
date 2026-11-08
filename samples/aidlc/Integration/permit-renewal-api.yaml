@@ -1,0 +1,234 @@
+# Permit Renewal API (synthetic sample). Seeded for review: one broken $ref and one missing error response.
+openapi: 3.0.3
+info:
+  title: Permit Renewal API
+  version: 1.0.0
+  description: Renewal journey API between the applicant portal and the case management platform (synthetic).
+servers:
+  - url: https://api.example.test/permit-renewal
+security:
+  - bearerAuth: []
+tags:
+  - name: Renewals
+  - name: Eligibility
+  - name: Photos
+paths:
+  /v1/renewals:
+    post:
+      tags: [Renewals]
+      operationId: startRenewal
+      summary: Start a renewal for a permit inside the renewal window
+      x-traces-to: [BR-001.1, FD-010, FD-011]
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RenewalRequest'
+      responses:
+        '201':
+          description: Renewal started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Renewal'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /v1/renewals/{renewalId}:
+    parameters:
+      - $ref: '#/components/parameters/RenewalId'
+    get:
+      tags: [Renewals]
+      operationId: getRenewal
+      summary: Get a renewal and its status
+      x-traces-to: [BR-001.2, FD-011]
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+      responses:
+        '200':
+          description: The renewal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Renewal'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /v1/renewals/{renewalId}/eligibility:
+    parameters:
+      - $ref: '#/components/parameters/RenewalId'
+    post:
+      tags: [Eligibility]
+      operationId: checkEligibility
+      summary: Run the eligibility check and record the decision on the case
+      x-traces-to: [BR-002.1, BR-002.2, BR-002.3, FD-012]
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+      responses:
+        '200':
+          description: The eligibility decision
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EligibilityResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /v1/renewals/{renewalId}/photo:
+    parameters:
+      - $ref: '#/components/parameters/RenewalId'
+    post:
+      tags: [Photos]
+      operationId: uploadPhoto
+      summary: Upload and validate the applicant photo
+      x-traces-to: [BR-004.1, FD-014]
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Photo accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Photo'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  parameters:
+    CorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: true
+      description: Unique ID for tracing the request across systems
+      schema:
+        type: string
+        format: uuid
+    RenewalId:
+      name: renewalId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^RN[0-9]{7}$'
+        example: RN0001234
+  responses:
+    BadRequest:
+      description: The request is not valid
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthorized:
+      description: The caller is not signed in
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: No renewal with that ID
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    ServerError:
+      description: Something went wrong; retry with the same correlation ID
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  schemas:
+    RenewalRequest:
+      type: object
+      required: [permitNumber, language]
+      properties:
+        permitNumber:
+          type: string
+          example: PR-2024-00123
+        language:
+          type: string
+          enum: [en, fr]
+    Renewal:
+      type: object
+      required: [renewalId, permitNumber, status]
+      properties:
+        renewalId:
+          type: string
+          example: RN0001234
+        permitNumber:
+          type: string
+          example: PR-2024-00123
+        status:
+          type: string
+          enum: [Draft, Submitted, In review, Approved, Refused]
+        draftExpiresOn:
+          type: string
+          format: date
+    EligibilityDecision:
+      type: object
+      required: [eligible, reasonCode]
+      properties:
+        eligible:
+          type: boolean
+        reasonCode:
+          type: string
+          enum: [OK, EXPIRED_OVER_90_DAYS, ACTIVE_HOLD]
+        decidedAt:
+          type: string
+          format: date-time
+    Photo:
+      type: object
+      required: [photoId, accepted]
+      properties:
+        photoId:
+          type: string
+        accepted:
+          type: boolean
+        reason:
+          type: string
+    Problem:
+      type: object
+      required: [type, title, status, correlationId]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        correlationId:
+          type: string
+          format: uuid

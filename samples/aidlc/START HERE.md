@@ -18,6 +18,9 @@ Synthetic data for trying Lumen's delivery-lifecycle assistants locally: Require
 | **Architecture/Design gate.json** | The design gate definition: required artefacts and approvals |
 | **Architecture/Technical Inventory.xlsx**, **Architecture/Reusable assets.xlsx** | The technical catalogue and the reusable-asset register |
 | **Architecture/Delivery changes - git log.txt** | `git log --name-only` output, for **Update technical inventory** |
+| **Knowledge/API Standards.md**, **Knowledge/HIP Patterns.md** | The program API rules (versioning, naming, error model, headers, traceability) and the HIP integration patterns (ARO P4/P5) |
+| **Integration/permit-renewal-api.yaml** | An OpenAPI 3.0 spec for the Case API, for **Review an OpenAPI spec** |
+| **Integration/ICD - Case API (draft).md** | A draft interface control document, for **Draft an ICD** |
 
 ## Built-in scenarios
 - **One-to-many and many-to-many links:** BR-002 has three refined requirements, and FD-012 realises all three.
@@ -29,6 +32,7 @@ Synthetic data for trying Lumen's delivery-lifecycle assistants locally: Require
 - **Test coverage:** BR-007 (notifications) has no test, TC-011 still tests the withdrawn BR-008, TC-006 was written for the old 12-month photo rule, and US-106, US-108 and US-109 have no test.
 - **Defect triage:** 1201/1204 (payment time-outs) and 1203/1206 (PNG photos) are probable duplicates, 1207 is critical but priority 4, and 1203 has no owner. 1210 looks like 1203 but is in a different area.
 - **Architecture:** the TDD names an *Address lookup service* the blueprint never mentions (and the reusable-asset register already has an address lookup API), cites ADR-002 although ADR-003 superseded it, and uses an entity (Renewal Fee) and a field (Permit.renewalCount) the data model doesn't have. For the design gate, the blueprint has no approval, the security assessment is missing, and interface catalogue v1.1 is a newer draft that isn't approved yet. The git log adds a photo validation service, changes the eligibility service and the Case API, and retires the legacy kiosk interface.
+- **Integration:** in `permit-renewal-api.yaml` the eligibility response points to a schema that does not exist (`EligibilityResult`; the schema is `EligibilityDecision`), and the photo upload has no 400 error response although the API standards require 400, 401 and 500. The draft Case API ICD has no volumes section, and its integration pattern, error handling and service levels are still TBD.
 
 ## Things to try
 - *"Inventory the program knowledge in this folder."*
@@ -40,5 +44,6 @@ Synthetic data for trying Lumen's delivery-lifecycle assistants locally: Require
 
 - *"Publish the approved lifecycle outputs to the Design library."* then edit one and run **Knowledge freshness**.
 - **Architecture review** on the blueprint and the TDD (with the ADR folder and the data model), **Reuse vs. build assessment** for the address lookup, **Assemble a gate pack** from `Architecture/Design gate.json`, and **Update technical inventory** from the git log.
+- **Review an OpenAPI spec** on `Integration/permit-renewal-api.yaml` with `Knowledge/API Standards.md`, **Draft an ICD** for the Case API (or check the draft one), **Design an API** for the notification interface, and **Generate API scaffolding** once a spec has no errors.
 
 Regenerate with `node scripts/make-aidlc-sample.js` (templates: `node scripts/make-word-templates.js`).

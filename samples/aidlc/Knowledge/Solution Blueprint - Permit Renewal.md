@@ -22,3 +22,6 @@ Contoso Licensing Agency · Version 0.9 · 2026-09-18 · Owner: Solution Archite
 
 ## Open architecture decisions
 - AD-07: Where to run photo validation (portal vs. a new service). Leaning toward a server-side service called by the portal.
+
+## Build stack
+New APIs are written in C# on .NET 8 with ASP.NET Core controllers, and contract-tested with xUnit. API specs are OpenAPI 3.0 and follow Knowledge/API Standards.md.

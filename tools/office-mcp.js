@@ -23,6 +23,7 @@ const release = require('./release');
 const governance = require('./governance');
 const controls = require('./controls');
 const data = require('./data');
+const openapi = require('./openapi');
 
 const ROOT = path.resolve(process.env.OFFICE_MCP_ROOT || process.cwd());
 const READ_ONLY = process.env.OFFICE_MCP_READONLY === '1';
@@ -70,10 +71,10 @@ const write = (fn) => (READ_ONLY ? () => { throw Object.assign(new Error('Editin
 const TOOLS = [
   {
     name: 'list_office_files',
-    description: 'List the documents (.docx/.md/.txt/.pdf), Excel workbooks (.xlsx/.xlsm/.csv) and Microsoft Project plans (.mpp/.xml) in the project folder, with size and last-modified date.',
+    description: 'List the documents (.docx/.md/.txt/.pdf), Excel workbooks (.xlsx/.xlsm/.csv) and Microsoft Project plans (.mpp/.xml) and OpenAPI specs (.yaml/.yml) in the project folder, with size and last-modified date.',
     inputSchema: { type: 'object', properties: {} },
     run: () => {
-      const files = walk(ROOT).filter((f) => /\.(xlsx|xlsm|csv|mpp|xml|docx|docm|md|txt|pdf|vtt)$/i.test(f) && !/[\\/]\.?(claude|github|vscode)[\\/]/i.test(f));
+      const files = walk(ROOT).filter((f) => /\.(xlsx|xlsm|csv|mpp|xml|docx|docm|md|txt|pdf|vtt|yaml|yml)$/i.test(f) && !/[\\/]\.?(claude|github|vscode)[\\/]/i.test(f));
       return files.map((f) => `${path.relative(ROOT, f)}  (${Math.round(fs.statSync(f).size / 1024)} KB, modified ${new Date(fs.statSync(f).mtimeMs).toISOString().slice(0, 10)})`).join('\n') || 'No documents, workbooks or plans found.';
     },
   },
@@ -534,6 +535,55 @@ const TOOLS = [
     run: write((a) => data.generatePipelineCode(resolveIn(a.sttm), { layer: a.layer, entity: a.entity, outDir: outputIn(a.outDir), sourceTables: a.sourceTables, root: ROOT })),
   },
   {
+    name: 'validate_openapi',
+    description: 'Validate an OpenAPI 3.0 spec (.yaml, .yml or .json). Checks the structure: info, paths, operations, every $ref resolves, valid response codes with a success response, a schema for every request and response body, path parameters declared and required, unique operation IDs. With the program API standards (e.g. "Knowledge/API Standards.md", a Rule | Value table) it also checks the version prefix (/v1/), path and property naming, operation IDs, the error model, the required error responses, required headers (X-Correlation-ID) and x-traces-to on every operation. Every finding has a JSON path (and a line number for YAML). Read-only.',
+    inputSchema: { type: 'object', properties: {
+      path: { type: 'string', description: 'The OpenAPI file, e.g. "Integration/permit-renewal-api.yaml"' },
+      standards: { type: 'string', description: 'Optional API standards (Markdown with a Rule | Value table, or JSON)' },
+      requireTraces: { type: 'boolean', description: 'Report operations without x-traces-to as errors even without standards' },
+    }, required: ['path'] },
+    run: (a) => openapi.validateOpenApi(resolveIn(a.path), { standards: a.standards ? resolveIn(a.standards) : undefined, requireTraces: !!a.requireTraces, root: ROOT }),
+  },
+  {
+    name: 'check_icd',
+    description: 'Check an interface control document (ICD; Markdown, text or Word) against the ICD template sections: purpose and scope, parties, protocol, integration pattern (HIP / ARO P4 or P5), message schemas, error handling, security, service levels (SLAs) and volumes. Returns each section as ok, empty (only TBD or placeholders), incomplete (e.g. no P4/P5 named, or lines still marked Needs input) or missing, with the heading and line, and a completeness log. Read-only.',
+    inputSchema: { type: 'object', properties: {
+      path: { type: 'string', description: 'The ICD, e.g. "Integration/ICD - Case API (draft).md"' },
+      sections: { type: 'array', items: { type: 'string' }, description: 'Optional section names to check instead of the standard ICD template list' },
+    }, required: ['path'] },
+    run: (a) => openapi.checkIcd(resolveIn(a.path), { sections: a.sections, root: ROOT }),
+  },
+  {
+    name: 'write_openapi',
+    description: 'Save an OpenAPI 3.0 spec you designed as .yaml, .yml or .json, then validate it like validate_openapi (x-traces-to is required on every operation). Give the spec as an object or as YAML/JSON text. With schemas (SQL DDL, JSON Schema or data dictionary files), entities not yet in components.schemas are added from them (PascalCase names, camelCase properties, required, enum and pattern kept). Never overwrites: a numbered copy is saved instead. Call again with the fixes until it reports no errors.',
+    inputSchema: { type: 'object', properties: {
+      path: { type: 'string', description: 'Output file, e.g. "Integration/notification-api.yaml"' },
+      spec: { description: 'The OpenAPI document (object) or its YAML/JSON text' },
+      standards: { type: 'string', description: 'API standards file to validate against' },
+      schemas: { type: 'array', items: { type: 'string' }, description: 'Optional schema files to add component schemas from' },
+    }, required: ['path', 'spec'] },
+    run: write(async (a) => {
+      const out = outputIn(a.path);
+      if (!out) throw Object.assign(new Error('A file path is required.'), { friendly: true });
+      const models = [];
+      for (const f of a.schemas || []) models.push(await data.readSchema(resolveIn(f)));
+      const r = openapi.writeOpenApi(out, a.spec, { standards: a.standards ? resolveIn(a.standards) : undefined, models });
+      return { ...r, saved: path.relative(ROOT, r.saved) };
+    }),
+  },
+  {
+    name: 'generate_api_scaffold',
+    description: 'From an OpenAPI spec with no validation errors, generate a static mock (one example response per operation and status, plus mock/index.json) and scaffolding in the chosen stack: controller or route stubs that return 501, DTOs from components.schemas, and contract tests (status codes and required fields, skipped until implemented), each carrying the operation\'s x-traces-to IDs. Stacks: dotnet (C# / ASP.NET Core, xUnit), node (Express, node:test) or python (FastAPI, pytest); or pass the Solution Blueprint as blueprint and the stack it names is used. A spec with errors is refused and nothing is written. Writes to "<spec folder>/API/<title>/" (a numbered folder if that one has files). No mock server is started.',
+    inputSchema: { type: 'object', properties: {
+      spec: { type: 'string', description: 'The OpenAPI file' },
+      stack: { type: 'string', description: 'dotnet, node or python (or words like "C# on .NET 8")' },
+      blueprint: { type: 'string', description: 'Optional Solution Blueprint to read the stack from when stack is not given' },
+      standards: { type: 'string', description: 'API standards file the spec must pass' },
+      outDir: { type: 'string', description: 'Output folder (default "<spec folder>/API/<API title>")' },
+    }, required: ['spec'] },
+    run: write((a) => openapi.generateScaffold(resolveIn(a.spec), { stack: a.stack, stackText: !a.stack && a.blueprint ? governance.readText(resolveIn(a.blueprint)) : '', standards: a.standards ? resolveIn(a.standards) : undefined, outDir: outputIn(a.outDir), root: ROOT })),
+  },
+  {
     name: 'write_test_cases',
     description: 'Save test cases as an Excel workbook in the Azure DevOps Test Plans import layout: one row per step (ID, Work Item Type, Title, Test Step, Step Action, Step Expected, Traces To, Priority, Type SIT/UAT, Preconditions), with the case fields on its first step row, plus a Coverage sheet with one row per case. Cases without an ID get TC-001, TC-002… An existing file is never overwritten; a numbered copy is saved instead. Returns warnings for cases without steps, expected results or traces.',
     inputSchema: {
@@ -628,7 +678,7 @@ const TOOLS = [
 
 // ------------------------------------------------------------------ JSON-RPC over stdio
 if (require.main === module) {
-  require('./mcp-stdio').serve({ name: 'office', instructions: 'Tools for Excel workbooks, Microsoft Project plans (including delivery scenarios and team capacity), Word documents, requirements traceability, test cases, defect triage, change impacts and training needs, bilingual QA, release readiness, cutover and hypercare, architecture reviews, ADRs, gate packs and technical inventories, security controls (SCTM and SA&A evidence), data profiling, schemas, source-to-target mappings (STTM) and pipeline code, and knowledge publishing in the project folder.', tools: TOOLS });
+  require('./mcp-stdio').serve({ name: 'office', instructions: 'Tools for Excel workbooks, Microsoft Project plans (including delivery scenarios and team capacity), Word documents, requirements traceability, test cases, defect triage, change impacts and training needs, bilingual QA, release readiness, cutover and hypercare, architecture reviews, ADRs, gate packs and technical inventories, security controls (SCTM and SA&A evidence), data profiling, schemas, source-to-target mappings (STTM) and pipeline code, OpenAPI specs, interface control documents (ICD) and API scaffolding, and knowledge publishing in the project folder.', tools: TOOLS });
 }
 
 module.exports = { TOOLS };

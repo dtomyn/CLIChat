@@ -10,9 +10,9 @@ Last reviewed: 2026-11-07 (branch `feature/ideas-for-pm`, commit `82b234d`)
 
 | Status | Count |
 |---|---|
-| ✅ Done | 32 |
+| ✅ Done | 34 |
 | 🟡 Partial | 4 |
-| 📝 Planned | 6 |
+| 📝 Planned | 4 |
 | ⬜ Not started | 0 |
 
 Lumen runs on one computer and works on files in the notebook folder. Where the catalogue names a cloud target (SharePoint, Teams, Power BI, Fabric, ADO Test Plans), Lumen produces the file or proposal locally, and a person publishes it. "Done" means the use case works end to end in that model. Live system connections are tracked separately in Plan 08 (Azure DevOps) and in the "Live targets" column.
@@ -36,8 +36,8 @@ Lumen runs on one computer and works on files in the notebook folder. Where the 
 | 13 | EDP / Data Engineering | Profile datasets, find quality issues | High | ✅ | **Data Profiler** agent, `data-engineering` skill, `tools/data.js` `profileTable` via read-only `profile_data` (CSV/XLSX up to 200,000 rows: type, nulls, distinct, min/max, top values, patterns, outliers; data dictionary rules required, type, allowed values, pattern, length, unique and foreign key into another extract; at most 5 example rows per finding, personal columns masked; optional PySpark/Spark SQL profiling scripts), prompt **Profile a dataset** (DQ findings report through `save_draft_document`), sample `samples/data` with seven seeded defects (2026-11-07). Running against Fabric directly: out of scope | 11 |
 | 14 | EDP / Data Engineering | Draft source-to-target mappings | High | ✅ | **Mapping Analyst** agent, `write_sttm` (STTM workbook: source, transformation rule, target layer/entity/field, match, DQ rule, Status, Reviewer; every row saved as Draft; with the schemas, unmatched source and target fields added as *Needs input* rows plus *Unmatched fields* and *Match evidence* sheets), prompt **Draft the STTM** (2026-11-07) | 11 |
 | 15 | EDP / Data Engineering | Generate and review ETL assets | High | ✅ | **Data Engineer** agent, `generate_pipeline_code` (Approved STTM rows only, others refused and listed: PySpark notebook, Spark SQL, Data Factory/Fabric pipeline JSON, pytest tests and a row-count/checksum reconciliation query per target table; untranslatable rules marked TODO), prompt **Generate pipeline code from the STTM** (2026-11-07). Deploying to or running in Fabric: out of scope | 11 |
-| 16 | Partner / Integration | Draft interface-control documents | High | 📝 | — | 12 |
-| 17 | Partner / Integration | API specifications and scaffolding | High | 📝 | — | 12 |
+| 16 | Partner / Integration | Draft interface-control documents | High | ✅ | **Interface Designer** agent, `integration-design` skill, `tools/openapi.js` `icdCompleteness`, read-only `check_icd` (purpose, parties, protocol, HIP / ARO P4 or P5 pattern, message schemas, error handling, security, SLAs, volumes: ok, empty, incomplete or missing, with heading and line, as a completeness log), prompt **Draft an ICD** (saved through `save_draft_document` as Markdown and Word with the new `Templates/ICD Template.dotx`), sample `Knowledge/HIP Patterns.md`, BRD §5 Interfaces and a draft `Integration/ICD - Case API (draft).md` with empty and missing sections (2026-11-07) | 12 |
+| 17 | Partner / Integration | API specifications and scaffolding | High | ✅ | **API Designer** agent, `tools/openapi.js` (YAML subset parser, no new package), read-only `validate_openapi` (structure, `$ref` resolution, response codes, body schemas, path parameters, operation IDs, plus the program API standards: `/v1/`, naming, `Problem` error model, required error responses and headers, `x-traces-to`; JSON path and line per finding), `write_openapi` (saves and validates; component schemas from `readSchema`), `generate_api_scaffold` (static mock responses, controller stubs, DTOs and contract tests in dotnet, node or python, stack read from the Solution Blueprint; refused while the spec has errors), prompts **Design an API**, **Review an OpenAPI spec** and **Generate API scaffolding**, sample `Knowledge/API Standards.md` and a flawed `Integration/permit-renewal-api.yaml` (2026-11-07). Publishing to an API gateway and running the mock as a server: out of scope | 12 |
 | 18 | Partner / Integration | Reconcile schemas and canonical models | Med–High | ✅ | `readSchema` (SQL DDL, JSON Schema, data dictionary / data model workbooks; also used by `check_consistency` and available to Plan 12) and `compareSchemas` via read-only `read_schema` and `compare_schemas` (exact, normalized and fuzzy matches with abbreviation expansion, type compatibility, unmatched fields on both sides), prompt **Compare schemas**, sample source DDL, Silver JSON Schema and Gold DDL (2026-11-07) | 11 |
 | 19 | Testing / QE | Test cases and coverage gaps | High | ✅ | **Test Designer** agent, `test-design` skill, `write_test_cases` (Excel in the ADO Test Plans import layout, one row per step), prompts **Generate test cases from stories** and **Coverage gaps**, optional lifecycle stage `tests` (`05-test-cases.md`), sample Tests sheet in the AIDLC TRM (2026-11-07). Live ADO Test Plans writes: Plan 08 | 09 |
 | 20 | Testing / QE | Assist defect triage | High | ✅ | **Defect Triage** agent, `analyze_defects` (duplicates, severity–priority mismatches, ageing, unowned), `propose_defect_changes` (`(proposed)` copy with Approve column), prompt **Triage defects**, sample `Defects export.xlsx` (2026-11-07) | 09 |
@@ -74,7 +74,7 @@ Lumen runs on one computer and works on files in the notebook folder. Where the 
 | [09 Quality engineering](09-quality-engineering.md) | 11 (test layer), 19, 20, 34 | M | — (08 for ADO Test Plans) | ✅ 2026-11-07 |
 | [10 Planning intelligence](10-planning-intelligence.md) | 3, 5, 39 | M | — | ✅ 2026-11-07 |
 | [11 Data engineering](11-data-engineering.md) | 13, 14, 15, 18 | L | — | ✅ 2026-11-07 |
-| [12 Integration and APIs](12-integration-and-apis.md) | 16, 17 | M | 11 (schema reader) | 📝 |
+| [12 Integration and APIs](12-integration-and-apis.md) | 16, 17 | M | 11 (schema reader) | ✅ 2026-11-07 |
 | [13 Security and SA&A](13-security-saa.md) | 21, 22, 23 | M | 18 (templates) helps | ✅ 2026-11-07 |
 | [14 Change, training and bilingual](14-change-training-bilingual.md) | 24, 25, 26, 32 | M | — | ✅ 2026-11-07 |
 | [15 Release and cutover](15-release-and-cutover.md) | 27, 28, 29, 30 | M | 09 (defect reader) | ✅ 2026-11-07 |
@@ -107,3 +107,4 @@ These extend the [ground rules](README.md#ground-rules-for-every-plan):
 | 2026-11-07 | Plan 16 implemented: #31, #38, #40, #42 done |
 | 2026-11-07 | Plan 13 implemented: #21, #22, #23 done |
 | 2026-11-07 | Plan 11 implemented: #13, #14, #15, #18 done |
+| 2026-11-07 | Plan 12 implemented: #16, #17 done |
