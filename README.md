@@ -48,12 +48,16 @@ Lumen ships two **skills** that agents can switch on (Agents › Customize › C
 
 | Skill | What the AI can do |
 |---|---|
-| 📅 **Microsoft Project plans** | Read plans; run a health check (RAG, late tasks, critical path with float, slips vs. baseline, milestones, over-allocated people, cost vs. baseline); update % complete, dates, durations and notes (always saved as an "(updated)" copy); export to an Excel tracker with a weekly Gantt chart |
+| 📅 **Microsoft Project plans** | Read plans; run a health check (RAG, late tasks, critical path with float, slips vs. baseline, milestones, over-allocated people, cost vs. baseline); update % complete, dates, durations and notes (always saved as an "(updated)" copy); export to an Excel tracker with a weekly variance Gantt (baseline under each bar, slip weeks hatched, status-date line) and a milestone variance sheet that shows week-over-week movement. Lumen keeps a dated copy of the plan in `.lumen/plan-history/` each time a tracker is built or progress is recorded, and compares against it automatically |
 | 📗 **Excel workbooks** | Read every sheet with real cell addresses and formulas; create formatted workbooks with live formulas; update cells or append rows without losing formatting |
 
 They're backed by a small local tool server, [tools/office-mcp.js](tools/office-mcp.js), an MCP server that every engine can use. It can only read or write inside the project folder, and its editing tools exist only when the chat is set to "Create & edit files". Attaching a `.mpp`, `.xml`, `.xlsx` or `.csv` turns on the matching skill automatically.
 
-**PM agents:** Schedule Analyst 📅, Budget Controller 💰 and Project Partner 📋. **PM prompts:** Project health check, Status report from my files, Update plan from progress sheet, Plan → Excel tracker, Who's overloaded?, Budget variance review, Timesheets vs. plan, and RAID log review. File questions pre-select the best-matching file from the project folder.
+**PM agents:** Schedule Analyst 📅, Ask the Plan 🔎, Budget Controller 💰 and Project Partner 📋. **Ask the Plan** answers plain-English questions ("what's late in Testing?", "what does Go-live depend on that hasn't started?", "what changed since last week?") through the `query_plan` tool, which filters the plan in code by workstream, person, status, critical path, slip, date window, dependency chain or change since the last saved version, and returns exact rows. **Weekly executive status** builds a status pack in `Status reports/<status date>/` from the plan and RAID log. It has three files from one status model: `status.json`, a detailed report (Markdown) and a one-page HTML executive dashboard where each milestone opens to the unfinished work it depends on. Facts, the RAG rating and its rule-based reasons are calculated in code, and every fact cites its source (plan task or RAID `Sheet!Cell`). The AI writes only the summary and decisions needed, which are labelled AI-written; if the summary names a different rating, the pack flags it. The pack reads the newest approved RAID log, so changes you approved from the huddle (`<RAID log> (updated).xlsx`) are included automatically. A `(proposed)` review copy is never read as fact, and the pack says how many huddle changes are still waiting for review. Packs are saved as Drafts for PMO review.
+
+**Huddle → RAID log** turns a meeting transcript (Teams `.vtt`, a transcript saved as Word, or text) into proposed RAID updates: new risks, issues, actions, decisions and dependencies, plus updates and closures to existing items. Every proposal must quote the transcript word for word, and proposals whose quote can't be found are rejected. Lumen writes `<RAID log> (proposed).xlsx` with the changes highlighted and a **Proposed changes** sheet (evidence, speaker, time, an **Approve? (Yes/No)** column), then flags meeting gaps such as actions with no owner. After you mark every row and save, ask Lumen to apply them: only approved changes go into `<RAID log> (updated).xlsx`, and the original is never touched. The PM demo includes a sample 10:30 huddle transcript.
+
+**PM prompts:** Project health check, Status report from my files, Weekly executive status, Huddle → RAID log, Update plan from progress sheet, Plan → Excel tracker, Who's overloaded?, Budget variance review, Timesheets vs. plan, and RAID log review. File questions pre-select the best-matching file from the project folder.
 
 **About .mpp files:** `.mpp` is Microsoft's closed binary format, and only Microsoft Project can read or write it. Lumen works with **Project XML** (File › Save As › XML in Project), which Project opens natively. On computers with Microsoft Project installed, Lumen converts `.mpp` to and from XML automatically through Project itself. That path hasn't been tested yet, because this build machine doesn't have Project.
 
@@ -160,6 +164,12 @@ defaults/            Starter agents & prompts
 public/              The UI (vanilla HTML/CSS/JS, no build step)
 Start Lumen.cmd      Double-click launcher for Windows
 ```
+
+## Tests
+
+`node --test test/*.test.js` runs the unit and tool tests.
+
+`npm run test:e2e` runs browser tests ([Playwright](https://playwright.dev), using the Microsoft Edge already installed) against a throw-away copy of Lumen on 127.0.0.1:4391. It uses a stand-in engine that calls the real plan tools but has no AI, so it checks the screens, file pickers and tool results, not the wording of a real reply. Data goes to a temporary folder, and screenshots are saved in `e2e/screenshots/`.
 
 ## The explainer video
 

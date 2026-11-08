@@ -15,6 +15,8 @@ Thirteen enhancements, grouped into seven plans. Each plan is sized for one work
 
 Suggested order: 01 → 02 → 03 → 04 → 05 → 06 → 07. Plans 01 to 05 don't depend on each other.
 
+Plans 09–18 cover the AI use-case catalogue (AIThemes.pdf). Progress for all 42 use cases is tracked in [INVENTORY.md](INVENTORY.md).
+
 ## Ground rules for every plan
 
 - **No new downloads.** `jszip` and `exceljs` are already in `node_modules`. If a plan seems to need a new package, stop and ask the owner first (see the owner's global CLAUDE.md).

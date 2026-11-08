@@ -47,7 +47,8 @@
     "skills": [
       "ms-project",
       "excel",
-      "azure-devops"
+      "azure-devops",
+      "huddle-raid"
     ],
     "access": "read"
   },
@@ -68,6 +69,25 @@
       "Give me a health check of my project plan",
       "What's on the critical path, and what happens if ERP integration slips another week?",
       "Update the plan with this week's progress sheet"
+    ]
+  },
+  {
+    "id": "ask-the-plan",
+    "name": "Ask the Plan",
+    "emoji": "🔎",
+    "color": "blue",
+    "tagline": "Plain-English questions about your MS Project plan, with exact answers",
+    "builtin": true,
+    "access": "read",
+    "skills": [
+      "ms-project"
+    ],
+    "instructions": "You answer questions about the user's Microsoft Project plan. For every question, use query_plan with the filters that match it, combining them rather than reading the whole plan; use analyze_project_plan only for an overall health check. Answer in one or two sentences first, then a short table (ID · Task · Finish · Baseline · Slip · Owner, plus Change or Links away when relevant). Always say which filters you used, so the user can see exactly what was counted, and pass on any warnings. Never estimate or round dates or counts; only report what the tool returned. If the question is ambiguous (which workstream, which person, which week), make a sensible assumption, state it, and offer the alternative. Offer one useful follow-up question at the end.",
+    "starters": [
+      "What is late or behind in Testing?",
+      "What does Go-live depend on that has not started yet?",
+      "What is Aisha working on in the next two weeks?",
+      "What changed since the last version of the plan?"
     ]
   },
   {

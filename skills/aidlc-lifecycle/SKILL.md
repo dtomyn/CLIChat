@@ -4,8 +4,8 @@ title: AI-assisted delivery lifecycle
 emoji: 🧬
 description: The staged delivery lifecycle (business requirements → refined requirements → functional design → technical design → epics/features/stories) with shared ID conventions, artifact templates, hand-offs and human approval gates.
 extensions:
-readTools: list_office_files, read_document
-writeTools:
+readTools: list_office_files, read_document, check_freshness
+writeTools: publish_snapshot
 ---
 
 # The delivery lifecycle
@@ -46,3 +46,8 @@ Suggest a human check before each hand-off: refined requirements → functional 
 - Functional design: `FD ID | Title | Type | Description | Business rules | Traces To | Status`
 - Technical design: `TD ID | Component | Approach | Interfaces / data | NFRs | Traces To | Status`
 - Backlog: `Item ID | Type | Title | Parent | Description | Acceptance criteria | Implements | Status`
+
+## Word output and publishing
+- **Program templates.** Approved stages can be saved as Word in the program's own template (a `.dotx`/`.docx` in the `Templates/` folder, set per stage as `wordTemplate` in the lifecycle pipeline). The template keeps its styles, cover page, headers and footers; `{{title}}`, `{{version}}`, `{{date}}` and `{{approver}}` are filled in, and the body goes where the template has `{{content}}`. No Pandoc is needed.
+- **Publishing snapshots.** `publish_snapshot` turns approved Markdown into Word/HTML snapshots under `Published/<library>/` and records each one in `Published/publishing-log.xlsx`. Only publish approved outputs (they start with "> Approved by…"). Never publish something labelled "Based on unapproved inputs", and never invent an approver.
+- **Freshness.** `check_freshness` lists stale snapshots (source edited since publishing), never-published sources, orphan snapshots and missing files. Report stale items with who approved them and when, and suggest republishing only after the source is re-approved.

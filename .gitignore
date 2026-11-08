@@ -40,3 +40,8 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# ── Browser test output ─────────────────────────────────────
+e2e/results/
+e2e/screenshots/
+playwright-report/
