@@ -1518,9 +1518,11 @@ function renderAssistantsPage() {
         <div><h1>Agents</h1><p>Agents are helpers with their own expertise and instructions, the same idea as agents in Microsoft 365 Copilot. Pick one to start a chat, or create your own in under a minute.</p></div>
         <div class="row" style="flex:0 0 auto;gap:8px"><button class="btn soft" data-export-engineering title="Save the developer, test automation and pipeline packs into a code repository for VS Code">${icon('code')}Engineering packs</button><button class="btn soft" data-export-all title="Save every agent in a form Microsoft 365 Copilot can use">${icon('external')}Export all to Copilot</button><button class="btn grad" data-new-assistant>${icon('plus')}Create agent</button></div>
       </div>
+      <div class="search-wrap agent-search">${icon('search')}<input id="agentSearch" type="search" placeholder="Search agents by name, what they do or skill" autocomplete="off" aria-label="Search agents" value="${esc(S.agentSearch || '')}"></div>
+      <p class="agent-search-empty" hidden>No agents match your search.</p>
       <div class="card-grid">
         ${S.assistants.map((a, i) => `
-          <div class="a-card" data-color="${esc(a.color)}" style="animation-delay:${i * 40}ms">
+          <div class="a-card" data-color="${esc(a.color)}" data-agent-text="${esc(agentSearchText(a))}" style="animation-delay:${i * 40}ms">
             <div class="a-card-top"><span class="a-badge lg">${esc(a.emoji)}</span>
               <button class="icon-btn" data-assistant-menu="${esc(a.id)}" title="More">${icon('dots')}</button></div>
             <div><h3>${esc(a.name)}</h3></div>
@@ -1536,6 +1538,11 @@ function renderAssistantsPage() {
         </button>
       </div>
     </div></div>`;
+  const search = $('#agentSearch');
+  search.addEventListener('input', () => { S.agentSearch = search.value; filterAgentCards(); });
+  search.addEventListener('keydown', (e) => { if (e.key === 'Escape' && search.value) { e.preventDefault(); e.stopPropagation(); search.value = ''; S.agentSearch = ''; filterAgentCards(); } });
+  filterAgentCards();
+  setTimeout(() => { if (!$('#modalRoot').children.length) search.focus(); }, 50);
   $('#view').firstElementChild.addEventListener('click', (e) => {
     const t = e.target.closest('[data-new-assistant],[data-chat-with],[data-edit-assistant],[data-assistant-menu],[data-export-all],[data-export-engineering]'); if (!t) return;
     if ('exportAll' in t.dataset) exportToCopilot(null, t);
@@ -1557,6 +1564,28 @@ function renderAssistantsPage() {
       ], { align: 'right' });
     }
   });
+}
+
+// What the Agents page search looks at: name, tagline, description and skill titles.
+function agentSearchText(a) {
+  const skills = (a.skills || []).map((id) => S.skills.find((s) => s.id === id)?.title).filter(Boolean);
+  return [a.name, a.tagline, a.description, ...skills].filter(Boolean).join(' ').toLowerCase();
+}
+
+// Every word typed must appear somewhere; "Create an agent" always stays visible.
+function filterAgentCards() {
+  const words = (S.agentSearch || '').toLowerCase().split(/\s+/).filter(Boolean);
+  let shown = 0;
+  $('#view .card-grid')?.classList.toggle('searching', words.length > 0);
+  $$('#view .a-card[data-agent-text]').forEach((c) => {
+    const hit = words.every((w) => c.dataset.agentText.includes(w));
+    c.hidden = !hit; if (hit) shown++;
+    // Agents whose name matches come first.
+    const name = c.querySelector('h3').textContent.toLowerCase();
+    c.style.order = hit && words.length && !words.every((w) => name.includes(w)) ? 1 : '';
+  });
+  $('#view .new-card')?.style.setProperty('order', words.length ? 2 : '');
+  const empty = $('#view .agent-search-empty'); if (empty) empty.hidden = shown > 0;
 }
 
 async function reloadAssistants() { S.assistants = await api('/api/assistants'); if (S.view === 'assistants') renderAssistantsPage(); else rerenderCurrent(); renderConvList(); }

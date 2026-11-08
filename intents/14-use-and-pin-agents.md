@@ -7,7 +7,7 @@ keep the ones I use most in the sidebar, so that every chat starts with the righ
 ## Where
 - **Agents** page (left rail **Agents**, or **All agents** in the sidebar): one card per agent with **Start chat**,
   **Customize** and **⋯** (**Customize**, **Pin to sidebar** / **Unpin from sidebar**, **Duplicate**, **Export to
-  Microsoft 365 Copilot**, **Use in VS Code**, **Delete**).
+  Microsoft 365 Copilot**, **Use in VS Code**, **Delete**), and a **Search agents** box above the cards.
 - Home screen: the **Agents** row of chips (**See all agents**, **Create an agent**) and the agent pill in the composer
   (**Who should help?** menu).
 - Sidebar **Agents** list (`#agentList`).
@@ -16,6 +16,7 @@ keep the ones I use most in the sidebar, so that every chat starts with the righ
 | Control | Effect |
 |---|---|
 | **Start chat** (card) / agent chip / pill menu | Sets the draft's agent and its default file access, then shows home with the agent's name, tagline and starter prompts. |
+| **Search agents** (Agents page) | Filters the cards as you type; Escape clears it. |
 | Starter prompt chip | Puts the starter text in the message box (it is not sent). |
 | Sidebar agent | Clears the draft and opens home with that agent selected. |
 | **⋯ › Pin to sidebar / Unpin from sidebar** | Adds or removes the agent from `settings.pinnedAgents`; toast "Pinned to the sidebar" / "Removed from the sidebar". |
@@ -38,6 +39,10 @@ keep the ones I use most in the sidebar, so that every chat starts with the righ
   **Settings › Advanced › Restore defaults** brings it back (and removes agents the user created).
 - New built-ins from a newer version are added to the saved list on start unless the user deleted them.
 - Each card shows its skills as chips with a **Lumen only** badge (`skillChips`).
+- **Search** (`agentSearchText`, `filterAgentCards`): case-insensitive; every typed word must appear in the agent's
+  name, tagline, description or skill titles. Agents whose name matches are listed first. **Create an agent** always
+  stays visible (last while searching); with no match, "No agents match your search." shows. The box gets focus when
+  the page opens, and the text is kept while Lumen is open (`S.agentSearch`), not saved.
 
 ## Outputs
 - A new chat with the chosen agent; its emoji shows on the chat in the chat list.
@@ -52,14 +57,14 @@ keep the ones I use most in the sidebar, so that every chat starts with the righ
 - Each domain's agents exist with their skills: `test/change.test.js` › change and bilingual agents, prompts and skills
   are wired up (and the matching "… are wired up" tests in `test/release.test.js`, `test/governance.test.js`,
   `test/data.test.js`, `test/openapi.test.js`, `test/controls.test.js`, `test/tests.test.js`, `test/drift.test.js`).
-  No automated test covers pinning.
+  No automated test covers pinning. `e2e/agent-search.spec.js` covers the search box.
 
 ## Limits
 - One agent per chat; switching means starting a new chat.
 - Pins are global (one `settings.json`), not per notebook.
 
 ## Source
-`public/app.js` (`renderAssistantsPage`, `pinnedAgentIds`, `togglePinAgent`, `renderAgentList`, `renderHome`,
+`public/app.js` (`renderAssistantsPage`, `agentSearchText`, `filterAgentCards`, `pinnedAgentIds`, `togglePinAgent`, `renderAgentList`, `renderHome`,
 `homeClicks`, `skillChips`, `#assistantPill` menu in `bindComposer`), `public/index.html` (`#agentList`),
 `server.js` (`/api/assistants` routes, `buildSystemPrompt`, `runTurn`), `lib/store.js` (`collection`: seeding,
 `removed.json`, `reset`), `defaults/assistants.json`.
