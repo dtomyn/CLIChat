@@ -1518,10 +1518,13 @@ function renderAssistantsPage() {
         <div><h1>Agents</h1><p>Agents are helpers with their own expertise and instructions, the same idea as agents in Microsoft 365 Copilot. Pick one to start a chat, or create your own in under a minute.</p></div>
         <div class="row" style="flex:0 0 auto;gap:8px"><button class="btn soft" data-export-engineering title="Save the developer, test automation and pipeline packs into a code repository for VS Code">${icon('code')}Engineering packs</button><button class="btn soft" data-export-all title="Save every agent in a form Microsoft 365 Copilot can use">${icon('external')}Export all to Copilot</button><button class="btn grad" data-new-assistant>${icon('plus')}Create agent</button></div>
       </div>
-      <div class="search-wrap agent-search">${icon('search')}<input id="agentSearch" type="search" placeholder="Search agents by name, what they do or skill" autocomplete="off" aria-label="Search agents" value="${esc(S.agentSearch || '')}"></div>
+      <div class="agent-toolbar">
+        <div class="search-wrap agent-search">${icon('search')}<input id="agentSearch" type="search" placeholder="Search agents by name, what they do or skill" autocomplete="off" aria-label="Search agents" value="${esc(S.agentSearch || '')}"></div>
+        <label class="agent-sort"><span>Sort by</span><select class="select" id="agentSort">${Object.entries(AGENT_SORTS).map(([k, v]) => `<option value="${k}" ${k === agentSortKey() ? 'selected' : ''}>${esc(v.label)}</option>`).join('')}</select></label>
+      </div>
       <p class="agent-search-empty" hidden>No agents match your search.</p>
       <div class="card-grid">
-        ${S.assistants.map((a, i) => `
+        ${sortedAgents().map((a, i) => `
           <div class="a-card" data-color="${esc(a.color)}" data-agent-text="${esc(agentSearchText(a))}" style="animation-delay:${i * 40}ms">
             <div class="a-card-top"><span class="a-badge lg">${esc(a.emoji)}</span>
               <button class="icon-btn" data-assistant-menu="${esc(a.id)}" title="More">${icon('dots')}</button></div>
@@ -1538,6 +1541,7 @@ function renderAssistantsPage() {
         </button>
       </div>
     </div></div>`;
+  $('#agentSort').addEventListener('change', (e) => { saveSettings({ agentSort: e.target.value }).then(() => { if (S.view === 'assistants') renderAssistantsPage(); }); });
   const search = $('#agentSearch');
   search.addEventListener('input', () => { S.agentSearch = search.value; filterAgentCards(); });
   search.addEventListener('keydown', (e) => { if (e.key === 'Escape' && search.value) { e.preventDefault(); e.stopPropagation(); search.value = ''; S.agentSearch = ''; filterAgentCards(); } });
@@ -1564,6 +1568,33 @@ function renderAssistantsPage() {
       ], { align: 'right' });
     }
   });
+}
+
+// Agents page sort orders. Usage comes from the chats on this computer; ties fall back to the name.
+const AGENT_SORTS = {
+  name: { label: 'Name (A to Z)' },
+  recent: { label: 'Recently used' },
+  most: { label: 'Most used' },
+  pinned: { label: 'Pinned first' },
+  mine: { label: 'My agents first' },
+  original: { label: 'Original order' },
+};
+const agentSortKey = () => (Object.hasOwn(AGENT_SORTS, S.settings.agentSort || '') ? S.settings.agentSort : 'name');
+function sortedAgents() {
+  const key = agentSortKey();
+  if (key === 'original') return [...S.assistants]; // the order they were added to Lumen, then the user's own
+  const byName = (a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+  const last = {}, count = {};
+  for (const c of S.convs) { count[c.assistantId] = (count[c.assistantId] || 0) + 1; last[c.assistantId] = Math.max(last[c.assistantId] || 0, c.updatedAt || 0); }
+  const pins = pinnedAgentIds();
+  const rank = {
+    name: () => 0,
+    recent: (a) => -(last[a.id] || 0),
+    most: (a) => -(count[a.id] || 0),
+    pinned: (a) => (pins.includes(a.id) ? pins.indexOf(a.id) - pins.length : 0),
+    mine: (a) => (a.builtin ? 1 : 0),
+  }[key];
+  return [...S.assistants].sort((a, b) => rank(a) - rank(b) || byName(a, b));
 }
 
 // What the Agents page search looks at: name, tagline, description and skill titles.

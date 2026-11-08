@@ -35,3 +35,20 @@ test('Agents page search filters by name and skill, and Escape clears it', async
   await expect(search).toHaveValue('');
   await expect(cards).toHaveCount(total);
 });
+
+test('Agents page sort order is A to Z by default, can be changed and is remembered', async ({ page, request }) => {
+  await request.put('/api/settings', { data: { agentSort: null } });
+  await page.goto('/#/agents');
+  const sort = page.locator('#agentSort');
+  await expect(sort).toHaveValue('name', { timeout: 15_000 });
+  const names = () => page.locator('.a-card[data-agent-text] h3').allTextContents();
+  const az = await names();
+  expect(az).toEqual([...az].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' })));
+
+  await sort.selectOption('original');
+  await expect(page.locator('.a-card[data-agent-text] h3').first()).toHaveText('Lumen');
+
+  await page.reload();
+  await expect(page.locator('#agentSort')).toHaveValue('original', { timeout: 15_000 });
+  await request.put('/api/settings', { data: { agentSort: null } });
+});
