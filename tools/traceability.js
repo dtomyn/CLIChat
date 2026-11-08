@@ -2,6 +2,7 @@
 //
 // The lifecycle layers, upstream → downstream:
 //   BR  business requirements → RR refined requirements → FD functional design → TD technical design → BL delivery backlog (epics/features/stories)
+//   TC  test cases sit alongside the chain: each traces to a story or a requirement, and is checked for coverage separately.
 //
 // Two workbook shapes are understood, and can be mixed:
 //   1. One sheet per layer, each row an item with an ID and a "Traces To" / "Parent" / "Implements" column listing upstream IDs.
@@ -18,6 +19,7 @@ const LAYERS = [
   { key: 'FD', name: 'Functional design', re: /\bfd\b|functional\s*(design|spec)/i },
   { key: 'TD', name: 'Technical design', re: /\btd\b|technical\s*(design|spec)|solution\s*design/i },
   { key: 'BL', name: 'Delivery backlog', re: /backlog|stor(y|ies)|epics?|features?|\bado\b|work\s*items?|\bpbis?\b|\bus\b|delivery/i },
+  { key: 'TC', name: 'Test cases', re: /\btests?\b|test\s*cases?|\btc\b|\bsit\b|\buat\b/i },
 ];
 const RANK = Object.fromEntries(LAYERS.map((l, i) => [l.key, i]));
 const layerOf = (text) => (LAYERS.find((l) => l.re.test(text)) || {}).key;
@@ -152,19 +154,19 @@ async function analyze(file, { changed = [] } = {}) {
   };
   const brief = (n) => ({ id: n.id, title: n.title || undefined, status: n.status || undefined, at: n.ref });
   const present = new Set(all.map((n) => n.layer));
-  const nextLayer = (key) => LAYERS.slice(RANK[key] + 1).find((l) => present.has(l.key) && l.key !== 'TD')?.key;
+  const nextLayer = (key) => LAYERS.slice(RANK[key] + 1).find((l) => present.has(l.key) && l.key !== 'TD' && l.key !== 'TC')?.key;
 
   // Coverage: every item should be realised by the next layer down (TD is optional per design element).
   const gaps = [];
   for (const n of all) {
-    if (n.layer === 'BL' || n.layer === 'TD' || DEAD_STATUS.test(n.status || '')) continue;
+    if (n.layer === 'BL' || n.layer === 'TD' || n.layer === 'TC' || DEAD_STATUS.test(n.status || '')) continue;
     const kids = children.get(n.id);
     const want = nextLayer(n.layer);
     if (!want) continue;
     if (n.layer === 'FD') {
       const stories = [...downstream(n.id)].map(get).filter(isStory);
       if (!stories.length) gaps.push({ ...brief(n), missing: 'No delivery story traces to this design element' });
-    } else if (!kids.some((k) => RANK[k.layer] > RANK[n.layer])) {
+    } else if (!kids.some((k) => k.layer !== 'TC' && RANK[k.layer] > RANK[n.layer])) {
       gaps.push({ ...brief(n), missing: `Not yet covered by any ${LAYERS[RANK[want]].name.toLowerCase()}` });
     }
   }
@@ -178,8 +180,25 @@ async function analyze(file, { changed = [] } = {}) {
   const wrongDirection = all.flatMap((n) => [...n.traces].map(get).filter((u) => RANK[u.layer] > RANK[n.layer]).map((u) => ({ ...brief(n), tracesTo: u.id, note: `${LAYERS[RANK[n.layer]].name} should not depend on ${LAYERS[RANK[u.layer]].name.toLowerCase()}` })));
   const deadUpstream = all.filter((n) => DEAD_STATUS.test(n.status || '')).map((n) => ({ ...brief(n), stillLinked: [...downstream(n.id)].map(get).filter((d) => !DEAD_STATUS.test(d.status || '')).map((d) => d.id) })).filter((x) => x.stillLinked.length);
 
+  // Test coverage (only when the workbook has a test-case layer): a requirement is covered when any live test sits
+  // anywhere below it; a story is covered when a live test traces to it directly. Items under a withdrawn
+  // requirement need no test (they are already reported as withdrawn but still linked).
+  const hasTests = present.has('TC');
+  const isLive = (n) => !DEAD_STATUS.test(n.status || '');
+  const ancestors = (n, seen = new Set()) => { for (const u of n.traces) { const up = get(u); if (!seen.has(up.id)) { seen.add(up.id); ancestors(up, seen); } } return seen; };
+  const inScope = (n) => isLive(n) && ![...ancestors(n)].some((u) => !isLive(get(u)));
+  const testsBelow = (id) => [...downstream(id)].map(get).filter((d) => d.layer === 'TC' && isLive(d));
+  const testableReqs = (key) => all.filter((n) => n.layer === key && inScope(n));
+  const reqNoTest = hasTests ? [...testableReqs('BR'), ...testableReqs('RR')].filter((n) => !testsBelow(n.id).length) : [];
+  const reqNoTestIds = new Set(reqNoTest.map((n) => n.id));
+  // Don't repeat a refined requirement when its business requirement is already listed.
+  const requirementsWithoutTests = reqNoTest.filter((n) => !(n.layer === 'RR' && [...n.traces].some((u) => reqNoTestIds.has(get(u).id)))).map(brief);
+  const liveStories = all.filter((n) => isStory(n) && inScope(n));
+  const storiesWithoutTests = hasTests ? liveStories.filter((n) => !children.get(n.id).some((k) => k.layer === 'TC' && isLive(k))).map(brief) : [];
+  const testsOnWithdrawn = all.filter((n) => n.layer === 'TC' && isLive(n)).map((n) => ({ ...brief(n), withdrawnUpstream: [...ancestors(n)].map(get).filter((u) => !isLive(u)).map((u) => u.id) })).filter((x) => x.withdrawnUpstream.length);
+
   // Impact: requirements marked as changed (or named by the caller), and anything downstream that is older than its changed source.
-  const changedSet = new Set([...changed.map((c) => get(c)?.id).filter(Boolean), ...all.filter((n) => n.layer !== 'BL' && CHANGED_STATUS.test(n.status || '') && !DEAD_STATUS.test(n.status || '')).map((n) => n.id)]);
+  const changedSet = new Set([...changed.map((c) => get(c)?.id).filter(Boolean), ...all.filter((n) => n.layer !== 'BL' && n.layer !== 'TC' && CHANGED_STATUS.test(n.status || '') && !DEAD_STATUS.test(n.status || '')).map((n) => n.id)]);
   const unknownChanged = changed.filter((c) => !get(c));
   const impact = [...changedSet].map((id) => {
     const src = get(id);
@@ -196,9 +215,17 @@ async function analyze(file, { changed = [] } = {}) {
   const pct = (a, b) => (b ? `${Math.round((100 * a) / b)}%` : 'n/a');
   const covered = (key) => live(key).filter((n) => !gaps.some((g) => g.id === n.id));
   const coverage = Object.fromEntries(['BR', 'RR', 'FD'].filter((k) => present.has(k) && nextLayer(k)).map((k) => [`${LAYERS[RANK[k]].name} covered downstream`, `${pct(covered(k).length, live(k).length)} (${covered(k).length}/${live(k).length})`]));
+  if (hasTests) {
+    for (const k of ['BR', 'RR'].filter((x) => present.has(x))) {
+      const scope = testableReqs(k), tested = scope.filter((n) => !reqNoTestIds.has(n.id)).length;
+      coverage[`${LAYERS[RANK[k]].name} with tests`] = `${pct(tested, scope.length)} (${tested}/${scope.length})`;
+    }
+    const testedStories = liveStories.length - storiesWithoutTests.length;
+    if (liveStories.length) coverage['Stories with tests'] = `${pct(testedStories, liveStories.length)} (${testedStories}/${liveStories.length})`;
+  }
 
   const broken = all.flatMap((n) => n.broken.map((b) => ({ item: n.id, missingId: b.id, at: b.ref })));
-  const problems = gaps.length + broken.length + dupes.length + designBypass.length + wrongDirection.length + deadUpstream.length;
+  const problems = gaps.length + broken.length + dupes.length + designBypass.length + wrongDirection.length + deadUpstream.length + requirementsWithoutTests.length + testsOnWithdrawn.length;
   const rag = dupes.length || broken.length || deadUpstream.length || impact.some((i) => i.affected.length) ? 'Red' : problems || untraced.length || stale.length ? 'Amber' : 'Green';
 
   return {
@@ -215,6 +242,7 @@ async function analyze(file, { changed = [] } = {}) {
       linksInTheWrongDirection: wrongDirection,
       withdrawnButStillLinked: deadUpstream,
       designElementsWithoutTechnicalDesign: noTechDesign,
+      ...(hasTests ? { requirementsWithoutTests, storiesWithoutTests, testsTracingToWithdrawnItems: testsOnWithdrawn } : {}),
       changeImpact: impact,
       possiblyStaleAfterUpstreamChange: stale,
       ...(unknownChanged.length ? { changedIdsNotFound: unknownChanged } : {}),

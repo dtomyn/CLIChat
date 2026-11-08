@@ -10,9 +10,9 @@ Last reviewed: 2026-11-07 (branch `feature/ideas-for-pm`, commit `82b234d`)
 
 | Status | Count |
 |---|---|
-| ✅ Done | 7 |
+| ✅ Done | 10 |
 | 🟡 Partial | 5 |
-| 📝 Planned | 30 |
+| 📝 Planned | 27 |
 | ⬜ Not started | 0 |
 
 Lumen runs on one computer and works on files in the notebook folder. Where the catalogue names a cloud target (SharePoint, Teams, Power BI, Fabric, ADO Test Plans), Lumen produces the file or proposal locally, and a person publishes it. "Done" means the use case works end to end in that model. Live system connections are tracked separately in Plan 08 (Azure DevOps) and in the "Live targets" column.
@@ -31,7 +31,7 @@ Lumen runs on one computer and works on files in the notebook folder. Where the 
 | 8 | Functional Design | Draft and review FDD | High | ✅ | Functional Designer, lifecycle stage; **Save as Word (program template)** on the approved stage (`wordTemplate`, `md-export.js` `toDocx`), sample `Templates/FDD Template.dotx` (2026-11-07) | 18 |
 | 9 | Technical Design | Draft and review TDD | Med–High | ✅ | Technical Designer, lifecycle stage; Word output from `Templates/TDD Template.dotx` (2026-11-07) | 18 |
 | 10 | Functional / ADO Backlog | Delivery-ready ADO backlog items | High | 🟡 | Story Writer (Markdown backlog). Missing: create items in ADO | 08 |
-| 11 | Functional / Traceability | End-to-end requirements traceability | High | 🟡 | `analyze_traceability` on the RTM workbook. Missing: ADO links, test-case layer | 08, 09 |
+| 11 | Functional / Traceability | End-to-end requirements traceability | High | 🟡 | `analyze_traceability` on the RTM workbook, now with a **test-case layer** (Tests sheet, `TC-###`): requirements and stories with no test, tests tracing to withdrawn items, test coverage per layer (2026-11-07). Missing: ADO links | 08, 09 |
 | 12 | Cross-Functional / Knowledge | Common grounded program context | Foundational | ✅ | program-knowledge skill, Knowledge folder convention | — |
 | 13 | EDP / Data Engineering | Profile datasets, find quality issues | High | 📝 | — | 11 |
 | 14 | EDP / Data Engineering | Draft source-to-target mappings | High | 📝 | — | 11 |
@@ -39,8 +39,8 @@ Lumen runs on one computer and works on files in the notebook folder. Where the 
 | 16 | Partner / Integration | Draft interface-control documents | High | 📝 | — | 12 |
 | 17 | Partner / Integration | API specifications and scaffolding | High | 📝 | — | 12 |
 | 18 | Partner / Integration | Reconcile schemas and canonical models | Med–High | 📝 | — | 11 |
-| 19 | Testing / QE | Test cases and coverage gaps | High | 📝 | — | 09 |
-| 20 | Testing / QE | Assist defect triage | High | 📝 | — | 09 |
+| 19 | Testing / QE | Test cases and coverage gaps | High | ✅ | **Test Designer** agent, `test-design` skill, `write_test_cases` (Excel in the ADO Test Plans import layout, one row per step), prompts **Generate test cases from stories** and **Coverage gaps**, optional lifecycle stage `tests` (`05-test-cases.md`), sample Tests sheet in the AIDLC TRM (2026-11-07). Live ADO Test Plans writes: Plan 08 | 09 |
+| 20 | Testing / QE | Assist defect triage | High | ✅ | **Defect Triage** agent, `analyze_defects` (duplicates, severity–priority mismatches, ageing, unowned), `propose_defect_changes` (`(proposed)` copy with Approve column), prompt **Triage defects**, sample `Defects export.xlsx` (2026-11-07) | 09 |
 | 21 | Security / SA&A | Map security controls and evidence needs | High | 📝 | — | 13 |
 | 22 | Security / SA&A | Security design documentation | Med–High | 📝 | — | 13 |
 | 23 | Security / SA&A | Assemble and validate control evidence | High | 📝 | — | 13 |
@@ -54,7 +54,7 @@ Lumen runs on one computer and works on files in the notebook folder. Where the 
 | 31 | Architecture / Governance | Architecture and design consistency review | High | 📝 | — | 16 |
 | 32 | Documentation / Bilingual | French drafts and bilingual QA | Med–High | 📝 | — | 14 |
 | 33 | Functional / ADO Backlog | ADO backlog Q&A and controlled updates | High | 📝 | Plan 08 written, nothing built | 08 |
-| 34 | Testing / QE | Test strategy, coverage model, risk priorities | High | 📝 | — | 09 |
+| 34 | Testing / QE | Test strategy, coverage model, risk priorities | High | ✅ | **Test Planner** agent, prompt **Draft the test strategy** (levels, STE/UAT/STG/PRD, entry/exit, test data, risk × change-impact priority); coverage model from `analyze_traceability` (2026-11-07) | 09 |
 | 35 | Test Automation | Automated regression tests (Playwright) | High | 📝 | Lumen's own e2e suite as a pattern | 17 |
 | 36 | Development / Engineering | Developer Copilot skill pack | High | 📝 | "Use in VS Code" export exists to reuse | 17 |
 | 37 | Cross-Functional / Knowledge | ADO Wiki → SharePoint publishing, freshness | Foundational | 🟡 | `tools/publish.js`: `publish_snapshot`, `check_freshness`, `Published/publishing-log.xlsx`, **Knowledge freshness** prompt (2026-11-07). Missing: live ADO Wiki source (Plan 08 phase 2) | 18, 08 |
@@ -71,7 +71,7 @@ Lumen runs on one computer and works on files in the notebook folder. Where the 
 | Plan | Covers | Size | Depends on | Status |
 |---|---|---|---|---|
 | [08 Azure DevOps](08-azure-devops.md) | 2, 10, 11, 33 (live ADO) | L | — | 📝 |
-| [09 Quality engineering](09-quality-engineering.md) | 11 (test layer), 19, 20, 34 | M | — (08 for ADO Test Plans) | 📝 |
+| [09 Quality engineering](09-quality-engineering.md) | 11 (test layer), 19, 20, 34 | M | — (08 for ADO Test Plans) | ✅ 2026-11-07 |
 | [10 Planning intelligence](10-planning-intelligence.md) | 3, 5, 39 | M | — | 📝 |
 | [11 Data engineering](11-data-engineering.md) | 13, 14, 15, 18 | L | — | 📝 |
 | [12 Integration and APIs](12-integration-and-apis.md) | 16, 17 | M | 11 (schema reader) | 📝 |
@@ -100,3 +100,4 @@ These extend the [ground rules](README.md#ground-rules-for-every-plan):
 | Date | Change |
 |---|---|
 | 2026-11-07 | Inventory created from AIThemes.pdf; plans 09–18 written |
+| 2026-11-07 | Plan 09 implemented: #19, #20, #34 done; #11 gains the test-case layer |

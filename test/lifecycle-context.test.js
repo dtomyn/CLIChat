@@ -149,17 +149,17 @@ test('lifecycle gates, checks, override, rework and persisted approvals', async 
   assert.equal(run.stages[0].status, 'approved');
   assert.equal((fs.readFileSync(run.stages[0].outputPath, 'utf8').match(/> Approved by/g) || []).length, 1);
   assert.equal(store.runs.get(id).stages[0].status, 'approved');
-  for (const stage of ['functional', 'technical', 'stories']) {
+  for (const stage of ['functional', 'technical', 'stories', 'tests']) {
     assert.equal((await action(stage, 'start')).status, 200);
     await runState(id, (r) => r.stages.find((s) => s.id === stage).status === 'review');
     assert.equal((await action(stage, 'approve')).status, 200);
   }
   run = (await request(`/api/runs/${id}`)).data;
-  assert.equal(run.stages.filter((s) => s.status === 'approved').length, 4);
+  assert.equal(run.stages.filter((s) => s.status === 'approved').length, 5);
   for (const stage of run.stages) assert.match(fs.readFileSync(stage.outputPath, 'utf8'), /^> Approved by Reviewer on /);
   await new Promise((resolve) => server.close(resolve));
   server.listen(0, '127.0.0.1');
   await once(server, 'listening');
   base = `http://127.0.0.1:${server.address().port}`;
-  assert.equal((await request(`/api/runs/${id}`)).data.stages.filter((s) => s.status === 'approved').length, 4);
+  assert.equal((await request(`/api/runs/${id}`)).data.stages.filter((s) => s.status === 'approved').length, 5);
 });

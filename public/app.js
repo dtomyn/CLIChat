@@ -1390,7 +1390,7 @@ async function renderRun(id, selected = null) {
     const index = run.stages.indexOf(stage), prev = run.stages[index - 1];
     $('#view').innerHTML = `<div class="page"><div class="page-inner">
       <a data-back-runs>← Lifecycle runs</a><h1>${esc(run.name)}</h1><p>${esc(pipeline.name)} · ${esc(run.workspace)}</p>
-      <div class="run-stepper">${run.stages.map((s, i) => `<button class="run-step ${s.id === stage.id ? 'selected' : ''}" data-stage="${esc(s.id)}"><b>${i + 1}. ${esc(pipeline.stages[i].name)}</b><span>${esc(s.status)}</span></button>`).join('')}</div>
+      <div class="run-stepper">${run.stages.map((s, i) => `<button class="run-step ${s.id === stage.id ? 'selected' : ''}" data-stage="${esc(s.id)}"><b>${i + 1}. ${esc(pipeline.stages[i]?.name || s.id)}${pipeline.stages[i]?.optional ? ' (optional)' : ''}</b><span>${esc(s.status)}</span></button>`).join('')}</div>
       <h2>${esc(def.name)}</h2><p>Status: <b>${esc(stage.status)}</b>${stage.unapprovedInputs ? ' · Based on unapproved inputs' : ''}</p>
       ${stage.error ? `<p class="run-error">${esc(stage.error)}</p>` : ''}
       ${stage.approvedAt ? `<p>Approved by ${esc(stage.approvedBy)} on ${esc(new Date(stage.approvedAt).toLocaleString())}</p>` : ''}

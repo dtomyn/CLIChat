@@ -14,6 +14,7 @@ const traceability = require('./traceability');
 const status = require('./status');
 const raid = require('./raid');
 const publish = require('./publish');
+const qe = require('./tests');
 
 const ROOT = path.resolve(process.env.OFFICE_MCP_ROOT || process.cwd());
 const READ_ONLY = process.env.OFFICE_MCP_READONLY === '1';
@@ -76,7 +77,7 @@ const TOOLS = [
   },
   {
     name: 'analyze_traceability',
-    description: 'Check a requirements traceability workbook (TRM/RTM). Recognises sheets for business requirements, refined requirements, functional design, technical design and the delivery backlog (epics/features/stories), or a single trace-matrix sheet. Reports item counts, coverage per layer, coverage gaps, untraced items, broken links to IDs that do not exist, duplicate IDs, stories that trace straight to requirements without a design element, withdrawn requirements still linked downstream, and the downstream impact of changed requirements. Every finding has a Sheet!Cell reference. Read-only.',
+    description: 'Check a requirements traceability workbook (TRM/RTM). Recognises sheets for business requirements, refined requirements, functional design, technical design, the delivery backlog (epics/features/stories) and test cases (a Tests sheet whose cases trace to stories or requirements), or a single trace-matrix sheet. Reports item counts, coverage per layer, coverage gaps, untraced items, broken links to IDs that do not exist, duplicate IDs, stories that trace straight to requirements without a design element, withdrawn requirements still linked downstream, requirements and stories with no test, tests tracing to withdrawn items, and the downstream impact of changed requirements. Every finding has a Sheet!Cell reference. Read-only.',
     inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'The traceability workbook' }, changed: { type: 'array', items: { type: 'string' }, description: 'Optional requirement or design IDs that have changed, for impact analysis (e.g. ["BR-004"]). Items whose Status says Changed are always included.' } }, required: ['path'] },
     run: (a) => traceability.analyze(resolveIn(a.path), { changed: Array.isArray(a.changed) ? a.changed : [] }),
   },
@@ -231,6 +232,56 @@ const TOOLS = [
     run: write((a) => raid.applyApproved(resolveIn(a.proposed))),
   },
   {
+    name: 'write_test_cases',
+    description: 'Save test cases as an Excel workbook in the Azure DevOps Test Plans import layout: one row per step (ID, Work Item Type, Title, Test Step, Step Action, Step Expected, Traces To, Priority, Type SIT/UAT, Preconditions), with the case fields on its first step row, plus a Coverage sheet with one row per case. Cases without an ID get TC-001, TC-002… An existing file is never overwritten; a numbered copy is saved instead. Returns warnings for cases without steps, expected results or traces.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'Output .xlsx path, e.g. "Test cases - Release 1.xlsx"' },
+        title: { type: 'string', description: 'Optional workbook title' },
+        cases: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', description: 'Optional, e.g. TC-001' },
+              title: { type: 'string' },
+              type: { type: 'string', enum: ['SIT', 'UAT'] },
+              priority: { type: ['string', 'number'], description: '1 (highest) to 4' },
+              tracesTo: { type: 'array', items: { type: 'string' }, description: 'Story or requirement IDs this case verifies, e.g. ["US-103", "BR-002.1"]' },
+              preconditions: { type: 'string' },
+              technique: { type: 'string', description: 'e.g. positive, negative, boundary' },
+              steps: { type: 'array', items: { type: 'object', properties: { action: { type: 'string' }, expected: { type: 'string' } }, required: ['action'] } },
+            },
+            required: ['title', 'steps'],
+          },
+        },
+      },
+      required: ['path', 'cases'],
+    },
+    run: write((a) => qe.writeTestCases(outputIn(a.path) || resolveIn(null), a.cases || [], { title: a.title })),
+  },
+  {
+    name: 'analyze_defects',
+    description: 'Triage a defect export (Azure DevOps query saved as .xlsx or .csv). Reports counts by severity, state and area; the age of open defects and the oldest ones; probable duplicates (similar titles in the same area path); severity–priority mismatches; open defects without an owner or severity; and defects not changed recently. Every defect has a Sheet!Cell reference. Returns proposed changes only and never changes the file.',
+    inputSchema: { type: 'object', properties: {
+      path: { type: 'string', description: 'The defect export' },
+      asOf: { type: 'string', description: 'YYYY-MM-DD for ages (default today)' },
+      duplicateThreshold: { type: 'number', description: 'Title similarity for a probable duplicate, 0 to 1 (default 0.6)' },
+      staleDays: { type: 'number', description: 'Open defects unchanged for longer than this are listed (default 30)' },
+    }, required: ['path'] },
+    run: (a) => qe.analyzeDefects(resolveIn(a.path), { asOf: a.asOf, duplicateThreshold: a.duplicateThreshold, staleDays: a.staleDays }),
+  },
+  {
+    name: 'propose_defect_changes',
+    description: 'Record proposed defect changes (severity, priority, state, owner, area or tags) for a person to approve. Saves "<export> (proposed).xlsx" with the changed cells highlighted and a "Proposed changes" sheet with an "Approve? (Yes/No)" column. The original export is never changed. Use it only after the person has agreed which triage proposals to record.',
+    inputSchema: { type: 'object', properties: {
+      path: { type: 'string', description: 'The defect export' },
+      changes: { type: 'array', items: { type: 'object', properties: { id: { type: 'string' }, field: { type: 'string', enum: ['severity', 'priority', 'state', 'owner', 'area', 'tags'] }, value: { type: 'string' }, reason: { type: 'string' } }, required: ['id', 'field', 'value'] } },
+    }, required: ['path', 'changes'] },
+    run: write((a) => qe.proposeDefectChanges(resolveIn(a.path), a.changes || [])),
+  },
+  {
     name: 'update_project_plan',
     description: 'Update tasks in a Microsoft Project plan (percent complete, start, finish, duration, name, notes) and optionally the status date. Identify tasks by taskId (the ID column) or exact taskName. Never overwrites the original: saves "<name> (updated).xml" (or saveAs). Microsoft Project recalculates dependent dates when the file is opened.',
     inputSchema: {
@@ -275,7 +326,7 @@ const TOOLS = [
 
 // ------------------------------------------------------------------ JSON-RPC over stdio
 if (require.main === module) {
-  require('./mcp-stdio').serve({ name: 'office', instructions: 'Tools for Excel workbooks, Microsoft Project plans, Word documents and requirements traceability and knowledge publishing in the project folder.', tools: TOOLS });
+  require('./mcp-stdio').serve({ name: 'office', instructions: 'Tools for Excel workbooks, Microsoft Project plans, Word documents, requirements traceability, test cases, defect triage and knowledge publishing in the project folder.', tools: TOOLS });
 }
 
 module.exports = { TOOLS };

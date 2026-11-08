@@ -133,6 +133,40 @@ const BL = [
   ['US-110', 'Story', 'Choose a paper permit', 'FT-1.2', 'As an applicant, I want a paper permit mailed so that I have a physical copy.', 'Given I tick the option, then a mailing request is created.', 'FD-017', 'Ready', '2026-10-01'],
 ];
 
+// Test cases (SIT/UAT). BR-007 (notifications) has no test at all, TC-011 still tests the withdrawn paper-permit
+// requirement, and TC-006 was written against the old 12-month photo rule.
+// [id, title, type, priority, traces to, status, last changed]
+const TESTS = [
+  ['TC-001', 'Renew from My permits inside the renewal window', 'SIT', 2, 'US-101', 'Passed', '2026-10-10'],
+  ['TC-002', 'Renew is not offered 91 days after expiry (boundary)', 'SIT', 1, 'US-101, BR-002.1', 'Passed', '2026-10-10'],
+  ['TC-003', 'Resume a saved draft within 30 days', 'SIT', 2, 'US-102', 'Not run', '2026-10-10'],
+  ['TC-004', 'Eligibility blocks a permit expired 91 days ago', 'SIT', 1, 'US-103', 'Failed', '2026-10-12'],
+  ['TC-005', 'Active hold blocks renewal without showing hold details (negative)', 'SIT', 1, 'US-103, BR-002.2', 'Passed', '2026-10-12'],
+  ['TC-006', 'Photo taken 11 months ago is accepted', 'SIT', 2, 'US-104', 'Passed', '2026-10-12'],
+  ['TC-007', 'Pay by card, then submit the renewal', 'SIT', 1, 'US-105', 'Not run', '2026-10-12'],
+  ['TC-008', 'Failed check creates an agent work item with the reason', 'SIT', 2, 'US-107', 'Not run', '2026-10-12'],
+  ['TC-009', 'Renewal journey passes WCAG 2.1 AA checks', 'UAT', 1, 'BR-006.1', 'Not run', '2026-10-14'],
+  ['TC-010', 'Every screen switches between English and French', 'UAT', 2, 'BR-006.2', 'Not run', '2026-10-14'],
+  ['TC-011', 'Paper permit request is mailed to a Canadian address', 'UAT', 3, 'BR-008', 'Not run', '2026-10-14'],
+];
+
+// Defect export in the Azure DevOps query layout. Two duplicate pairs (1201/1204 payment time-outs, 1203/1206 PNG
+// photos, each in the same area), one severity–priority mismatch (1207), one unowned defect (1203), and a closed
+// look-alike of 1203 in a different area (1210) that is not a duplicate.
+// [id, title, state, severity, priority, area, assigned to, created, changed]
+const DEFECTS = [
+  [1201, 'Payment page times out when submitting the renewal', 'Active', '2 - High', 2, 'Permit Renewal\\Payments', 'Grace Kim', '2026-10-12', '2026-11-02'],
+  [1202, 'Eligibility check allows a permit expired 91 days ago', 'Active', '1 - Critical', 1, 'Permit Renewal\\Eligibility', 'Ben Carter', '2026-10-14', '2026-11-04'],
+  [1203, 'Photo upload rejects valid PNG files', 'New', '3 - Medium', 3, 'Permit Renewal\\Portal', '', '2026-10-20', '2026-10-20'],
+  [1204, 'Renewal payment page timing out on submit', 'New', '2 - High', 2, 'Permit Renewal\\Payments', 'Aisha Khan', '2026-10-25', '2026-10-25'],
+  [1205, 'French text missing from the receipt email', 'Active', '3 - Medium', 3, 'Permit Renewal\\Notifications', 'Priya Shah', '2026-10-18', '2026-10-30'],
+  [1206, 'PNG photo rejected on upload', 'Active', '3 - Medium', 3, 'Permit Renewal\\Portal', 'Ben Carter', '2026-10-27', '2026-10-29'],
+  [1207, 'Enforcement hold details shown to the applicant', 'New', '1 - Critical', 4, 'Permit Renewal\\Eligibility', 'Grace Kim', '2026-11-03', '2026-11-03'],
+  [1208, 'Screen reader skips the Renew button', 'Active', '3 - Medium', 2, 'Permit Renewal\\Portal', 'Grace Kim', '2026-09-15', '2026-09-20'],
+  [1209, 'Draft renewal deleted after 20 days instead of 30', 'Closed', '2 - High', 2, 'Permit Renewal\\Portal', 'Ben Carter', '2026-09-28', '2026-10-09'],
+  [1210, 'Photo upload rejects valid PNG files', 'Closed', '3 - Medium', 3, 'Permit Renewal\\Agent Console', 'Aisha Khan', '2026-09-30', '2026-10-05'],
+];
+
 const CHANGES = [
   ['2026-10-15', 'BR-008', 'Withdrawn: paper permits descoped from Release 1 (steering committee decision SC-14).', 'Business owner', 'BRD v1.3'],
   ['2026-10-28', 'BR-004', 'Changed: photo must be taken within the last 6 months (was 12 months), following the updated photo standard.', 'Business owner', 'BRD v1.3'],
@@ -165,6 +199,8 @@ async function traceabilityWorkbook() {
     TD.map((r) => [...r.slice(0, 7), date(r[7])]), 'FFC757D6');
   const bl = sheet(wb, 'Backlog', [['Item ID', 9], ['Type', 9], ['Title', 32], ['Parent', 9], ['Description', 55], ['Acceptance Criteria', 55], ['Implements', 20], ['Status', 10], ['Last Changed', 14]],
     BL.map((r) => [...r.slice(0, 8), date(r[8])]), 'FFFF8A5B');
+  sheet(wb, 'Tests', [['Test ID', 9], ['Title', 50], ['Type', 7], ['Priority', 9], ['Traces To', 22], ['Status', 10], ['Last Changed', 14]],
+    TESTS.map((r) => [...r.slice(0, 6), date(r[6])]), 'FF2E9E6B');
   sheet(wb, 'Change Log', [['Date', 12], ['Req ID', 10], ['Change', 80], ['Changed By', 16], ['Version', 10]], CHANGES.map(([d, ...r]) => [date(d), ...r]), 'FF888888');
   for (const ws of [br, rr, fd, td, bl]) {
     const statusCol = ws.getRow(1).values.indexOf('Status');
@@ -172,6 +208,14 @@ async function traceabilityWorkbook() {
   }
   for (const ws of wb.worksheets) ws.eachRow((row, i) => { if (i > 1) row.eachCell((c) => { if (c.value instanceof Date) c.numFmt = 'yyyy-mm-dd'; }); });
   await wb.xlsx.writeFile(path.join(OUT, 'Requirements Traceability (sample).xlsx'));
+}
+
+async function defectExport() {
+  const wb = new ExcelJS.Workbook(); wb.creator = 'Azure DevOps query export (sample)';
+  sheet(wb, 'Defects', [['ID', 7], ['Work Item Type', 14], ['Title', 50], ['State', 9], ['Severity', 12], ['Priority', 9], ['Area Path', 30], ['Assigned To', 14], ['Created Date', 13], ['Changed Date', 13]],
+    DEFECTS.map(([id, t, st, sev, pri, area, who, c, ch]) => [id, 'Bug', t, st, sev, pri, area, who, date(c), date(ch)]));
+  wb.worksheets[0].eachRow((row, i) => { if (i > 1) row.eachCell((c) => { if (c.value instanceof Date) c.numFmt = 'yyyy-mm-dd'; }); });
+  await wb.xlsx.writeFile(path.join(OUT, 'Defects export.xlsx'));
 }
 
 async function dataModel() {
@@ -304,18 +348,21 @@ A changed or withdrawn requirement is logged in the TRM Change Log. All linked d
   documents();
   await dataModel();
   await traceabilityWorkbook();
+  await defectExport();
   fs.writeFileSync(path.join(OUT, 'START HERE.md'), `# ${PROGRAM} — AIDLC sample
 
-Synthetic data for trying Lumen's delivery-lifecycle assistants locally: Requirements Refiner, Functional Designer, Technical Designer, Story Writer and Traceability Analyst. Everything here is fictional.
+Synthetic data for trying Lumen's delivery-lifecycle assistants locally: Requirements Refiner, Functional Designer, Technical Designer, Story Writer, Traceability Analyst, Test Designer, Test Planner and Defect Triage. Everything here is fictional.
 
 | File | What it is |
 |---|---|
-| **Requirements Traceability (sample).xlsx** | The traceability workbook (TRM): Business Requirements → Refined Requirements → Functional Design → Technical Design → Backlog, plus a Change Log |
+| **Requirements Traceability (sample).xlsx** | The traceability workbook (TRM): Business Requirements → Refined Requirements → Functional Design → Technical Design → Backlog, Tests (SIT/UAT cases tracing to stories and requirements), plus a Change Log |
+| **Defects export.xlsx** | An Azure DevOps defect query export, for **Triage defects** |
 | **Knowledge/PID - Online Permit Renewal v1.2.docx** | Scope, objectives and constraints (Word) |
 | **Knowledge/BRD - Online Permit Renewal v1.3.docx** | Business requirements BR-001 to BR-008 (Word) |
 | **Knowledge/Solution Blueprint - Permit Renewal.md** | Target architecture and principles |
 | **Knowledge/Ways of Working - Delivery.md** | Artifact ownership, Definition of Ready/Done, change control |
 | **Knowledge/Data Model - Permit Renewal.xlsx** | Entities and attributes |
+| **Templates/FDD Template.dotx**, **Templates/TDD Template.dotx** | Program Word templates: styles, cover page, header and footer. Approved Functional and Technical design stages offer **Save as Word (program template)** |
 
 ## Built-in scenarios
 - **One-to-many and many-to-many links:** BR-002 has three refined requirements, and FD-012 realises all three.
@@ -324,6 +371,8 @@ Synthetic data for trying Lumen's delivery-lifecycle assistants locally: Require
 - **Conflicting sources:** BR-007 asks for SMS, but the PID and the Solution Blueprint put SMS out of Release 1.
 - **Ambiguity:** BR-005 says "in a timely manner".
 - **Traceability defects:** FD-016 links to a requirement that doesn't exist (BR-009.1), US-106 is used twice, US-108 traces straight to BR-003 without a design element, US-109 traces to nothing, and BR-006 (accessibility, bilingual) has no design.
+- **Test coverage:** BR-007 (notifications) has no test, TC-011 still tests the withdrawn BR-008, TC-006 was written for the old 12-month photo rule, and US-106, US-108 and US-109 have no test.
+- **Defect triage:** 1201/1204 (payment time-outs) and 1203/1206 (PNG photos) are probable duplicates, 1207 is critical but priority 4, and 1203 has no owner. 1210 looks like 1203 but is in a different area.
 
 ## Things to try
 - *"Inventory the program knowledge in this folder."*
@@ -331,8 +380,11 @@ Synthetic data for trying Lumen's delivery-lifecycle assistants locally: Require
 - *"Run a traceability check on the traceability workbook."*
 - *"BR-004 has changed. What is affected downstream?"*
 - *"Write stories for FD-012 and FD-018."*
+- **Coverage gaps** on the traceability workbook, **Generate test cases from stories** for US-103, and **Triage defects** on the defect export.
 
-Regenerate with \`node scripts/make-aidlc-sample.js\`.
+- *"Publish the approved lifecycle outputs to the Design library."* then edit one and run **Knowledge freshness**.
+
+Regenerate with \`node scripts/make-aidlc-sample.js\` (templates: \`node scripts/make-word-templates.js\`).
 `);
   console.log(`AIDLC sample written to ${OUT}`);
 })();

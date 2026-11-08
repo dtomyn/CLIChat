@@ -930,5 +930,115 @@
       }
     ],
     "template": "Check the freshness of the published knowledge in my project folder. Folders that should be published: {{sources}} (if blank, leave sources out).\n\nCall check_freshness and base everything on it. Lead with one line: how many snapshots are stale, never published and orphaned. Then a table of stale snapshots (Snapshot · Source · Published version · Approved by · Published at · Source last changed), the approved sources never published, orphan snapshots, and anything missing. End with the actions to take and who should take them (re-approve then republish, publish, or remove). Do not change any files."
+  },
+  {
+    "id": "qe-test-cases",
+    "name": "Generate test cases from stories",
+    "emoji": "🧪",
+    "category": "Quality engineering",
+    "description": "SIT and UAT test cases (positive, negative and boundary) from the stories' acceptance criteria, each tracing to its story and requirement, saved in the Azure DevOps Test Plans layout.",
+    "assistantId": "test-designer",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "stories",
+        "label": "Stories (traceability workbook, backlog export or stories document)",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.md,.docx"
+      },
+      {
+        "key": "scope",
+        "label": "Which stories (optional)",
+        "type": "text",
+        "placeholder": "e.g. US-101 to US-105, or leave blank for all",
+        "optional": true
+      }
+    ],
+    "template": "Design test cases for the stories in {{stories}}, limited to {{scope}} (if blank, all live stories).\n\n1. Read the stories, their Given/When/Then acceptance criteria and the design rules they implement.\n2. For each criterion write a positive case, then negative and boundary cases for every limit and failure path. Each case: title, SIT or UAT, priority 1-4, preconditions and test data, numbered steps with one expected result each, and tracesTo with the story ID (and refined requirement where useful).\n3. Show the cases as a table (ID, Title, Type, Priority, Traces to, Steps), then list acceptance criteria that can't be tested as written with a measurable rewording.\n4. Save them with write_test_cases to \"Test cases.xlsx\" and tell me the file name and how many cases and steps it holds."
+  },
+  {
+    "id": "qe-coverage-gaps",
+    "name": "Coverage gaps",
+    "emoji": "🕳️",
+    "category": "Quality engineering",
+    "description": "Requirements and stories with no test, and tests that trace to withdrawn items, from the Tests sheet of your traceability workbook.",
+    "assistantId": "test-designer",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "trm",
+        "label": "Traceability workbook",
+        "type": "file",
+        "accept": ".xlsx,.xlsm"
+      }
+    ],
+    "template": "Check test coverage in {{trm}}.\n\nCall analyze_traceability and base everything on it. Lead with test coverage per layer (requirements with tests, stories with tests) as a small table. Then list: requirements with no test, stories with no test, and tests tracing to withdrawn items (these should be retired or re-pointed), each with its ID and Sheet!Cell reference. Also list tests affected by changed requirements, which need review. End with the five most important tests to add, with the story or requirement each would cover. Do not change any files."
+  },
+  {
+    "id": "qe-test-strategy",
+    "name": "Draft the test strategy",
+    "emoji": "🗺️",
+    "category": "Quality engineering",
+    "description": "Test Strategy / Master Test Plan from scope, requirements, plan and RAID: levels, environments, entry/exit criteria, test data and risk-based priority.",
+    "assistantId": "test-planner",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "scope",
+        "label": "Scope document (PID or charter)",
+        "type": "file",
+        "accept": ".docx,.md,.txt"
+      },
+      {
+        "key": "trm",
+        "label": "Requirements or traceability workbook",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.docx,.md"
+      },
+      {
+        "key": "plan",
+        "label": "Project plan (optional)",
+        "type": "file",
+        "accept": ".mpp,.xml",
+        "optional": true
+      },
+      {
+        "key": "raid",
+        "label": "RAID log (optional)",
+        "type": "file",
+        "accept": ".xlsx,.xlsm",
+        "optional": true
+      }
+    ],
+    "template": "Draft the Test Strategy and Master Test Plan from the scope {{scope}}, the requirements {{trm}}, the plan {{plan}} and the RAID log {{raid}} (skip any that are blank).\n\nSections: 1 Scope and out of scope; 2 Test levels and who runs them (unit, SIT, UAT, performance, accessibility, security); 3 Environments (STE, UAT, STG, PRD) and what runs where; 4 Entry and exit criteria per level; 5 Test data needs (synthetic or masked, never real personal data); 6 Defect management and severity definitions; 7 Schedule from the plan's test tasks and milestones; 8 Risk-based priority: a table of requirements with business impact, likelihood of failure, change impact (new, changed, or affected by a change) and the resulting priority (High/Medium/Low); 9 Testing risks from the RAID log; 10 Assumptions and open questions.\n\nCite the source for every fact. Label it 'Draft (AI) for review'. Do not save any files unless I ask."
+  },
+  {
+    "id": "qe-triage-defects",
+    "name": "Triage defects",
+    "emoji": "🐞",
+    "category": "Quality engineering",
+    "description": "Probable duplicates, severity–priority mismatches, ageing and unowned defects from a defect export, with changes proposed for your approval.",
+    "assistantId": "defect-triage",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "defects",
+        "label": "Defect export",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv"
+      },
+      {
+        "key": "asof",
+        "label": "As-of date (optional)",
+        "type": "text",
+        "placeholder": "e.g. 2026-11-06",
+        "optional": true
+      }
+    ],
+    "template": "Triage the defect export {{defects}} as of {{asof}} (if blank, today).\n\n1. Call analyze_defects and base everything on it.\n2. Lead with the summary line and counts by severity and state. Then tables: probable duplicates (Keep, Probable duplicate, Similarity, Area), severity-priority mismatches (Defect, Severity, Priority, Why it matters), the oldest open defects, and defects with no owner. Cite IDs and cells.\n3. Show the proposed changes as a table (Defect, Field, Now, Proposed, Why) and ask me which to record. Only after I agree, call propose_defect_changes with the agreed rows and tell me how to approve them. Never change the original export."
   }
 ]
