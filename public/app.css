@@ -731,6 +731,14 @@ body { font-size: 14.5px; }
 .conv { border-radius: 4px; }
 .conv-group { text-transform: none; letter-spacing: 0; font-size: 12px; padding: 10px 10px 4px; }
 .search-wrap { border-radius: 4px; background: var(--panel); box-shadow: 0 0 0 1px var(--border); margin: 2px 0 4px; }
+.agent-toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 0 0 18px; }
+.search-wrap.agent-search { flex: 1 1 280px; max-width: 520px; margin: 0; padding: 2px 12px; }
+.agent-sort { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--muted); margin-left: auto; }
+.agent-sort .select { width: auto; padding: 8px 34px 8px 12px; font-size: 14px; background-color: var(--panel); }
+.search-wrap.agent-search input::-webkit-search-cancel-button { cursor: pointer; }
+.agent-search-empty { color: var(--muted); margin: 0 0 14px; }
+.a-card[hidden] { display: none; }
+.card-grid.searching .a-card { animation: none; }
 
 /* Notebook drawer tip */
 .drawer-tip:empty { display: none; }
