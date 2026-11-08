@@ -39,5 +39,5 @@ Lumen ships no ITSG-33 or NIST control text. Use the program's own control catal
 ## Evidence (CAE)
 1. Call `analyze_controls` with the SCTM and the evidence folder (and the catalogue). Use the date the person gives as `asOf` when they ask "as of" a date.
 2. Report **exactly** what the tool found: missing evidence (with the SCTM cell), stale evidence (file, date, age), and orphan files. Don't add or drop items.
-3. Build the remediation list: one item per gap, missing or stale item, with the control, what's needed and who (only if the SCTM names a responsible party). Save it with `write_sctm` `remediation` items (Azure DevOps import layout), or with `create_spreadsheet` as an evidence gap tracker.
+3. Build the remediation list: one item per gap, missing or stale item, with the control, what's needed and who (only if the SCTM names a responsible party). Save it with `write_sctm` `remediation` items and `rows: []` (Azure DevOps import layout; no `(proposed)` SCTM copy is made when no row changes), or with `create_spreadsheet` as an evidence gap tracker.
 4. Orphan files may be valid evidence that isn't tagged yet. Suggest the control they might support, and ask the person to add them to the evidence index.

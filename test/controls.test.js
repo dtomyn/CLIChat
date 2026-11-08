@@ -128,6 +128,26 @@ test('SCTM proposals go to a (proposed) copy; uncited statements are marked Need
   await assert.rejects(ctl.proposeSctm(sctm, [{ control: 'AC-2', status: 'Implemented' }]), /Nothing to propose/);
 });
 
+test('remediation items alone are saved without a (proposed) SCTM copy', async () => {
+  // Found in the live evidence-gap run: the agent had to invent a no-op SCTM row to get the remediation workbook.
+  const dir = path.join(temp, 'remediate'); copyDir(SAMPLE, dir);
+  const sctm = path.join(dir, 'SCTM - Online Permit Renewal.xlsx');
+  const before = hash(sctm);
+  const r = await ctl.proposeSctm(sctm, [], { root: dir, remediation: [
+    { control: 'CM-2', title: 'Add the configuration baseline scan', priority: 2, owner: 'Cloud platform team' },
+    { control: 'SI-2', title: 'Refresh the monthly patch report', priority: 2 },
+  ] });
+  assert.equal(r.saved, null);
+  assert.equal(r.changes, 0);
+  assert.match(r.next, /no "\(proposed\)" copy/);
+  assert.ok(!fs.readdirSync(dir).some((f) => /\(proposed\)/.test(f)), 'no (proposed) copy is written');
+  assert.equal(hash(sctm), before);
+  const rb = new ExcelJS.Workbook(); await rb.xlsx.readFile(r.remediation);
+  const rs = rb.getWorksheet('Remediation');
+  assert.deepEqual([rs.getCell('C2').value, rs.getCell('F2').value, rs.getCell('C3').value], ['Add the configuration baseline scan', 'Cloud platform team', 'Refresh the monthly patch report']);
+  await assert.rejects(ctl.proposeSctm(sctm, [], { remediation: [] }), /at least one SCTM row or remediation item/);
+});
+
 test('writeSctm writes a fresh SCTM that readSctm reads back', async () => {
   const f = path.join(temp, 'new sctm.xlsx');
   await ctl.writeSctm(f, [{ control: 'ac-2', applicability: 'Applicable', statement: 'S', designReference: 'TDD > 1.3', evidence: ['a.md', 'b.md'], status: 'Planned' }]);
@@ -179,4 +199,5 @@ test('security agents, prompts and skill are wired up', () => {
   const labels = require('../lib/tool-labels');
   assert.match(labels.officeLabel('analyze_controls', { sctm: 'x/SCTM.xlsx', evidence: 'Evidence' }).label, /Checking security controls and evidence in SCTM\.xlsx/);
   assert.match(labels.officeLabel('write_sctm', { rows: [{}, {}] }).label, /Proposing 2 SCTM rows/);
+  assert.equal(labels.officeLabel('write_sctm', { rows: [], remediation: [{}, {}, {}] }).label, 'Saving 3 remediation items for Azure DevOps');
 });

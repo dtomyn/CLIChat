@@ -374,7 +374,9 @@ const asEvidence = (v) => (Array.isArray(v) ? v.map(String).map((s) => s.trim())
  * remediation items, "<SCTM> - remediation (ADO import).xlsx". The SCTM itself is never changed.
  */
 async function proposeSctm(sctmFile, rows = [], { catalogue, documents = [], remediation = [], root } = {}) {
-  if (!Array.isArray(rows) || !rows.length) throw friendly('Give at least one SCTM row to propose.');
+  if (!Array.isArray(rows)) rows = [];
+  const hasRemediation = (remediation || []).some((x) => x && (x.title || x.control));
+  if (!rows.length && !hasRemediation) throw friendly('Give at least one SCTM row or remediation item.');
   const cat = catalogue ? await readControlCatalogue(catalogue) : null;
   const docs = readDesignDocs(documents, root);
   const warnings = [];
@@ -430,25 +432,29 @@ async function proposeSctm(sctmFile, rows = [], { catalogue, documents = [], rem
     if (isNew) { for (let i = 1; i <= width; i++) rowObj.getCell(i).fill = NEW_ROW; if (want.status === 'Needs input') rowObj.getCell(map.status).fill = NEEDS_INPUT; }
     results.push({ control: id, status: want.status || cur?.status || '', at: `${ws.name}!A${rowObj.number}`, isNew, check });
   }
-  if (!changes.length && !remediation.length) throw friendly(`Nothing to propose: ${rejected.length ? `${plural(rejected.length, 'row')} rejected (${rejected.map((r) => `${r.control || '?'}: ${r.reason}`).join('; ')})` : 'every row already matches the SCTM'}.`);
+  if (!changes.length && !hasRemediation) throw friendly(`Nothing to propose: ${rejected.length ? `${plural(rejected.length, 'row')} rejected (${rejected.map((r) => `${r.control || '?'}: ${r.reason}`).join('; ')})` : 'every row already matches the SCTM'}.`);
 
-  const old = wb.getWorksheet('Proposed changes'); if (old) wb.removeWorksheet(old.id);
-  const rs = wb.addWorksheet('Proposed changes', { properties: { tabColor: { argb: 'FFFFC000' } } });
-  rs.addRow(['#', 'Approve? (Yes/No)', 'Change', 'Control', 'Field', 'Current', 'Proposed', 'Design citation check', 'Cell']);
-  styleHeader(rs, [4, 18, 10, 10, 22, 40, 60, 46, 12]);
-  changes.forEach((c, n) => {
-    const r = rs.addRow([n + 1, '', c.change, c.control, c.field, c.current, c.proposed, c.check, c.at]);
-    r.alignment = { vertical: 'top', wrapText: true };
-    r.getCell(2).fill = HIGHLIGHT;
-    r.getCell(2).dataValidation = { type: 'list', allowBlank: true, formulae: ['"Yes,No"'] };
-    if (/^Needs input/.test(c.check)) r.getCell(8).fill = NEEDS_INPUT;
-  });
-  wb.views = [{ activeTab: wb.worksheets.indexOf(rs) }];
   const dir = sctmFile ? path.dirname(sctmFile) : catalogue ? path.dirname(catalogue) : root || process.cwd();
   const stem = sctmFile ? path.basename(sctmFile, path.extname(sctmFile)).replace(/\s*\((proposed|updated)\)\s*$/i, '') : 'SCTM';
-  let out = path.join(dir, `${stem} (proposed).xlsx`);
-  if (sctmFile && path.resolve(out) === path.resolve(sctmFile)) out = freeName(out);
-  await wb.xlsx.writeFile(out);
+  // With no SCTM change (remediation items only), no "(proposed)" copy is written.
+  let out = null;
+  if (changes.length) {
+    const old = wb.getWorksheet('Proposed changes'); if (old) wb.removeWorksheet(old.id);
+    const rs = wb.addWorksheet('Proposed changes', { properties: { tabColor: { argb: 'FFFFC000' } } });
+    rs.addRow(['#', 'Approve? (Yes/No)', 'Change', 'Control', 'Field', 'Current', 'Proposed', 'Design citation check', 'Cell']);
+    styleHeader(rs, [4, 18, 10, 10, 22, 40, 60, 46, 12]);
+    changes.forEach((c, n) => {
+      const r = rs.addRow([n + 1, '', c.change, c.control, c.field, c.current, c.proposed, c.check, c.at]);
+      r.alignment = { vertical: 'top', wrapText: true };
+      r.getCell(2).fill = HIGHLIGHT;
+      r.getCell(2).dataValidation = { type: 'list', allowBlank: true, formulae: ['"Yes,No"'] };
+      if (/^Needs input/.test(c.check)) r.getCell(8).fill = NEEDS_INPUT;
+    });
+    wb.views = [{ activeTab: wb.worksheets.indexOf(rs) }];
+    out = path.join(dir, `${stem} (proposed).xlsx`);
+    if (sctmFile && path.resolve(out) === path.resolve(sctmFile)) out = freeName(out);
+    await wb.xlsx.writeFile(out);
+  }
 
   // Remediation items: the ones given, plus one per Gap row that has none.
   const items = (remediation || []).filter((x) => x && (x.title || x.control)).map((x) => ({ control: normId(x.control || ''), title: text(x.title), description: text(x.description), priority: Math.min(4, Math.max(1, +x.priority || 2)), owner: text(x.owner) }));
@@ -470,7 +476,7 @@ async function proposeSctm(sctmFile, rows = [], { catalogue, documents = [], rem
     saved: out, remediation: remFile, changes: changes.length, newRows: results.filter((r) => r.isNew).length,
     needsInput, rejected, remediationItems: items.length, warnings,
     summary: `${plural(changes.length, 'proposed change')} to ${plural(results.length, 'control')} (${results.filter((r) => r.isNew).length} new); ${plural(needsInput.length, 'statement')} marked Needs input; ${rejected.length} rejected${remFile ? `; ${plural(items.length, 'remediation item')} saved for Azure DevOps import` : ''}.`,
-    next: 'Open the "(proposed)" workbook, check each Needs input row against the design, and set Approve? to Yes or No on each row of "Proposed changes". The original SCTM has not been changed.',
+    next: !out ? 'No SCTM row changed, so no "(proposed)" copy was saved. Import the remediation workbook into Azure DevOps. The original SCTM has not been changed.' : 'Open the "(proposed)" workbook, check each Needs input row against the design, and set Approve? to Yes or No on each row of "Proposed changes". The original SCTM has not been changed.',
   };
 }
 

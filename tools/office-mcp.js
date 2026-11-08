@@ -453,7 +453,7 @@ const TOOLS = [
   },
   {
     name: 'write_sctm',
-    description: 'Propose SCTM rows (implementation statements, applicability, responsible party, design reference, evidence references, status) for an assessor to approve. Saves "<SCTM> (proposed).xlsx" (or "SCTM (proposed).xlsx" next to the catalogue when no SCTM is given) with changed cells highlighted, new rows in green, and a "Proposed changes" sheet with an "Approve? (Yes/No)" column and a design citation check. A statement whose design reference is missing or is not a real heading in the FDD/TDD you pass is marked Status "Needs input". Controls not in the catalogue are rejected. Remediation items (and every Gap row) are saved as "<SCTM> - remediation (ADO import).xlsx". The original SCTM is never changed.',
+    description: 'Propose SCTM rows (implementation statements, applicability, responsible party, design reference, evidence references, status) for an assessor to approve. Saves "<SCTM> (proposed).xlsx" (or "SCTM (proposed).xlsx" next to the catalogue when no SCTM is given) with changed cells highlighted, new rows in green, and a "Proposed changes" sheet with an "Approve? (Yes/No)" column and a design citation check. A statement whose design reference is missing or is not a real heading in the FDD/TDD you pass is marked Status "Needs input". Controls not in the catalogue are rejected. Remediation items (and every Gap row) are saved as "<SCTM> - remediation (ADO import).xlsx". For remediation items only, pass rows: [] with the remediation list: then no "(proposed)" copy is written. The original SCTM is never changed.',
     inputSchema: { type: 'object', properties: {
       sctm: { type: 'string', description: 'The SCTM to propose changes to (optional when starting one)' },
       catalogue: { type: 'string', description: 'Control catalogue workbook (controls not in it are rejected)' },
@@ -465,7 +465,7 @@ const TOOLS = [
         evidence: { type: 'array', items: { type: 'string' } }, status: { type: 'string', description: 'Planned, Implemented, Partially implemented or Gap' }, notes: { type: 'string' },
       }, required: ['control'] } },
       remediation: { type: 'array', items: { type: 'object', properties: { control: { type: 'string' }, title: { type: 'string' }, description: { type: 'string' }, priority: { type: 'number', description: '1 (highest) to 4' }, owner: { type: 'string' } } }, description: 'Optional remediation items for the Azure DevOps import workbook' },
-    }, required: ['rows'] },
+    } },
     run: write((a) => controls.proposeSctm(a.sctm ? resolveIn(a.sctm) : null, a.rows || [], { catalogue: a.catalogue ? resolveIn(a.catalogue) : undefined, documents: (a.documents || []).map((p) => resolveIn(p)), remediation: a.remediation || [], root: ROOT })),
   },
   {

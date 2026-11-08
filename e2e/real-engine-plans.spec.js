@@ -109,7 +109,9 @@ test('Security: evidence gap check reports the missing, stale and orphan evidenc
   const { text, steps } = await run(page, 'security-evidence');
   expect(steps.join(' ')).toMatch(/Checking security controls and evidence/);
   all(text, /CM-2/, /AC-3/, /SI-2/, /Firewall rule export/i);
-  expect(changes(dir, before).modified).toEqual([]);
+  const c = changes(dir, before);
+  expect(c.modified).toEqual([]);
+  expect(c.added.filter((f) => /\(proposed\)/i.test(f))).toEqual([]); // no SCTM change was asked for, only remediation items
 });
 
 test('Data: profiling finds the seeded data quality defects', async ({ page, request }) => {
@@ -120,7 +122,8 @@ test('Data: profiling finds the seeded data quality defects', async ({ page, req
   await pick(page, 'dictionary', 'Data Dictionary - Applications.xlsx');
   const { text, steps } = await run(page, 'data-profile');
   expect(steps.join(' ')).toMatch(/Profiling Applications - source extract\.csv/);
-  all(text, /SUBMIT_DT/, /APP_TYPE/, /C-1999/, /PENDING/, /APP_ID/);
+  // Problems are referred to by column and row (the prompt says not to read raw rows), so values such as PENDING may not appear.
+  all(text, /SUBMIT_DT/, /APP_TYPE/, /CLIENT_ID/, /STATUS_CD/, /APP_ID/, /\b24\b/, /\b32\b/);
   expect(changes(dir, before).modified).toEqual([]);
 });
 
@@ -133,7 +136,7 @@ test('Integration: OpenAPI review finds the broken reference and the missing 400
   const { text, steps } = await run(page, 'openapi-review');
   expect(steps.join(' ')).toMatch(/Checking the API spec permit-renewal-api\.yaml/);
   all(text, /EligibilityResult/, /\b400\b/, /photo/i);
-  expect(text).toMatch(/not (yet )?ready|isn.t ready|errors? (must|need)/i);
+  expect(text).toMatch(/not (yet )?ready|isn.t ready|ready for scaffolding\?\s*No\b|errors? (must|need)/i);
   expect(changes(dir, before).modified).toEqual([]);
 });
 
