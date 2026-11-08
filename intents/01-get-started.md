@@ -37,14 +37,14 @@ screen that greets me by name and shows what I can do, so that I can start worki
 - **Home** (`renderHome`): with the Lumen agent selected the heading is a time-of-day greeting (**Burning the
   midnight oil** before 5:00, **Good morning**, **Good afternoon** from 12:00, **Good evening** from 17:00) plus the
   first name, and **How can I help today?**; with another agent it shows that agent's emoji, name and tagline. The
-  selected agent's starter prompts appear as chips under the message box. Then: the sample banner
-  ([04](04-install-demo-and-samples.md)), **Agents** (all agents plus **Create an agent**), **From the prompt
+  selected agent's starter prompts appear as chips under the message box. Then: the in-sample banner, or for a new
+  user the one-line sample hint ([04](04-install-demo-and-samples.md)), **Agents** (all agents plus **Create an agent**), **From the prompt
   gallery** (the first 6 prompts) and **Guided delivery** (Lumen only). The message box gets focus unless a dialog is open.
 - **Theme** (`applyTheme`): `system` removes `data-theme` so the OS preference applies; `light`/`dark` set it. The choice
   is also kept in `localStorage` (`lumen-theme`), and an inline script in `index.html` applies it before first paint
   to avoid a flash. On start, the saved `settings.theme` is applied again.
 - **Layout**: an app rail (**Chat**, **Agents**, **Prompts**, **Notebook**, **Lifecycle**, **Insights**) mirrors
-  Microsoft 365 Copilot; the sidebar collapses with the rail button and starts collapsed at 860 px wide or less.
+  Microsoft 365 Copilot, with **Samples** ([04](04-install-demo-and-samples.md)) at the bottom; the sidebar collapses with the rail button and starts collapsed at 860 px wide or less.
 - If the first API calls fail, the page shows **Lumen couldn't start** with the error.
 
 ## Outputs

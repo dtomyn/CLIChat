@@ -6,19 +6,25 @@ sample files with one click and be shown what to try, so that I can see the agen
 own documents.
 
 ## Where
-Home screen banner **Try it on sample data** with **PM demo**, **AIDLC sample**, **Data sample**, **Security sample** and **Change sample** (and × to hide
-it). Once a pack is the active folder, the banner changes to **You're in the …** with quick prompt buttons.
+- **Samples** in the app rail (at the bottom, above the chats toggle; route `#/samples`) opens the **Sample data** page:
+  one card per pack (**PM demo**, **AIDLC sample**, **Data sample**, **Security sample**, **Change sample**) with a
+  one-line summary, the agent it starts with and **Use this sample**. The card of the active pack shows **You're here**,
+  its quick prompt buttons and **See the files** instead.
+- Home screen: while a pack is the active folder, a **You're in the …** banner with quick prompt buttons. Otherwise,
+  only for someone with no chats who has never installed a pack, a one-line hint **New to Lumen? Try it on sample
+  data** (link to the Samples page, × to hide). Regular users see nothing about samples on the home screen.
 
 ## Inputs & controls
 | Control | Effect |
 |---|---|
-| **PM demo** | Installs the Contoso CRM Migration pack. |
-| **AIDLC sample** | Installs the Online Permit Renewal delivery-lifecycle pack. |
-| **Data sample** | Installs the Permit Applications data pack. |
-| **Security sample** | Installs the Permit Renewal security (SA&A) pack. |
-| **Change sample** | Installs the Permit Renewal change, training and bilingual pack. |
-| × (**Hide**) | Sets `demoDismissed`; the offer no longer shows (the in-pack banner still does). |
-| In-pack buttons | Open the named prompt's form ([16](16-run-a-prompt.md)); **See the files** opens the Notebook drawer ([02](02-choose-notebook-folder.md)). |
+| **Use this sample** on **PM demo** | Installs the Contoso CRM Migration pack. |
+| … on **AIDLC sample** | Installs the Online Permit Renewal delivery-lifecycle pack. |
+| … on **Data sample** | Installs the Permit Applications data pack. |
+| … on **Security sample** | Installs the Permit Renewal security (SA&A) pack. |
+| … on **Change sample** | Installs the Permit Renewal change, training and bilingual pack. |
+| Home hint **Try it on sample data** | Opens the Samples page. |
+| Home hint × (**Hide**) | Sets `demoDismissed`; the hint no longer shows (the Samples page and in-pack banner still do). |
+| In-pack buttons (home banner or **You're here** card) | Open the named prompt's form ([16](16-run-a-prompt.md)); **See the files** opens the Notebook drawer ([02](02-choose-notebook-folder.md)). |
 
 ## Behaviour (as implemented)
 - **Packs** (`PACKS` in `server.js`):
@@ -39,8 +45,10 @@ it). Once a pack is the active folder, the banner changes to **You're in the …
 - After install the server sets `workspace` to the pack folder plus `demoInstalled` and `demoPack`. The UI picks the
   pack's starting agent (**Schedule Analyst** for `crm`, **Traceability Analyst** for `aidlc`, **Data Profiler** for
   `data`, **Security Control Mapper** for `security`, **Change Impact Analyst** for `change`), sets access to **Read my files**, shows confetti and the toast **Demo ready — your project folder is now
-  "<folder>"** (**Sample ready …** for the other packs).
-- **In-pack banner** (`demoBanner`, shown while `workspace` equals `demoInstalled`):
+  "<folder>"** (**Sample ready …** for the other packs), and goes to the home screen.
+- The pack names, summaries, starting agents and quick prompts come from one list, `SAMPLE_PACKS` in `public/app.js`.
+- **In-pack banner** (`demoBanner`, shown while `workspace` equals `demoInstalled`; the same prompts show on the
+  **You're here** card):
   - PM demo 📦: 🩺 **Health check**, 📣 **Status report**, 🔄 **Update the plan**, 💰 **Budget review**.
   - AIDLC 🧬: 📚 **Knowledge inventory**, 🔬 **Refine requirements**, 🔗 **Traceability check**, 🌊 **Change impact**.
   - Data 📊: 📊 **Profile a dataset**, 🔀 **Compare schemas**, 🗺️ **Draft the STTM**, 🧱 **Generate pipeline code**.
@@ -62,7 +70,8 @@ it). Once a pack is the active folder, the banner changes to **You're in the …
   and sets `settings.workspace`, `demoInstalled` and `demoPack`.
 - Installing twice does not overwrite a file the user changed.
 - Installing a second pack while inside the first puts it beside the first, not inside it.
-- Hiding the offer does not hide the in-pack banner.
+- Hiding the home hint does not hide the in-pack banner or the Samples page.
+- The home hint never shows once there is a chat or a pack has been installed.
 - The pack's prompts and many tool tests run on these files (e.g. `e2e/real-engine.spec.js` › Weekly look-ahead,
   `e2e/real-engine-plans.spec.js` › Data: profiling finds the seeded data quality defects); no test calls
   `/api/demo/install` itself.
@@ -70,9 +79,11 @@ it). Once a pack is the active folder, the banner changes to **You're in the …
 ## Limits
 - The samples are synthetic.
 - Installing switches the default notebook; switching back is manual ([02](02-choose-notebook-folder.md)).
-- The in-pack banner shows only while the default notebook is exactly the most recently installed pack.
+- The in-pack banner and **You're here** show only while the default notebook is exactly the most recently installed
+  pack; other packs installed earlier show **Use this sample** again (reinstalling only restores missing files).
 
 ## Source
 `server.js` (`PACKS`, `copyMissing`, `installDemo`, `writeVsCodeKit`, `POST /api/demo/install`); `public/app.js`
-(`demoBanner`, `installDemo`, `homeClicks`, `celebrate`); `demo/`, `samples/aidlc/`, `samples/data/`;
+(`SAMPLE_PACKS`, `demoBanner`, `renderSamplesPage`, `installDemo`, `homeClicks`, `celebrate`); `public/index.html`
+(rail **Samples**); `demo/`, `samples/aidlc/`, `samples/data/`;
 `scripts/make-demo.js`, `scripts/make-aidlc-sample.js`, `scripts/make-data-sample.js`.
