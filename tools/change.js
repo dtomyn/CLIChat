@@ -405,7 +405,13 @@ async function saveDraft(file, markdown, { label = 'Draft (AI) for review', sour
   if (ext === '.md') { out.saved = freeName(file); fs.writeFileSync(out.saved, body, 'utf8'); }
   if (ext === '.docx' || word) {
     const target = freeName(ext === '.docx' ? file : file.replace(/\.md$/i, '.docx'));
-    const r = await require('./md-export').toDocx(body, { title: title || path.basename(target, '.docx'), template, properties: { Status: label } });
+    // Without a template Word puts the title at the top. A draft that starts with its own "# Heading" gives that title
+    // (unless another one was asked for), and the heading is not repeated under it.
+    const h1 = /^\s*#\s+(.+?)\s*#*\s*$/m.exec(String(markdown).trim().split('\n')[0] || '');
+    const sameTitle = h1 && (!title || h1[1].trim().toLowerCase() === String(title).trim().toLowerCase());
+    const wordTitle = sameTitle ? h1[1].trim() : title || path.basename(target, '.docx');
+    const wordBody = sameTitle && !template ? body.replace(h1[0].trim(), '').replace(/\n{3,}/, '\n\n') : body;
+    const r = await require('./md-export').toDocx(wordBody, { title: wordTitle, template, properties: { Status: label } });
     fs.writeFileSync(target, r.buffer);
     if (r.warning) warnings.push(r.warning);
     if (ext === '.docx') out.saved = target; else out.word = target;

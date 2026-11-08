@@ -548,11 +548,14 @@ function icdCompleteness(markdown, { sections } = {}) {
   const found = sectionsOf(markdown);
   const titleLevel = found.length && found[0].level === 1 && found.filter((h) => h.level === 1).length === 1 ? 1 : 0;
   const rows = list.map((s) => {
-    const h = found.find((x) => x.level > titleLevel && s.re.test(x.text.replace(/^[\d.]+\s*/, ''))) || (titleLevel ? null : found.find((x) => s.re.test(x.text)));
+    // The shallowest matching heading wins, so "## 6. Error handling" beats "### Problem (all error responses)" above it.
+    const hits = found.filter((x) => x.level > titleLevel && s.re.test(x.text.replace(/^[\d.]+\s*/, '')));
+    const h = hits.reduce((best, x) => (!best || x.level < best.level ? x : best), null) || (titleLevel ? null : found.find((x) => s.re.test(x.text)));
     if (!h) return { id: s.id, section: s.section, status: 'missing', note: 'No heading for this section.' };
     const body = meaningful(h.body);
     if (!body.length) return { id: s.id, section: s.section, status: 'empty', heading: h.text, line: h.line, note: 'The heading is there but the section has no content (only placeholders such as TBD).' };
-    const needs = body.filter((l) => /needs input|\btbd\b|\btbc\b/i.test(l)).length;
+    // Count open points in the raw lines: meaningful() drops a line that is only "Needs input: …" as a placeholder.
+    const needs = h.body.filter((l) => /needs input|\btbd\b|\btbc\b/i.test(l)).length;
     if (s.id === 'pattern' && !/\bP[45]\b|\bARO\b|\bHIP\b/i.test(body.join(' '))) return { id: s.id, section: s.section, status: 'incomplete', heading: h.text, line: h.line, note: "It doesn't name the HIP pattern (ARO P4 or P5)." };
     if (needs) return { id: s.id, section: s.section, status: 'incomplete', heading: h.text, line: h.line, note: `${plural(needs, 'line')} still marked Needs input or TBD.` };
     return { id: s.id, section: s.section, status: 'ok', heading: h.text, line: h.line, note: '' };

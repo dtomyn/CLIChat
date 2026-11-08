@@ -75,3 +75,17 @@ test('glossary sheets need English and French columns', async () => {
   await assert.rejects(g.readGlossary(f), /English column and a French column/);
   assert.throws(() => g.readText(path.join(temp, 'x.pdf')), /Word document/);
 });
+
+test('a French draft saved by save_draft_document is checked without its label and sources, and its title appears once', async () => {
+  const change = require('../tools/change');
+  const paras = (await g.readText(FR)).replace(/\r/g, '').split(/\n\s*\n/);
+  const title = 'Renouveler votre permis en ligne (ébauche)';
+  const markdown = `# ${title}\n\n${paras.slice(1).join('\n\n')}`; // the sample's text, as an AI drafts it: its own "# Title" first
+  const r = await change.saveDraft(path.join(temp, 'Renewal guide (FR draft).docx'), markdown, { label: 'Machine-drafted, needs translator review', sources: ['Renewal guide (EN).docx'], title });
+  const text = await g.readText(r.saved);
+  assert.equal(text.split(title).length - 1, 1, 'the title is not repeated under the Word title');
+  assert.match(text, /Machine-drafted/);
+  const c = await g.checkTerminology(EN, r.saved, GLOSSARY);
+  assert.deepEqual(c.summary, { terminology: 1, untranslated: 0, numbers: 1, missing: 1, total: 3 }, c.findings.map((f) => f.detail).join('\n'));
+  assert.match(c.findings.find((f) => f.type === 'missing').enText, /refund is issued/);
+});
