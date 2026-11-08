@@ -209,6 +209,43 @@ test('Change: training materials for processing officers are saved as Word draft
   for (const f of md) expect(fs.readFileSync(path.join(dir, f), 'utf8'), f).toMatch(/Source/i);
 });
 
+test('Change: the training deck is saved as PowerPoint in the program deck template, with speaker notes', async ({ page, request }) => {
+  const dir = await useSample(request, 'change');
+  const template = path.join(dir, 'Templates', 'Training Deck Template.potx');
+  if (!fs.existsSync(template)) { fs.mkdirSync(path.dirname(template), { recursive: true }); fs.copyFileSync(path.join(__dirname, '..', 'samples', 'change', 'Templates', 'Training Deck Template.potx'), template); }
+  await consolidated(dir);
+  const before = snapshot(dir);
+  await openPrompt(page, 'change-training-materials');
+  await pick(page, 'cia', 'CIA - consolidated.xlsx');
+  await fill(page, 'role', 'Processing officer');
+  await none(page, 'process');
+  const { text, steps } = await run(page, 'training-deck');
+  expect(stepsOf(steps)).toMatch(/Saving draft .*(with a PowerPoint deck|\.pptx)/);
+  all(text, /\.pptx/i);
+  const c = changes(dir, before);
+  expect(c.modified).toEqual([]);
+  const decks = added(c, /^Training\/Processing officer\/.*\.pptx$/);
+  expect(decks.length).toBeGreaterThanOrEqual(1);
+  const buffer = fs.readFileSync(path.join(dir, decks[0]));
+  const zip = await JSZip.loadAsync(buffer);
+  // The program template: its theme (Georgia, teal), its master with the OPR logo, and none of its example slides.
+  const theme = await zip.file('ppt/theme/theme1.xml').async('string');
+  expect(theme).toMatch(/<a:latin typeface="Georgia"\/>/);
+  expect(theme).toMatch(/<a:accent1><a:srgbClr val="0F5C6E"\/>/);
+  expect(await zip.file('ppt/slideMasters/slideMaster1.xml').async('string')).toMatch(/<a:t>OPR<\/a:t>/);
+  expect(await zip.file('[Content_Types].xml').async('string')).toMatch(/presentationml\.presentation\.main\+xml/);
+  const slides = await require('../tools/pptx').readPptx(buffer);
+  expect(slides.length).toBeGreaterThanOrEqual(7);
+  expect(slides.map((s) => s.title).join('\n')).not.toMatch(/How to use this template|Training deck title/);
+  expect(slides[0].text.join('\n')).toMatch(/Draft \(AI\) for review/);
+  expect(slides[slides.length - 1].title).toBe('Sources');
+  for (const s of slides) expect(s.text.join('\n'), s.title).toMatch(/Online Permit Renewal · Training · Protected A/);
+  expect(slides.filter((s) => s.notes.length).length).toBeGreaterThanOrEqual(3);
+  for (const s of slides.slice(1)) expect(s.notes.join(' '), s.title).not.toMatch(/^Notes:/i);
+  // The Markdown outline is saved next to it.
+  expect(added(c, /^Training\/Processing officer\/.*\.md$/).length).toBeGreaterThanOrEqual(1);
+});
+
 test('Change: the French draft is saved for translator review and checked against the glossary', async ({ page, request }) => {
   const dir = await useSample(request, 'change');
   const before = snapshot(dir);
