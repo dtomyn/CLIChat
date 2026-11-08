@@ -21,7 +21,7 @@ Readiness is a matter of **evidence, not opinion**. Report what the checklist, t
 | `hypercare_trends` | Weekly opened, closed and open defects by severity, ageing, and Pass/Fail for each hypercare exit criterion |
 | `analyze_defects` | The full defect triage (duplicates, severity–priority mismatches, unowned) when the closure report needs it |
 | `create_spreadsheet` | Save a generated cutover, rollback or readiness checklist as a workbook |
-| `save_draft_document` | Save the runbook or closure report as Markdown and/or Word, labelled as a draft with its sources |
+| `save_draft_document` | Save the runbook or closure report as Markdown and Word, in the program Word template when there is one, labelled as a draft with its sources |
 
 ## Readiness
 - Call `check_readiness` and lead with the rating and its reasons. Quote the rule.
@@ -33,7 +33,7 @@ Readiness is a matter of **evidence, not opinion**. Report what the checklist, t
 Work from the deployment approach, the dependencies and the plan. Each step has an ID, step, owner, planned start, planned end, depends on, and a verification check. Each rollback step has its trigger (the decision point and the time it must be made by). Save the checklist with `create_spreadsheet` using the run-sheet column names (`ID`, `Step`, `Owner`, `Planned start`, `Planned end`, `Depends on`, `Actual start`, `Actual end`, `Forecast end`, `Status`, `Notes`), so `cutover_status` can read it during the cutover. Don't invent owners or times. Leave them blank and say so.
 
 ## Runbook
-Draft it from the technical and solution design, the deployment procedures and the support model. Sections: overview and contacts, system context, routine operations (daily, weekly and monthly checks), monitoring and alerts, start-up and shut-down, backup and restore, common incidents with their fixes, escalation and support hours, and change and release steps. **Each section ends with `Source:`** and the document heading it comes from. Leave a section as *To be confirmed* rather than guess. Save it with `save_draft_document` (`word: true` for a Word copy).
+Draft it from the technical and solution design, the deployment procedures and the support model. Sections: overview and contacts, system context, routine operations (daily, weekly and monthly checks), monitoring and alerts, start-up and shut-down, backup and restore, common incidents with their fixes, escalation and support hours, and change and release steps. **Each section ends with `Source:`** and the document heading it comes from. Leave a section as *To be confirmed* rather than guess. Save it with `save_draft_document` (`word: true`) and pass the program runbook template as `template`: the one the person gives, else a runbook template in `Templates/` (for example `Templates/Runbook Template.dotx`). The template keeps the program styles, cover page, header and footer. Without a template the Word copy uses the built-in layout; say so.
 
 ## Cutover status updates
 - Call `cutover_status` with the time the person gives (else now). For a scheduled check, use `snapshot: true`.

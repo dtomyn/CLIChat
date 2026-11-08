@@ -1319,7 +1319,7 @@
     "name": "Draft the runbook",
     "emoji": "📗",
     "category": "Release",
-    "description": "Draft the operational runbook from the design, the deployment procedures and the support model, each section citing its source.",
+    "description": "Draft the operational runbook from the design, the deployment procedures and the support model, each section citing its source, saved as Markdown and Word in the program runbook template.",
     "assistantId": "runbook-writer",
     "builtin": true,
     "access": "edit",
@@ -1348,9 +1348,16 @@
         "key": "system",
         "label": "System name",
         "placeholder": "e.g. Contoso CRM"
+      },
+      {
+        "key": "template",
+        "label": "Word template (optional)",
+        "type": "file",
+        "accept": ".dotx,.docx",
+        "optional": true
       }
     ],
-    "template": "Draft the operational runbook for {{system}} from the design {{design}}, the deployment procedures {{deploy}} and the support model {{support}} (skip any that are blank, and read other design documents in the notebook if they help).\n\nSections: overview and contacts, system context, routine operations (daily, weekly, monthly checks), monitoring and alerts, start-up and shut-down, backup and restore, common incidents and fixes, escalation and support hours, change and release steps. End each section with \"Source:\" and the document heading. Mark anything you can't source as To be confirmed.\n\nSave it with save_draft_document as \"Runbook - {{system}} (draft).md\" with word: true, listing the source documents. Then tell me which sections still need input and from whom."
+    "template": "Draft the operational runbook for {{system}} from the design {{design}}, the deployment procedures {{deploy}} and the support model {{support}} (skip any that are blank, and read other design documents in the notebook if they help).\n\nSections: overview and contacts, system context, routine operations (daily, weekly, monthly checks), monitoring and alerts, start-up and shut-down, backup and restore, common incidents and fixes, escalation and support hours, change and release steps. End each section with \"Source:\" and the document heading. Mark anything you can't source as To be confirmed.\n\nSave it with save_draft_document as \"Runbook - {{system}} (draft).md\" with word: true and the Word template {{template}} (if blank, use the runbook template in the Templates folder when there is one, such as \"Templates/Runbook Template.dotx\", otherwise leave the template out), listing the source documents. Then tell me which sections still need input and from whom."
   },
   {
     "id": "release-cutover-status",
