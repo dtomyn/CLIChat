@@ -344,8 +344,204 @@ A changed or withdrawn requirement is logged in the TRM Change Log. All linked d
 `);
 }
 
+// ------------------------------------------------------------------ architecture and governance (Plan 16)
+// Seeded defects: the TDD names an "Address lookup service" the blueprint never mentions, cites the superseded
+// ADR-002, uses an entity (Renewal Fee) and a field (Permit.renewalCount) the data model doesn't have; the
+// interface catalogue has an approved v1.0 and a newer unapproved v1.1; the security assessment is missing.
+async function architecture() {
+  const ARCH = path.join(OUT, 'Architecture');
+  const ADRS = path.join(ARCH, 'ADRs');
+  const DESIGN = path.join(ARCH, 'Design');
+  for (const d of [ADRS, DESIGN]) fs.mkdirSync(d, { recursive: true });
+  fs.writeFileSync(path.join(ADRS, 'ADR-001-eligibility-rules-in-case-management.md'), `# ADR-001: Run eligibility rules in the case management rules engine
+
+## Status
+Accepted (2026-09-12, Design Authority)
+
+## Context
+Renewal eligibility (expiry window, enforcement holds) must be checked before payment. The rules change a few times a year and the case management platform already holds permits and holds.
+
+## Decision
+We will run the eligibility rules in the case management rules engine and expose them to the portal through the Case API. No separate rules service will be built.
+
+## Consequences
+- Rule changes follow the case management release cycle.
+- The Eligibility service in the TDD is a thin API over the rules engine.
+`);
+  fs.writeFileSync(path.join(ADRS, 'ADR-002-photo-validation-in-the-portal.md'), `---
+status: superseded
+date: 2026-09-20
+superseded-by: ADR-003
+---
+# ADR-002: Validate photos in the applicant portal
+
+## Context and Problem Statement
+Uploaded photos must meet the photo standard (type, size, capture date) before the renewal can be submitted.
+
+## Decision Outcome
+Chosen option: validate the photo in the browser, inside the existing applicant portal.
+
+### Consequences
+- No new component.
+- Checks can be bypassed by a modified browser, so the case worker re-checks the photo.
+`);
+  fs.writeFileSync(path.join(ADRS, 'ADR-003-photo-validation-service.md'), `---
+status: accepted
+date: 2026-10-14
+---
+# ADR-003: Photo validation as a server-side service
+
+Supersedes ADR-002.
+
+## Context and Problem Statement
+Browser-only checks (ADR-002) can be bypassed, and the photo standard changed (BR-004: 6 months). The enterprise reusable-asset register lists a photo standard checker library.
+
+## Decision Outcome
+Chosen option: build a photo validation service called by the portal, using the photo standard checker library. Photos are stored in the enterprise document store only after they pass.
+
+### Consequences
+- One new component to run and support.
+- The portal keeps a quick browser check for usability only.
+`);
+  fs.writeFileSync(path.join(KB, 'Technical Design - Permit Renewal.md'), `# ${PROGRAM} — Technical Design
+
+${AGENCY} · Version 1.1 · Owner: Solution Architect (fictional)
+
+**Status:** Approved · Approved by: Solution Architect (fictional) · 2026-10-20
+
+## Components
+| Component | Responsibility | Decision |
+|---|---|---|
+| Existing applicant portal | Renewal journey, EN/FR, WCAG 2.1 AA | Extend |
+| Enterprise sign-in | Applicant sign-in | Reuse |
+| Case management platform | Permits, renewals, agent work items | Reuse |
+| Case management rules engine | Eligibility rules (ADR-001) | Reuse |
+| Enterprise payment gateway | Hosted payment page and webhook | Reuse |
+| Enterprise notification service | Email notifications | Reuse |
+| Enterprise document store | Photos and receipts | Reuse |
+| Photo validation | Type, size and capture-date checks | Build |
+| Address lookup service | Validates the mailing address on the summary page | Build |
+
+## Photo validation
+Photo validation follows ADR-002: the checks run in the browser before upload.
+
+## Endpoints
+- POST /renewals — start a renewal
+- POST /renewals/{id}/eligibility — run the eligibility check
+- POST /renewals/{id}/photo — upload and validate the photo
+
+## Data
+| Entity | Attributes used |
+|---|---|
+| Permit | permitNumber, expiryDate, renewalCount |
+| Renewal Application | status, draftExpiresOn |
+| Eligibility Decision | reasonCode |
+| Renewal Fee | amount |
+
+Notifications record Notification.channel and Notification.language.
+`);
+  fs.writeFileSync(path.join(DESIGN, 'Interface Catalogue v1.0.md'), `> Approved by Solution Architect (fictional) on 2026-10-12T15:00:00.000Z
+
+# Interface Catalogue
+
+| Interface | From | To | Pattern |
+|---|---|---|---|
+| Case API | Existing applicant portal | Case management platform | REST, idempotent writes |
+| Payment webhook | Enterprise payment gateway | Case management platform | Webhook |
+| Notification API | Case management platform | Enterprise notification service | REST |
+`);
+  fs.writeFileSync(path.join(DESIGN, 'Interface Catalogue v1.1.md'), `# Interface Catalogue
+
+Draft: adds the address lookup interface. Not yet reviewed.
+
+| Interface | From | To | Pattern |
+|---|---|---|---|
+| Case API | Existing applicant portal | Case management platform | REST, idempotent writes |
+| Payment webhook | Enterprise payment gateway | Case management platform | Webhook |
+| Notification API | Case management platform | Enterprise notification service | REST |
+| Address lookup API | Existing applicant portal | Address lookup service | REST |
+`);
+  fs.writeFileSync(path.join(ARCH, 'Design gate.json'), `${JSON.stringify({
+    gate: 'Design gate',
+    artefacts: [
+      { name: 'Solution Blueprint', path: 'Knowledge/Solution Blueprint - Permit Renewal.md' },
+      { name: 'Technical Design', path: 'Knowledge/Technical Design - Permit Renewal.md' },
+      { name: 'Interface Catalogue', path: 'Architecture/Design/Interface Catalogue v1.0.md' },
+      { name: 'Security Assessment', path: 'Architecture/Design/Security Assessment.md' },
+    ],
+    approvals: [{ role: 'Design Authority', artefact: 'Technical Design' }, { role: 'Business Owner' }],
+    openItems: ['AD-07 photo validation location: confirm ADR-003 closes it'],
+  }, null, 2)}\n`);
+  fs.writeFileSync(path.join(ARCH, 'Delivery changes - git log.txt'), `commit 9f3c2a1d4e5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d
+Author: Dev One <dev.one@example.com>
+Date:   Mon Oct 26 10:00:00 2026 -0500
+
+    Add photo validation service (ADR-003)
+
+services/photo-validation/src/index.js
+services/photo-validation/src/checks.js
+services/photo-validation/package.json
+
+commit 7a1b2c3d4e5f60718293a4b5c6d7e8f901234567
+Author: Dev Two <dev.two@example.com>
+Date:   Tue Oct 27 14:30:00 2026 -0500
+
+    Eligibility: block renewals expired more than 90 days
+
+services/eligibility-service/rules/expiry.js
+services/eligibility-service/test/expiry.test.js
+
+commit 5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f
+Author: Dev One <dev.one@example.com>
+Date:   Wed Oct 28 09:15:00 2026 -0500
+
+    Retire the legacy kiosk interface (kiosk integration is out of scope)
+
+integrations/legacy-kiosk/README.md
+integrations/legacy-kiosk/kiosk-sync.js
+
+commit 3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d
+Author: Dev Two <dev.two@example.com>
+Date:   Thu Oct 29 16:45:00 2026 -0500
+
+    Case API client: retry with back-off
+
+apis/case-api/client.js
+`);
+  const wb = new ExcelJS.Workbook(); wb.creator = 'Architecture practice';
+  sheet(wb, 'Components', [['Name', 30], ['Type', 14], ['Owner', 18], ['Platform', 30], ['Status', 12], ['Last changed', 14], ['Notes', 40]], [
+    ['Applicant portal', 'Web app', 'Client Services', 'Existing applicant portal', 'Active', '2026-06-01', ''],
+    ['Eligibility service', 'Service', 'Licensing', 'Case management rules engine', 'Active', '2026-09-12', 'ADR-001'],
+    ['Document store', 'Platform', 'Enterprise IT', 'Enterprise document store', 'Active', '2025-03-01', ''],
+    ['Legacy kiosk interface', 'Interface', 'Licensing', 'Kiosk system', 'Active', '2024-11-01', 'Out of scope for Release 1 (PID §3)'],
+  ], 'FF2F3B8F');
+  sheet(wb, 'APIs', [['Name', 26], ['Owner', 18], ['Version', 10], ['Status', 12], ['Last changed', 14], ['Notes', 40]], [
+    ['Case API', 'Case management', 'v2', 'Active', '2026-08-15', ''],
+    ['Notification API', 'Enterprise IT', 'v1', 'Active', '2025-10-01', 'Email channel only'],
+    ['Payment webhook', 'Finance', 'v1', 'Active', '2026-02-01', ''],
+  ], 'FF3A7BD5');
+  sheet(wb, 'Integrations', [['Name', 40], ['From', 26], ['To', 26], ['Pattern', 16], ['Status', 12], ['Last changed', 14], ['Notes', 30]], [
+    ['Portal to payment gateway', 'Applicant portal', 'Enterprise payment gateway', 'Redirect + webhook', 'Active', '2026-02-01', ''],
+    ['Case management to notification service', 'Case management platform', 'Enterprise notification service', 'REST', 'Active', '2025-10-01', ''],
+  ], 'FF7C5CFF');
+  sheet(wb, 'Dependencies', [['Name', 30], ['Version', 10], ['Used by', 30], ['Status', 12], ['Last changed', 14], ['Notes', 30]], [
+    ['Photo standard checker library', '2.3', 'Not yet used', 'Active', '2026-04-01', 'From the reusable-asset register'],
+  ], 'FFC757D6');
+  await wb.xlsx.writeFile(path.join(ARCH, 'Technical Inventory.xlsx'));
+  const ra = new ExcelJS.Workbook(); ra.creator = 'Architecture practice';
+  sheet(ra, 'Reusable assets', [['Asset', 32], ['Type', 14], ['Owner', 18], ['Status', 12], ['What it does', 56], ['How to reuse', 46]], [
+    ['Enterprise address lookup API', 'API', 'Enterprise IT', 'Active', 'Validates and completes Canadian mailing addresses.', 'Subscribe through the API catalogue; REST, OAuth client credentials'],
+    ['Photo standard checker library', 'Library', 'Identity programme', 'Active', 'Checks photo type, size, dimensions and capture date against the photo standard.', 'Package from the internal registry; configurable age limit'],
+    ['Enterprise notification service', 'Platform', 'Enterprise IT', 'Active', 'Email (SMS in 2027) with EN/FR templates.', 'Onboard through the platform team'],
+    ['Enterprise document store', 'Platform', 'Enterprise IT', 'Active', 'Stores documents and images with retention rules.', 'Onboard through the platform team'],
+    ['Case API', 'API', 'Case management', 'Active', 'Read and write cases, permits and work items.', 'Request access from the case management team'],
+  ], 'FF2E9E6B');
+  await ra.xlsx.writeFile(path.join(ARCH, 'Reusable assets.xlsx'));
+}
+
 (async () => {
   documents();
+  await architecture();
   await dataModel();
   await traceabilityWorkbook();
   await defectExport();
@@ -363,6 +559,12 @@ Synthetic data for trying Lumen's delivery-lifecycle assistants locally: Require
 | **Knowledge/Ways of Working - Delivery.md** | Artifact ownership, Definition of Ready/Done, change control |
 | **Knowledge/Data Model - Permit Renewal.xlsx** | Entities and attributes |
 | **Templates/FDD Template.dotx**, **Templates/TDD Template.dotx** | Program Word templates: styles, cover page, header and footer. Approved Functional and Technical design stages offer **Save as Word (program template)** |
+| **Knowledge/Technical Design - Permit Renewal.md** | The approved technical design: components, endpoints and the data it uses |
+| **Architecture/ADRs/** | Three architecture decision records (ADR-002 is superseded by ADR-003) |
+| **Architecture/Design/** | Interface catalogue v1.0 (approved) and v1.1 (draft) |
+| **Architecture/Design gate.json** | The design gate definition: required artefacts and approvals |
+| **Architecture/Technical Inventory.xlsx**, **Architecture/Reusable assets.xlsx** | The technical catalogue and the reusable-asset register |
+| **Architecture/Delivery changes - git log.txt** | \`git log --name-only\` output, for **Update technical inventory** |
 
 ## Built-in scenarios
 - **One-to-many and many-to-many links:** BR-002 has three refined requirements, and FD-012 realises all three.
@@ -373,6 +575,7 @@ Synthetic data for trying Lumen's delivery-lifecycle assistants locally: Require
 - **Traceability defects:** FD-016 links to a requirement that doesn't exist (BR-009.1), US-106 is used twice, US-108 traces straight to BR-003 without a design element, US-109 traces to nothing, and BR-006 (accessibility, bilingual) has no design.
 - **Test coverage:** BR-007 (notifications) has no test, TC-011 still tests the withdrawn BR-008, TC-006 was written for the old 12-month photo rule, and US-106, US-108 and US-109 have no test.
 - **Defect triage:** 1201/1204 (payment time-outs) and 1203/1206 (PNG photos) are probable duplicates, 1207 is critical but priority 4, and 1203 has no owner. 1210 looks like 1203 but is in a different area.
+- **Architecture:** the TDD names an *Address lookup service* the blueprint never mentions (and the reusable-asset register already has an address lookup API), cites ADR-002 although ADR-003 superseded it, and uses an entity (Renewal Fee) and a field (Permit.renewalCount) the data model doesn't have. For the design gate, the blueprint has no approval, the security assessment is missing, and interface catalogue v1.1 is a newer draft that isn't approved yet. The git log adds a photo validation service, changes the eligibility service and the Case API, and retires the legacy kiosk interface.
 
 ## Things to try
 - *"Inventory the program knowledge in this folder."*
@@ -383,6 +586,7 @@ Synthetic data for trying Lumen's delivery-lifecycle assistants locally: Require
 - **Coverage gaps** on the traceability workbook, **Generate test cases from stories** for US-103, and **Triage defects** on the defect export.
 
 - *"Publish the approved lifecycle outputs to the Design library."* then edit one and run **Knowledge freshness**.
+- **Architecture review** on the blueprint and the TDD (with the ADR folder and the data model), **Reuse vs. build assessment** for the address lookup, **Assemble a gate pack** from \`Architecture/Design gate.json\`, and **Update technical inventory** from the git log.
 
 Regenerate with \`node scripts/make-aidlc-sample.js\` (templates: \`node scripts/make-word-templates.js\`).
 `);

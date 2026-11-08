@@ -20,6 +20,7 @@ const capacity = require('./capacity');
 const change = require('./change');
 const glossary = require('./glossary');
 const release = require('./release');
+const governance = require('./governance');
 
 const ROOT = path.resolve(process.env.OFFICE_MCP_ROOT || process.cwd());
 const READ_ONLY = process.env.OFFICE_MCP_READONLY === '1';
@@ -383,6 +384,57 @@ const TOOLS = [
     run: (a) => release.hypercareTrends(resolveIn(a.path), { exitCriteria: a.exitCriteria, asOf: a.asOf, start: a.start }),
   },
   {
+    name: 'index_adrs',
+    description: 'Index the architecture decision records (ADRs) in a folder (MADR or Nygard style Markdown: title, status, date, context, decision, consequences, supersedes / superseded by). Flags ADRs with no status, superseded ADRs that are still referenced (by other ADRs or by the documents you pass), supersede links that disagree with the status, references to ADRs that do not exist, and decisions that look duplicated. Read-only.',
+    inputSchema: { type: 'object', properties: {
+      folder: { type: 'string', description: 'The ADR folder, e.g. "Architecture/ADRs"' },
+      referencedIn: { type: 'array', items: { type: 'string' }, description: 'Optional design documents to scan for references to superseded ADRs' },
+    }, required: ['folder'] },
+    run: (a) => governance.readAdrs(resolveIn(a.folder), { root: ROOT, referencedIn: (a.referencedIn || []).map((p) => resolveIn(p)) }),
+  },
+  {
+    name: 'check_consistency',
+    description: 'Architecture consistency check across design documents (solution blueprint, FDD, TDD, API specs; .md/.docx/.txt). Pulls out named components, APIs and integrations (from table columns like Component/Platform/Service/API and from component sections), endpoints (GET /path…) and standards (WCAG, ISO, PCI DSS…), and reports names one document uses that the others never mention, standards cited with different versions, references to unknown or superseded ADRs (with adrs), and entities or fields the data model does not have (with dataModel). Each finding cites the file and heading. Pattern-based evidence for your review, not a verdict. Read-only.',
+    inputSchema: { type: 'object', properties: {
+      documents: { type: 'array', items: { type: 'string' }, description: 'Design documents to compare (two or more)' },
+      adrs: { type: 'string', description: 'Optional ADR folder' },
+      dataModel: { type: 'string', description: 'Optional data model workbook (Entities sheet with Entity; Attributes sheet with Entity and Attribute)' },
+    }, required: ['documents'] },
+    run: (a) => governance.checkConsistency((a.documents || []).map((p) => resolveIn(p)), { root: ROOT, adrs: a.adrs ? resolveIn(a.adrs) : undefined, dataModel: a.dataModel ? resolveIn(a.dataModel) : undefined }),
+  },
+  {
+    name: 'assemble_gate_pack',
+    description: 'Assemble a stage-gate pack. For each required artefact it takes the latest APPROVED version (Lumen\'s lifecycle approval stamp, a "Status: Approved" line, or Approver properties on a Word file; versioned siblings like "v1.0"/"v1.1" are compared) and leaves newer unapproved drafts out. Writes only into "Gate packs/<gate>/": a combined Word pack, an index (artefacts, approval status, open items), an open-item log workbook and copies of the included artefacts. Lists missing artefacts and open approvals. Give the gate definition inline or as a JSON file (manifest).',
+    inputSchema: { type: 'object', properties: {
+      manifest: { type: 'string', description: 'Optional gate definition JSON file, e.g. "Architecture/Design gate.json" ({ gate, artefacts: [{ name, path, required }], approvals: [{ role, artefact }], openItems })' },
+      gate: { type: 'string', description: 'Gate name, e.g. "Design gate"' },
+      artefacts: { type: 'array', items: { type: 'object', properties: { name: { type: 'string' }, path: { type: 'string', description: 'File or folder' }, required: { type: 'boolean' } } }, description: 'Required artefacts' },
+      approvals: { type: 'array', items: { type: 'object', properties: { role: { type: 'string' }, artefact: { type: 'string', description: 'Artefact whose approval counts for this role' }, approver: { type: 'string' }, date: { type: 'string' } } }, description: 'Required approvals. Only give approver and date when the person tells you they were recorded.' },
+      openItems: { type: 'array', items: { type: 'string' } },
+      raid: { type: 'string', description: 'Optional RAID log: its open Medium/High items are added to the open items' },
+      template: { type: 'string', description: 'Optional Word template, e.g. "Templates/TDD Template.dotx"' },
+    } },
+    run: write(async (a) => {
+      let m = {};
+      if (a.manifest) { try { m = JSON.parse(fs.readFileSync(resolveIn(a.manifest), 'utf8')); } catch (e) { throw Object.assign(new Error(e.friendly ? e.message : `The gate definition "${a.manifest}" is not valid JSON: ${e.message}`), { friendly: true }); } }
+      const manifest = { gate: a.gate || m.gate, artefacts: a.artefacts || m.artefacts, approvals: a.approvals || m.approvals, openItems: a.openItems || m.openItems };
+      for (const x of manifest.artefacts || []) if (x && x.path) resolveIn(x.path, { mustExist: false });
+      return governance.assembleGatePack(manifest, { root: ROOT, raid: a.raid ? resolveIn(a.raid) : undefined, template: a.template ? resolveIn(a.template) : undefined });
+    }),
+  },
+  {
+    name: 'propose_inventory_updates',
+    description: 'Propose updates to a technical inventory workbook (solution components, APIs, integrations, dependencies) from delivery changes: an Azure DevOps export (.xlsx/.csv with Title), git log --name-only output saved as a text file, an ADR folder (accepted decisions) and design documents. Proposes rows to add (new components), change (last changed date, or a review) and retire (retire/decommission/replace wording), each with its evidence. Writes "<inventory> (proposed).xlsx" with the rows highlighted and a "Proposed changes" sheet with an "Approve? (Yes/No)" column. The inventory itself is never changed.',
+    inputSchema: { type: 'object', properties: {
+      inventory: { type: 'string', description: 'The technical inventory workbook' },
+      adoExports: { type: 'array', items: { type: 'string' } },
+      gitLogs: { type: 'array', items: { type: 'string' }, description: 'Text files with git log --name-only output' },
+      adrs: { type: 'string', description: 'ADR folder' },
+      documents: { type: 'array', items: { type: 'string' }, description: 'Design documents' },
+    }, required: ['inventory'] },
+    run: write((a) => governance.diffInventory(resolveIn(a.inventory), { adoExports: (a.adoExports || []).map((p) => resolveIn(p)), gitLogs: (a.gitLogs || []).map((p) => resolveIn(p)), adrs: a.adrs ? resolveIn(a.adrs) : undefined, documents: (a.documents || []).map((p) => resolveIn(p)) }, { root: ROOT })),
+  },
+  {
     name: 'write_test_cases',
     description: 'Save test cases as an Excel workbook in the Azure DevOps Test Plans import layout: one row per step (ID, Work Item Type, Title, Test Step, Step Action, Step Expected, Traces To, Priority, Type SIT/UAT, Preconditions), with the case fields on its first step row, plus a Coverage sheet with one row per case. Cases without an ID get TC-001, TC-002… An existing file is never overwritten; a numbered copy is saved instead. Returns warnings for cases without steps, expected results or traces.',
     inputSchema: {
@@ -477,7 +529,7 @@ const TOOLS = [
 
 // ------------------------------------------------------------------ JSON-RPC over stdio
 if (require.main === module) {
-  require('./mcp-stdio').serve({ name: 'office', instructions: 'Tools for Excel workbooks, Microsoft Project plans (including delivery scenarios and team capacity), Word documents, requirements traceability, test cases, defect triage, change impacts and training needs, bilingual QA, release readiness, cutover and hypercare, and knowledge publishing in the project folder.', tools: TOOLS });
+  require('./mcp-stdio').serve({ name: 'office', instructions: 'Tools for Excel workbooks, Microsoft Project plans (including delivery scenarios and team capacity), Word documents, requirements traceability, test cases, defect triage, change impacts and training needs, bilingual QA, release readiness, cutover and hypercare, architecture reviews, ADRs, gate packs and technical inventories, and knowledge publishing in the project folder.', tools: TOOLS });
 }
 
 module.exports = { TOOLS };

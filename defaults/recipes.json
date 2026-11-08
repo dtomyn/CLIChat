@@ -1405,5 +1405,174 @@
       }
     ],
     "template": "Analyse hypercare from the defect export {{defects}} as of {{asof}} (if blank, today), against these exit criteria: {{criteria}} (if not specified, use the defaults).\n\n1. Call hypercare_trends (each criterion as one item of exitCriteria) and analyze_defects, and base everything on them.\n2. Lead with the verdict and each exit criterion with Pass/Fail and its evidence. Show the weekly trend as a table (week, opened, closed, open at week end, average age) and the open defects by severity with owners.\n3. Draft the closure report: period and scope, trend, exit criteria, open defects and owners, recurring themes by area, the handover to business-as-usual support, and a recommendation (close, or extend until the failing criteria pass). Save it with save_draft_document as \"Hypercare closure report (draft).md\" with word: true, listing the export as the source.\n\nSay Not ready to close while any criterion fails."
+  },
+  {
+    "id": "architecture-review",
+    "name": "Architecture review",
+    "emoji": "🏛️",
+    "category": "Architecture",
+    "description": "Review a design against the blueprint, the standards and the ADRs: a findings and deviation log, and a remediation backlog to import into Azure DevOps.",
+    "assistantId": "architecture-reviewer",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "blueprint",
+        "label": "Solution blueprint or standards",
+        "type": "file",
+        "accept": ".docx,.md,.txt"
+      },
+      {
+        "key": "design",
+        "label": "Design to review (FDD, TDD or API spec)",
+        "type": "file",
+        "accept": ".docx,.md,.txt"
+      },
+      {
+        "key": "adrs",
+        "label": "ADR folder (optional)",
+        "placeholder": "e.g. Architecture/ADRs"
+      },
+      {
+        "key": "model",
+        "label": "Data model (optional)",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv",
+        "optional": true
+      }
+    ],
+    "template": "Review the design {{design}} against the blueprint {{blueprint}}, the ADRs in {{adrs}} and the data model {{model}} (skip any that are blank).\n\n1. Call check_consistency with both documents (and the ADR folder and data model when given). Then read the sections the findings point to and check the design against the blueprint's principles and standards.\n2. Lead with a short verdict and the three most important findings.\n3. Findings and deviation log as a table: ID (AR-01…) · Finding · Type (Inconsistency, Deviation from standard, Superseded decision, Data model mismatch, Gap) · Severity · Evidence (file and heading, or ADR ID) · Recommendation.\n4. Save the log with create_spreadsheet as \"Architecture review - findings.xlsx\", and the remediation backlog as \"Architecture review - remediation (ADO import).xlsx\" with columns ID, Work Item Type (Task), Title, Description (finding ID and evidence), Priority (1-4), Tags (Architecture).\n\nConfirm each pattern-based finding in the text before you list it, and say when a document explains it. Do not change the design documents."
+  },
+  {
+    "id": "architecture-draft-adr",
+    "name": "Draft an ADR",
+    "emoji": "🧭",
+    "category": "Architecture",
+    "description": "Draft an architecture decision record (MADR layout, status Proposed) from a decision discussion, numbered after the existing ADRs.",
+    "assistantId": "adr-advisor",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "notes",
+        "label": "Decision discussion (notes or transcript)",
+        "type": "file",
+        "accept": ".docx,.md,.txt,.vtt"
+      },
+      {
+        "key": "adrs",
+        "label": "ADR folder",
+        "placeholder": "e.g. Architecture/ADRs"
+      },
+      {
+        "key": "topic",
+        "label": "Decision",
+        "placeholder": "e.g. Where to validate photos"
+      }
+    ],
+    "template": "Draft an ADR for \"{{topic}}\" from the discussion in {{notes}}.\n\n1. Call index_adrs on {{adrs}} to find the next number and any ADR this decision replaces.\n2. Write it in the MADR layout: title, status Proposed, date, context and problem statement, considered options (with pros and cons from the discussion), decision outcome, consequences (good and bad), and links. If it replaces an ADR, add \"Supersedes ADR-nnn\" and list the documents that still cite the old one.\n3. Save it with save_draft_document as \"{{adrs}}/ADR-nnn-<short-title>.md\", listing the discussion as its source.\n\nUse only what the discussion says; mark anything it doesn't settle as an open question. Leave the status as Proposed."
+  },
+  {
+    "id": "architecture-reuse",
+    "name": "Reuse vs. build assessment",
+    "emoji": "♻️",
+    "category": "Architecture",
+    "description": "Check the reusable-asset register before building something new: fit, gaps, effort and a recommendation.",
+    "assistantId": "adr-advisor",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "register",
+        "label": "Reusable-asset register",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv"
+      },
+      {
+        "key": "need",
+        "label": "What do we need?",
+        "type": "textarea",
+        "placeholder": "e.g. Validate the mailing address on the renewal summary page"
+      },
+      {
+        "key": "design",
+        "label": "Design that proposes the build (optional)",
+        "type": "file",
+        "accept": ".docx,.md,.txt",
+        "optional": true
+      }
+    ],
+    "template": "We need: {{need}}\n\nRead the reusable-asset register {{register}} and the design {{design}} (skip if blank). For each candidate asset give a table: Asset (cell) · What it does · Fit (Full, Partial, None) · Gaps · Effort to reuse · Effort to build. Then recommend reuse or build in one paragraph, preferring reuse unless a must-have gap rules it out, and name that gap. Cite the register cell or document heading for every fact. If the design proposes a build, say whether an ADR is needed to record the decision."
+  },
+  {
+    "id": "architecture-gate-pack",
+    "name": "Assemble a gate pack",
+    "emoji": "📦",
+    "category": "Architecture",
+    "description": "Build the stage-gate pack from the approved artefacts: a combined Word pack, the index with approval status and the open-item log.",
+    "assistantId": "gate-pack-assembler",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "gate",
+        "label": "Gate definition",
+        "type": "file",
+        "accept": ".json"
+      },
+      {
+        "key": "template",
+        "label": "Word template (optional)",
+        "type": "file",
+        "accept": ".dotx,.docx",
+        "optional": true
+      },
+      {
+        "key": "raid",
+        "label": "RAID log (optional)",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv",
+        "optional": true
+      }
+    ],
+    "template": "Assemble the gate pack from the gate definition {{gate}}, with the Word template {{template}} and the RAID log {{raid}} (skip any that are blank).\n\nCall assemble_gate_pack and base everything on it. Lead with one line: ready or not ready for the gate, and why. Then a table of the artefacts (included or missing, file, version, approved by, date), the approvals still open, newer drafts that were left out because they are not approved, and the other open items. End with what has to happen before the gate and who owns it, where the documents say. Do not record any approval yourself."
+  },
+  {
+    "id": "architecture-inventory",
+    "name": "Update technical inventory",
+    "emoji": "🗃️",
+    "category": "Architecture",
+    "description": "Propose additions, changes and retirements to the technical inventory from delivery changes, for the owner to approve.",
+    "assistantId": "inventory-keeper",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "inventory",
+        "label": "Technical inventory",
+        "type": "file",
+        "accept": ".xlsx,.xlsm"
+      },
+      {
+        "key": "gitlog",
+        "label": "git log --name-only output (optional)",
+        "type": "file",
+        "accept": ".txt,.log",
+        "optional": true
+      },
+      {
+        "key": "ado",
+        "label": "Azure DevOps export (optional)",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv",
+        "optional": true
+      },
+      {
+        "key": "adrs",
+        "label": "ADR folder (optional)",
+        "placeholder": "e.g. Architecture/ADRs"
+      }
+    ],
+    "template": "Propose updates to the technical inventory {{inventory}} from the git log {{gitlog}}, the Azure DevOps export {{ado}} and the ADRs in {{adrs}} (skip any that are blank; you may add the design documents in the notebook).\n\nCall propose_inventory_updates. Summarise the result as three short tables (to add, changed, to retire) with the evidence for each row (commit, work item, ADR or document heading). Point out anything that looks like a false match. End by reminding me to set Approve? on every row of the (proposed) copy; the inventory itself has not been changed."
   }
 ]

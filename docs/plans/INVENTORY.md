@@ -10,9 +10,9 @@ Last reviewed: 2026-11-07 (branch `feature/ideas-for-pm`, commit `82b234d`)
 
 | Status | Count |
 |---|---|
-| ✅ Done | 21 |
+| ✅ Done | 25 |
 | 🟡 Partial | 4 |
-| 📝 Planned | 17 |
+| 📝 Planned | 13 |
 | ⬜ Not started | 0 |
 
 Lumen runs on one computer and works on files in the notebook folder. Where the catalogue names a cloud target (SharePoint, Teams, Power BI, Fabric, ADO Test Plans), Lumen produces the file or proposal locally, and a person publishes it. "Done" means the use case works end to end in that model. Live system connections are tracked separately in Plan 08 (Azure DevOps) and in the "Live targets" column.
@@ -51,18 +51,18 @@ Lumen runs on one computer and works on files in the notebook folder. Where the 
 | 28 | Release / Cutover | Operational runbook | High | ✅ | **Runbook Writer** agent, prompt **Draft the runbook** (each section cites its source, gaps marked To be confirmed), saved as Markdown and Word through `save_draft_document` (2026-11-07). Program Word templates: Plan 18 | 15 |
 | 29 | Release / Cutover | Coordinate and summarize cutover | High | ✅ | **Cutover Coordinator** agent, `cutover_status` (late and blocked steps, critical path from the dependencies and actuals, next steps, projected finish, optional `Cutover/<date time>.md` snapshot), prompt **Cutover status update**, new *Every few minutes, between two times* scheduled-prompt option, demo `Cutover Run-sheet - Go-live weekend.xlsx` with one late step (2026-11-07). Teams alerts: out of scope | 15 |
 | 30 | Release / Cutover | Hypercare analysis and closure report | Med–High | ✅ | **Hypercare Analyst** agent, `hypercare_trends` (weekly opened/closed/open/ageing by severity on the Plan 09 defect reader, Pass/Fail per exit criterion in plain words), prompt **Hypercare closure report**, demo `Hypercare Defects - 1 Feb 2027.xlsx` (2026-11-07). Power BI: out of scope | 15 |
-| 31 | Architecture / Governance | Architecture and design consistency review | High | 📝 | — | 16 |
+| 31 | Architecture / Governance | Architecture and design consistency review | High | ✅ | **Architecture Reviewer** agent, `architecture` skill, `check_consistency` (components/APIs/endpoints/standards named in one design document but not the others, references to unknown or superseded ADRs, entities and fields missing from the data model, each citing file and heading), prompt **Architecture review** (findings and deviation log plus a remediation backlog in the ADO import layout), sample TDD with a component missing from the blueprint (2026-11-07) | 16 |
 | 32 | Documentation / Bilingual | French drafts and bilingual QA | Med–High | ✅ | **Bilingual Reviewer** agent, `bilingual` skill, `check_terminology` (glossary terms, untranslated English, numbers/dates/IDs, missing paragraphs after alignment), prompts **Draft French version** (labelled machine-drafted, needs translator review) and **Bilingual QA**, sample 30-term glossary and EN/FR guide pair with three seeded issues (2026-11-07) | 14 |
 | 33 | Functional / ADO Backlog | ADO backlog Q&A and controlled updates | High | 📝 | Plan 08 written, nothing built | 08 |
 | 34 | Testing / QE | Test strategy, coverage model, risk priorities | High | ✅ | **Test Planner** agent, prompt **Draft the test strategy** (levels, STE/UAT/STG/PRD, entry/exit, test data, risk × change-impact priority); coverage model from `analyze_traceability` (2026-11-07) | 09 |
 | 35 | Test Automation | Automated regression tests (Playwright) | High | 📝 | Lumen's own e2e suite as a pattern | 17 |
 | 36 | Development / Engineering | Developer Copilot skill pack | High | 📝 | "Use in VS Code" export exists to reuse | 17 |
 | 37 | Cross-Functional / Knowledge | ADO Wiki → SharePoint publishing, freshness | Foundational | 🟡 | `tools/publish.js`: `publish_snapshot`, `check_freshness`, `Published/publishing-log.xlsx`, **Knowledge freshness** prompt (2026-11-07). Missing: live ADO Wiki source (Plan 08 phase 2) | 18, 08 |
-| 38 | Architecture / Governance | ADRs and reuse vs. build | High | 📝 | — | 16 |
+| 38 | Architecture / Governance | ADRs and reuse vs. build | High | ✅ | **ADR & Reuse Advisor** agent, `index_adrs` (MADR and Nygard ADRs: status, supersedes, no status, superseded still referenced, duplicate decisions), prompts **Draft an ADR** (MADR, status Proposed, via `save_draft_document`) and **Reuse vs. build assessment**, sample `Architecture/ADRs/` (ADR-002 superseded but still cited) and `Reusable assets.xlsx` (2026-11-07) | 16 |
 | 39 | Planning / Resources | Estimates and resource capacity | High | ✅ | `tools/capacity.js`, `analyze_capacity` (weekly demand vs. capacity per person and role, leave clashes with critical work, sprint overloads from an ADO export, story-point outliers vs. the team median), **Who's overloaded?** takes an optional capacity workbook and backlog, sample `Team Capacity - Q4 2026.xlsx` (2026-11-07) | 10 |
-| 40 | Architecture / Governance | Stage-gate packs | High | 📝 | — | 16 |
+| 40 | Architecture / Governance | Stage-gate packs | High | ✅ | **Gate Pack Assembler** agent, `assemble_gate_pack` (latest approved version per artefact from the lifecycle approval stamp or Word properties, newer drafts left out; writes `Gate packs/<gate>/` with a combined Word pack through `md-export` `toDocx` and the program template, an index with approval status and open items, an open-item log and artefact copies), prompt **Assemble a gate pack**, sample `Architecture/Design gate.json` (2026-11-07). SharePoint upload: out of scope | 16 |
 | 41 | DevOps / Environments | Pipeline assets and environment drift | High | 📝 | — | 17 |
-| 42 | Architecture / Knowledge | Technical catalogues from delivery changes | High | 📝 | — | 16 |
+| 42 | Architecture / Knowledge | Technical catalogues from delivery changes | High | ✅ | **Inventory Keeper** agent, `propose_inventory_updates` (adds, changes and retirements from an ADO export, `git log --name-only` text, accepted ADRs and design documents; `(proposed)` copy with Approve column), prompt **Update technical inventory**, sample `Technical Inventory.xlsx` and git log (2026-11-07). Applying approved rows is by hand; live GitHub PRs: out of scope | 16 |
 
 (#39 is counted as Planned in the summary because the missing half is the substantial part.)
 
@@ -78,7 +78,7 @@ Lumen runs on one computer and works on files in the notebook folder. Where the 
 | [13 Security and SA&A](13-security-saa.md) | 21, 22, 23 | M | 18 (templates) helps | 📝 |
 | [14 Change, training and bilingual](14-change-training-bilingual.md) | 24, 25, 26, 32 | M | — | ✅ 2026-11-07 |
 | [15 Release and cutover](15-release-and-cutover.md) | 27, 28, 29, 30 | M | 09 (defect reader) | ✅ 2026-11-07 |
-| [16 Architecture and governance](16-architecture-governance.md) | 31, 38, 40, 42 | M | 18 (templates) | 📝 |
+| [16 Architecture and governance](16-architecture-governance.md) | 31, 38, 40, 42 | M | 18 (templates) | ✅ 2026-11-07 |
 | [17 Engineering skill packs](17-engineering-skill-packs.md) | 35, 36, 41 | M | — | 📝 |
 | [18 Document templates and publishing](18-document-templates-publishing.md) | 8, 9, 37 | M | — (08 for wiki source) | 📝 |
 
@@ -104,3 +104,4 @@ These extend the [ground rules](README.md#ground-rules-for-every-plan):
 | 2026-11-07 | Plan 10 implemented: #3, #5, #39 done |
 | 2026-11-07 | Plan 14 implemented: #24, #25, #26, #32 done |
 | 2026-11-07 | Plan 15 implemented: #27, #28, #29, #30 done |
+| 2026-11-07 | Plan 16 implemented: #31, #38, #40, #42 done |

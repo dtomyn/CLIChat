@@ -1,0 +1,35 @@
+commit 9f3c2a1d4e5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d
+Author: Dev One <dev.one@example.com>
+Date:   Mon Oct 26 10:00:00 2026 -0500
+
+    Add photo validation service (ADR-003)
+
+services/photo-validation/src/index.js
+services/photo-validation/src/checks.js
+services/photo-validation/package.json
+
+commit 7a1b2c3d4e5f60718293a4b5c6d7e8f901234567
+Author: Dev Two <dev.two@example.com>
+Date:   Tue Oct 27 14:30:00 2026 -0500
+
+    Eligibility: block renewals expired more than 90 days
+
+services/eligibility-service/rules/expiry.js
+services/eligibility-service/test/expiry.test.js
+
+commit 5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f
+Author: Dev One <dev.one@example.com>
+Date:   Wed Oct 28 09:15:00 2026 -0500
+
+    Retire the legacy kiosk interface (kiosk integration is out of scope)
+
+integrations/legacy-kiosk/README.md
+integrations/legacy-kiosk/kiosk-sync.js
+
+commit 3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d
+Author: Dev Two <dev.two@example.com>
+Date:   Thu Oct 29 16:45:00 2026 -0500
+
+    Case API client: retry with back-off
+
+apis/case-api/client.js
