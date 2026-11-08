@@ -50,6 +50,7 @@ const P = {
   chart: '<path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/>',
   chat: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
   book: '<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M8 7h8M8 11h6"/>',
+  board: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 7v6M12 7v10M16 7v4"/>',
   at: '<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><path d="M14 2v6h6M9 15l6-6"/>',
 };
 const icon = (n, cls = '') => `<span class="ico ${cls}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${P[n] || P.spark}</svg></span>`;
@@ -189,7 +190,7 @@ function renderAgentList() {
   const el = $('#agentList'); if (!el) return;
   const ids = pinnedAgentIds();
   const sel = S.view === 'home' ? (S.draft.assistantId || 'lumen') : S.view === 'chat' ? S.current?.assistantId : null;
-  el.innerHTML = ids.length ? ids.map((id) => { const a = assistantById(id); return `<button class="agent-item ${sel === id ? 'active' : ''}" data-agent="${esc(id)}" data-color="${a.color}" title="${esc(a.tagline || a.name)}"><span class="a-badge sm">${esc(a.emoji)}</span><span class="conv-title">${esc(a.name)}</span></button>`; }).join('')
+  el.innerHTML = ids.length ? ids.map((id) => { const a = assistantById(id); return `<button class="agent-item ${sel === id ? 'active' : ''}" data-agent="${esc(id)}" data-color="${esc(a.color)}" title="${esc(a.tagline || a.name)}"><span class="a-badge sm">${esc(a.emoji)}</span><span class="conv-title">${esc(a.name)}</span></button>`; }).join('')
     : '<div class="conv-empty" style="padding:6px 10px;text-align:left">Pin agents here from the Agents page.</div>';
 }
 
@@ -208,13 +209,13 @@ function renderConvList() {
   el.innerHTML = groups.filter(([, items]) => items.length).map(([name, items]) => `
     <div class="conv-group">${name}</div>
     ${items.map((c) => `
-      <div class="conv ${S.current?.id === c.id ? 'active' : ''}" data-cid="${c.id}" title="${esc(c.title)}">
+      <div class="conv ${S.current?.id === c.id ? 'active' : ''}" data-cid="${esc(c.id)}" title="${esc(c.title)}">
         <span class="conv-emoji">${esc(assistantById(c.assistantId).emoji)}</span>
         <span class="conv-title">${esc(c.title)}</span>
         ${c.scheduled ? '<span title="Scheduled chat" aria-label="Scheduled chat">🕘</span>' : ''}
         ${c.unread ? '<i class="unread-dot" title="Unread" aria-label="Unread"></i>' : ''}
         ${S.live.has(c.id) ? '<i class="live-dot"></i>' : ''}
-        <span class="conv-actions"><button data-conv-menu="${c.id}" title="More">${icon('dots')}</button></span>
+        <span class="conv-actions"><button data-conv-menu="${esc(c.id)}" title="More">${icon('dots')}</button></span>
       </div>`).join('')}`).join('');
 }
 
@@ -350,7 +351,7 @@ function composerHTML({ home = false, conv = null } = {}) {
         <textarea id="input" rows="1" placeholder="${esc(placeholder)}">${esc(d.text)}</textarea>
         <div class="composer-row">
           <button class="pill round" id="attachBtn" title="Add content">${icon('plus')}</button>
-          ${home ? `<button class="pill outline" id="assistantPill" data-color="${a.color}"><span class="a-badge sm">${esc(a.emoji)}</span><span class="lbl">${esc(a.name)}</span>${icon('chevron', 'caret')}</button>` : ''}
+          ${home ? `<button class="pill outline" id="assistantPill" data-color="${esc(a.color)}"><span class="a-badge sm">${esc(a.emoji)}</span><span class="lbl">${esc(a.name)}</span>${icon('chevron', 'caret')}</button>` : ''}
           <button class="pill" id="accessPill" title="What Lumen is allowed to do">${ACCESS[access]?.emoji || '👀'} <span class="lbl">${esc(ACCESS[access]?.short || 'Can read files')}</span>${icon('chevron', 'caret')}</button>
           <span class="spacer"></span>
           ${model && p.models.length > 1 ? `<button class="pill" id="modelPill" title="Response mode">${icon('gauge')}<span class="lbl">${esc(model.label)}</span>${icon('chevron', 'caret')}</button>` : ''}
@@ -609,7 +610,7 @@ function renderHome() {
     <div class="home">
       <div class="home-inner">
         <div class="greeting">
-          ${a.id === 'lumen' ? '' : `<span class="a-badge md" data-color="${a.color}">${esc(a.emoji)}</span>`}
+          ${a.id === 'lumen' ? '' : `<span class="a-badge md" data-color="${esc(a.color)}">${esc(a.emoji)}</span>`}
           <h1>${a.id === 'lumen' ? `${greetingWord()}${firstName() ? `, ${esc(firstName())}` : ''}` : esc(a.name)}</h1>
         </div>
         <p class="home-sub">${a.id === 'lumen' ? 'How can I help today?' : esc(a.tagline || '')}</p>
@@ -621,7 +622,7 @@ function renderHome() {
 
         <div class="section-label"><span>Agents</span><a data-go="assistants">See all agents</a></div>
         <div class="assistant-row">
-          ${S.assistants.map((x) => `<button class="a-chip ${x.id === (S.draft.assistantId || 'lumen') ? 'selected' : ''}" data-color="${x.color}" data-pick-assistant="${x.id}" title="${esc(x.tagline || '')}"><span class="a-badge">${esc(x.emoji)}</span>${esc(x.name)}</button>`).join('')}
+          ${S.assistants.map((x) => `<button class="a-chip ${x.id === (S.draft.assistantId || 'lumen') ? 'selected' : ''}" data-color="${esc(x.color)}" data-pick-assistant="${esc(x.id)}" title="${esc(x.tagline || '')}"><span class="a-badge">${esc(x.emoji)}</span>${esc(x.name)}</button>`).join('')}
           <button class="a-chip" data-new-assistant><span class="a-badge" style="background:var(--panel-2)">${icon('plus')}</span>Create an agent</button>
         </div>
 
@@ -702,11 +703,11 @@ function homeClicks(e) {
 
 function recipeCard(r) {
   const a = assistantById(r.assistantId);
-  return `<button class="recipe-card" data-recipe="${r.id}" data-color="${a.color}">
+  return `<button class="recipe-card" data-recipe="${esc(r.id)}" data-color="${esc(a.color)}">
     <span class="recipe-emoji">${esc(r.emoji || '✨')}</span>
     <span class="recipe-name">${esc(r.name)}</span>
     <span class="recipe-desc">${esc(r.description || '')}</span>
-    <span class="recipe-meta"><span class="a-badge sm" data-color="${a.color}" style="width:18px;height:18px;font-size:10px">${esc(a.emoji)}</span>${esc(a.name)}${r.access === 'edit' ? ' · <span class="badge accent">Saves a file</span>' : ''}${needsLocalTools(r) ? ` ${lumenOnlyBadge('This prompt relies on Lumen’s local document tools (saving files, or reading Microsoft Project plans). In Microsoft 365 Copilot you’d do those steps by hand.')}` : ''}</span>
+    <span class="recipe-meta"><span class="a-badge sm" data-color="${esc(a.color)}" style="width:18px;height:18px;font-size:10px">${esc(a.emoji)}</span>${esc(a.name)}${r.access === 'edit' ? ' · <span class="badge accent">Saves a file</span>' : ''}${needsLocalTools(r) ? ` ${lumenOnlyBadge('This prompt relies on Lumen’s local document tools (saving files, or reading Microsoft Project plans). In Microsoft 365 Copilot you’d do those steps by hand.')}` : ''}</span>
   </button>`;
 }
 
@@ -763,7 +764,7 @@ function renderChat() {
   $('#view').innerHTML = `
     <div class="chat">
       <div class="chat-head" id="chatHead">
-        <span class="a-badge md" data-color="${a.color}">${esc(a.emoji)}</span>
+        <span class="a-badge md" data-color="${esc(a.color)}">${esc(a.emoji)}</span>
         <button class="chat-title" id="chatTitle" title="Click to rename">${esc(c.title)}</button>
         <span class="grow"></span>
         <button class="pill outline" id="folderPill" title="${esc(c.workspace || '')}">${icon('folder')}<span class="lbl">${esc(baseName(c.workspace) || 'Project folder')}</span></button>
@@ -806,7 +807,7 @@ function forkedFromHTML(c) {
 }
 
 function emptyChatHTML(a) {
-  return `<div class="chat-empty" style="min-height:50vh"><span class="a-badge lg" data-color="${a.color}">${esc(a.emoji)}</span><h2>${esc(a.name)}</h2><p>${esc(a.tagline || '')}</p></div>`;
+  return `<div class="chat-empty" style="min-height:50vh"><span class="a-badge lg" data-color="${esc(a.color)}">${esc(a.emoji)}</span><h2>${esc(a.name)}</h2><p>${esc(a.tagline || '')}</p></div>`;
 }
 
 function msgHTML(m, c) {
@@ -825,7 +826,7 @@ function msgHTML(m, c) {
   }
   const a = assistantById(c.assistantId);
   const live = [...S.live.values()].some((l) => l.msg === m);
-  return `<div class="msg assistant" data-mid="${m.id}" data-color="${a.color}">
+  return `<div class="msg assistant" data-mid="${m.id}" data-color="${esc(a.color)}">
     <span class="a-badge">${esc(a.emoji)}</span>
     <div class="msg-body">${assistantInner(m, a, live)}</div>
   </div>`;
@@ -851,6 +852,7 @@ function assistantInner(m, a, live) {
     </div>` : ''}
     ${m.content ? `<div class="md">${md(m.content, live)}</div>` : live && !running ? `<div class="thinking"><span class="orb"></span><span class="shimmer">${esc(a.name)} is thinking…</span></div>` : ''}
     ${files.length ? `<div class="file-cards">${files.map((f) => `<div><button class="file-card" data-open-file="${esc(f)}" title="Open ${esc(f)}"><span class="file-icon">${esc(extOf(f))}</span><span class="file-info"><b>${esc(baseName(f))}</b><small>Saved to your project folder · Click to open</small></span></button>${/\.(xlsx|xml)$/i.test(f) ? `<button class="btn ghost sm" data-diff-file="${esc(f)}" title="${esc(LUMEN_ONLY_TIP)}">See changes / Compare with…</button>` : ''}</div>`).join('')}</div>` : ''}
+    ${(m.approvals || []).length ? `<div class="approval-cards">${m.approvals.map((id) => approvalCard(id, m)).join('')}</div>` : ''}
     ${m.error ? `<div class="error-card">${icon('alert')}<div><b>Something went wrong.</b><div style="color:var(--text-2);font-size:13.5px">${esc(friendlyError(m.error))}</div><button class="btn soft sm" data-retry="${m.id}">${icon('retry')}Try again</button></div></div>` : ''}
     ${m.stopped ? `<div class="msg-meta" style="margin:6px 0 0">Stopped</div>` : ''}
     ${!live && (m.content || m.error) ? `<div class="msg-actions"><button data-copy-msg="${m.id}">${icon('copy')}Copy</button>${m.error ? '' : `<button data-retry="${m.id}" title="Replace this reply with a new one">${icon('retry')}Retry</button>`}<button data-branch="${m.id}" title="Continue from here in a new chat">${icon('branch')}Branch</button>${m.content ? `<button data-save-as title="Export this reply to Word or Excel">${icon('save')}Export</button>${feedbackButtons(m)}` : ''}${usageMeta(m)}${m.content ? '<span class="ai-note">AI-generated content may be incorrect</span>' : ''}</div>` : ''}
@@ -880,7 +882,91 @@ function friendlyError(e) {
   return e;
 }
 
+// ---------------------------------------------------------------- Azure DevOps Approve cards (plan 08)
+// The card is drawn from the change set the server stored, never from the AI's own words. Only Apply writes to Azure DevOps.
+const approvalCache = new Map(); // change set id -> described change set
+const approvalLoading = new Set();
+const AP_STATUS = {
+  pending: ['Waiting for your approval', 'warn'], applied: ['Applied', 'ok'], partial: ['Partly applied', 'warn'], discarded: ['Discarded', 'muted'],
+  expired: ['Expired', 'muted'], conflict: ['Changed in Azure DevOps first', 'bad'], failed: ["Couldn't apply", 'bad'],
+};
+
+function loadApproval(id) {
+  const conv = S.current;
+  if (!conv?.id || approvalLoading.has(id)) return;
+  approvalLoading.add(id);
+  api(`/api/chat/${conv.id}/approvals/${id}`)
+    .then((d) => { approvalCache.set(id, d); repaintApproval(id); })
+    .catch((e) => { approvalCache.set(id, { id, status: 'failed', title: 'Proposed change', rows: [], missing: true, result: { message: e.message, links: [] } }); repaintApproval(id); })
+    .finally(() => approvalLoading.delete(id));
+}
+// Repaints a card and the other cards of the same reply (their "Apply all" count depends on it).
+function repaintApproval(id) {
+  for (const el of $$(`[data-approval="${id}"]`)) {
+    const mid = el.closest('[data-mid]')?.dataset.mid;
+    const m = S.current?.messages?.find((x) => x.id === mid);
+    for (const sib of m?.approvals || [id]) {
+      const card = $(`[data-mid="${mid}"] [data-approval="${sib}"]`);
+      if (card && approvalCache.has(sib)) card.outerHTML = approvalCard(sib, m);
+    }
+  }
+}
+const apVal = (v) => { const s = String(v ?? ''); return s ? `<div class="ap-val" title="${esc(s.length > 300 ? s.slice(0, 2000) : '')}">${esc(s)}</div>` : '<span class="ap-empty">—</span>'; };
+
+function approvalCard(id, m) {
+  const d = approvalCache.get(id);
+  if (!d) { setTimeout(() => loadApproval(id)); return `<div class="approval-card loading" data-approval="${esc(id)}"><span class="spinner"></span><span>Loading the proposed change…</span></div>`; }
+  const [label, tone] = AP_STATUS[d.status] || [d.status, 'muted'];
+  const pending = d.status === 'pending';
+  const siblings = (m?.approvals || []).filter((x) => approvalCache.get(x)?.status === 'pending');
+  let last = '';
+  const hasBefore = (d.rows || []).some((r) => r.before); // new items have no "Now" value: drop the column
+  const rows = (d.rows || []).map((r) => { const same = r.target === last; last = r.target; return `<tr><td>${same ? '' : esc(r.target)}</td><td>${esc(r.field)}</td>${hasBefore ? `<td class="ap-now">${apVal(r.before)}</td>` : ''}<td>${apVal(r.after)}</td></tr>`; }).join('');
+  const diff = d.diff ? `<details class="ap-diff" ${pending ? 'open' : ''}><summary>${d.diff.tooLarge ? 'The page is too large to compare line by line' : `Page changes: <span class="ap-add">+${d.diff.added}</span> <span class="ap-del">−${d.diff.removed}</span>`}</summary>${d.diff.tooLarge ? '' : `<pre>${d.diff.lines.map((l) => `<span class="dl ${l.t === '+' ? 'add' : l.t === '-' ? 'del' : l.t === '…' ? 'gap' : ''}">${esc(l.t === '…' ? `   ⋯ ${l.s}` : `${l.t} ${l.s}`)}</span>`).join('')}</pre>`}</details>` : '';
+  const when = d.decidedAt ? `${d.decidedBy ? ` by ${esc(d.decidedBy)}` : ''} · ${esc(timeAgo(d.decidedAt))}` : pending && d.expiresAt ? ` · expires ${esc(new Date(d.expiresAt).toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' }))}` : '';
+  const result = d.result && !pending ? `<div class="ap-result ${tone}">${icon(tone === 'ok' ? 'check' : tone === 'bad' ? 'alert' : 'x')}<span>${esc(d.result.message || label)}</span></div>
+    ${(d.result.links || []).length ? `<div class="ap-links">${d.result.links.map((l) => `<a href="${esc(/^https?:\/\//i.test(String(l.url)) ? l.url : '#')}" target="_blank" rel="noopener noreferrer">${icon('external')}${esc(l.label)}</a>`).join('')}</div>` : ''}` : '';
+  return `<div class="approval-card ${esc(d.status)}" data-approval="${esc(id)}">
+    <div class="ap-head">${icon(d.kind === 'wiki' ? 'book' : 'board')}<div class="ap-title"><b>${esc(d.title)}</b><small>Azure DevOps${d.project ? ` · ${esc(d.project)}` : ''}</small></div><span class="status-tag ${tone}">${esc(label)}${when}</span></div>
+    ${d.reason ? `<div class="ap-reason"><b>Why:</b> ${esc(d.reason)}</div>` : ''}
+    ${rows ? `<div class="ap-table-wrap"><table class="ap-table"><thead><tr><th>Item</th><th>Field</th>${hasBefore ? '<th>Now</th>' : ''}<th>Proposed</th></tr></thead><tbody>${rows}</tbody></table></div>` : ''}
+    ${diff}
+    ${pending ? `<div class="ap-actions"><button class="btn primary sm" data-ap-apply="${esc(id)}">${icon('check')}Apply</button><button class="btn ghost sm" data-ap-discard="${esc(id)}">Discard</button>${siblings.length > 1 ? `<button class="btn soft sm" data-ap-apply-all>${icon('check')}Apply all ${siblings.length}</button>` : ''}<span class="ap-note">Nothing changes in Azure DevOps until you click Apply.</span></div>` : result}
+  </div>`;
+}
+
+async function decideApproval(btn, ids, discard = false) {
+  const conv = S.current;
+  if (!conv?.id) return;
+  const card = btn.closest('.approval-card');
+  $$('button', card).forEach((b) => { b.disabled = true; });
+  if (!discard) btn.innerHTML = `<span class="spinner" style="width:13px;height:13px"></span>Applying…`;
+  for (const id of ids) {
+    try {
+      const d = await api(`/api/chat/${conv.id}/approvals/${id}`, { method: discard ? 'DELETE' : 'POST' });
+      approvalCache.set(id, d);
+      if (!discard) toast(d.status === 'applied' ? d.result.message : d.result?.message || 'Done', d.status === 'applied' ? 'check' : 'alert');
+    } catch (e) {
+      if (/name in Settings/i.test(e.message)) { toast(e.message, 'alert'); openSettings(); }
+      else toast(e.message, 'alert');
+      approvalCache.delete(id); // reload the card's real state
+      break;
+    }
+  }
+  for (const id of ids) repaintApproval(id);
+}
+
 function chatClicks(e) {
+  const ap = e.target.closest('[data-ap-apply],[data-ap-discard],[data-ap-apply-all]');
+  if (ap) {
+    if (ap.dataset.apApply) decideApproval(ap, [ap.dataset.apApply]);
+    else if (ap.dataset.apDiscard) decideApproval(ap, [ap.dataset.apDiscard], true);
+    else {
+      const m = S.current?.messages?.find((x) => x.id === ap.closest('[data-mid]')?.dataset.mid);
+      decideApproval(ap, (m?.approvals || []).filter((x) => approvalCache.get(x)?.status === 'pending'));
+    }
+    return;
+  }
   const t = e.target.closest('[data-toggle-steps],[data-copy-msg],[data-retry],[data-open-file],[data-pin-file],[data-diff-file],[data-copy-code],[data-copy-table],[data-starter],[data-suggest],[data-edit-msg],[data-edit-save],[data-edit-cancel],[data-branch],[data-go-conv],[data-save-as],[data-rate],[data-save-recipe]');
   if (!t) return;
   const c = S.current;
@@ -1006,7 +1092,7 @@ function setEditing(id) {
   const prev = S.editing; S.editing = id;
   for (const mid of [prev, id]) {
     const m = mid && c.messages.find((x) => x.id === mid);
-    const el = m && $(`[data-mid="${mid}"]`);
+    const el = m && $(`[data-mid="${esc(mid)}"]`);
     if (el) el.outerHTML = msgHTML(m, c);
   }
   const ta = $('#editInput');
@@ -1134,6 +1220,7 @@ async function sendMessage({ text, attachments = [], assistantId, access, retryN
         else if (ev.type === 'tool') { msg.tools.push({ id: ev.id, icon: ev.icon, label: ev.label }); if (ev.writes && ev.file && !msg.files.includes(ev.file)) msg.files.push(ev.file); schedule(); }
         else if (ev.type === 'tool_done') { const t = msg.tools.find((x) => x.id === ev.id); if (t) t.ok = ev.ok; schedule(); }
         else if (ev.type === 'file') { if (!msg.files.includes(ev.path)) msg.files.push(ev.path); schedule(); }
+        else if (ev.type === 'approval') { msg.approvals = [...new Set([...(msg.approvals || []), ev.id])]; schedule(); }
         else if (ev.type === 'error') { msg.error = ev.message; schedule(); }
         else if (ev.type === 'done') { msg.files = ev.message.files || []; if (ev.message.usage) msg.usage = ev.message.usage; }
         else if (ev.type === 'title') {
@@ -1312,18 +1399,39 @@ async function renderRun(id, selected = null) {
         ${stage.conversationId ? `<button class="btn soft" data-open-chat="${esc(stage.conversationId)}">Open stage chat</button>` : ''}
         ${['review', 'approved'].includes(stage.status) ? `<button class="btn soft" data-run-file="${esc(stage.outputPath)}">Open output</button>` : ''}
         ${stage.status === 'review' ? `<button class="btn soft" data-run-action="check" ${stage.checkRunning ? 'disabled' : ''}>${stage.checkRunning ? 'Checking…' : 'Traceability check'}</button><button class="btn primary" data-run-action="approve">Approve</button>` : ''}
+        ${stage.status === 'approved' ? `<button class="btn soft" data-run-word title="${def.wordTemplate ? `Uses ${esc(def.wordTemplate)}` : "Uses Lumen's built-in Word styles"}">${def.wordTemplate ? 'Save as Word (program template)' : 'Save as Word'}</button>` : ''}
         ${['review', 'approved'].includes(stage.status) ? '<button class="btn soft" data-run-action="rework">Send back</button>' : ''}
+        ${stage.status === 'approved' && adoReady() ? `<button class="btn soft" data-run-ado="${stage.id === 'stories' ? 'workitems' : 'wiki'}">${icon(stage.id === 'stories' ? 'board' : 'book')}${stage.id === 'stories' ? 'Create work items in Azure DevOps' : 'Publish to the Azure DevOps wiki'}</button>` : ''}
       </div>
       ${stage.checkSummary ? `<div class="run-findings"><h3>Traceability findings</h3><div class="md">${md(stage.checkSummary)}</div>${stage.gateConversationId ? `<button class="btn ghost sm" data-open-chat="${esc(stage.gateConversationId)}">Open check chat</button>` : ''}</div>` : ''}
       ${prev && prev.status !== 'approved' && stage.status === 'pending' ? '<p>Previous stage is not approved. Starting requires an explicit override and the output will be labelled.</p>' : ''}
       </div></div>`;
     highlight($('#view'));
     $('#view').onclick = async (e) => {
-      const b = e.target.closest('[data-back-runs],[data-stage],[data-run-action],[data-open-chat],[data-run-file]'); if (!b) return;
+      const b = e.target.closest('[data-back-runs],[data-stage],[data-run-action],[data-open-chat],[data-run-file],[data-run-ado],[data-run-word]'); if (!b) return;
       if ('backRuns' in b.dataset) return go('runs');
+      if (b.dataset.runAdo) {
+        b.disabled = true;
+        try {
+          const r = await api(`/api/runs/${id}/stages/${stage.id}/azure-devops`, { method: 'POST', body: { target: b.dataset.runAdo } });
+          await refreshConvs();
+          toast('Lumen is preparing the changes. You approve them in the chat.', 'spark');
+          return go(`c/${r.conversationId}`);
+        } catch (err) { toast(err.message, 'alert'); b.disabled = false; return; }
+      }
       if (b.dataset.stage) return renderRun(id, b.dataset.stage);
       if (b.dataset.openChat) return go(`c/${b.dataset.openChat}`);
       if (b.dataset.runFile) return api('/api/folder/open', { method: 'POST', body: { path: b.dataset.runFile, workspace: run.workspace } });
+      if ('runWord' in b.dataset) {
+        b.disabled = true;
+        try {
+          const r = await api(`/api/runs/${id}/stages/${stage.id}/word`, { method: 'POST', body: {} });
+          if (r.warning) toast(r.warning, 'alert');
+          modal({ title: 'Saved as Word', sub: `${r.name}${r.template ? ` · ${r.template}` : ''}`, actions: [{ label: 'Close' }, { label: 'Open', primary: true, run: () => api('/api/folder/open', { method: 'POST', body: { path: r.path, workspace: run.workspace } }) }] });
+        } catch (err) { toast(err.message, 'alert'); }
+        b.disabled = false;
+        return;
+      }
       const operation = b.dataset.runAction;
       const act = async (override = false) => {
         await api(`/api/runs/${id}/stages/${stage.id}/${operation}`, { method: 'POST', body: { override } });
@@ -1366,15 +1474,15 @@ function renderAssistantsPage() {
       </div>
       <div class="card-grid">
         ${S.assistants.map((a, i) => `
-          <div class="a-card" data-color="${a.color}" style="animation-delay:${i * 40}ms">
+          <div class="a-card" data-color="${esc(a.color)}" style="animation-delay:${i * 40}ms">
             <div class="a-card-top"><span class="a-badge lg">${esc(a.emoji)}</span>
-              <button class="icon-btn" data-assistant-menu="${a.id}" title="More">${icon('dots')}</button></div>
+              <button class="icon-btn" data-assistant-menu="${esc(a.id)}" title="More">${icon('dots')}</button></div>
             <div><h3>${esc(a.name)}</h3></div>
             <p class="tagline">${esc(a.tagline || '')}</p>
             ${skillChips(a)}
             <div class="a-card-actions">
-              <button class="btn primary sm" data-chat-with="${a.id}">${icon('spark')}Start chat</button>
-              <button class="btn soft sm" data-edit-assistant="${a.id}">${icon('edit')}Customize</button>
+              <button class="btn primary sm" data-chat-with="${esc(a.id)}">${icon('spark')}Start chat</button>
+              <button class="btn soft sm" data-edit-assistant="${esc(a.id)}">${icon('edit')}Customize</button>
             </div>
           </div>`).join('')}
         <button class="a-card new-card" data-new-assistant>
@@ -1456,7 +1564,7 @@ function openAssistantBuilder(existing) {
   while (a.starters.length < 3) a.starters.push('');
   const preview = () => `
     <div class="preview-label">Preview</div>
-    <div class="a-card" data-color="${a.color}" style="animation:none">
+    <div class="a-card" data-color="${esc(a.color)}" style="animation:none">
       <div class="a-card-top"><span class="a-badge lg">${esc(a.emoji)}</span></div>
       <div><h3>${esc(a.name || 'Your agent')}</h3></div>
       <p class="tagline">${esc(a.tagline || 'A short line about what it helps with')}</p>
@@ -1597,7 +1705,7 @@ function openRecipeRunner(id) {
   const m = modal({
     head: `<div class="modal-head"><span class="recipe-emoji" style="font-size:24px;width:48px;height:48px;border-radius:14px;margin:0">${esc(r.emoji)}</span><div><h2>${esc(r.name)}</h2><p>${esc(r.description || '')}</p></div><button class="icon-btn" data-x>${icon('x')}</button></div>`,
     body: `${(r.fields || []).map((f) => `<div class="field"><label>${esc(f.label)}</label>${fieldInput(f)}</div>`).join('')}
-      <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-top:4px" data-color="${a.color}"><span class="a-badge sm">${esc(a.emoji)}</span>${esc(a.name)} will take it from here${r.access === 'edit' ? ' and save the result to your project folder' : ''}.</div>`,
+      <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-top:4px" data-color="${esc(a.color)}"><span class="a-badge sm">${esc(a.emoji)}</span>${esc(a.name)} will take it from here${r.access === 'edit' ? ' and save the result to your project folder' : ''}.</div>`,
     leftAction: { label: 'Edit', icon: 'edit', run: () => openRecipeBuilder(r) },
     actions: [{ label: 'Cancel' }, { label: 'Copy for Copilot', icon: 'copy', run: async (el) => {
       // Answers filled in so far go in; anything blank stays as a [placeholder]. Files become "/name", the way
@@ -1633,7 +1741,10 @@ function openRecipeRunner(id) {
         const score = (x) => words.reduce((s, w) => s + (x.name.toLowerCase().includes(w) ? 2 : 0), 0) - (/\(updated\)/i.test(x.name) ? 0 : 0);
         const matches = found.filter((x) => !exts.length || exts.includes(`.${x.name.split('.').pop().toLowerCase()}`)).sort((a, b) => score(b) - score(a) || b.mtime - a.mtime);
         const used = new Set(Object.values(files).filter(Boolean).map((x) => x.path));
-        const pick = matches.find((x) => !used.has(x.path) && (score(x) > 0 || matches.length === 1));
+        // No name clue? Still preselect when every match is a version of one file (plan and its "(updated)" copy): the newest is first.
+        const family = (x) => x.name.replace(/\s*\((updated|proposed)\)(?=\.[^.]+$)/i, '').toLowerCase();
+        const oneFamily = matches.length > 0 && matches.every((x) => family(x) === family(matches[0]));
+        const pick = matches.find((x) => !used.has(x.path) && (score(x) > 0 || matches.length === 1 || oneFamily));
         sel.innerHTML = `<option value="">${f.optional ? 'None' : matches.length ? 'Choose a file…' : `No ${exts.join('/') || ''} files in your project folder`}</option>`
           + matches.map((x) => `<option value="${esc(x.path)}" ${pick === x ? 'selected' : ''}>${esc(x.rel)}</option>`).join('')
           + '<option value="__upload">⬆ Upload from my computer…</option>';
@@ -1707,7 +1818,7 @@ function openRecipeBuilder(existing, prefill) {
       </div>
       <div class="field"><label>Short description</label><input class="input" id="rDesc" value="${esc(r.description || '')}" placeholder="What does it produce?"></div>
       <div class="row">
-        <div class="field"><label>Agent</label><select class="select" id="rAsst">${S.assistants.map((a) => `<option value="${a.id}" ${a.id === r.assistantId ? 'selected' : ''}>${esc(a.emoji)} ${esc(a.name)}</option>`).join('')}</select></div>
+        <div class="field"><label>Agent</label><select class="select" id="rAsst">${S.assistants.map((a) => `<option value="${esc(a.id)}" ${a.id === r.assistantId ? 'selected' : ''}>${esc(a.emoji)} ${esc(a.name)}</option>`).join('')}</select></div>
         <div class="field"><label>File access</label><select class="select" id="rAccess"><option value="">Use my default</option>${Object.entries(ACCESS).map(([k, v]) => `<option value="${k}" ${r.access === k ? 'selected' : ''}>${v.label}</option>`).join('')}</select></div>
       </div>
       <div class="field"><label>Questions to ask</label><div id="rFields">${fieldsHTML()}</div><button class="btn ghost sm" id="addField">${icon('plus')}Add a question</button></div>
@@ -1791,7 +1902,7 @@ async function renderInsightsPage() {
 // ---------------------------------------------------------------- settings
 function providerCards(selected) {
   return S.providers.map((p) => `
-    <button class="option-card ${p.id === selected ? 'active' : ''}" data-provider="${p.id}">
+    <button class="option-card ${p.id === selected ? 'active' : ''}" data-provider="${esc(p.id)}">
       <span class="oc-icon">${p.id.startsWith('claude') ? '🟣' : p.id.startsWith('copilot') ? '🐙' : '🔌'}</span>
       <span class="oc-text"><span class="oc-title">${esc(p.name)} ${p.available ? `<span class="status-tag ok"><i class="dot ok" style="box-shadow:none"></i>Installed</span>` : `<span class="status-tag bad">Not set up</span>`}</span>
       <span class="oc-desc">${esc(p.available ? `${p.vendor}${p.version ? ` · ${p.version}` : ''}` : p.message || p.description)}</span></span>
@@ -1807,6 +1918,9 @@ function openSettings(focus) {
       <div class="field" id="engineField"><label style="display:flex;align-items:center;justify-content:space-between">AI engine <button class="link" id="refreshEngines" style="font-weight:500">${icon('refresh')} Check again</button></label>
         <div class="option-cards" id="providerCards">${providerCards(s.providerId)}</div>
         <div class="help">Lumen is pluggable — it runs on whichever AI tool is installed on this computer. Add more engines by dropping a file into the <code>providers</code> folder.</div></div>
+      <div class="field" id="connectionsField"><label>Connections</label><div class="option-cards">
+        <button type="button" class="option-card" id="sAdo"><span class="oc-icon">🔷</span><span class="oc-text"><span class="oc-title">Azure DevOps ${adoReady() ? `<span class="status-tag ok"><i class="dot ok" style="box-shadow:none"></i>Connected</span>` : '<span class="status-tag">Not set up</span>'}</span>
+          <span class="oc-desc">${adoReady() ? esc(`${S.settings.ado.project}${S.settings.ado.team ? ` · ${S.settings.ado.team}` : ''} · ${S.settings.ado.orgUrl.replace(/^https:\/\//, '')}`) : 'Search and update work items and wiki pages. Every change waits for your approval.'}</span></span></button></div></div>
       <div class="field"><label>Default file access</label><div class="seg" id="sAccess">${Object.entries(ACCESS).map(([k, v]) => `<button data-v="${k}" class="${s.access === k ? 'active' : ''}">${v.emoji} ${esc(v.label)}</button>`).join('')}</div></div>
       <div class="field"><label>Default notebook (project folder)</label><div class="row" style="align-items:center"><input class="input" id="sFolder" value="${esc(s.workspace)}" readonly style="flex:1"><button class="btn soft" id="sFolderBtn" style="flex:0 0 auto">${icon('folder')}Change</button></div><div class="help">Your notebook: where Lumen reads and saves documents unless a chat uses a different folder. Keep it in OneDrive so Microsoft 365 Copilot can find the same files later.</div></div>
       <div class="field"><label>Appearance</label><div class="seg" id="sTheme">${[['system', 'Match system'], ['light', 'Light'], ['dark', 'Dark']].map(([k, l]) => `<button data-v="${k}" class="${(s.theme || 'system') === k ? 'active' : ''}">${l}</button>`).join('')}</div></div>
@@ -1824,11 +1938,89 @@ function openSettings(focus) {
   const seg = (id, key, after) => $(`#${id}`, el).addEventListener('click', (e) => { const b = e.target.closest('[data-v]'); if (!b) return; s[key] = b.dataset.v; $$(`#${id} button`, el).forEach((x) => x.classList.toggle('active', x === b)); after?.(); });
   seg('sAccess', 'access'); seg('sTheme', 'theme', () => applyTheme(s.theme));
   $('#sShowCost', el).addEventListener('click', (e) => { s.showCost = !s.showCost; e.currentTarget.classList.toggle('active', s.showCost); });
+  $('#sAdo', el).addEventListener('click', () => { m.close(); openAdoSettings(); });
   $('#providerCards', el).addEventListener('click', (e) => { const b = e.target.closest('[data-provider]'); if (!b) return; s.providerId = b.dataset.provider; $('#providerCards', el).innerHTML = providerCards(s.providerId); });
   $('#refreshEngines', el).addEventListener('click', async () => { $('#providerCards', el).style.opacity = .5; const st = await api('/api/status?refresh=1'); S.providers = st.providers; $('#providerCards', el).innerHTML = providerCards(s.providerId); $('#providerCards', el).style.opacity = 1; renderUser(); });
   $('#sFolderBtn', el).addEventListener('click', async () => { const p = await pickFolder(s.workspace); if (p) { s.workspace = p; $('#sFolder', el).value = p; } });
   $('#sReset', el).addEventListener('click', () => modal({ title: 'Restore defaults?', sub: 'Built-in agents and prompts go back to how they shipped. Ones you created are removed.', actions: [{ label: 'Cancel' }, { label: 'Restore', danger: true, run: async () => { await api('/api/reset', { method: 'POST' }).catch(() => {}); toast('Defaults restored'); location.reload(); } }] }));
   if (focus === 'engine') setTimeout(() => $('#engineField', el).scrollIntoView({ block: 'center' }), 50);
+}
+
+// ---------------------------------------------------------------- Azure DevOps connection (plan 08)
+const adoReady = () => !!(S.settings.ado?.orgUrl && S.settings.ado?.project && S.settings.ado?.enabled !== false);
+
+async function openAdoSettings() {
+  let conn;
+  try { conn = await api('/api/connections/ado'); } catch (e) { return toast(e.message, 'alert'); }
+  const f = { orgUrl: conn.orgUrl || '', auth: conn.auth || (conn.hasAz || !conn.patSupported ? 'azcli' : 'pat'), project: conn.project || '', team: conn.team || '', wikis: conn.wikis || [] };
+  let found = null; // last successful check: { user, projects, teams, wikis }
+  const opt = (v, cur, label = v) => `<option value="${esc(v)}" ${v === cur ? 'selected' : ''}>${esc(label)}</option>`;
+  const m = modal({
+    title: 'Azure DevOps', sub: 'Let Lumen search and read your work items and wiki. Lumen only proposes changes: each one waits for you to click Apply.',
+    body: `
+      <div class="field"><label>Organisation address</label><input class="input" id="adoOrg" placeholder="https://dev.azure.com/your-organisation" value="${esc(f.orgUrl)}"><div class="help">Copy it from your browser when you're in Azure DevOps. Cloud (dev.azure.com) only.</div></div>
+      <div class="field"><label>How should Lumen sign in?</label><div class="seg" id="adoAuth"><button data-v="azcli" class="${f.auth === 'azcli' ? 'active' : ''}">Use my Azure sign-in</button><button data-v="pat" class="${f.auth === 'pat' ? 'active' : ''}" ${conn.patSupported ? '' : 'disabled title="Only available on Windows"'}>Use an access token</button></div>
+        <div class="help" id="adoAuthHelp"></div><div id="adoPat"></div></div>
+      <div class="row" style="align-items:center;gap:10px;margin:2px 0 14px"><button class="btn soft sm" id="adoCheck">${icon('refresh')}Check connection</button><span id="adoStatus" class="help" style="margin:0"></span></div>
+      <div id="adoPick"></div>`,
+    leftAction: conn.orgUrl ? { label: 'Disconnect', run: async () => { await api('/api/connections/ado', { method: 'PUT', body: { orgUrl: '', enabled: false } }); S.settings.ado = { enabled: false }; toast('Azure DevOps disconnected'); } } : null,
+    actions: [{ label: 'Cancel' }, { label: 'Save', primary: true, run: async (el) => {
+      readForm(el);
+      if (f.orgUrl && !f.project) throw new Error('Choose a project first (click Check connection).');
+      S.settings.ado = await api('/api/connections/ado', { method: 'PUT', body: { ...f, enabled: true } });
+      toast('Azure DevOps connected'); rerenderCurrent();
+    } }],
+  });
+  const el = m.el;
+  const readForm = () => {
+    f.orgUrl = $('#adoOrg', el).value.trim();
+    f.project = $('#adoProject', el)?.value ?? f.project;
+    f.team = $('#adoTeam', el)?.value ?? f.team;
+    if ($('#adoWikis', el)) f.wikis = $$('#adoWikis input:checked', el).map((x) => x.value);
+  };
+  const paintAuth = () => {
+    $('#adoAuthHelp', el).innerHTML = f.auth === 'azcli'
+      ? (conn.hasAz ? 'Uses the account you signed in to with the Azure CLI (<code>az login</code>). Nothing is stored by Lumen.' : 'The Azure CLI isn\'t installed on this computer. Install it and run <code>az login</code> once, or use an access token.')
+      : 'Create a personal access token in Azure DevOps (User settings › Personal access tokens) with <b>Work Items: Read &amp; write</b> and <b>Wiki: Read &amp; write</b>. Lumen keeps it encrypted for your Windows account.';
+    $('#adoPat', el).innerHTML = f.auth !== 'pat' ? '' : conn.hasPat
+      ? `<div class="row" style="align-items:center;gap:10px;margin-top:8px"><span class="status-tag ok"><i class="dot ok" style="box-shadow:none"></i>A token is saved</span><button class="link" id="adoPatRemove">Remove it</button></div>`
+      : `<div class="row" style="gap:8px;margin-top:8px"><input class="input" type="password" id="adoPatInput" placeholder="Paste the access token" autocomplete="off" style="flex:1"><button class="btn soft" id="adoPatSave" style="flex:0 0 auto">Save token</button></div>`;
+  };
+  const paintPick = () => {
+    if (!found) { $('#adoPick', el).innerHTML = f.project ? `<div class="help">Project: <b>${esc(f.project)}</b>${f.team ? ` · Team: <b>${esc(f.team)}</b>` : ''}. Click Check connection to change them.</div>` : ''; return; }
+    $('#adoPick', el).innerHTML = `
+      <div class="field"><label>Project</label><select class="select" id="adoProject"><option value="">Choose a project…</option>${found.projects.map((p) => opt(p, f.project)).join('')}</select></div>
+      ${f.project ? `<div class="field"><label>Team <span class="help" style="display:inline">(for "current sprint")</span></label><select class="select" id="adoTeam"><option value="">No team</option>${found.teams.map((t) => opt(t, f.team)).join('')}</select></div>
+      ${found.wikis.length ? `<div class="field"><label>Wikis to search first</label><div id="adoWikis" class="ado-wikis">${found.wikis.map((w) => `<label class="check"><input type="checkbox" value="${esc(w.name)}" ${f.wikis.includes(w.name) ? 'checked' : ''}> ${esc(w.name)}${w.type === 'code' ? ' <span class="help" style="display:inline">(read-only: published from a repository)</span>' : ''}</label>`).join('')}</div></div>` : '<div class="help">This project has no wiki yet.</div>'}` : ''}`;
+    $('#adoProject', el)?.addEventListener('change', () => { readForm(); f.team = ''; f.wikis = []; check(); });
+  };
+  const check = async () => {
+    readForm();
+    const st = $('#adoStatus', el);
+    st.innerHTML = '<span class="spinner" style="width:13px;height:13px"></span> Checking…';
+    try {
+      const r = await api('/api/connections/ado/test', { method: 'POST', body: { orgUrl: f.orgUrl, auth: f.auth, project: f.project } });
+      if (!r.ok) { found = null; st.innerHTML = `<span class="status-tag bad">${esc(r.error)}</span>`; paintPick(); return; }
+      f.orgUrl = r.orgUrl; $('#adoOrg', el).value = r.orgUrl;
+      if (f.project && !r.projects.includes(f.project)) f.project = '';
+      found = r;
+      st.innerHTML = `<span class="status-tag ok"><i class="dot ok" style="box-shadow:none"></i>Connected${r.user ? ` as ${esc(r.user)}` : ''}</span>`;
+      paintPick();
+    } catch (e) { st.innerHTML = `<span class="status-tag bad">${esc(e.message)}</span>`; }
+  };
+  $('#adoAuth', el).addEventListener('click', (e) => { const b = e.target.closest('[data-v]'); if (!b || b.disabled) return; f.auth = b.dataset.v; $$('#adoAuth button', el).forEach((x) => x.classList.toggle('active', x === b)); paintAuth(); });
+  $('#adoPat', el).addEventListener('click', async (e) => {
+    if (e.target.closest('#adoPatSave')) {
+      const pat = $('#adoPatInput', el).value.trim();
+      if (!pat) return toast('Paste the access token first', 'alert');
+      try { conn = await api('/api/connections/ado/pat', { method: 'POST', body: { pat } }); paintAuth(); toast('Token saved'); check(); } catch (err) { toast(err.message, 'alert'); }
+    } else if (e.target.closest('#adoPatRemove')) {
+      conn = await api('/api/connections/ado/pat', { method: 'DELETE' }); paintAuth(); toast('Token removed');
+    }
+  });
+  $('#adoCheck', el).addEventListener('click', check);
+  paintAuth(); paintPick();
+  if (f.orgUrl) check();
 }
 
 // ---------------------------------------------------------------- onboarding

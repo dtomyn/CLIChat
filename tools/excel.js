@@ -180,9 +180,16 @@ async function update(file, { updates = [], appendRows = [], saveAs } = {}) {
   return { saved: out, changes: done };
 }
 
-/** Turn a Microsoft Project plan into a formatted Excel tracker with a weekly Gantt view. */
-async function projectToWorkbook(planFile, outFile) {
+/** Turn a Microsoft Project plan into a formatted Excel tracker with a weekly variance Gantt.
+ *  history: optional earlier versions of the same plan, for the milestone week-over-week trend. */
+async function projectToWorkbook(planFile, outFile, { history = [], historyRoot } = {}) {
   const p = project.load(planFile);
+  // Remember this version of the plan, and fall back to earlier saved versions when none are given.
+  let historySource = history.length ? 'given' : 'none';
+  if (historyRoot) {
+    try { project.recordVersion(p, historyRoot); } catch { /* best effort */ }
+    if (!history.length) { history = project.earlierVersions(historyRoot, planFile, p.statusDate); if (history.length) historySource = 'saved versions'; }
+  }
   const a = project.analyze(planFile);
   const critical = new Set(a.criticalPath.map((t) => t.id));
   const late = new Set(a.lateTasks.map((t) => t.id));
@@ -209,30 +216,78 @@ async function projectToWorkbook(planFile, outFile) {
   }
   styleSheet(ws, cols, p.tasks.length);
 
-  // Gantt (one column per week)
+  // Gantt (one column per week), with the baseline drawn under each bar so schedule variance is visible.
   const gs = wb.addWorksheet('Gantt');
-  const weeks = [];
-  const monday = (d) => { const x = new Date(d); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; };
-  for (let w = monday(p.start || new Date()); w <= (p.finish || new Date()); w = new Date(+w + 7 * 86400000)) weeks.push(w);
-  gs.addRow(['Task', ...weeks.map((w) => project.iso(w).slice(5))]);
+  const status = toLocalDate(a.statusDate);
+  const weeks = ganttWeeks(p);
+  const FIRST_WEEK_COL = 5;
+  const statusWeek = weeks.findIndex((w) => status >= w && status < new Date(+w + 7 * DAY));
+  gs.addRow(['Task', 'Baseline finish', 'Forecast finish', 'Variance (days)', ...weeks.map((w) => project.iso(w).slice(5))]);
+  const fill = (argb, pattern = 'solid', bg) => ({ type: 'pattern', pattern, fgColor: { argb }, ...(bg ? { bgColor: { argb: bg } } : {}) });
   for (const t of p.tasks) {
-    const row = gs.addRow([`${'  '.repeat(t.level - 1)}${t.name}`]);
+    const variance = finishVariance(t);
+    const row = gs.addRow([`${'  '.repeat(t.level - 1)}${t.name}`, t.baselineFinish, t.finish, variance ?? '']);
     if (t.summary) row.font = { bold: true };
+    row.getCell(2).numFmt = row.getCell(3).numFmt = FORMATS.date;
+    const vc = row.getCell(4);
+    vc.alignment = { horizontal: 'center' };
+    const vColor = varianceColor(variance);
+    if (vColor) vc.fill = fill(vColor);
+    const barColor = t.summary ? 'FF9AA3B5' : t.milestone ? 'FF111111' : t.percent === 100 ? 'FF34B27A' : late.has(t.id) ? 'FFE5484D' : critical.has(t.id) ? 'FFF59E0B' : 'FF6D4DFF';
     weeks.forEach((w, i) => {
-      const we = new Date(+w + 6 * 86400000);
-      if (t.start && t.finish && t.start <= we && t.finish >= w) {
-        const argb = t.summary ? 'FF9AA3B5' : t.milestone ? 'FF111111' : t.percent === 100 ? 'FF34B27A' : late.has(t.id) ? 'FFE5484D' : critical.has(t.id) ? 'FFF59E0B' : 'FF6D4DFF';
-        const c = row.getCell(i + 2);
-        c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb } };
-        if (t.milestone) { c.value = '◆'; c.font = { color: { argb: 'FFFFFFFF' } }; c.alignment = { horizontal: 'center' }; }
-      }
+      const s = ganttWeek(t, w);
+      const c = row.getCell(i + FIRST_WEEK_COL);
+      if (t.milestone) {
+        if (s.current) { c.value = '◆'; c.font = { bold: true, color: { argb: s.base || !t.baselineFinish ? 'FF111111' : 'FFE5484D' } }; }
+        else if (s.base) { c.value = '◇'; c.font = { color: { argb: 'FF6B7280' } }; }
+        c.alignment = { horizontal: 'center' };
+      } else if (s.slip) c.fill = fill('FFE5484D', 'darkUp', 'FFFADBD8'); // scheduled past the baseline
+      else if (s.current) c.fill = fill(barColor);
+      else if (s.base) c.fill = fill('FFE5E7EB'); // baseline weeks the task no longer occupies
+      const border = {};
+      if (s.base && !t.milestone) border.bottom = { style: 'thick', color: { argb: 'FF374151' } };
+      if (i === statusWeek) border.left = { style: 'medium', color: { argb: 'FFE5484D' } };
+      if (Object.keys(border).length) c.border = border;
     });
   }
   const hdr = gs.getRow(1); hdr.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 9 }; hdr.fill = HEADER_FILL; hdr.alignment = { textRotation: 90, horizontal: 'center' };
-  gs.getColumn(1).width = 44; for (let i = 2; i <= weeks.length + 1; i++) gs.getColumn(i).width = 3.2;
-  gs.views = [{ state: 'frozen', xSplit: 1, ySplit: 1 }];
-  const legend = gs.addRow([]); legend.getCell(1).value = 'Legend: purple = scheduled · amber = critical path · red = late · green = complete · ◆ milestone';
-  legend.font = { italic: true, color: { argb: 'FF666666' } };
+  for (let i = 1; i <= 4; i++) hdr.getCell(i).alignment = { vertical: 'bottom', wrapText: true };
+  if (statusWeek >= 0) hdr.getCell(statusWeek + FIRST_WEEK_COL).fill = fill('FFE5484D');
+  hdr.height = 44;
+  gs.getColumn(1).width = 44; gs.getColumn(2).width = 11; gs.getColumn(3).width = 11; gs.getColumn(4).width = 9;
+  for (let i = FIRST_WEEK_COL; i < weeks.length + FIRST_WEEK_COL; i++) gs.getColumn(i).width = 3.2;
+  gs.views = [{ state: 'frozen', xSplit: 4, ySplit: 1 }];
+  gs.addRow([]);
+  for (const line of [
+    'Bars: purple = scheduled · amber = critical path · red = late · green = complete · grey = summary',
+    'Variance: dark line under a bar = baseline dates · red hatching = weeks scheduled past the baseline finish · light grey = baseline weeks no longer used',
+    `◆ = forecast milestone (red when it has moved off its baseline week) · ◇ = baseline milestone · red column = status date ${a.statusDate}`,
+    'Variance (days) = working days between baseline finish and forecast finish; positive means later than baseline.',
+  ]) { const r = gs.addRow([line]); r.font = { italic: true, color: { argb: 'FF666666' } }; }
+
+  // Milestone variance, with a week-over-week trend when earlier versions of the plan are supplied.
+  const snapshots = loadSnapshots(history, planFile);
+  const trend = milestoneTrend(p, snapshots);
+  const ms = wb.addWorksheet('Milestone variance');
+  const mcols = [{ header: 'ID', width: 6 }, { header: 'Milestone', width: 34 }, { header: 'Baseline', width: 12, format: 'date' },
+    ...trend.versions.map((v) => ({ header: `Forecast ${v.label}`, width: 14, format: 'date' })),
+    { header: 'Variance (days)', width: 10 }, { header: 'Change vs. last (days)', width: 12 }, { header: 'Trend', width: 12 }, { header: 'Status', width: 14 }];
+  ms.addRow(mcols.map((c) => c.header));
+  for (const m of trend.rows) {
+    const r = ms.addRow([m.id, m.name, m.baseline, ...m.forecasts, m.variance ?? '', m.change ?? '', m.trend, m.status]);
+    const vCol = 4 + trend.versions.length;
+    const vColor = varianceColor(m.variance);
+    if (vColor) r.getCell(vCol).fill = fill(vColor);
+    const tColor = { Worse: 'FFFADBD8', Better: 'FFD7F5E3' }[m.trend];
+    if (tColor) r.getCell(vCol + 2).fill = fill(tColor);
+  }
+  styleSheet(ms, mcols, trend.rows.length);
+  ms.getRow(1).alignment = { vertical: 'middle', wrapText: true }; ms.getRow(1).height = 32;
+  if (!snapshots.length) {
+    ms.addRow([]);
+    const r = ms.addRow(['', 'No earlier versions yet. Lumen keeps a dated copy each time this tracker is built or progress is recorded, so next week this sheet shows how each milestone moved.']);
+    r.font = { italic: true, color: { argb: 'FF666666' } };
+  }
 
   // Resources
   const rs = wb.addWorksheet('Resources');
@@ -245,11 +300,91 @@ async function projectToWorkbook(planFile, outFile) {
   // Summary
   const lines = [['Project', a.project], ['Status date', a.statusDate], ['Suggested RAG', a.suggestedRag], ['% complete', `${a.progress.percentComplete}% (plan: ${a.progress.expectedByNow}%)`],
     ['Forecast finish', a.schedule.forecastFinish], ['Baseline finish', a.schedule.baselineFinish], ['Schedule slip (working days)', a.schedule.slipWorkingDays], ['Late tasks', a.lateTasks.length], ['Critical-path tasks remaining', a.criticalPath.length]];
+  const slippedMs = trend.rows.filter((m) => m.status === 'Slipped');
+  const worst = trend.rows.reduce((w, m) => (m.variance > (w?.variance ?? 0) ? m : w), null);
+  lines.push(['Milestones slipped vs. baseline', `${slippedMs.length} of ${trend.rows.length}`]);
+  if (worst) lines.push(['Biggest milestone slip', `${worst.name} (${worst.variance} working days)`]);
+  if (snapshots.length) {
+    const worse = trend.rows.filter((m) => m.trend === 'Worse').length;
+    lines.push(['Compared with', `${trend.versions.slice(0, -1).map((v) => v.label).join(', ')} (${worse} milestone${worse === 1 ? '' : 's'} moved later)`]);
+  }
   for (const l of lines) ss.addRow(l);
   ss.getColumn(1).width = 30; ss.getColumn(2).width = 40; ss.getColumn(1).font = { bold: true };
 
-  await save(wb, outFile);
-  return { saved: outFile, sheets: ['Summary', 'Tasks', 'Gantt', 'Resources'], tasks: p.tasks.length };
+  await save(wb, outFile, { recalculate: false }); // no formulas, so no Excel round trip needed
+  return {
+    saved: outFile, sheets: ['Summary', 'Tasks', 'Gantt', 'Milestone variance', 'Resources'], tasks: p.tasks.length,
+    milestonesSlipped: slippedMs.length, comparedWith: snapshots.map((s) => (s.plan.statusDate ? `version of ${project.iso(s.plan.statusDate)}` : path.basename(s.file))), historySource,
+  };
 }
 
-module.exports = { open, cellText, read, write, update, projectToWorkbook, recalc };
+// ------------------------------------------------------------------ schedule-variance helpers (pure, tested)
+const DAY = 86400000;
+const toLocalDate = (s) => (s ? new Date(`${String(s).slice(0, 10)}T00:00:00`) : null);
+const monday = (d) => { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; };
+
+/** Week starts (Mondays) spanning both the current schedule and the baseline. */
+function ganttWeeks(p) {
+  const dates = [p.start, p.finish];
+  for (const t of p.tasks) dates.push(t.start, t.finish, t.baselineStart, t.baselineFinish);
+  const valid = dates.filter(Boolean);
+  if (!valid.length) return [monday(new Date())];
+  const first = monday(new Date(Math.min(...valid))), last = new Date(Math.max(...valid));
+  const weeks = [];
+  for (let w = first; w <= last; w = new Date(w.getFullYear(), w.getMonth(), w.getDate() + 7)) weeks.push(w);
+  return weeks;
+}
+
+/** How a task occupies one week: current bar, baseline bar, and whether the current bar runs past the baseline finish. */
+function ganttWeek(t, weekStart) {
+  const weekEnd = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + 6);
+  const overlaps = (s, f) => !!(s && f && s <= weekEnd && f >= weekStart);
+  const current = overlaps(t.start, t.finish);
+  const base = overlaps(t.baselineStart || t.baselineFinish, t.baselineFinish);
+  const slip = current && !!t.baselineFinish && weekEnd > t.baselineFinish && !base;
+  return { current, base, slip };
+}
+
+/** Working days from baseline finish to forecast finish (positive = later), or null without a baseline. */
+function finishVariance(t) {
+  return t.baselineFinish && t.finish ? project.workdaysBetween(t.baselineFinish, t.finish) : null;
+}
+
+function varianceColor(v) {
+  if (v == null || v === 0) return null;
+  return v < 0 ? 'FFD7F5E3' : v > 10 ? 'FFFADBD8' : 'FFFFE8CC';
+}
+
+/** Load earlier versions of the plan, oldest first by status date. The current plan itself is skipped. */
+function loadSnapshots(files = [], currentFile) {
+  const out = [];
+  for (const f of files || []) {
+    if (!f || path.resolve(f) === path.resolve(currentFile)) continue;
+    const s = project.load(f);
+    out.push({ file: f, plan: s, date: s.statusDate || fs.statSync(f).mtime });
+  }
+  return out.sort((x, y) => x.date - y.date);
+}
+
+/** Milestone forecasts across versions. Milestones are matched by UID, then by name. */
+function milestoneTrend(current, snapshots = []) {
+  const label = (plan, fallback) => (plan.statusDate ? project.iso(plan.statusDate) : fallback);
+  const versions = [...snapshots.map((s) => ({ label: label(s.plan, path.basename(s.file)) })), { label: `${label(current, 'current')} (current)` }];
+  const rows = current.tasks.filter((t) => t.milestone).map((t) => {
+    const forecasts = snapshots.map(({ plan }) => {
+      const m = plan.byUid.get(t.uid);
+      const match = m && m.name === t.name ? m : plan.tasks.find((x) => x.milestone && x.name === t.name) || m;
+      return match?.finish || null;
+    });
+    forecasts.push(t.finish);
+    const variance = finishVariance(t);
+    const prev = forecasts.length > 1 ? forecasts[forecasts.length - 2] : null;
+    const change = prev && t.finish ? project.workdaysBetween(prev, t.finish) : null;
+    const trend = change == null ? '' : change > 0 ? 'Worse' : change < 0 ? 'Better' : 'No change';
+    const status = t.percent === 100 ? 'Complete' : variance == null ? 'No baseline' : variance > 0 ? 'Slipped' : variance < 0 ? 'Early' : 'On baseline';
+    return { id: t.id, uid: t.uid, name: t.name, baseline: t.baselineFinish, forecasts, variance, change, trend, status };
+  });
+  return { versions, rows };
+}
+
+module.exports = { open, cellText, read, write, update, projectToWorkbook, recalc, ganttWeeks, ganttWeek, finishVariance, milestoneTrend };

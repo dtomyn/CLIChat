@@ -4,8 +4,8 @@ title: Microsoft Project plans
 emoji: 📅
 description: Read, analyze and update Microsoft Project plans (.mpp and Project XML) — schedule health, critical path, slippage, resource over-allocation, and progress updates.
 extensions: .mpp, .xml
-readTools: list_office_files, read_project_plan, analyze_project_plan
-writeTools: update_project_plan, project_plan_to_spreadsheet
+readTools: list_office_files, read_project_plan, analyze_project_plan, query_plan, plan_change_log, plan_lookahead, plan_progress_from_backlog, get_status_facts
+writeTools: update_project_plan, project_plan_to_spreadsheet, build_status_report
 ---
 
 # Working with Microsoft Project plans
@@ -16,9 +16,15 @@ You have tools for Microsoft Project plans in the user's project folder. **Alway
 |---|---|
 | `list_office_files` | Find plans and workbooks when the user doesn't name a file |
 | `analyze_project_plan` | Health checks, status reports, "what's late / slipping / at risk", critical path, over-allocation. **Start here for any question about schedule health.** |
+| `query_plan` | Questions about **part** of a plan: a workstream (`under`), a person (`owner`), late/behind tasks, the critical path, slips over N days, a date window, what a task depends on or what depends on it (`relatedTo`), and what changed since last week (`changedSince: "last"`). Returns exact rows; combine filters rather than reading the whole plan. Report the filters it applied, and any warnings |
+| `plan_change_log` | The change log between plan versions (the monthly one, or "what changed since the baseline?"). Changes are already sorted into **material** (milestone or finish moves, critical-path or large date moves, dependency logic changes, work added or removed) and **administrative**, each with the reason. Report material changes first, with their reasons; summarise administrative ones in a line or two |
+| `plan_lookahead` | The weekly forward-looking readout by workstream: starting, finishing, milestones, late carry-overs and what each workstream is waiting on. Lead with milestones and dependencies, since those are what teams need on their radar |
+| `plan_progress_from_backlog` | Propose % complete from an Azure DevOps work-item export. Items link to tasks by an `MPP-<task ID>` tag (or a mapping sheet). Show the proposed changes as a table (ID · Task · Now · Proposed · Items done), then the data-quality findings (unlinked items, bad links, stale items, tasks with no items) because the proposals are only as good as that data. Held-back decreases need a person's decision. Apply nothing until the user approves, then use `update_project_plan` with the approved rows |
+| `get_status_facts` | The weekly status model for a plan and optional RAID log: rule-based RAG with reasons, milestones with variance and movement since last time, changes, late/behind work, overdue RAID items, top risks and issues. Every fact has a source. It reads the newest approved RAID log (the huddle's "(updated)" copy, never a "(proposed)" one); `raidInput` says which file it used and how many huddle changes are still waiting for review. Always tell the user about pending changes, because the status leaves them out. Use it before writing any status summary |
+| `build_status_report` | Save the status pack (status.json, a detailed Markdown report, a one-page HTML executive dashboard) under "Status reports/<date>/" as a Draft. Pass your narrative and decisions needed; they are labelled AI-written. Never contradict the calculated rating in the narrative; recommend a change instead |
 | `read_project_plan` | Full task list (IDs, WBS, dates, % complete, predecessors, resources) when you need details |
 | `update_project_plan` | Record progress (% complete, dates, durations, notes) and move the status date. Saves a new "(updated)" copy, so the original is never overwritten |
-| `project_plan_to_spreadsheet` | Produce an Excel tracker with a colour-coded task list and a weekly Gantt chart |
+| `project_plan_to_spreadsheet` | Produce an Excel tracker with a colour-coded task list, a weekly **variance Gantt** (baseline under each bar, slip weeks hatched red, variance in working days, status-date line) and a Milestone variance sheet. Lumen keeps a dated version of the plan (in .lumen/plan-history) each time a tracker is built or progress is recorded, and the Milestone variance sheet compares against those automatically. Pass `history` only to compare with specific files |
 
 ## How to report on a plan
 - Lead with the answer: an overall **RAG status** with a one-line reason, then the 3–5 things a project manager must act on.

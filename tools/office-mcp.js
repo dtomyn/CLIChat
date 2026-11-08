@@ -8,8 +8,12 @@ const path = require('path');
 const fs = require('fs');
 const excel = require('./excel');
 const project = require('./project');
+const backlog = require('./backlog');
 const docx = require('./docx');
 const traceability = require('./traceability');
+const status = require('./status');
+const raid = require('./raid');
+const publish = require('./publish');
 
 const ROOT = path.resolve(process.env.OFFICE_MCP_ROOT || process.cwd());
 const READ_ONLY = process.env.OFFICE_MCP_READONLY === '1';
@@ -18,7 +22,13 @@ function resolveIn(p, { mustExist = true } = {}) {
   if (!p) throw Object.assign(new Error('A file path is required.'), { friendly: true });
   const full = path.resolve(ROOT, String(p).replace(/^["']|["']$/g, ''));
   const rel = path.relative(ROOT, full);
-  if (rel.startsWith('..') || path.isAbsolute(rel)) throw Object.assign(new Error(`"${p}" is outside the project folder (${ROOT}).`), { friendly: true });
+  // A link inside the folder that points outside it counts as outside.
+  let realRel = rel;
+  try {
+    const real = fs.existsSync(full) ? fs.realpathSync(full) : path.join(fs.realpathSync(path.dirname(full)), path.basename(full));
+    realRel = path.relative(fs.realpathSync(ROOT), real);
+  } catch {} // a folder that doesn't exist yet: the lexical check above applies
+  if (rel.startsWith('..') || path.isAbsolute(rel) || realRel.startsWith('..') || path.isAbsolute(realRel)) throw Object.assign(new Error(`"${p}" is outside the project folder (${ROOT}).`), { friendly: true });
   if (mustExist && !fs.existsSync(full)) {
     // Be forgiving: match by file name anywhere in the folder.
     const want = path.basename(full).toLowerCase();
@@ -26,6 +36,14 @@ function resolveIn(p, { mustExist = true } = {}) {
     if (hit) return hit;
     throw Object.assign(new Error(`Can't find "${p}" in the project folder.`), { friendly: true });
   }
+  return full;
+}
+/** A "save as" target, resolved like the tool does (relative to `base`) but confined to the project folder. */
+function outputIn(p, base = ROOT) {
+  if (p == null || p === '') return undefined;
+  const full = path.resolve(base, String(p).replace(/^["']|["']$/g, ''));
+  const rel = path.relative(ROOT, full);
+  if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) throw Object.assign(new Error(`"${p}" is outside the project folder (${ROOT}).`), { friendly: true });
   return full;
 }
 function walk(dir, depth = 0, out = []) {
@@ -46,7 +64,7 @@ const TOOLS = [
     description: 'List the documents (.docx/.md/.txt/.pdf), Excel workbooks (.xlsx/.xlsm/.csv) and Microsoft Project plans (.mpp/.xml) in the project folder, with size and last-modified date.',
     inputSchema: { type: 'object', properties: {} },
     run: () => {
-      const files = walk(ROOT).filter((f) => /\.(xlsx|xlsm|csv|mpp|xml|docx|docm|md|txt|pdf)$/i.test(f) && !/[\\/]\.?(claude|github|vscode)[\\/]/i.test(f));
+      const files = walk(ROOT).filter((f) => /\.(xlsx|xlsm|csv|mpp|xml|docx|docm|md|txt|pdf|vtt)$/i.test(f) && !/[\\/]\.?(claude|github|vscode)[\\/]/i.test(f));
       return files.map((f) => `${path.relative(ROOT, f)}  (${Math.round(fs.statSync(f).size / 1024)} KB, modified ${new Date(fs.statSync(f).mtimeMs).toISOString().slice(0, 10)})`).join('\n') || 'No documents, workbooks or plans found.';
     },
   },
@@ -99,7 +117,7 @@ const TOOLS = [
       },
       required: ['path'],
     },
-    run: write((a) => excel.update(resolveIn(a.path), a)),
+    run: write((a) => { const file = resolveIn(a.path); return excel.update(file, { ...a, saveAs: outputIn(a.saveAs, path.dirname(file)) }); }),
   },
   {
     name: 'read_project_plan',
@@ -114,6 +132,105 @@ const TOOLS = [
     run: (a) => project.analyze(resolveIn(a.path), a.statusDate),
   },
   {
+    name: 'query_plan',
+    description: 'Answer a question about a Microsoft Project plan with exact task rows, calculated by code. Combine any filters (AND): a WBS branch or summary task ("under"), a person ("owner"), words in the name or notes, status (late, behind, not_started, in_progress, complete, should_have_started), critical path only, milestones only, slipped more than N working days vs. baseline, a date window (tasks active, starting or finishing in it), what a task depends on or what depends on it (relatedTo, any number of links away), and what changed since the last saved version or a date. Use it for questions like "what\'s late in Testing?", "what does Go-live depend on that is at risk?", "what is Priya doing in the next 2 weeks?" or "what moved since last week?". Prefer it over read_project_plan for questions about part of a plan.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'The project plan' },
+        under: { type: 'string', description: 'WBS number (e.g. "5") or summary task name; includes everything beneath it' },
+        owner: { type: 'string', description: 'Part of a resource name' },
+        text: { type: 'string', description: 'Words in the task name or notes' },
+        status: { type: 'array', items: { type: 'string', enum: ['late', 'behind', 'not_started', 'in_progress', 'complete', 'should_have_started'] } },
+        critical: { type: 'boolean', description: 'Only incomplete tasks with zero float' },
+        milestones: { type: 'boolean' },
+        slippedMoreThan: { type: 'number', description: 'Working days later than baseline finish' },
+        from: { type: 'string', description: 'YYYY-MM-DD' },
+        to: { type: 'string', description: 'YYYY-MM-DD' },
+        dateMode: { type: 'string', enum: ['active', 'starting', 'finishing'], description: 'How from/to apply (default active)' },
+        relatedTo: { type: 'object', properties: { task: { type: 'string', description: 'Task ID or name' }, direction: { type: 'string', enum: ['upstream', 'downstream'], description: 'upstream = what it depends on; downstream = what depends on it' }, depth: { type: 'number', description: 'Max links away (default all)' } }, required: ['task'] },
+        changedSince: { type: 'string', description: '"last" for the previous saved version, or YYYY-MM-DD for the version saved on or before that date' },
+        includeSummaries: { type: 'boolean', description: 'Include summary rows (default false)' },
+        statusDate: { type: 'string', description: 'YYYY-MM-DD; defaults to the plan\'s status date' },
+        sort: { type: 'string', enum: ['id', 'start', 'finish', 'slip', 'float'] },
+        limit: { type: 'number', description: 'Max rows (default 50)' },
+      },
+      required: ['path'],
+    },
+    run: (a) => project.queryPlan(resolveIn(a.path), a, ROOT),
+  },
+  {
+    name: 'plan_change_log',
+    description: 'Compare a Microsoft Project plan with an earlier version (the last saved one, the one on or before a date, or a file you name) and produce the change log: every change sorted into material (moves a milestone or the finish, critical-path or large date moves, dependency logic changes, added or removed work that matters) or administrative (renames, notes, resources, small date moves), each with the reason it is material, plus milestone movement and the project finish. Progress updates are only counted. Read-only. Use it for the monthly change log or "what changed since the last baseline?".',
+    inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'The current plan' }, against: { type: 'string', description: '"last" (default) or YYYY-MM-DD: compare with the saved version on or before that date' }, compareFile: { type: 'string', description: 'Optional: an earlier version of the plan to compare with, instead of the saved history' }, thresholdDays: { type: 'number', description: 'Working days of date movement that count as material for non-critical tasks (default 3)' }, statusDate: { type: 'string' } }, required: ['path'] },
+    run: (a) => project.changeLog(resolveIn(a.path), { ...a, compareFile: a.compareFile ? resolveIn(a.compareFile) : undefined }, ROOT),
+  },
+  {
+    name: 'plan_lookahead',
+    description: 'Forward-looking readout from a Microsoft Project plan for the coming week (or N days), grouped by workstream: tasks starting, tasks finishing, milestones, late carry-overs, and unfinished work these tasks are waiting on (from other workstreams or overdue). Read-only. Use it for "what do teams need on their radar next week?".',
+    inputSchema: { type: 'object', properties: { path: { type: 'string' }, from: { type: 'string', description: 'YYYY-MM-DD; default the day after the status date' }, days: { type: 'number', description: 'Window length in days (default 7)' }, under: { type: 'string', description: 'Limit to a WBS branch or summary task' }, owner: { type: 'string', description: 'Limit to a person' }, statusDate: { type: 'string' } }, required: ['path'] },
+    run: (a) => project.lookahead(resolveIn(a.path), a),
+  },
+  {
+    name: 'plan_progress_from_backlog',
+    description: "Propose % complete for Microsoft Project tasks from an Azure DevOps backlog export (.xlsx or .csv from a work-item query with ID, State, Tags and optionally Story Points). Items are linked to plan tasks by a tag such as MPP-23 (tagPrefix changes MPP), by a mapping sheet, or by a Plan task column. Each task's % complete is calculated from its items' states (or story points), items removed from the backlog are ignored, and a % that would go down is held back for confirmation. Also returns data-quality findings: items not linked to any task, links to tasks that do not exist or are summary tasks, unknown states, stale in-progress items, and plan tasks that should be moving but have no items. Read-only: show the proposals, and after approval pass them to update_project_plan.",
+    inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'The project plan' }, backlog: { type: 'string', description: 'The Azure DevOps work-item export (.xlsx/.csv)' }, tagPrefix: { type: 'string', description: 'Tag prefix that links an item to a plan task (default MPP, e.g. MPP-23)' }, basis: { type: 'string', enum: ['state', 'points'], description: 'Weight items equally by state (default) or by story points' }, stateMap: { type: 'object', description: 'Override the % counted as done for a state, e.g. {"Ready for test": 90}' }, staleDays: { type: 'number', description: 'Days without a change before an in-progress item is called stale (default 14)' }, allowDecrease: { type: 'boolean', description: 'Also propose lower percentages (default false)' }, statusDate: { type: 'string' } }, required: ['path', 'backlog'] },
+    run: (a) => backlog.progressFromBacklog(resolveIn(a.path), resolveIn(a.backlog), a),
+  },
+  {
+    name: 'get_status_facts',
+    description: 'Calculate the weekly status facts for a Microsoft Project plan, optionally with a RAID log: overall RAG with the rule-based reasons, schedule and cost vs. baseline, milestones with variance and movement since the last saved version (plus the unfinished work each depends on), what changed since then, late and behind tasks, over-allocation, overdue RAID items, and the top open risks and issues. The RAID log is read from the newest approved copy next to the one you pass (an "(updated)" file from the huddle flow, never a "(proposed)" review copy); raidInput says which file was used and lists huddle changes still pending review, which are not in the facts. Every fact has a source reference. Read-only. Use it before writing a status summary, then pass your summary to build_status_report.',
+    inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'The project plan' }, raid: { type: 'string', description: 'Optional RAID log workbook (.xlsx/.csv)' }, statusDate: { type: 'string', description: 'YYYY-MM-DD; defaults to the plan status date' } }, required: ['path'] },
+    run: async (a) => { const m = await status.buildModel(resolveIn(a.path), { raid: a.raid ? resolveIn(a.raid) : null, root: ROOT, statusDate: a.statusDate }); delete m.ai; return m; },
+  },
+  {
+    name: 'build_status_report',
+    description: 'Write the weekly status pack into "Status reports/<status date>/": status.json (the status model), a detailed status report (Markdown, which can be saved as Word) and a one-page executive dashboard (HTML, with milestones you can open to see the work they depend on). All facts are calculated from the files. Your narrative and decisionsNeeded are shown separately and labelled as AI-written; if the narrative names a different RAG rating from the calculated one, the pack flags it. Everything is saved as a Draft for PMO review.',
+    inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'The project plan' }, raid: { type: 'string', description: 'Optional RAID log workbook' }, statusDate: { type: 'string' }, narrative: { type: 'string', description: '3 to 5 sentences for executives, based only on get_status_facts' }, decisionsNeeded: { type: 'array', items: { type: 'string' }, description: 'Decisions or support needed from leadership, each citing the task or RAID ID' } }, required: ['path'] },
+    run: write((a) => status.buildReport(resolveIn(a.path), { raid: a.raid ? resolveIn(a.raid) : null, root: ROOT, statusDate: a.statusDate, narrative: a.narrative, decisionsNeeded: a.decisionsNeeded })),
+  },
+  {
+    name: 'read_transcript',
+    description: 'Read a meeting transcript (Teams .vtt, a Teams transcript saved as Word .docx, or a .txt/.md file) as numbered turns with time, speaker and text. Use it before proposing RAID log updates, and quote from it word for word.',
+    inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'The transcript file' } }, required: ['path'] },
+    run: (a) => { const segs = raid.readTranscript(resolveIn(a.path)); return { file: path.basename(a.path), turns: segs.length, speakers: [...new Set(segs.map((s) => s.speaker).filter(Boolean))], transcript: segs.map((s) => `[${s.n}] ${s.time ? s.time + ' ' : ''}${s.speaker ? s.speaker + ': ' : ''}${s.text}`).join('\n') }; },
+  },
+  {
+    name: 'propose_raid_updates',
+    description: 'Propose RAID log changes from a meeting transcript, for a person to approve. Saves "<RAID log> (proposed).xlsx" with the changes highlighted (green = new row, yellow = changed cell) and a "Proposed changes" sheet listing each change with its transcript evidence and an "Approve? (Yes/No)" column. The original RAID log is not changed. Each proposal must include evidence.quote copied word for word from the transcript (at least 4 words); proposals whose quote cannot be found are rejected. Also returns meeting checks such as new actions with no owner or due date.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        raid: { type: 'string', description: 'The RAID log workbook' },
+        transcript: { type: 'string', description: 'The meeting transcript' },
+        meetingDate: { type: 'string', description: 'YYYY-MM-DD; used as the Raised date for new items' },
+        proposals: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              change: { type: 'string', enum: ['add', 'update', 'close'] },
+              kind: { type: 'string', enum: ['risk', 'issue', 'action', 'decision', 'dependency', 'assumption'] },
+              id: { type: 'string', description: 'Existing ID, for update or close' },
+              fields: { type: 'object', description: 'Only what the meeting supports', properties: { title: { type: 'string' }, owner: { type: 'string' }, due: { type: 'string', description: 'YYYY-MM-DD (due, next review or needed-by date)' }, status: { type: 'string' }, action: { type: 'string', description: 'Mitigation or action; added to any existing text' }, priority: { type: 'string' }, probability: { type: 'string', description: 'H/M/L' }, impact: { type: 'string', description: 'H/M/L' }, category: { type: 'string' }, date: { type: 'string' } } },
+              evidence: { type: 'object', properties: { quote: { type: 'string', description: 'At least 4 words copied exactly from the transcript' } }, required: ['quote'] },
+              reason: { type: 'string', description: 'One line on why, especially when linking to an existing item' },
+            },
+            required: ['change', 'kind', 'evidence'],
+          },
+        },
+      },
+      required: ['raid', 'transcript', 'proposals'],
+    },
+    run: write((a) => raid.propose(resolveIn(a.raid), resolveIn(a.transcript), a.proposals || [], { meetingDate: a.meetingDate })),
+  },
+  {
+    name: 'apply_raid_updates',
+    description: 'Apply only the approved changes from a reviewed "<RAID log> (proposed).xlsx" (rows marked Yes in "Approve?") to "<RAID log> (updated).xlsx". Refuses if any row is not marked Yes or No. Only call this after the person says they have reviewed the proposed workbook. The original RAID log is never overwritten.',
+    inputSchema: { type: 'object', properties: { proposed: { type: 'string', description: 'The reviewed "(proposed)" workbook' } }, required: ['proposed'] },
+    run: write((a) => raid.applyApproved(resolveIn(a.proposed))),
+  },
+  {
     name: 'update_project_plan',
     description: 'Update tasks in a Microsoft Project plan (percent complete, start, finish, duration, name, notes) and optionally the status date. Identify tasks by taskId (the ID column) or exact taskName. Never overwrites the original: saves "<name> (updated).xml" (or saveAs). Microsoft Project recalculates dependent dates when the file is opened.',
     inputSchema: {
@@ -126,54 +243,39 @@ const TOOLS = [
       },
       required: ['path', 'updates'],
     },
-    run: write((a) => project.updatePlan(resolveIn(a.path), a, ROOT)),
+    run: write((a) => project.updatePlan(resolveIn(a.path), { ...a, saveAs: outputIn(a.saveAs) }, ROOT)),
   },
   {
     name: 'project_plan_to_spreadsheet',
-    description: 'Export a Microsoft Project plan to a formatted Excel tracker with Summary, Tasks (status colour-coded), a weekly Gantt chart, and Resources sheets.',
-    inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'The project plan' }, output: { type: 'string', description: 'Output .xlsx path' } }, required: ['path', 'output'] },
-    run: write((a) => excel.projectToWorkbook(resolveIn(a.path), resolveIn(a.output, { mustExist: false }))),
+    description: 'Export a Microsoft Project plan to a formatted Excel tracker: Summary, Tasks (status colour-coded), a weekly variance Gantt (baseline drawn under each bar, weeks past the baseline finish hatched red, a variance column, a status-date line, baseline vs. forecast milestones), Milestone variance, and Resources. Lumen keeps a dated version of the plan each time a tracker is built or progress is recorded, and compares against the most recent earlier versions automatically; pass history only to compare against specific files.',
+    inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'The project plan' }, output: { type: 'string', description: 'Output .xlsx path' }, history: { type: 'array', items: { type: 'string' }, description: "Optional earlier versions of the same plan (.mpp/.xml), e.g. last week's copy, for the milestone slip trend" } }, required: ['path', 'output'] },
+    run: write((a) => excel.projectToWorkbook(resolveIn(a.path), resolveIn(a.output, { mustExist: false }), { history: (a.history || []).map((h) => resolveIn(h)), historyRoot: ROOT })),
+  },
+  {
+    name: 'check_freshness',
+    description: 'Knowledge freshness check against Published/publishing-log.xlsx: re-hashes each published source and lists stale snapshots (the source changed since it was published), sources that were never published (Markdown under the folders you pass), orphan snapshots (files under Published/ that no log row points at), and sources or snapshots that have gone missing. Read-only. Use it for "is the published knowledge up to date?" and the scheduled freshness check.',
+    inputSchema: { type: 'object', properties: { sources: { type: 'array', items: { type: 'string' }, description: 'Optional Markdown files or folders that should be published (e.g. ["Lifecycle", "Wiki export"]), to find never-published sources' } } },
+    run: (a) => publish.freshnessCheck({ root: ROOT, sources: (a.sources || []).map((s) => resolveIn(s)) }),
+  },
+  {
+    name: 'publish_snapshot',
+    description: 'Publish approved Markdown (lifecycle stage outputs, or a wiki export folder) as Word and/or HTML snapshots under "Published/<library>/", with version, approver, source and source revision in the document properties, and record each one in Published/publishing-log.xlsx (source, revision, published at, approver, version, destination). Sources without Lumen\'s approval stamp are skipped unless you pass the approver the person names; sources unchanged since their last publish are skipped. A Word template (.dotx/.docx, e.g. from the Templates folder) gives the program styles and cover page. Only publish what the person asked for.',
+    inputSchema: { type: 'object', properties: {
+      sources: { type: 'array', items: { type: 'string' }, description: 'Markdown files or folders to publish' },
+      library: { type: 'string', description: 'Published/<library> folder name (default Knowledge)' },
+      formats: { type: 'array', items: { type: 'string', enum: ['docx', 'html'] }, description: 'Default ["docx"]' },
+      approver: { type: 'string', description: 'Only when the person tells you who approved sources that have no approval stamp' },
+      version: { type: 'string', description: 'Optional version; default goes up by one per republish' },
+      template: { type: 'string', description: 'Optional Word template, e.g. "Templates/FDD Template.dotx"' },
+      force: { type: 'boolean', description: 'Republish even when the source is unchanged' },
+    }, required: ['sources'] },
+    run: write((a) => publish.publishSnapshot((a.sources || []).map((s) => resolveIn(s)), { root: ROOT, library: a.library, formats: a.formats, approver: a.approver, version: a.version, template: a.template ? resolveIn(a.template) : undefined, force: !!a.force })),
   },
 ];
 
 // ------------------------------------------------------------------ JSON-RPC over stdio
-const send = (msg) => process.stdout.write(JSON.stringify(msg) + '\n');
-const result = (id, r) => send({ jsonrpc: '2.0', id, result: r });
-
-async function handle(msg) {
-  const { id, method, params } = msg;
-  if (method === 'initialize') {
-    return result(id, { protocolVersion: params?.protocolVersion || '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 'office', version: '1.0.0' },
-      instructions: 'Tools for Excel workbooks, Microsoft Project plans, Word documents and requirements traceability in the project folder.' });
-  }
-  if (method === 'ping') return result(id, {});
-  if (method === 'tools/list') return result(id, { tools: TOOLS.map(({ name, description, inputSchema }) => ({ name, description, inputSchema })) });
-  if (method === 'tools/call') {
-    const tool = TOOLS.find((t) => t.name === params?.name);
-    if (!tool) return send({ jsonrpc: '2.0', id, error: { code: -32602, message: `Unknown tool ${params?.name}` } });
-    try {
-      const out = await tool.run(params.arguments || {});
-      return result(id, { content: [{ type: 'text', text: typeof out === 'string' ? out : JSON.stringify(out, null, 1) }] });
-    } catch (e) {
-      return result(id, { isError: true, content: [{ type: 'text', text: e.friendly ? e.message : `Error: ${e.message}` }] });
-    }
-  }
-  if (id !== undefined) send({ jsonrpc: '2.0', id, error: { code: -32601, message: `Method not found: ${method}` } });
+if (require.main === module) {
+  require('./mcp-stdio').serve({ name: 'office', instructions: 'Tools for Excel workbooks, Microsoft Project plans, Word documents and requirements traceability and knowledge publishing in the project folder.', tools: TOOLS });
 }
-
-let buf = '';
-process.stdin.on('data', (c) => {
-  buf += c.toString('utf8');
-  let nl;
-  while ((nl = buf.indexOf('\n')) >= 0) {
-    const line = buf.slice(0, nl).trim(); buf = buf.slice(nl + 1);
-    if (!line) continue;
-    let msg; try { msg = JSON.parse(line); } catch { continue; }
-    pending++;
-    handle(msg).catch((e) => process.stderr.write(String(e.stack || e) + '\n')).finally(() => { pending--; if (ended && !pending) process.exit(0); });
-  }
-});
-let pending = 0, ended = false;
-process.stdin.on('end', () => { ended = true; if (!pending) process.exit(0); });
 
 module.exports = { TOOLS };

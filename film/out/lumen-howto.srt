@@ -1,0 +1,515 @@
+1
+00:00:00,994 --> 00:00:02,151
+Welcome to Lumen.
+
+2
+00:00:02,151 --> 00:00:05,623
+A friendly chat workspace, built on GitHub Copilot.
+
+3
+00:00:05,959 --> 00:00:09,538
+You may already chat with GitHub Copilot in VS Code.
+
+4
+00:00:09,538 --> 00:00:13,873
+Behind the scenes, that chat now runs on the Copilot CLI agent.
+
+5
+00:00:13,873 --> 00:00:17,796
+It reads your files, uses tools, and gets real work done.
+
+6
+00:00:17,796 --> 00:00:24,541
+But VS Code is built around code, and most of the team works in plans, spreadsheets and documents.
+
+7
+00:00:24,883 --> 00:00:31,733
+Lumen runs on that same Copilot agent, in a chat window built for that kind of work, on your own computer.
+
+8
+00:00:31,733 --> 00:00:35,933
+And yes, if Claude Code is what you have, Lumen runs on that too.
+
+9
+00:00:36,191 --> 00:00:40,372
+In the next few minutes, you'll learn how to use every part of it, step by step.
+
+10
+00:00:40,667 --> 00:00:41,330
+Step one.
+
+11
+00:00:41,330 --> 00:00:42,139
+Get set up.
+
+12
+00:00:44,193 --> 00:00:47,163
+The first time you open Lumen, it asks three things.
+
+13
+00:00:47,163 --> 00:00:47,735
+Your name,
+
+14
+00:00:50,924 --> 00:00:52,448
+which AI engine to use.
+
+15
+00:00:52,448 --> 00:00:56,556
+GitHub Copilot is ready, and Claude Code sits right beside it,
+
+16
+00:00:59,851 --> 00:01:01,755
+and where your work lives.
+
+17
+00:01:01,755 --> 00:01:03,878
+That folder is your notebook.
+
+18
+00:01:03,878 --> 00:01:09,515
+Keep it in OneDrive, and Microsoft 365 Copilot can find the same files later.
+
+19
+00:01:13,441 --> 00:01:14,023
+Step two.
+
+20
+00:01:14,023 --> 00:01:15,382
+Find your way around.
+
+21
+00:01:17,434 --> 00:01:22,278
+If you've used Microsoft 365 Copilot, this will feel familiar.
+
+22
+00:01:22,278 --> 00:01:23,684
+That's on purpose.
+
+23
+00:01:25,677 --> 00:01:27,226
+The same rail on the left.
+
+24
+00:01:27,226 --> 00:01:29,670
+Chat, Agents, Prompts, and your Notebook.
+
+25
+00:01:29,670 --> 00:01:36,941
+The same words, and the same habits, so everything you learn here carries straight over when your Copilot licence arrives.
+
+26
+00:01:38,931 --> 00:01:45,523
+And so nobody mixes them up, every message box says plainly which tool you're in, and which engine is answering.
+
+27
+00:01:46,591 --> 00:01:47,248
+Step three.
+
+28
+00:01:47,248 --> 00:01:48,383
+Chat with an agent.
+
+29
+00:01:49,334 --> 00:01:50,671
+Agents are specialists.
+
+30
+00:01:50,671 --> 00:01:55,670
+Pick one, like the Requirements Coach, and it offers starter prompts to get you going.
+
+31
+00:01:57,498 --> 00:02:00,385
+Under the message box, choose what Lumen may do.
+
+32
+00:02:00,385 --> 00:02:03,512
+Just chat, read your files, or create and edit them.
+
+33
+00:02:03,512 --> 00:02:06,458
+And pick a response mode, from quick to thorough.
+
+34
+00:02:08,119 --> 00:02:11,981
+Send it, and the answer streams in, with real headings and tables.
+
+35
+00:02:17,825 --> 00:02:24,652
+User stories, Given, When, Then acceptance criteria, and the open questions to take back to the business.
+
+36
+00:02:25,833 --> 00:02:26,473
+Step four.
+
+37
+00:02:26,473 --> 00:02:27,753
+Work with the reply.
+
+38
+00:02:30,629 --> 00:02:32,275
+Lumen suggests a next step.
+
+39
+00:02:32,275 --> 00:02:35,749
+Click it to send, or press the up arrow to edit it first.
+
+40
+00:02:38,527 --> 00:02:42,623
+Every reply can be copied, retried, or branched into a new chat.
+
+41
+00:02:42,623 --> 00:02:45,823
+A thumbs up or down tells the team what's working.
+
+42
+00:02:46,695 --> 00:02:47,713
+Need a document?
+
+43
+00:02:47,713 --> 00:02:49,112
+Export, Word document.
+
+44
+00:02:49,112 --> 00:02:53,437
+Real headings, lists, and tables, saved straight into your notebook.
+
+45
+00:02:56,861 --> 00:03:02,024
+Your own messages can be edited and resent, or saved as a prompt to reuse any time.
+
+46
+00:03:03,006 --> 00:03:03,611
+Step five.
+
+47
+00:03:03,611 --> 00:03:04,820
+Bring in your files.
+
+48
+00:03:09,571 --> 00:03:14,024
+To practise, the home screen sets up a sample project in one click.
+
+49
+00:03:14,024 --> 00:03:18,809
+A Microsoft Project plan, with a budget, risks, and timesheets in Excel.
+
+50
+00:03:23,007 --> 00:03:26,207
+Open the Notebook to see everything in your project folder.
+
+51
+00:03:33,796 --> 00:03:41,220
+To use a file in a chat, type a slash, exactly like in Microsoft 365 Copilot, and pick it.
+
+52
+00:03:42,200 --> 00:03:46,232
+Lumen reads the real plan, and you can watch every step as it works.
+
+53
+00:03:52,668 --> 00:03:53,280
+Step six.
+
+54
+00:03:53,280 --> 00:03:54,844
+Use the prompt gallery.
+
+55
+00:03:58,747 --> 00:04:03,957
+Saved prompts ask a few simple questions, then hand the work to the right agent.
+
+56
+00:04:03,957 --> 00:04:08,581
+Project plans, budgets, the delivery lifecycle, Azure DevOps, and more.
+
+57
+00:04:12,820 --> 00:04:14,512
+Open the project health check.
+
+58
+00:04:14,512 --> 00:04:17,840
+Lumen has already picked the right plan from your notebook.
+
+59
+00:04:17,840 --> 00:04:18,516
+Click Start.
+
+60
+00:04:32,030 --> 00:04:37,939
+Red, amber or green, the critical path, slippage against the baseline, and who's over allocated.
+
+61
+00:04:38,909 --> 00:04:41,917
+And any table copies straight into Excel or Outlook.
+
+62
+00:04:42,177 --> 00:04:42,940
+Step seven.
+
+63
+00:04:42,940 --> 00:04:44,119
+Put it on repeat.
+
+64
+00:04:49,097 --> 00:04:51,627
+Open the prompt again, and choose Repeat.
+
+65
+00:04:51,627 --> 00:04:53,108
+Weekly, Mondays at nine.
+
+66
+00:04:59,023 --> 00:05:01,222
+Scheduled prompts get their own tab.
+
+67
+00:05:01,222 --> 00:05:06,169
+Lumen runs them while it's open, and leaves the result waiting as an unread chat.
+
+68
+00:05:07,179 --> 00:05:07,858
+Step eight.
+
+69
+00:05:07,858 --> 00:05:10,081
+Let Lumen update your files, safely.
+
+70
+00:05:16,525 --> 00:05:22,114
+Update the plan reads this week's progress workbook, and applies it to the Microsoft Project plan.
+
+71
+00:05:23,726 --> 00:05:25,604
+It never touches the original.
+
+72
+00:05:25,604 --> 00:05:30,361
+It saves an updated copy, checks the schedule again, and lists every change.
+
+73
+00:05:40,218 --> 00:05:44,783
+See changes shows exactly what moved, task by task, before and after.
+
+74
+00:05:47,508 --> 00:05:51,289
+To create new files, switch the chat to Create and edit files.
+
+75
+00:05:51,289 --> 00:05:53,972
+Ask for an Excel tracker with a Gantt chart,
+
+76
+00:05:56,686 --> 00:06:00,078
+and there it is, colour coded and ready for the steering committee.
+
+77
+00:06:02,210 --> 00:06:02,864
+Step nine.
+
+78
+00:06:02,864 --> 00:06:04,301
+Create your own agent.
+
+79
+00:06:09,147 --> 00:06:12,369
+Describe what you need in one sentence, and click Draft it.
+
+80
+00:06:17,189 --> 00:06:22,644
+Lumen fills in the same fields as Agent Builder in Microsoft 365 Copilot.
+
+81
+00:06:22,644 --> 00:06:26,605
+Name, description, instructions, and starter prompts.
+
+82
+00:06:26,605 --> 00:06:29,819
+It even switches on the right capabilities.
+
+83
+00:06:33,304 --> 00:06:38,318
+Anything marked Lumen only runs on this computer, so you always know what will carry over.
+
+84
+00:06:40,545 --> 00:06:43,084
+Create it, and pin your favourites to the sidebar.
+
+85
+00:06:50,699 --> 00:06:51,403
+Step ten.
+
+86
+00:06:51,403 --> 00:06:53,046
+Connect Azure DevOps.
+
+87
+00:06:58,675 --> 00:07:02,814
+In Settings, under Connections, paste your organisation's address.
+
+88
+00:07:02,814 --> 00:07:08,019
+Lumen signs in with your Azure account, or an access token that it keeps encrypted.
+
+89
+00:07:08,283 --> 00:07:12,507
+Check the connection, then pick the project, the team, and the wikis to search.
+
+90
+00:07:17,648 --> 00:07:22,832
+Now agents like the Backlog Helper can search and read your work items and wiki pages.
+
+91
+00:07:34,955 --> 00:07:38,699
+And when an agent wants to change something, it only proposes.
+
+92
+00:07:38,699 --> 00:07:41,355
+Switch the chat to Create and edit, and ask.
+
+93
+00:07:54,925 --> 00:07:59,106
+The change arrives as an approval card, showing exactly what will be written.
+
+94
+00:07:59,381 --> 00:08:02,480
+Nothing reaches Azure DevOps until you click Apply.
+
+95
+00:08:02,480 --> 00:08:07,039
+Lumen checks that nobody changed it in the meantime, and records your name.
+
+96
+00:08:08,019 --> 00:08:08,845
+Step eleven.
+
+97
+00:08:08,845 --> 00:08:11,048
+Run a guided delivery lifecycle.
+
+98
+00:08:20,014 --> 00:08:23,285
+The lifecycle sample sets up a program's documents.
+
+99
+00:08:23,285 --> 00:08:30,404
+Requirements and a project definition in Word, a solution blueprint, a data model, and a traceability workbook.
+
+100
+00:08:36,103 --> 00:08:40,434
+The traceability check reads every layer, from business requirement to story.
+
+101
+00:08:49,492 --> 00:08:55,583
+Coverage for every layer, stories that would build the wrong thing, broken links, and conflicting sources.
+
+102
+00:08:55,583 --> 00:08:58,111
+Each one with a cell reference and an owner.
+
+103
+00:09:03,512 --> 00:09:05,985
+For bigger work, start a lifecycle run.
+
+104
+00:09:05,985 --> 00:09:12,707
+Requirements, functional design, technical design, and stories, with an approval gate between every stage.
+
+105
+00:09:12,961 --> 00:09:16,938
+Name the run, choose the source documents, and start the first stage.
+
+106
+00:09:16,938 --> 00:09:21,089
+Each stage works in its own chat, and saves its output to your notebook.
+
+107
+00:09:48,783 --> 00:09:52,343
+Before you sign off, run an advisory traceability check.
+
+108
+00:09:52,343 --> 00:09:55,012
+It reports gaps, and never changes a file.
+
+109
+00:10:10,071 --> 00:10:10,902
+Then approve.
+
+110
+00:10:10,902 --> 00:10:15,821
+Your name and the time are stamped on the output, and the next stage unlocks.
+
+111
+00:10:15,821 --> 00:10:22,594
+With Azure DevOps connected, an approved stage publishes to the wiki, or becomes work items, in one click.
+
+112
+00:10:23,483 --> 00:10:24,176
+Step twelve.
+
+113
+00:10:24,176 --> 00:10:25,275
+See what's working.
+
+114
+00:10:29,132 --> 00:10:33,335
+Every thumbs up and down lands in Insights, by agent and by prompt.
+
+115
+00:10:33,335 --> 00:10:35,468
+And it all stays on this computer.
+
+116
+00:10:36,349 --> 00:10:37,703
+Step thirteen.
+
+117
+00:10:37,703 --> 00:10:40,893
+Take it to Microsoft 365 Copilot.
+
+118
+00:10:47,769 --> 00:10:51,211
+When your Copilot licence arrives, export any agent.
+
+119
+00:10:51,211 --> 00:10:56,110
+Paste it straight into Agent Builder, or hand IT a ready made app package.
+
+120
+00:11:00,106 --> 00:11:05,269
+Your prompts export too, as plain text, ready to save in Copilot's prompt gallery.
+
+121
+00:11:09,219 --> 00:11:16,217
+And every agent and skill exports into VS Code, so it works in GitHub Copilot Chat and Claude Code too.
+
+122
+00:11:18,331 --> 00:11:19,291
+Step fourteen.
+
+123
+00:11:19,291 --> 00:11:20,251
+Make it yours.
+
+124
+00:11:24,260 --> 00:11:25,487
+Lumen is pluggable.
+
+125
+00:11:25,487 --> 00:11:30,980
+It runs on GitHub Copilot, or on Claude Code, and switching is one click in Settings.
+
+126
+00:11:31,840 --> 00:11:33,419
+Light or dark, your choice.
+
+127
+00:11:37,438 --> 00:11:40,510
+And press control slash, for every keyboard shortcut.
+
+128
+00:11:43,764 --> 00:11:44,241
+Lumen.
+
+129
+00:11:44,241 --> 00:11:51,956
+Built for GitHub Copilot, ready for Microsoft 365 Copilot, and friendly for everyone on the team.

@@ -104,7 +104,7 @@
     "name": "Plan → Excel tracker",
     "emoji": "📗",
     "category": "Project plans",
-    "description": "Turn an MS Project plan into a colour-coded Excel tracker with a weekly Gantt chart.",
+    "description": "Turn an MS Project plan into a colour-coded Excel tracker with a weekly Gantt chart that shows slips against the baseline.",
     "assistantId": "schedule-analyst",
     "builtin": true,
     "access": "edit",
@@ -114,9 +114,16 @@
         "label": "Project plan",
         "type": "file",
         "accept": ".mpp,.xml"
+      },
+      {
+        "key": "previous",
+        "label": "Earlier version of the plan, to show week-over-week change",
+        "type": "file",
+        "accept": ".mpp,.xml",
+        "optional": true
       }
     ],
-    "template": "Export the project plan {{plan}} to an Excel tracker with a Gantt chart. Name it after the project, ending in ' - Tracker.xlsx'. Then summarise what is in each sheet."
+    "template": "Export the project plan {{plan}} to an Excel tracker with a variance Gantt chart. Earlier version to compare against: {{previous}} (if one is given, pass it as history; otherwise leave history out and Lumen compares with the versions it saved earlier). Name it after the project, ending in ' - Tracker.xlsx'. Then summarise what is in each sheet, and lead with the schedule variance: how many working days the forecast finish is behind the baseline, which milestones have slipped the most, and (if the tracker was compared with an earlier version) which milestones moved since then."
   },
   {
     "id": "resource-load",
@@ -601,5 +608,327 @@
       }
     ],
     "template": "Analyse the downstream impact of changed requirements in {{trm}}. Changed IDs: {{ids}}. What changed: {{change}}\n\nFor each changed requirement, list every affected refined requirement, functional design element, technical design element and story (with IDs and cells), say whether each one probably needs to change or only needs a review and why, mark the ones last updated before the change, and say who should review each layer. End with a proposed change-log entry."
+  },
+  {
+    "id": "ado-my-work",
+    "name": "My open work items",
+    "emoji": "🔷",
+    "category": "Azure DevOps",
+    "description": "Everything assigned to you that isn't done, grouped by sprint, with what needs attention.",
+    "assistantId": "backlog-helper",
+    "builtin": true,
+    "access": "read",
+    "fields": [],
+    "template": "List the Azure DevOps work items assigned to me that are not closed, done or removed. Group them by sprint, then by state. Point out anything that looks stuck (no change in two weeks), anything blocked, and anything missing acceptance criteria or an estimate. End with what I should do first today."
+  },
+  {
+    "id": "ado-sprint-status",
+    "name": "Sprint status summary",
+    "emoji": "🏃",
+    "category": "Azure DevOps",
+    "description": "Progress, risks and blockers in the current sprint.",
+    "assistantId": "backlog-helper",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "audience",
+        "label": "Who is it for?",
+        "type": "select",
+        "options": [
+          "The team",
+          "Stakeholders",
+          "Steering committee"
+        ],
+        "default": "The team"
+      }
+    ],
+    "template": "Summarise the current sprint from Azure DevOps for {{audience}}. Lead with a RAG status and one line. Show counts by state (done, in progress, not started, blocked) and by type. List the items at risk of not finishing and why, unassigned items, and bugs raised this sprint. Link every item. Keep it to one screen."
+  },
+  {
+    "id": "ado-wiki-find",
+    "name": "Find it in the wiki",
+    "emoji": "📖",
+    "category": "Azure DevOps",
+    "description": "Answer a question from the Azure DevOps wiki, with the pages cited.",
+    "assistantId": "backlog-helper",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "question",
+        "label": "What do you want to know?",
+        "type": "textarea",
+        "placeholder": "e.g. How are renewal fees calculated for late renewals?"
+      }
+    ],
+    "template": "Answer this from our Azure DevOps wiki: {{question}}\n\nSearch the wiki, read the most relevant pages, and answer in plain language. Cite each page as a link next to the point it supports. Say clearly if the wiki doesn't answer it or if pages disagree."
+  },
+  {
+    "id": "ado-stories-from-design",
+    "name": "Stories from the design → Azure DevOps",
+    "emoji": "✍️",
+    "category": "Azure DevOps",
+    "description": "Propose epics, features and stories in Azure DevOps from an approved design, traced by tags. You approve each batch.",
+    "assistantId": "story-writer",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "design",
+        "label": "Approved design or backlog",
+        "type": "file",
+        "accept": ".md,.docx,.txt"
+      },
+      {
+        "key": "parent",
+        "label": "Parent feature or epic number (optional)",
+        "type": "text",
+        "placeholder": "e.g. 210"
+      }
+    ],
+    "template": "Create Azure DevOps work items for the approved design in {{design}}. Parent feature or epic, if given: {{parent}}.\n\nFirst call ado_describe_work_item_type and check for existing epics and features with the same titles. Then propose the items with ado_propose_work_items: one story per design behaviour, each tagged with the FD/TD IDs it implements, with Given/When/Then acceptance criteria. Propose parents before children. Ask me for any required value you can't take from the design."
+  },
+  {
+    "id": "ado-publish-wiki",
+    "name": "Publish a document to the wiki",
+    "emoji": "📤",
+    "category": "Azure DevOps",
+    "description": "Propose a wiki page from a Markdown or Word document. You review the diff and approve.",
+    "assistantId": "backlog-helper",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "doc",
+        "label": "Document to publish",
+        "type": "file",
+        "accept": ".md,.docx,.txt"
+      },
+      {
+        "key": "path",
+        "label": "Wiki page path (optional)",
+        "type": "text",
+        "placeholder": "e.g. /Design/Functional Design"
+      }
+    ],
+    "template": "Publish {{doc}} to our Azure DevOps wiki at {{path}} (if no path is given, suggest one that fits the existing page tree). If the page exists, read it first and pass its etag. Keep headings, IDs and tables. Propose the page with ado_propose_wiki_page and tell me what changed compared with the current page."
+  },
+  {
+    "id": "ado-stale-items",
+    "name": "Stale items check",
+    "emoji": "🕸️",
+    "category": "Azure DevOps",
+    "description": "Open work items with no change in a while, and what to do about each.",
+    "assistantId": "backlog-helper",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "days",
+        "label": "No change for how many days?",
+        "type": "select",
+        "options": [
+          "14",
+          "30",
+          "60"
+        ],
+        "default": "30"
+      }
+    ],
+    "template": "Find open Azure DevOps work items (not closed, done or removed) with no change in the last {{days}} days. Work out the cut-off date from today's date and use changedBefore. Group them by owner. For each, suggest one action: close it, re-plan it, split it, or ask the owner. Link every item."
+  },
+  {
+    "id": "ado-release-notes",
+    "name": "Release notes from closed items",
+    "emoji": "🗒️",
+    "category": "Azure DevOps",
+    "description": "Plain-language release notes from what was finished in a sprint.",
+    "assistantId": "backlog-helper",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "sprint",
+        "label": "Which sprint? (optional)",
+        "type": "text",
+        "placeholder": "Leave empty for the current sprint, or give an iteration path"
+      }
+    ],
+    "template": "Write release notes for business users from the Azure DevOps stories and bugs that are done or closed in this sprint: {{sprint}} (use the current sprint if empty). Group them as New, Improved and Fixed, one plain-language line each with a link. Leave out internal tasks."
+  },
+  {
+    "id": "ado-traceability-live",
+    "name": "Traceability against Azure DevOps",
+    "emoji": "🔗",
+    "category": "Azure DevOps",
+    "description": "Check requirements and design in the TRM against the live backlog.",
+    "assistantId": "traceability-analyst",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "trm",
+        "label": "Traceability workbook (TRM)",
+        "type": "file",
+        "accept": ".xlsx,.xlsm"
+      }
+    ],
+    "template": "Check traceability against the live Azure DevOps backlog. Run ado_export_backlog with {{trm}} as the workbook, then analyze_traceability on the saved copy. Report coverage per layer, design elements with no story in Azure DevOps, stories with no lifecycle tags, and broken links, citing IDs and work item links. The original workbook must stay unchanged."
+  },
+  {
+    "id": "exec-status-pack",
+    "name": "Weekly executive status",
+    "emoji": "🧭",
+    "category": "Project plans",
+    "description": "A draft status report and a one-page executive dashboard from your plan and RAID log, with every fact traced to its source.",
+    "assistantId": "project-partner",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "plan",
+        "label": "Project plan",
+        "type": "file",
+        "accept": ".mpp,.xml"
+      },
+      {
+        "key": "raid",
+        "label": "RAID log",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv",
+        "optional": true
+      }
+    ],
+    "template": "Build this week's executive status pack for the project plan {{plan}} with the RAID log {{raid}} (if no RAID log is given, leave it out).\n\n1. Call get_status_facts first and base everything on it.\n2. Write a 3 to 5 sentence narrative for executives: the overall rating and why, what moved since last time, the biggest threat to the next milestone, and what is being done. Use the calculated rating; if you think it should be different, say so as a recommendation, not as the rating.\n3. List up to 3 decisions or support needed from leadership, each citing the task or RAID ID.\n4. Call build_status_report with the narrative and decisions.\n\nThen reply with the overall rating, the top 3 points, any warnings the tool returned, and links to the saved files. The tools read the newest approved RAID log automatically, so if raidInput has notes or pending huddle changes, tell me plainly which file was used and how many proposed RAID changes are still waiting for review (they are not in the pack). Remind me that the pack is a draft for PMO review."
+  },
+  {
+    "id": "huddle-to-raid",
+    "name": "Huddle → RAID log",
+    "emoji": "🗣️",
+    "category": "Project plans",
+    "description": "Propose RAID log updates from a meeting transcript, each with the quote it came from, for you to approve before anything changes.",
+    "assistantId": "project-partner",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "transcript",
+        "label": "Meeting transcript",
+        "type": "file",
+        "accept": ".vtt,.docx,.txt,.md"
+      },
+      {
+        "key": "raid",
+        "label": "RAID log",
+        "type": "file",
+        "accept": ".xlsx,.xlsm"
+      }
+    ],
+    "template": "Read the RAID log {{raid}} and the meeting transcript {{transcript}}. Take the meeting date from the transcript file name, or use today. Propose RAID updates with propose_raid_updates: updates and closures to existing items first, then new risks, issues, actions, decisions and dependencies. Quote the transcript word for word for each one, and do not invent owners or dates.\n\nThen show me a table of the proposed changes with who said each one and when, anything that was not proposed and why, and the meeting checks. Tell me how to approve them."
+  },
+  {
+    "id": "plan-change-log",
+    "name": "Monthly plan change log",
+    "emoji": "🧾",
+    "category": "Project plans",
+    "description": "Compare the plan with an earlier version and list the changes, separating material schedule changes from administrative ones.",
+    "assistantId": "schedule-analyst",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "plan",
+        "label": "Project plan",
+        "type": "file",
+        "accept": ".mpp,.xml"
+      },
+      {
+        "key": "since",
+        "label": "Compare with the version from (optional)",
+        "type": "text",
+        "placeholder": "e.g. 2026-10-01, or leave blank for the last saved version",
+        "optional": true
+      }
+    ],
+    "template": "Produce the change log for the project plan {{plan}}, compared with the version from {{since}} (if blank, use the last saved version).\n\nCall plan_change_log first and base everything on it. Then write:\n1. A two-sentence headline: how many material changes, which milestones moved and by how many working days, and the project finish movement.\n2. A table of material changes (ID · Task · What changed · Why it is material).\n3. A short summary of the administrative changes, grouped by kind, without listing every row.\n4. Anything the planner should confirm before this is published as the monthly baseline.\nOnly report what the tool returned."
+  },
+  {
+    "id": "plan-lookahead",
+    "name": "Weekly look-ahead",
+    "emoji": "🔭",
+    "category": "Project plans",
+    "description": "What each workstream needs on its radar next week: starts, finishes, milestones, late work and dependencies.",
+    "assistantId": "schedule-analyst",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "plan",
+        "label": "Project plan",
+        "type": "file",
+        "accept": ".mpp,.xml"
+      },
+      {
+        "key": "workstream",
+        "label": "Workstream (optional)",
+        "type": "text",
+        "placeholder": "e.g. Testing, or leave blank for all",
+        "optional": true
+      }
+    ],
+    "template": "Write next week's look-ahead for the project plan {{plan}}, limited to the workstream {{workstream}} (if blank, cover every workstream).\n\nCall plan_lookahead first and base everything on it. Open with the milestones and the 2 or 3 dependencies most likely to cause trouble. Then give one short section per workstream with what is starting, finishing and carried over late, and what it is waiting on and from whom. Keep it to one page that can be pasted into an email, and only report what the tool returned."
+  },
+  {
+    "id": "plan-progress-from-backlog",
+    "name": "Update plan from ADO backlog",
+    "emoji": "🔗",
+    "category": "Project plans",
+    "description": "Propose plan % complete from an Azure DevOps backlog export, and list the data-quality gaps that stop it being reliable.",
+    "assistantId": "schedule-analyst",
+    "builtin": true,
+    "access": "edit",
+    "fields": [
+      {
+        "key": "plan",
+        "label": "Project plan",
+        "type": "file",
+        "accept": ".mpp,.xml"
+      },
+      {
+        "key": "backlog",
+        "label": "Azure DevOps backlog export",
+        "type": "file",
+        "accept": ".xlsx,.xlsm,.csv"
+      },
+      {
+        "key": "status",
+        "label": "Status date (optional)",
+        "type": "text",
+        "placeholder": "e.g. 2026-10-30",
+        "optional": true
+      }
+    ],
+    "template": "Compare the Azure DevOps backlog {{backlog}} with the project plan {{plan}} (status date {{status}}; if blank, use the plan's).\n\n1. Call plan_progress_from_backlog and base everything on it.\n2. Show the proposed % complete changes as a table (ID · Task · Now · Proposed · Items done/total), and any that were held back because the backlog shows less progress than the plan.\n3. Show the data-quality findings: unlinked items, links to missing or summary tasks, stale in-progress items, unknown states, and plan tasks that should be moving but have no backlog items. Say who needs to fix what.\n4. Ask me to approve before changing anything. If I approve, call update_project_plan with only the approved rows and summarise what moved."
+  },
+  {
+    "id": "knowledge-freshness",
+    "name": "Knowledge freshness",
+    "emoji": "🗞️",
+    "category": "Delivery lifecycle",
+    "description": "Which published Word/HTML snapshots are out of date with their source, which approved outputs were never published, and which snapshots are orphans. Good as a weekly scheduled check.",
+    "assistantId": "traceability-analyst",
+    "builtin": true,
+    "access": "read",
+    "fields": [
+      {
+        "key": "sources",
+        "label": "Folders that should be published (optional)",
+        "type": "text",
+        "placeholder": "e.g. Lifecycle, Wiki export — leave blank to check only what was published",
+        "optional": true
+      }
+    ],
+    "template": "Check the freshness of the published knowledge in my project folder. Folders that should be published: {{sources}} (if blank, leave sources out).\n\nCall check_freshness and base everything on it. Lead with one line: how many snapshots are stale, never published and orphaned. Then a table of stale snapshots (Snapshot · Source · Published version · Approved by · Published at · Source last changed), the approved sources never published, orphan snapshots, and anything missing. End with the actions to take and who should take them (re-approve then republish, publish, or remove). Do not change any files."
   }
 ]

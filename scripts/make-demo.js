@@ -8,7 +8,7 @@ const path = require('path');
 const ExcelJS = require('exceljs');
 const { iso, addWorkdays, isWorkday, workdaysBetween } = require('../tools/project');
 
-const OUT = path.join(__dirname, '..', 'demo');
+const OUT = process.env.DEMO_OUT ? path.resolve(process.env.DEMO_OUT) : path.join(__dirname, '..', 'demo');
 fs.mkdirSync(OUT, { recursive: true });
 const PLAN = 'Contoso CRM Migration.xml';
 const PROJECT_START = new Date('2026-08-03T00:00:00');
@@ -354,8 +354,78 @@ async function timesheets() {
   await pw.xlsx.writeFile(path.join(OUT, 'Weekly Progress Update - 30 Oct 2026.xlsx'));
 }
 
+// An Azure DevOps work-item export (the kind a saved query gives you) for the "Update plan from ADO backlog" quick start.
+// Items link to plan tasks with an MPP-<task ID> tag. A few are deliberately messy so the data-quality findings have something to show.
+async function backlog() {
+  const bw = new ExcelJS.Workbook(); bw.creator = 'Azure DevOps';
+  const cols = [{ h: 'ID', w: 8 }, { h: 'Work Item Type', w: 16 }, { h: 'Title', w: 52 }, { h: 'State', w: 14 }, { h: 'Tags', w: 22 }, { h: 'Story Points', w: 12 }, { h: 'Assigned To', w: 16 }, { h: 'State Change Date', w: 16, fmt: 'yyyy-mm-dd' }];
+  const D = (x) => (x ? new Date(x + 'T00:00:00Z') : null);
+  const items = [
+    // Task 17 Configure sales pipeline: nearly done
+    ['User Story', 'Opportunity pipeline stages', 'Closed', 'MPP-17', 5, 'Tom Becker', '2026-10-16'],
+    ['User Story', 'Custom object: Renewal', 'Closed', 'MPP-17', 3, 'Tom Becker', '2026-10-21'],
+    ['User Story', 'Custom object: Partner', 'Closed', 'MPP-17', 3, 'Tom Becker', '2026-10-27'],
+    ['User Story', 'Page layouts and validation rules', 'Active', 'MPP-17', 2, 'Tom Becker', '2026-10-29'],
+    // Task 18 Build ERP integration: blocked on a vendor fix, one item gone quiet
+    ['User Story', 'ERP read: accounts', 'Closed', 'MPP-18; erp', 5, 'Aisha Khan', '2026-10-14'],
+    ['User Story', 'ERP read: orders', 'Closed', 'MPP-18; erp', 5, 'Aisha Khan', '2026-10-22'],
+    ['User Story', 'ERP write-back: orders', 'Active', 'MPP-18; erp', 8, 'Aisha Khan', '2026-10-02'],
+    ['User Story', 'ERP error handling and retries', 'Active', 'MPP-18; erp', 5, 'Elena Rossi', '2026-10-28'],
+    ['User Story', 'ERP nightly reconciliation job', 'New', 'MPP-18; erp', 3, '', ''],
+    ['User Story', 'ERP legacy price list import', 'Removed', 'MPP-18; erp', 5, '', '2026-10-10'],
+    // Task 21 Data cleansing: finished
+    ['User Story', 'Deduplicate accounts', 'Closed', 'MPP-21', 5, 'Ben Carter', '2026-10-20'],
+    ['User Story', 'Deduplicate contacts', 'Closed', 'MPP-21', 5, 'Ben Carter', '2026-10-27'],
+    ['User Story', 'Opportunity clean-up rules', 'Closed', 'MPP-21', 3, 'Ben Carter', '2026-10-29'],
+    // Task 22 Data mapping: just started
+    ['User Story', 'Map accounts and contacts', 'Active', 'MPP-22', 5, 'Ben Carter', '2026-10-29'],
+    ['User Story', 'Map opportunities', 'New', 'MPP-22', 5, '', ''],
+    ['User Story', 'Transformation scripts', 'New', 'MPP-22', 8, '', ''],
+    // Task 20 Reports and 27 Dry run: not started
+    ['User Story', 'Sales pipeline dashboard', 'New', 'MPP-20', 5, 'Tom Becker', ''],
+    ['User Story', 'Forecast report', 'New', 'MPP-20', 3, 'Tom Becker', ''],
+    ['User Story', 'Dry-run migration plan', 'New', 'MPP-27', 3, 'Grace Kim', ''],
+    // Task 25 is 100% in the plan, but the backlog still shows work open (held back for a person to confirm)
+    ['User Story', 'Add negative test cases to the SIT scripts', 'Active', 'MPP-25', 2, 'Grace Kim', '2026-10-28'],
+    // Messy data
+    ['User Story', 'E-signature spike', 'Active', 'sprint-7', 3, 'Elena Rossi', '2026-10-27'],
+    ['User Story', 'Renewal reminder emails', 'Closed', 'MPP-99', 3, 'Marcus Lee', '2026-10-23'],
+    ['Feature', 'Sales pipeline (whole feature)', 'Active', 'MPP-16', 0, 'Tom Becker', '2026-10-26'],
+    ['User Story', 'Vendor sandbox access', 'Blocked', 'MPP-18', 2, 'Aisha Khan', '2026-10-24'],
+  ].map((r, i) => [1001 + i, ...r.slice(0, 6), D(r[6])]);
+  sheet(bw, 'Query 1', cols, items);
+  await bw.xlsx.writeFile(path.join(OUT, 'ADO Backlog Export - 30 Oct 2026.xlsx'));
+}
+
+// The 10:30 huddle on 30 Oct, as a Teams WebVTT transcript, for the "Huddle → RAID log" quick start.
+function huddle() {
+  const turns = [
+    ['Priya Shah', "Morning everyone, it's the 10:30 huddle. Quick round on blockers and anything for the RAID log."],
+    ['Aisha Khan', 'Good news on ERP. The vendor fixed the sandbox endpoints yesterday and the read-only calls have been stable for two days.'],
+    ['Aisha Khan', "So I think we can close the sandbox issue. We're still behind on the build itself, but the sandbox is no longer the blocker."],
+    ['Priya Shah', 'Great, close it. Ben, where are we on cleansing?'],
+    ['Ben Carter', 'Still at around eighteen percent duplicates. The two extra SMEs start on Monday, and Sales Ops signed off the dedupe rules on Wednesday.'],
+    ['Ben Carter', "If the dedupe run on Thursday doesn't get us under ten percent, the trial migration will slip again."],
+    ['Grace Kim', "One new one from me. We haven't booked the performance test environment yet, and the platform team says it's three weeks' lead time."],
+    ['Grace Kim', "There's a real risk the performance environment won't be ready before performance testing starts on the thirtieth of November. I'll own that one."],
+    ['Priya Shah', "Okay, log it as a risk, Grace as owner, probably medium likelihood but high impact. Grace, can you raise the booking request today?"],
+    ['Grace Kim', 'Yes, I will raise the booking request today.'],
+    ['Priya Shah', "On UAT testers, I'll confirm the UAT slots with Sales leadership by Friday the sixth."],
+    ['Marcus Lee', 'Also, someone needs to chase the identity team about the SSO configuration, it was due on the twentieth and nobody has heard back.'],
+    ['Priya Shah', "Noted, let's get that chased."],
+    ['Aisha Khan', 'And for the record on the API freeze, are we agreed?'],
+    ['Priya Shah', "Yes. So we're agreed: no ERP API changes from the first of December until after go-live. I'll tell the vendor."],
+    ['Marcus Lee', 'Marketing Ops told me the marketing automation sandbox will be ready on the twentieth of November, so that dependency is in progress now.'],
+    ['Priya Shah', "Thanks all. That's it for today."],
+  ];
+  let t = 2;
+  const ts = (s) => `00:${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}.000`;
+  const cues = turns.map(([who, text]) => { const start = t; t += Math.max(4, Math.round(text.length / 14)); return `${ts(start)} --> ${ts(t - 1)}\n<v ${who}>${text}</v>`; });
+  fs.writeFileSync(path.join(OUT, 'Huddle 10-30 - 30 Oct 2026.vtt'), `WEBVTT\n\n${cues.join('\n\n')}\n`, 'utf8');
+}
+
 (async () => {
-  await budget(); await raid(); await timesheets();
+  await budget(); await raid(); await timesheets(); await backlog(); huddle();
   const { recalc } = require('../tools/excel');
   for (const f of fs.readdirSync(OUT).filter((x) => x.endsWith('.xlsx'))) process.stdout.write(`${f}: ${recalc(path.join(OUT, f)) ? 'calculated in Excel' : 'Excel not available — values calculate on open'}
 `);
@@ -370,6 +440,8 @@ A fictional project used to try Lumen's project-management assistants.
 | **CRM Migration - RAID Log.xlsx** | Risks, issues, assumptions, dependencies, decisions |
 | **Team Timesheets - October 2026.xlsx** | Hours booked per person per task |
 | **Weekly Progress Update - 30 Oct 2026.xlsx** | Team leads' latest % complete — use it to update the plan |
+| **ADO Backlog Export - 30 Oct 2026.xlsx** | Azure DevOps work items tagged MPP-<task ID> — use it to propose plan progress and see the data-quality gaps |
+| **Huddle 10-30 - 30 Oct 2026.vtt** | Teams transcript of the daily 10:30 huddle — use it to update the RAID log |
 
 ## Things to try
 - *"Give me a health check of the project plan."*
@@ -378,6 +450,8 @@ A fictional project used to try Lumen's project-management assistants.
 - *"Are any budget categories heading over? Which invoices need attention?"*
 - *"Compare timesheet hours with the plan — where are we burning more effort than planned?"*
 - *"Turn the plan into an Excel tracker with a Gantt chart."*
+- *"Update the RAID log from this morning's huddle transcript."*
+- *"Update the plan from the ADO backlog export, and tell me what is wrong with the data."*
 `);
   console.log(`Demo written to ${OUT}`);
   console.log(`Plan: ${tasks.length} tasks, ${iso(projStart)} → ${iso(projFinish)} (baseline finish ${iso(new Date(Math.max(...tasks.map((t) => t.bFinish))))})`);

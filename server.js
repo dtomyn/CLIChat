@@ -14,6 +14,11 @@ const mdExport = require('./tools/md-export');
 const copilotExport = require('./lib/copilot-export');
 const excel = require('./tools/excel');
 const project = require('./tools/project');
+const secrets = require('./lib/secrets');
+const adoAuth = require('./tools/ado/auth');
+const adoConn = require('./tools/ado/connection');
+const changesets = require('./tools/ado/changesets');
+const { normalizeOrgUrl } = require('./tools/ado/client');
 
 const PORT = process.env.PORT === undefined ? 4317 : Number(process.env.PORT);
 const HOST = '127.0.0.1'; // local only
@@ -57,6 +62,10 @@ function resolveWorkspace(ws) {
   return store.settings.get().workspace && fs.existsSync(store.settings.get().workspace) ? store.settings.get().workspace : defaultWorkspace();
 }
 const inside = (child, parent) => { const rel = path.relative(parent, child); return rel && !rel.startsWith('..') && !path.isAbsolute(rel); };
+// Access levels the API accepts. The providers also know "full" (shell commands), which is never reachable from the UI.
+const ACCESS_LEVELS = ['chat', 'read', 'edit'];
+const cleanAccess = (v, fallback = 'read') => (ACCESS_LEVELS.includes(v) ? v : fallback);
+const isDir = (p) => { try { return typeof p === 'string' && !!p && fs.statSync(p).isDirectory(); } catch { return false; } };
 function workspaceFile(file, workspace) {
   if (typeof file !== 'string' || !file) return false;
   try {
@@ -67,7 +76,7 @@ function workspaceFile(file, workspace) {
 }
 const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'assistant';
 
-function buildSystemPrompt(assistant, settings, activeSkills = [], access = 'read') {
+function buildSystemPrompt(assistant, settings, activeSkills = [], access = 'read', skillCtx = {}) {
   const parts = [];
   if (assistant?.instructions) parts.push(assistant.instructions);
   if (settings.userName) parts.push(`The user's name is ${settings.userName}.`);
@@ -75,7 +84,7 @@ function buildSystemPrompt(assistant, settings, activeSkills = [], access = 'rea
   // Suggestion chips (plan 01, optional): a predictable closing line makes the UI's "suggested next step" extraction reliable.
   // Remove this push to revert.
   parts.push('When it genuinely helps, end a substantive reply with a final line in the form "**Suggested next step:** <one short imperative sentence>". Skip it for quick factual answers and small talk.');
-  const sk = skills.promptFor(activeSkills, access);
+  const sk = skills.promptFor(activeSkills, access, skillCtx);
   if (sk) parts.push(sk);
   return parts.join('\n\n');
 }
@@ -135,25 +144,36 @@ async function runTurn(body, out = () => {}) {
     const idx = conv.messages.findIndex((x) => x.id === body.truncateFrom);
     if (idx >= 0) { conv.messages = conv.messages.slice(0, idx); conv.sessions = {}; }
   }
-  if (!conv) conv = store.conversations.create({ assistantId: body.assistantId || 'lumen', workspace: resolveWorkspace(body.workspace), access: body.access || settings.access, pinned_files: Array.isArray(body.pinned_files) ? body.pinned_files.filter((p) => typeof p === 'string') : [] });
+  if (!conv) conv = store.conversations.create({ assistantId: typeof body.assistantId === 'string' && body.assistantId ? body.assistantId : 'lumen', workspace: resolveWorkspace(body.workspace), access: cleanAccess(body.access, cleanAccess(settings.access)), pinned_files: Array.isArray(body.pinned_files) ? body.pinned_files.filter((p) => typeof p === 'string') : [] });
   if (running.has(conv.id)) throw new Error('Wait for the current reply to finish first.');
-  if (body.access) conv.access = body.access;
+  if (body.access) conv.access = cleanAccess(body.access, cleanAccess(conv.access));
   if (body.workspace) conv.workspace = resolveWorkspace(body.workspace);
   const assistant = store.assistants.get(conv.assistantId) || store.assistants.get('lumen');
+  // Only the engine's own response modes reach its command line.
+  const requestedModel = body.model || settings.model;
+  const model = (provider.models || []).some((x) => x.id === requestedModel) ? requestedModel : 'default';
 
   let message = String(body.message || '').trim();
-  const attachments = (body.attachments || []).filter((p) => fs.existsSync(p));
+  const attachments = (Array.isArray(body.attachments) ? body.attachments : []).filter((p) => { try { return typeof p === 'string' && fs.statSync(p).isFile(); } catch { return false; } });
   const rel = (p) => { const r = path.relative(conv.workspace, p); return r.startsWith('..') || path.isAbsolute(r) ? p : r; };
   if (attachments.length) message += `\n\n[Attached files: ${attachments.map((p) => `"${rel(p)}"`).join(', ')}]`;
   const pinned = (conv.pinned_files || []).filter((p) => workspaceFile(p, conv.workspace));
-  let access = conv.access || 'read';
+  let access = cleanAccess(conv.access);
   if ((attachments.length || pinned.length) && access === 'chat') access = 'read';
-  const activeSkills = skills.resolve(assistant?.skills || [], [...attachments, ...pinned]);
-  const tools = skills.toolConfig(activeSkills, access, conv.workspace);
+  // Files attached earlier in the chat keep their skills on, so follow-ups ("apply the approved changes") have the same tools.
+  const earlier = (conv.messages || []).flatMap((m) => (m.attachments || []).map((a) => a.path)).filter(Boolean);
+  const activeSkills = skills.resolve([...(assistant?.skills || []), ...(conv.skills || [])], [...attachments, ...pinned, ...earlier]);
+  const skillCtx = { ado: settings.ado, dataDir: store.DATA, conversationId: conv.id, scheduled: !!conv.scheduled };
+  const tools = skills.toolConfig(activeSkills, access, conv.workspace, skillCtx);
+  // Outcomes of Azure DevOps change sets applied or discarded since the last turn, so the AI knows what really happened.
+  const notes = (conv.adoNotes || []).slice();
+  if (notes.length) message = `[Lumen update: ${notes.map((n) => n.text).join(' ')}]
+
+${message}`;
 
   const userMsg = { id: store.id(), role: 'user', content: String(body.message || '').trim(), attachments: attachments.map((p) => ({ path: p, name: path.basename(p) })), createdAt: Date.now() };
   if (body.recipeId) userMsg.recipeId = String(body.recipeId);
-  const asstMsg = { id: store.id(), role: 'assistant', content: '', tools: [], files: [], createdAt: Date.now(), providerId };
+  const asstMsg = { id: store.id(), role: 'assistant', content: '', tools: [], files: [], approvals: [], createdAt: Date.now(), providerId };
   if (tools?.servers?.office && (access === 'edit' || access === 'full')) tools.servers.office.env.LUMEN_SNAPSHOT_DIR = path.join(conv.workspace, '.lumen', 'snapshots', asstMsg.id);
   const priorMessages = conv.messages.slice();
   conv.messages.push(userMsg);
@@ -177,6 +197,7 @@ async function runTurn(body, out = () => {}) {
     if (ev.type === 'tool_done') { const t = asstMsg.tools.find((x) => x.id === ev.id); if (t) t.ok = ev.ok; }
     if (ev.type === 'file' && ev.path) { const file = path.resolve(conv.workspace, ev.path); if (!asstMsg.files.includes(file)) asstMsg.files.push(file); }
     if (ev.type === 'error') asstMsg.error = ev.message;
+    if (ev.type === 'approval') { if (!changesets.load(conv.id, ev.id) || asstMsg.approvals.includes(ev.id)) return; asstMsg.approvals.push(ev.id); }
     if (ev.type === 'usage') { reported = ev; return; }
     out(ev);
   };
@@ -186,18 +207,19 @@ async function runTurn(body, out = () => {}) {
   const started = Date.now();
   try {
     await provider.run({
-      prompt, sessionId, cwd: conv.workspace, model: body.model || settings.model, access, signal: ac.signal, tools,
-      systemPrompt: [buildSystemPrompt(assistant, settings, activeSkills, access), pinned.length ? `Key files for this chat (read them when relevant): ${pinned.map((p) => JSON.stringify(rel(path.resolve(conv.workspace, p)))).join(', ')}` : ''].filter(Boolean).join('\n\n'),
+      prompt, sessionId, cwd: conv.workspace, model, access, signal: ac.signal, tools,
+      systemPrompt: [buildSystemPrompt(assistant, settings, activeSkills, access, skillCtx), pinned.length ? `Key files for this chat (read them when relevant): ${pinned.map((p) => JSON.stringify(rel(path.resolve(conv.workspace, p)))).join(', ')}` : ''].filter(Boolean).join('\n\n'),
     }, emit);
   } catch (e) { emit({ type: 'error', message: e.message }); }
 
   running.delete(conv.id);
   if (ac.signal.aborted) asstMsg.stopped = true;
   asstMsg.usage = reported
-    ? { durationMs: reported.durationMs ?? Date.now() - started, costUsd: reported.costUsd, model: modelLabel(provider, body.model || settings.model) }
+    ? { durationMs: reported.durationMs ?? Date.now() - started, costUsd: reported.costUsd, model: modelLabel(provider, model) }
     : { durationMs: Date.now() - started };
   const fresh = store.conversations.get(conv.id) || conv;
   fresh.sessions = conv.sessions; fresh.access = conv.access; fresh.workspace = conv.workspace;
+  if (notes.length) fresh.adoNotes = (fresh.adoNotes || []).filter((n) => !notes.some((x) => x.id === n.id));
   // Take earlier messages from disk, so feedback given while this reply was running isn't lost.
   fresh.messages = [...priorMessages.map((pm) => fresh.messages.find((x) => x.id === pm.id) || pm), userMsg, asstMsg];
   store.conversations.save(fresh);
@@ -225,6 +247,13 @@ function reconcileRun(run) {
     if (stage.checkRunning && !running.has(stage.gateConversationId)) { stage.checkRunning = false; changed = true; }
   }
   return changed ? store.runs.save(run) : run;
+}
+
+// The Word template for a lifecycle stage. Saved pipelines predate the setting, so fall back to the built-in one.
+const DEFAULT_PIPELINES = (() => { try { return JSON.parse(fs.readFileSync(path.join(__dirname, 'defaults', 'pipelines.json'), 'utf8')); } catch { return []; } })();
+function stageWordTemplate(pipelineId, def) {
+  if (def.wordTemplate !== undefined) return def.wordTemplate || '';
+  return DEFAULT_PIPELINES.find((p) => p.id === pipelineId)?.stages.find((s) => s.id === def.id)?.wordTemplate || '';
 }
 
 function stampOutput(stage, approvedBy, approvedAt) {
@@ -309,6 +338,41 @@ async function diffFiles(a, b) {
   return changes;
 }
 
+// ---------- Azure DevOps change sets ----------
+const deciding = new Set(); // change set ids being applied right now (blocks double clicks)
+
+/** Apply or discard a staged change set after a person clicked the button. Returns { code, body }. */
+async function decideChangeSet(conversationId, id, decision) {
+  const cs = changesets.load(conversationId, id);
+  if (!cs) return { code: 404, body: { error: 'That proposal could not be found.' } };
+  if (cs.status !== 'pending') return { code: 409, body: { ...changesets.describe(cs), error: `This proposal was already ${cs.status}.` } };
+  if (deciding.has(cs.id)) return { code: 409, body: { error: 'This proposal is already being applied.' } };
+  const settings = store.settings.get();
+  const userName = String(settings.userName || '').trim();
+  if (decision === 'apply' && !userName) return { code: 400, body: { error: 'Set your name in Settings first, so Azure DevOps records who approved the change.', needName: true } };
+  deciding.add(cs.id);
+  try {
+    if (decision === 'discard') {
+      cs.status = 'discarded';
+      cs.result = { status: 'discarded', message: 'Discarded. Nothing was changed.', links: [] };
+    } else {
+      const ado = settings.ado;
+      let org = '';
+      try { org = adoConn.configured(ado) ? normalizeOrgUrl(ado.orgUrl) : ''; } catch {}
+      if (!org) return { code: 409, body: { error: 'Azure DevOps isn\'t connected. Open Settings › Connections.' } };
+      if (org !== cs.orgUrl || ado.project !== cs.project) return { code: 409, body: { error: `This was proposed for project "${cs.project}", but Lumen is now connected to "${ado.project}". Ask Lumen to propose it again.` } };
+      cs.result = await changesets.apply(adoConn.fromSettings(ado), cs, { userName });
+      cs.status = cs.result.status;
+    }
+    cs.decidedAt = Date.now(); cs.decidedBy = userName || null;
+    changesets.save(cs);
+    changesets.audit({ conversationId, changeSetId: cs.id, decision, decidedBy: cs.decidedBy, kind: cs.kind, project: cs.project, title: cs.title, status: cs.status, message: cs.result.message, links: cs.result.links });
+    const conv = store.conversations.get(conversationId);
+    if (conv) { conv.adoNotes = [...(conv.adoNotes || []), { id: cs.id, text: changesets.outcomeNote(cs) }]; store.conversations.save(conv); }
+    return { code: 200, body: changesets.describe(cs) };
+  } finally { deciding.delete(cs.id); }
+}
+
 // ---------- assistant helpers ----------
 async function draftAssistant(description) {
   const provider = registry.get(store.settings.get().providerId) || registry.get('claude-cli');
@@ -340,8 +404,11 @@ function writeVsCodeKit(ws, assistants) {
   }
   if (used.size) {
     const server = { command: 'node', args: [skills.MCP_SERVER] };
-    put('.mcp.json', JSON.stringify({ mcpServers: { office: { type: 'stdio', ...server, env: { OFFICE_MCP_ROOT: ws } } } }, null, 2));
-    put(path.join('.vscode', 'mcp.json'), JSON.stringify({ servers: { office: { type: 'stdio', ...server, env: { OFFICE_MCP_ROOT: '${workspaceFolder}' } } } }, null, 2));
+    // Outside Lumen there are no Approve cards, so the Azure DevOps tools are exported read-only. No credentials are written.
+    const ado = store.settings.get().ado;
+    const adoServer = used.has('azure-devops') && skills.adoReady(ado) ? { type: 'stdio', command: 'node', args: [skills.ADO_SERVER], env: { ADO_ORG_URL: ado.orgUrl, ADO_PROJECT: ado.project, ADO_TEAM: ado.team || '', ADO_AUTH: ado.auth === 'pat' ? 'pat' : 'azcli', ADO_WIKIS: (ado.wikis || []).join(','), ADO_READONLY: '1', LUMEN_DATA: store.DATA } } : null;
+    put('.mcp.json', JSON.stringify({ mcpServers: { office: { type: 'stdio', ...server, env: { OFFICE_MCP_ROOT: ws } }, ...(adoServer ? { ado: adoServer } : {}) } }, null, 2));
+    put(path.join('.vscode', 'mcp.json'), JSON.stringify({ servers: { office: { type: 'stdio', ...server, env: { OFFICE_MCP_ROOT: '${workspaceFolder}' } }, ...(adoServer ? { ado: adoServer } : {}) } }, null, 2));
   }
   return written;
 }
@@ -353,7 +420,7 @@ function exportAssistant(a, workspace) {
 
 // Sample packs offered on the home screen. Each is copied into a sibling of the user's project folder.
 const PACKS = {
-  crm: { dir: path.join(__dirname, 'demo'), folder: 'Contoso CRM Migration (demo)', assistants: ['schedule-analyst', 'budget-controller', 'project-partner'] },
+  crm: { dir: path.join(__dirname, 'demo'), folder: 'Contoso CRM Migration (demo)', assistants: ['schedule-analyst', 'ask-the-plan', 'budget-controller', 'project-partner'] },
   aidlc: { dir: path.join(__dirname, 'samples', 'aidlc'), folder: 'Online Permit Renewal (AIDLC sample)', assistants: ['requirements-refiner', 'functional-designer', 'technical-designer', 'story-writer', 'traceability-analyst'] },
 };
 function copyMissing(from, to) {
@@ -400,6 +467,7 @@ function browseFolder(dir) {
   return { path: full, parent: parent === full ? '' : parent, places, dirs };
 }
 
+const RUNNABLE = /\.(exe|com|bat|cmd|ps1|psm1|vbs|vbe|js|jse|jar|wsf|wsh|msi|msp|scr|pif|cpl|hta|lnk|url|reg|scf|inf|application|appref-ms|sh|command|app)$/i;
 function openPath(p) {
   if (process.platform === 'win32') spawn('explorer.exe', [p], { detached: true, stdio: 'ignore' }).unref();
   else spawn(process.platform === 'darwin' ? 'open' : 'xdg-open', [p], { detached: true, stdio: 'ignore' }).unref();
@@ -467,7 +535,7 @@ async function api(req, res, url) {
     return send(res, 200, { providers: await registry.status(url.searchParams.has('refresh')), settings: { ...s, workspace: resolveWorkspace(s.workspace) }, platform: process.platform, user: os.userInfo().username });
   }
   if (resource === 'skills' && m === 'GET') return send(res, 200, skills.all().map(({ body, raw, file, ...rest }) => rest));
-  if (resource === 'pipelines' && m === 'GET') return send(res, 200, store.pipelines.all());
+  if (resource === 'pipelines' && m === 'GET') return send(res, 200, store.pipelines.all().map((p) => ({ ...p, stages: p.stages.map((s) => ({ ...s, wordTemplate: stageWordTemplate(p.id, s) })) })));
   if (resource === 'runs') {
     if (!rid && m === 'GET') return send(res, 200, store.runs.list().map(reconcileRun));
     if (!rid && m === 'POST') {
@@ -517,7 +585,7 @@ async function api(req, res, url) {
         if (!workspaceFile(stage.outputPath, run.workspace)) return send(res, 400, { error: 'The output file is missing.' });
         const name = String(store.settings.get().userName || '').trim();
         if (!name) return send(res, 400, { error: 'Set your name in Settings before approving.' });
-        stage.approvedBy = name; stage.approvedAt = Date.now(); stampOutput(stage, name, stage.approvedAt); stage.status = 'approved';
+        stage.approvedBy = name; stage.approvedAt = Date.now(); stampOutput(stage, name, stage.approvedAt); stage.status = 'approved'; stage.version = (stage.version || 0) + 1;
         return send(res, 200, store.runs.save(run));
       }
       if (operation === 'rework') {
@@ -535,6 +603,22 @@ async function api(req, res, url) {
         }
         return send(res, 200, store.runs.save(run));
       }
+      if (operation === 'word') {
+        if (stage.status !== 'approved') return send(res, 409, { error: 'Approve the stage before saving it as Word.' });
+        if (!workspaceFile(stage.outputPath, run.workspace)) return send(res, 400, { error: 'The output file is missing.' });
+        const rel = stageWordTemplate(pipeline.id, def);
+        const template = rel ? path.resolve(run.workspace, rel) : null;
+        if (template && !inside(template, run.workspace)) return send(res, 400, { error: 'The Word template must be inside your project folder.' });
+        const text = fs.readFileSync(stage.outputPath, 'utf8').replace(/^> Approved by .* on .*\r?\n(?:\r?\n)?/, '');
+        const version = `${stage.version || 1}.0`, date = new Date(stage.approvedAt).toISOString().slice(0, 10);
+        const target = stage.outputPath.replace(/\.(md|markdown)$/i, '') + '.docx';
+        try {
+          const r = await mdExport.toDocx(text, { title: `${run.name}: ${def.name}`, template, fields: { version, date, approver: stage.approvedBy },
+            properties: { Version: version, Approver: stage.approvedBy, 'Approved at': new Date(stage.approvedAt).toISOString(), Source: path.relative(run.workspace, stage.outputPath).split(path.sep).join('/') } });
+          fs.writeFileSync(target, r.buffer);
+          return send(res, 200, { path: target, name: path.basename(target), template: r.template ? rel : '', warning: r.warning });
+        } catch (e) { return send(res, e.code === 'EBUSY' || e.code === 'EPERM' ? 409 : 500, { error: e.code === 'EBUSY' || e.code === 'EPERM' ? `Close ${path.basename(target)} in Word and try again.` : `Couldn't save the Word file: ${e.message}` }); }
+      }
       if (operation === 'check') {
         if (stage.status !== 'review' || stage.checkRunning) return send(res, 409, { error: 'The stage must be ready for review.' });
         const inputs = prev ? [prev.outputPath] : run.sources;
@@ -545,6 +629,23 @@ async function api(req, res, url) {
         const prompt = pipeline.gateCheck.prompt.replaceAll('{{prev}}', inputs.map((p) => JSON.stringify(path.relative(run.workspace, p))).join(', ')).replaceAll('{{current}}', JSON.stringify(path.relative(run.workspace, stage.outputPath)));
         startRunTurn(run, stage, prompt, true);
         return send(res, 200, run);
+      }
+      if (operation === 'azure-devops') {
+        // Hand an approved stage to Azure DevOps: design stages are published to the wiki, the story stage becomes work items.
+        // The chat ends in Approve cards; nothing is written until a person clicks Apply.
+        if (stage.status !== 'approved') return send(res, 409, { error: 'Approve the stage first.' });
+        if (!workspaceFile(stage.outputPath, run.workspace)) return send(res, 400, { error: 'The output file is missing.' });
+        if (!skills.adoReady(store.settings.get().ado)) return send(res, 400, { error: 'Connect Azure DevOps in Settings › Connections first.' });
+        const target = body.target === 'workitems' ? 'workitems' : 'wiki';
+        const assistantId = target === 'workitems' ? 'story-writer' : def.assistantId;
+        if (!store.assistants.get(assistantId)) return send(res, 400, { error: 'The stage assistant is missing.' });
+        const out = JSON.stringify(path.relative(run.workspace, stage.outputPath));
+        const prompt = target === 'workitems'
+          ? `Turn the approved backlog in ${out} into Azure DevOps work items.\n\n1. Call ado_describe_work_item_type to learn this project's epic, feature and story types and required fields.\n2. Search for existing epics and features with the same titles, and reuse them instead of proposing duplicates.\n3. Propose missing epics and features first with ado_propose_work_items. Stories need their parent's number, so propose stories (with parentId) only after their parents have been applied. Tell me when I need to click Apply before you continue.\n4. Tag each story with the FD/TD IDs it implements, and put its Given/When/Then criteria in acceptanceCriteria.\n\nAsk me for any required value you can't take from the file. Don't invent owners, estimates or sprints.`
+          : `Publish the approved ${def.name.toLowerCase()} in ${out} to the Azure DevOps wiki.\n\n1. Look for an existing page for it (ado_search_wiki or ado_list_wiki_pages). If there is one, read it and keep its path; otherwise use "/Lifecycle/${run.name}/${def.name}".\n2. Propose the page with ado_propose_wiki_page, keeping the Markdown, IDs and tables exactly as in the file. Pass the etag when updating.\n3. Tell me what you proposed. It is applied only when I click Apply.`;
+        const c = store.conversations.create({ assistantId, workspace: run.workspace, access: 'edit', pinned_files: [stage.outputPath], skills: ['azure-devops'], title: `${run.name}: ${def.name} → Azure DevOps` });
+        runTurn({ conversationId: c.id, message: prompt }).catch((e) => console.error('Azure DevOps hand-off failed:', e));
+        return send(res, 200, { conversationId: c.id });
       }
       return send(res, 404, { error: 'Unknown stage action.' });
     }
@@ -579,7 +680,75 @@ async function api(req, res, url) {
     return send(res, 200, { path: target, pack, files: fs.readdirSync(target).filter((f) => !f.startsWith('.')) });
   }
   if (resource === 'reset' && m === 'POST') { store.assistants.reset(); store.recipes.reset(); return send(res, 200, { ok: true }); }
-  if (resource === 'settings' && m === 'PUT') return send(res, 200, store.settings.set(await json(req)));
+  if (resource === 'settings' && m === 'PUT') {
+    const patch = await json(req);
+    if (!patch || typeof patch !== 'object' || Array.isArray(patch)) return send(res, 400, { error: 'Settings must be an object.' });
+    delete patch.ado; delete patch.demoInstalled; // the Azure DevOps connection is validated by /api/connections/ado
+    if ('access' in patch) patch.access = cleanAccess(patch.access);
+    if ('providerId' in patch && !registry.get(patch.providerId)) return send(res, 400, { error: `Unknown provider ${patch.providerId}` });
+    if ('model' in patch && typeof patch.model !== 'string') return send(res, 400, { error: 'Choose a response mode.' });
+    if ('userName' in patch) patch.userName = String(patch.userName || '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 80);
+    if ('workspace' in patch && patch.workspace && !isDir(patch.workspace)) return send(res, 400, { error: 'Choose an existing project folder.' });
+    return send(res, 200, store.settings.set(patch));
+  }
+
+  // Azure DevOps connection (plan 08). Settings hold no secret; the access token lives in lib/secrets.js.
+  if (resource === 'connections' && rid === 'ado') {
+    const cur = store.settings.get().ado || {};
+    const view = (a) => ({ ...a, hasPat: secrets.has(adoAuth.PAT_SECRET), patSupported: secrets.supported(), hasAz: adoAuth.hasAz() });
+    const text = (v, max = 200) => String(v || '').replace(/[\u0000-\u001f]/g, '').trim().slice(0, max);
+    if (m === 'GET' && !action) return send(res, 200, view(cur));
+    if (m === 'PUT' && !action) {
+      const b = await json(req);
+      let orgUrl = '';
+      try { if (b.orgUrl) orgUrl = normalizeOrgUrl(b.orgUrl); } catch (e) { return send(res, 400, { error: e.message }); }
+      const next = { orgUrl, project: text(b.project), team: text(b.team), auth: b.auth === 'pat' ? 'pat' : 'azcli', wikis: (Array.isArray(b.wikis) ? b.wikis : []).map((w) => text(w)).filter(Boolean).slice(0, 20), enabled: b.enabled !== false };
+      store.settings.set({ ado: next });
+      return send(res, 200, view(next));
+    }
+    if (m === 'POST' && action === 'test') {
+      const b = { ...cur, ...(await json(req)) };
+      try {
+        const orgUrl = normalizeOrgUrl(b.orgUrl);
+        const org = adoConn.fromSettings({ orgUrl, auth: b.auth });
+        const [me, projects] = await Promise.all([org.me(), org.projects()]);
+        let teams = [], wikis = [];
+        if (b.project && projects.includes(b.project)) {
+          const p = adoConn.fromSettings({ orgUrl, project: b.project, auth: b.auth });
+          [teams, wikis] = await Promise.all([p.teams().catch(() => []), p.wikis().catch(() => [])]);
+        }
+        return send(res, 200, { ok: true, orgUrl, user: me.name, projects, teams, wikis });
+      } catch (e) { return send(res, 200, { ok: false, code: e.code, error: e.friendly ? e.message : `Couldn't connect to Azure DevOps: ${e.message}` }); }
+    }
+    if (m === 'POST' && action === 'pat') {
+      try { await secrets.save(adoAuth.PAT_SECRET, (await json(req)).pat); } catch (e) { return send(res, 400, { error: e.friendly ? e.message : `Couldn't save the token: ${e.message}` }); }
+      return send(res, 200, view(cur));
+    }
+    if (m === 'DELETE' && action === 'pat') { secrets.clear(adoAuth.PAT_SECRET); return send(res, 200, view(cur)); }
+  }
+
+  // Approve cards for proposed Azure DevOps changes. Only these endpoints write to Azure DevOps (decision D3).
+  if (resource === 'chat' && rid && action === 'approvals') {
+    const conv = store.conversations.get(rid);
+    if (!conv) return send(res, 404, { error: 'That chat could not be found.' });
+    if (m === 'GET' && !sub) return send(res, 200, changesets.list(rid).map(changesets.describe));
+    if (m === 'GET' && sub) { const cs = changesets.load(rid, sub); return cs ? send(res, 200, changesets.describe(cs)) : send(res, 404, { error: 'That proposal could not be found.' }); }
+    if (m === 'POST' && sub === 'apply-all') {
+      const body = await json(req);
+      const ids = Array.isArray(body.ids) ? body.ids.map(String) : changesets.list(rid).filter((x) => x.status === 'pending').map((x) => x.id);
+      const out = [];
+      for (const id of ids) {
+        const r = await decideChangeSet(rid, id, 'apply');
+        out.push(r.body);
+        if (r.code === 400) return send(res, 400, r.body);
+      }
+      return send(res, 200, out);
+    }
+    if ((m === 'POST' || m === 'DELETE') && sub) {
+      const r = await decideChangeSet(rid, sub, m === 'POST' ? 'apply' : 'discard');
+      return send(res, r.code, r.body);
+    }
+  }
 
   if (resource === 'schedules') {
     if (m === 'GET' && !rid) return send(res, 200, store.schedules.all().map((s) => ({ ...s, nextRunAt: s.enabled ? scheduler.nextDue(s, scheduler.dueFrom(s)).getTime() : null, running: scheduleRunner.isPending(s.id) })));
@@ -641,8 +810,16 @@ async function api(req, res, url) {
         return send(res, 200, await copilotExport.exportAgents(list, ws, skills.all()));
       } catch (e) { return send(res, 500, { error: `Couldn't export: ${e.message}` }); }
     }
-    if (m === 'POST' && !rid) { const item = await json(req); delete item.builtin; return send(res, 200, col.upsert(item)); }
-    if (m === 'PUT' && rid) return send(res, 200, col.upsert({ ...(await json(req)), id: rid }));
+    // Ids and colours end up in HTML attributes and file names, so keep them to simple characters.
+    const cleanItem = (item) => {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) return null;
+      if ('id' in item && !/^[A-Za-z0-9_-]{1,80}$/.test(String(item.id))) return null;
+      if ('color' in item && item.color != null && !/^[A-Za-z0-9-]{0,30}$/.test(String(item.color))) delete item.color;
+      if ('access' in item && item.access != null) item.access = cleanAccess(item.access);
+      return item;
+    };
+    if (m === 'POST' && !rid) { const item = cleanItem(await json(req)); if (!item) return send(res, 400, { error: 'Invalid item.' }); delete item.builtin; return send(res, 200, col.upsert(item)); }
+    if (m === 'PUT' && rid) { const item = cleanItem({ ...(await json(req)), id: rid }); if (!item) return send(res, 400, { error: 'Invalid item.' }); return send(res, 200, col.upsert(item)); }
     if (m === 'DELETE' && rid) { col.remove(rid); return send(res, 200, { ok: true }); }
   }
 
@@ -673,8 +850,8 @@ async function api(req, res, url) {
       store.conversations.save(c);
       return send(res, 200, { feedback: msg.feedback || null });
     }
-    if (m === 'PATCH' && rid) { const c = store.conversations.get(rid); if (!c) return send(res, 404, {}); const p = await json(req); if ('pinned_files' in p && (!Array.isArray(p.pinned_files) || p.pinned_files.some((x) => typeof x !== 'string'))) return send(res, 400, { error: 'Pinned files must be a list of paths.' }); if ('unread' in p && typeof p.unread !== 'boolean') return send(res, 400, { error: 'Unread must be true or false.' }); for (const k of ['title', 'pinned', 'pinned_files', 'access', 'workspace', 'unread']) if (k in p) c[k] = p[k]; return send(res, 200, store.conversations.save(c)); }
-    if (m === 'DELETE' && rid) { store.conversations.remove(rid); return send(res, 200, { ok: true }); }
+    if (m === 'PATCH' && rid) { const c = store.conversations.get(rid); if (!c) return send(res, 404, {}); const p = await json(req); if ('pinned_files' in p && (!Array.isArray(p.pinned_files) || p.pinned_files.some((x) => typeof x !== 'string'))) return send(res, 400, { error: 'Pinned files must be a list of paths.' }); if ('unread' in p && typeof p.unread !== 'boolean') return send(res, 400, { error: 'Unread must be true or false.' }); if ('access' in p) p.access = cleanAccess(p.access, cleanAccess(c.access)); if ('workspace' in p && !isDir(p.workspace)) return send(res, 400, { error: 'Choose an existing project folder.' }); if ('title' in p) p.title = String(p.title ?? '').slice(0, 200); for (const k of ['title', 'pinned', 'pinned_files', 'access', 'workspace', 'unread']) if (k in p) c[k] = p[k]; return send(res, 200, store.conversations.save(c)); }
+    if (m === 'DELETE' && rid) { store.conversations.remove(rid); changesets.removeConversation(rid); return send(res, 200, { ok: true }); }
   }
 
   if (resource === 'chat' && m === 'POST' && !rid) return handleChat(req, res);
@@ -706,7 +883,8 @@ async function api(req, res, url) {
 
   if (resource === 'upload' && m === 'POST') {
     const ws = resolveWorkspace(url.searchParams.get('workspace'));
-    const name = path.basename(decodeURIComponent(url.searchParams.get('name') || 'file')).replace(/[<>:"/\\|?*]/g, '_');
+    // searchParams is already decoded; decoding again breaks names such as "100% plan.xlsx".
+    const name = path.basename(url.searchParams.get('name') || 'file').replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_').replace(/[. ]+$/, '').slice(0, 200) || 'file';
     const dir = path.join(ws, 'Attachments');
     fs.mkdirSync(dir, { recursive: true });
     let target = path.join(dir, name);
@@ -721,12 +899,24 @@ async function api(req, res, url) {
     if (rid === 'mkdir' && m === 'POST') {
       const { parent, name } = await json(req);
       const clean = String(name || '').trim().replace(/[<>:"/\\|?*]/g, '').replace(/[. ]+$/, '');
-      if (!clean || !parent || !fs.existsSync(parent)) return send(res, 400, { error: 'Type a name for the new folder.' });
+      if (!clean || clean === '..' || !isDir(parent)) return send(res, 400, { error: 'Type a name for the new folder.' });
       const target = path.join(parent, clean);
       try { fs.mkdirSync(target, { recursive: true }); } catch (e) { return send(res, 400, { error: `Couldn't create the folder: ${e.message}` }); }
       return send(res, 200, { path: target });
     }
-    if (rid === 'open' && m === 'POST') { const { path: p, workspace } = await json(req); const ws = resolveWorkspace(workspace); const target = p && (p === ws || inside(p, ws)) ? p : ws; if (fs.existsSync(target)) openPath(target); return send(res, 200, { ok: true }); }
+    if (rid === 'open' && m === 'POST') {
+      const { path: p, workspace } = await json(req);
+      const ws = resolveWorkspace(workspace);
+      let target = ws;
+      try {
+        const real = fs.realpathSync(path.resolve(ws, String(p || '')));
+        if (real === fs.realpathSync(ws) || inside(real, fs.realpathSync(ws))) target = real;
+      } catch {}
+      // Opening a script or program would run it. The AI can write files here, so show those in their folder instead.
+      if (target !== ws && fs.statSync(target).isFile() && RUNNABLE.test(target)) target = path.dirname(target);
+      if (fs.existsSync(target)) openPath(target);
+      return send(res, 200, { ok: true });
+    }
     if (rid === 'files' && m === 'GET') { const ws = resolveWorkspace(url.searchParams.get('workspace')); const all = url.searchParams.has('all'); const files = listFolder(ws, 0, [], ws, all).sort((a, b) => b.mtime - a.mtime); return send(res, 200, { workspace: ws, files: all ? files : files.slice(0, 60) }); }
     if (rid === 'check' && m === 'POST') { const { path: p } = await json(req); const ok = !!p && fs.existsSync(p) && fs.statSync(p).isDirectory(); return send(res, 200, { ok }); }
   }
@@ -734,15 +924,46 @@ async function api(req, res, url) {
   return send(res, 404, { error: 'Not found' });
 }
 
+// The page's one inline script (theme before paint) is allowed by hash, so no other inline script can run.
+const INLINE_HASHES = (() => {
+  try {
+    const html = fs.readFileSync(path.join(PUBLIC, 'index.html'), 'utf8');
+    return [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((x) => `'sha256-${require('crypto').createHash('sha256').update(x[1]).digest('base64')}'`).join(' ');
+  } catch { return ''; }
+})();
+// External images are blocked: a reply could otherwise leak data by rendering an image from someone else's server.
+const CSP = [
+  "default-src 'self'", `script-src 'self' ${INLINE_HASHES}`.trim(), "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com data:", "img-src 'self' data: blob:", "connect-src 'self'",
+  "object-src 'none'", "base-uri 'none'", "form-action 'self'", "frame-ancestors 'none'",
+].join('; ');
+const SECURITY_HEADERS = { 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer', 'Content-Security-Policy': CSP };
+
+/**
+ * Cross-site request guard. The Host check stops DNS rebinding; the Origin / Sec-Fetch-Site checks stop other web pages
+ * (including other localhost ports) from driving the API with "simple" requests that skip CORS preflight.
+ * Requests without these headers (tests, curl) are not from a browser page and are allowed.
+ */
+function allowedRequest(req) {
+  const host = req.headers.host || '';
+  if (!/^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host)) return false;
+  if (!String(req.url || '').startsWith('/api/')) return true; // static files: following a link to Lumen must still work
+  const origin = req.headers.origin;
+  if (origin && origin !== `http://${host}`) return false;
+  const site = req.headers['sec-fetch-site'];
+  if (site && !['same-origin', 'none'].includes(site)) return false;
+  return true;
+}
+
 const server = http.createServer(async (req, res) => {
+  for (const [k, v] of Object.entries(SECURITY_HEADERS)) res.setHeader(k, v);
+  if (!allowedRequest(req)) { res.writeHead(403); return res.end(); }
   const url = new URL(req.url, `http://${req.headers.host}`);
-  // Basic CSRF/DNS-rebinding guard: only accept requests addressed to localhost.
-  if (!/^(localhost|127\.0\.0\.1)(:\d+)?$/.test(req.headers.host || '')) { res.writeHead(403); return res.end(); }
   try {
     if (url.pathname.startsWith('/api/')) return await api(req, res, url);
     if (VENDOR[url.pathname]) { res.writeHead(200, { 'Content-Type': MIME['.js'] }); return fs.createReadStream(VENDOR[url.pathname]).pipe(res); }
     const file = path.join(PUBLIC, url.pathname === '/' ? 'index.html' : path.normalize(url.pathname));
-    if (!file.startsWith(PUBLIC) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); return res.end('Not found'); }
+    if (!file.startsWith(PUBLIC + path.sep) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); return res.end('Not found'); }
     res.writeHead(200, { 'Content-Type': MIME[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-cache' });
     fs.createReadStream(file).pipe(res);
   } catch (e) {
