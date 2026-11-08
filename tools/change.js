@@ -8,7 +8,7 @@
 // 3. consolidateCia: merges several CIA workbooks/sheets, de-duplicates impacts (same group + process + similar text),
 //    builds a heat map (group × H/M/L), derives TNA rows from approved impacts and writes "CIA - consolidated.xlsx"
 //    plus "Training actions - ADO import.xlsx". Inputs are never changed.
-// 4. saveDraft: saves AI-written Markdown (training material, French drafts) as .md and/or Word with a draft label.
+// 4. saveDraft: saves AI-written Markdown (training material, French drafts) as .md, Word and/or PowerPoint with a draft label.
 
 const fs = require('fs');
 const path = require('path');
@@ -388,35 +388,63 @@ async function consolidateCia(files, { roles, output, threshold = 0.5, trainingA
 const PRIORITY_NUM = { High: 1, Medium: 2, Low: 3 };
 
 // ------------------------------------------------------------------ 4. drafts
+/** The program deck template in the project's Templates folder ("… Deck Template.potx"), if there is one. */
+function findDeckTemplate(root) {
+  const dir = root && path.join(root, 'Templates');
+  if (!dir || !fs.existsSync(dir)) return null;
+  const files = fs.readdirSync(dir).filter((f) => /\.(potx|pptx)$/i.test(f) && !f.startsWith('~$'));
+  const pick = files.find((f) => /deck template\.potx$/i.test(f)) || files.find((f) => /template\.potx$/i.test(f)) || files.find((f) => /\.potx$/i.test(f));
+  return pick ? path.join(dir, pick) : null;
+}
+
 /**
- * Save AI-written Markdown as a draft: "<name>.md" and/or a Word copy. The label goes at the top of the document,
- * and the sources it cites are listed at the end. Never overwrites: a numbered copy is saved instead.
- * opts: { label, sources: [..], word: true|false, template (Word template), title }
+ * Save AI-written Markdown as a draft: "<name>.md" and/or a Word copy and/or a PowerPoint deck. The label goes at the
+ * top of the document (on the title slide of a deck), and the sources it cites are listed at the end (a "Sources"
+ * slide in a deck). Never overwrites: a numbered copy is saved instead.
+ * opts: { label, sources: [..], word: true|false, powerpoint: true|false, template (a Word template, or a .potx/.pptx
+ * deck template), deckTemplate, root (the project folder: its Templates/"… Deck Template.potx" is used when no deck
+ * template is given), title }
  */
-async function saveDraft(file, markdown, { label = 'Draft (AI) for review', sources = [], word = false, template, title } = {}) {
+async function saveDraft(file, markdown, { label = 'Draft (AI) for review', sources = [], word = false, powerpoint = false, template, deckTemplate, root, title } = {}) {
   if (!String(markdown || '').trim()) throw friendly('There is nothing to save.');
   const ext = path.extname(file).toLowerCase();
-  if (!['.md', '.docx'].includes(ext)) throw friendly('Save drafts as .md (Markdown) or .docx (Word).');
+  if (!['.md', '.docx', '.pptx'].includes(ext)) throw friendly('Save drafts as .md (Markdown), .docx (Word) or .pptx (PowerPoint).');
   const src = [].concat(sources || []).map(String).filter(Boolean);
-  const body = [`> **${label}**`, '', String(markdown).trim(), ...(src.length ? ['', '## Sources', '', ...src.map((s) => `- ${s}`)] : [])].join('\n') + '\n';
+  const sourcesMd = src.length ? ['', '## Sources', '', ...src.map((s) => `- ${s}`)] : [];
+  const body = [`> **${label}**`, '', String(markdown).trim(), ...sourcesMd].join('\n') + '\n';
   const warnings = [];
   if (!src.length && !/source/i.test(markdown)) warnings.push('This draft does not cite any source. Add the approved sections it is based on.');
+  // A template goes to the format its extension belongs to.
+  const isDeck = (t) => typeof t === 'string' && /\.(potx|pptx)$/i.test(t);
+  const wordTemplate = template && !isDeck(template) ? template : undefined;
+  const h1 = /^\s*#\s+(.+?)\s*#*\s*$/m.exec(String(markdown).trim().split('\n')[0] || '');
   const out = {};
   if (ext === '.md') { out.saved = freeName(file); fs.writeFileSync(out.saved, body, 'utf8'); }
   if (ext === '.docx' || word) {
-    const target = freeName(ext === '.docx' ? file : file.replace(/\.md$/i, '.docx'));
+    const target = freeName(ext === '.docx' ? file : file.replace(/\.(md|pptx)$/i, '.docx'));
     // Without a template Word puts the title at the top. A draft that starts with its own "# Heading" gives that title
     // (unless another one was asked for), and the heading is not repeated under it.
-    const h1 = /^\s*#\s+(.+?)\s*#*\s*$/m.exec(String(markdown).trim().split('\n')[0] || '');
     const sameTitle = h1 && (!title || h1[1].trim().toLowerCase() === String(title).trim().toLowerCase());
     const wordTitle = sameTitle ? h1[1].trim() : title || path.basename(target, '.docx');
-    const wordBody = sameTitle && !template ? body.replace(h1[0].trim(), '').replace(/\n{3,}/, '\n\n') : body;
-    const r = await require('./md-export').toDocx(wordBody, { title: wordTitle, template, properties: { Status: label } });
+    const wordBody = sameTitle && !wordTemplate ? body.replace(h1[0].trim(), '').replace(/\n{3,}/, '\n\n') : body;
+    const r = await require('./md-export').toDocx(wordBody, { title: wordTitle, template: wordTemplate, properties: { Status: label } });
     fs.writeFileSync(target, r.buffer);
     if (r.warning) warnings.push(r.warning);
     if (ext === '.docx') out.saved = target; else out.word = target;
   }
+  if (ext === '.pptx' || powerpoint) {
+    const target = freeName(ext === '.pptx' ? file : file.replace(/\.(md|docx)$/i, '.pptx'));
+    // The deck outline: "# Title" is the title slide (with the draft label under it), each "##" a slide, Sources last.
+    const deckTitle = h1 ? h1[1].trim() : title || path.basename(target, '.pptx');
+    const deckMd = [h1 ? '' : `# ${deckTitle}`, String(markdown).trim(), ...sourcesMd].join('\n').trim() + '\n';
+    const tpl = deckTemplate || (isDeck(template) ? template : undefined) || findDeckTemplate(root) || undefined;
+    const r = await require('./pptx').toPptx(deckMd, { title: deckTitle, template: tpl, label, properties: { Status: label } });
+    fs.writeFileSync(target, r.buffer);
+    if (r.warning) warnings.push(r.warning);
+    out.deck = { slides: r.slides, speakerNotes: r.notes, template: r.template ? path.basename(String(tpl)) : null };
+    if (ext === '.pptx') out.saved = target; else out.powerpoint = target;
+  }
   return { ...out, label, sources: src.length, warnings };
 }
 
-module.exports = { proposeImpacts, applyImpacts, consolidateCia, readImpacts, readRoles, saveDraft, level, CIA_COLUMNS };
+module.exports = { proposeImpacts, applyImpacts, consolidateCia, readImpacts, readRoles, saveDraft, findDeckTemplate, level, CIA_COLUMNS };

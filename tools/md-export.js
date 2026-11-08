@@ -486,4 +486,4 @@ async function markdownTablesToXlsx(markdown, file) {
 
 const hasTable = (markdown) => findTables(lex(markdown)).length > 0;
 
-module.exports = { toDocx, readDocxProperties, fillFields, markdownToDocx, markdownTablesToXlsx, hasTable, coerceCell };
+module.exports = { toDocx, readDocxProperties, fillFields, markdownToDocx, markdownTablesToXlsx, hasTable, coerceCell, setCustomProperties };
