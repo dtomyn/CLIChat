@@ -23,18 +23,18 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import make_video as mv  # noqa: E402
 
 FILM = mv.FILM
-REC = FILM / "recordings" / "howto" / "recording.json"
-SEED = FILM / "recordings" / "v2"  # answers already recorded for the explainer are reused when the request is identical
+REC = FILM / "recordings" / "howto-v2" / "recording.json"
+SEED = FILM / "recordings" / "howto"  # answers recorded for the first how-to are reused when the request is identical
 ADO_MOCK = FILM / "ado-demo.js"
-NAME = "lumen-howto"
-TOTAL = 14
+NAME = "lumen-howto-v2"
+TOTAL = 15
 
 # ------------------------------------------------------------------ narration
 LINES = {
     "intro1": "Welcome to Lumen. A friendly chat workspace, built on GitHub Copilot.",
     "intro2": "You may already chat with GitHub Copilot in V S Code. Behind the scenes, that chat now runs on the Copilot C L I agent. It reads your files, uses tools, and gets real work done. But V S Code is built around code, and most of the team works in plans, spreadsheets and documents.",
     "intro3": "Lumen runs on that same Copilot agent, in a chat window built for that kind of work, on your own computer. And yes, if Claude Code is what you have, Lumen runs on that too.",
-    "intro4": "In the next few minutes, you'll learn how to use every part of it, step by step.",
+    "intro4": "In the next few minutes, you'll learn how to use every part of it, step by step. Including what's new. Thirty nine specialist agents, more than seventy ready made prompts, sample projects for every discipline, and PowerPoint decks.",
 
     "t1": "Step one. Get set up.",
     "s1a": "The first time you open Lumen, it asks three things. Your name,",
@@ -43,7 +43,7 @@ LINES = {
 
     "t2": "Step two. Find your way around.",
     "s2a": "If you've used Microsoft 365 Copilot, this will feel familiar. That's on purpose.",
-    "s2b": "The same rail on the left. Chat, Agents, Prompts, and your Notebook. The same words, and the same habits, so everything you learn here carries straight over when your Copilot licence arrives.",
+    "s2b": "The same rail on the left. Chat, Agents, Prompts, and your Notebook. The same words, and the same habits, so everything you learn here carries straight over when your Copilot licence arrives. Below them, Lumen adds a few of its own. Lifecycle runs, Insights, and Samples to practise on.",
     "s2c": "And so nobody mixes them up, every message box says plainly which tool you're in, and which engine is answering.",
 
     "t3": "Step three. Chat with an agent.",
@@ -55,23 +55,23 @@ LINES = {
     "t4": "Step four. Work with the reply.",
     "s4a": "Lumen suggests a next step. Click it to send, or press the up arrow to edit it first.",
     "s4b": "Every reply can be copied, retried, or branched into a new chat. A thumbs up or down tells the team what's working.",
-    "s4c": "Need a document? Export, Word document. Real headings, lists, and tables, saved straight into your notebook.",
+    "s4c": "Need a document? Export the reply to Word, PowerPoint, or Markdown. Every heading becomes a slide, and replies with tables export to Excel too. Here, Word. Real headings, lists, and tables, saved straight into your notebook.",
     "s4d": "Your own messages can be edited and resent, or saved as a prompt to reuse any time.",
 
     "t5": "Step five. Bring in your files.",
-    "s5a": "To practise, the home screen sets up a sample project in one click. A Microsoft Project plan, with a budget, risks, and timesheets in Excel.",
-    "s5b": "Open the Notebook to see everything in your project folder.",
+    "s5a": "To practise, open Samples on the left. There are five made up projects, one for each kind of work. Use the P M demo. A Microsoft Project plan, with a budget, risks, and timesheets in Excel.",
+    "s5b": "Lumen switches to the sample folder, and the home screen offers its best prompts. Open the Notebook to see everything in your project folder.",
     "s5c": "To use a file in a chat, type a slash, exactly like in Microsoft 365 Copilot, and pick it.",
     "s5d": "Lumen reads the real plan, and you can watch every step as it works.",
 
     "t6": "Step six. Use the prompt gallery.",
-    "s6a": "Saved prompts ask a few simple questions, then hand the work to the right agent. Project plans, budgets, the delivery lifecycle, Azure DevOps, and more.",
+    "s6a": "The gallery now holds more than seventy saved prompts, in sixteen categories. Project plans, quality engineering, security, data, Azure DevOps, and more. Each one asks a few simple questions, then hands the work to the right agent.",
     "s6b": "Open the project health check. Lumen has already picked the right plan from your notebook. Click Start.",
     "s6c": "Red, amber or green, the critical path, slippage against the baseline, and who's over allocated.",
     "s6d": "And any table copies straight into Excel or Outlook.",
 
     "t7": "Step seven. Put it on repeat.",
-    "s7a": "Open the prompt again, and choose Repeat. Weekly, Mondays at nine.",
+    "s7a": "Open the prompt again, and choose Repeat. Daily, weekly, monthly, or every few minutes between two times, for a busy window like a cutover weekend. This one is weekly, Mondays at nine.",
     "s7b": "Scheduled prompts get their own tab. Lumen runs them while it's open, and leaves the result waiting as an unread chat.",
 
     "t8": "Step eight. Let Lumen update your files, safely.",
@@ -82,7 +82,8 @@ LINES = {
     "s8e": "and there it is, colour coded and ready for the steering committee.",
 
     "t9": "Step nine. Create your own agent.",
-    "s9a": "Describe what you need in one sentence, and click Draft it.",
+    "s9pre": "There are now thirty nine specialist agents. Search by name, by what they do, or by skill, and sort them however you like.",
+    "s9a": "Can't find the right one? Create your own. Describe what you need in one sentence, and click Draft it.",
     "s9b": "Lumen fills in the same fields as Agent Builder in Microsoft 365 Copilot. Name, description, instructions, and starter prompts. It even switches on the right capabilities.",
     "s9c": "Anything marked Lumen only runs on this computer, so you always know what will carry over.",
     "s9d": "Create it, and pin your favourites to the sidebar.",
@@ -103,19 +104,28 @@ LINES = {
     "s11e": "Name the run, choose the source documents, and start the first stage. Each stage works in its own chat, and saves its output to your notebook.",
     "s11f": "Before you sign off, run an advisory traceability check. It reports gaps, and never changes a file.",
     "s11g": "Then approve. Your name and the time are stamped on the output, and the next stage unlocks. With Azure DevOps connected, an approved stage publishes to the wiki, or becomes work items, in one click.",
+    "s11h": "And any approved stage saves as a Word document, in the program's own template when it has one.",
 
-    "t12": "Step twelve. See what's working.",
-    "s12": "Every thumbs up and down lands in Insights, by agent and by prompt. And it all stays on this computer.",
+    "t12": "Step twelve. Try the specialist samples.",
+    "s12a": "Beyond plans and requirements, the other samples cover data, security, and change and training. Each one comes with its own agents.",
+    "s12b": "Use the data sample. It has a source extract with data quality problems planted in it, and a data dictionary to check it against.",
+    "s12c": "Profile a dataset. Pick the extract and the dictionary, and start.",
+    "s12d": "The Data Profiler reports exactly what the code found. Every column profiled, and every rule break, with example rows.",
+    "s12e": "And the findings are saved as a report, with scripts to run the same checks again in the data platform.",
 
-    "t13": "Step thirteen. Take it to Microsoft 365 Copilot.",
-    "s13a": "When your Copilot licence arrives, export any agent. Paste it straight into Agent Builder, or hand I T a ready made app package.",
-    "s13b": "Your prompts export too, as plain text, ready to save in Copilot's prompt gallery.",
-    "s13c": "And every agent and skill exports into V S Code, so it works in GitHub Copilot Chat and Claude Code too.",
+    "t13": "Step thirteen. See what's working.",
+    "s13": "Every thumbs up and down lands in Insights, by agent and by prompt. And it all stays on this computer.",
 
-    "t14": "Step fourteen. Make it yours.",
-    "s14a": "Lumen is pluggable. It runs on GitHub Copilot, or on Claude Code, and switching is one click in Settings.",
-    "s14b": "Light or dark, your choice.",
-    "s14c": "And press control slash, for every keyboard shortcut.",
+    "t14": "Step fourteen. Take it to Microsoft 365 Copilot.",
+    "s14a": "When your Copilot licence arrives, export any agent. Paste it straight into Agent Builder, or hand I T a ready made app package.",
+    "s14b": "Your prompts export too, as plain text, ready to save in Copilot's prompt gallery.",
+    "s14c": "And every agent and skill exports into V S Code, so it works in GitHub Copilot Chat and Claude Code too.",
+    "s14d": "For developers, Engineering packs save the developer, test automation, and pipeline agents into a code repository, so the whole team works to the same standards.",
+
+    "t15": "Step fifteen. Make it yours.",
+    "s15a": "Lumen is pluggable. It runs on GitHub Copilot, or on Claude Code, and switching is one click in Settings.",
+    "s15b": "Light or dark, your choice.",
+    "s15c": "And press control slash, for every keyboard shortcut.",
 
     "end": "Lumen. Built for GitHub Copilot, ready for Microsoft 365 Copilot, and friendly for everyone on the team.",
 }
@@ -131,7 +141,7 @@ api = mv.api
 
 def write_srt(cues, path):
     import re
-    fixes = {"V S Code": "VS Code", "A I": "AI", "C L I": "CLI", "I T ": "IT ", "C R M": "CRM"}
+    fixes = {"V S Code": "VS Code", "A I": "AI", "C L I": "CLI", "I T ": "IT ", "C R M": "CRM", "P M demo": "PM demo"}
 
     def stamp(s):
         ms = int(s * 1000)
@@ -290,6 +300,10 @@ def run_howto(d):
     for sel in ['.rail [data-nav="home"].rail-item', '.rail [data-nav="assistants"]', '.rail [data-nav="recipes"]', "#filesNavBtn"]:
         d.hover(sel, 550)
         d.wait(0.45)
+    d.wait(2.4)
+    for sel in ['.rail [data-nav="runs"]', '.rail [data-nav="insights"]', '.rail [data-nav="samples"]']:
+        d.hover(sel, 550)
+        d.wait(0.45)
     d.wait_voice()
     d.unzoom(700)
     d.zoom(".composer-hint", 2.0, 1000, pad=30)
@@ -360,6 +374,13 @@ def run_howto(d):
     d.say("s4c")
     d.click(".msg.assistant:last-child [data-save-as]", 600)
     d.wait(0.7)
+    d.zoom(".menu", 1.5, 800, pad=30)
+    for label in ["Excel workbook", "PowerPoint deck", "Markdown"]:
+        if page.locator(f'.menu-item:has-text("{label}")').count():
+            d.hover(f'.menu-item:has-text("{label}")', 500)
+            d.wait(0.6)
+    d.wait(1.0)
+    d.unzoom(500)
     d.click('.menu-item:has-text("Word document")', 500)
     page.wait_for_selector(".msg.assistant:last-child .file-card", timeout=30000)
     d.reveal(".msg.assistant:last-child .file-cards", "center", 0.9)
@@ -378,19 +399,25 @@ def run_howto(d):
 
     # ---------------- 5. Bring in your files
     step(d, 5, "Bring in your files", "t5")
-    d.click("#newChatBtn")
+    d.click('.rail [data-nav="samples"]')
     d.wait(0.8)
-    d.reveal(".demo-banner", "center", 0.8)
-    d.zoom(".demo-banner", 1.5, 900, pad=30)
+    d.zoom(".card-grid", 1.2, 900, pad=20)
     d.say("s5a")
+    d.hover('.sample-card:has([data-install-demo="crm"])', 600)
+    d.wait(1.0)
+    d.wait_voice(-2.5)
+    d.unzoom(600)
     d.click('[data-install-demo="crm"]', 600)
-    d.wait(2.4)
+    page.wait_for_selector(".demo-banner.active", timeout=30000)
+    d.wait(1.0)
     d.wait_voice()
+    d.zoom(".demo-banner", 1.45, 900, pad=30)
+    d.say("s5b")
+    d.wait(2.6)
     d.unzoom(600)
     d.click("#filesNavBtn")
     d.wait(1.0)
     d.zoom("#filesDrawer", 1.35, 1000)
-    d.say("s5b")
     d.wait_voice()
     d.unzoom(700)
     d.click("[data-close-drawer]")
@@ -428,7 +455,7 @@ def run_howto(d):
     d.wait(0.8)
     d.zoom(".tabs", 1.5, 900, pad=40)
     d.say("s6a")
-    for tab in ["Project plans", "Delivery lifecycle", "Azure DevOps"]:
+    for tab in ["Project plans", "Quality engineering", "Security", "Data", "Azure DevOps"]:
         d.click(f'[data-tab="{tab}"]', 550)
         d.wait(0.7)
     d.click('[data-tab="Project plans"]', 550)
@@ -466,10 +493,13 @@ def run_howto(d):
     page.wait_for_selector("#scheduleKind")
     d.wait(0.5)
     d.hover("#scheduleKind", 500)
+    d.zoom(".modal:has(#scheduleKind)", 1.4, 900, pad=20)
+    page.select_option("#scheduleKind", "interval")
+    d.log("click")
+    d.wait(3.2)
     page.select_option("#scheduleKind", "weekly")
     d.log("click")
     d.wait(0.5)
-    d.zoom(".modal:has(#scheduleKind)", 1.4, 900, pad=20)
     d.hover('#scheduleDays label:has-text("Mon")', 600)
     d.wait_voice()
     d.unzoom(600)
@@ -548,6 +578,20 @@ def run_howto(d):
     step(d, 9, "Create your own agent", "t9")
     d.click('.nav-item[data-nav="assistants"]')
     d.wait(0.8)
+    d.zoom(".agent-toolbar", 1.6, 900, pad=30)
+    d.say("s9pre")
+    d.click("#agentSearch", 500)
+    d.type("test", 0.12)
+    d.wait(1.6)
+    d.unzoom(600)
+    d.zoom(".page-inner", 1.15, 800, pad=10)
+    d.wait(1.6)
+    d.unzoom(600)
+    d.hover("#agentSort", 600)
+    d.wait_voice()
+    d.click("#agentSearch", 400)
+    d.key("Escape")
+    d.wait(0.6)
     d.click(".page-head [data-new-assistant]")
     d.wait(0.6)
     d.say("s9a")
@@ -572,7 +616,8 @@ def run_howto(d):
     d.wait(1.2)
     d.click('.nav-item[data-nav="assistants"]')
     d.wait(0.8)
-    d.click(".card-grid > div.a-card:last-of-type [data-assistant-menu]")
+    mine = [a["id"] for a in api("GET", "/api/assistants") if not a.get("builtin")]
+    d.click(f'[data-assistant-menu="{mine[-1]}"]')
     d.wait(0.5)
     d.click('.menu-item:has-text("Pin to sidebar")')
     d.wait(0.8)
@@ -661,15 +706,17 @@ def run_howto(d):
     d.card(f'<div class="stepnum rise">11</div><div class="kicker rise" style="animation-delay:.12s">How to</div>'
            f'<h1 class="rise" style="animation-delay:.22s"><em>Run a guided lifecycle</em></h1>', persist=True)
     d.say("t11")
-    api("PUT", "/api/settings", {"workspace": str(WORKSPACE), "access": "read"})
-    page.goto(f"http://localhost:{PORT}/")
+    api("PUT", "/api/settings", {"workspace": str(WORKSPACE), "access": "read", "demoInstalled": "", "demoPack": ""})
+    page.goto(f"http://localhost:{PORT}/#samples")
+    page.reload()  # only the hash changed, so goto alone keeps the old settings in the page
     page.wait_for_selector('[data-install-demo="aidlc"]')
     d.wait_voice(0.2)
     d.uncard(700)
     d.third(f'<div class="num">11</div><div><b>Run a guided lifecycle</b><span>Step 11 of {TOTAL}</span></div>')
     d.click('[data-install-demo="aidlc"]')
-    d.wait(2.2)
-    d.click("[data-open-drawer]")
+    page.wait_for_selector(".demo-banner.active", timeout=30000)
+    d.wait(1.2)
+    d.click(".demo-banner [data-open-drawer]")
     d.wait(1.0)
     d.zoom("#filesDrawer", 1.35, 1000)
     d.say("s11a")
@@ -769,19 +816,86 @@ def run_howto(d):
         d.wait_voice()
         d.unzoom(600)
     d.wait_voice()
+    d.say("s11h")
+    d.click("[data-run-word]")
+    page.wait_for_selector('.modal:has-text("Saved as Word")', timeout=60000)
+    d.wait(0.6)
+    d.zoom(".modal", 1.5, 900, pad=20)
+    d.wait_voice()
+    d.unzoom(600)
+    d.click('.modal-foot button:has-text("Close")')
+    d.wait(0.5)
 
-    # ---------------- 12. Insights
-    step(d, 12, "See what's working", "t12")
+    # ---------------- 12. Specialist samples
+    d.third(None)
+    d.card(f'<div class="stepnum rise">12</div><div class="kicker rise" style="animation-delay:.12s">How to</div>'
+           f'<h1 class="rise" style="animation-delay:.22s"><em>Try the specialist samples</em></h1>', persist=True)
+    d.say("t12")
+    api("PUT", "/api/settings", {"workspace": str(WORKSPACE), "access": "read", "demoInstalled": "", "demoPack": ""})
+    page.goto(f"http://localhost:{PORT}/#samples")
+    page.reload()  # only the hash changed, so goto alone keeps the old settings in the page
+    page.wait_for_selector('[data-install-demo="data"]')
+    d.wait_voice(0.2)
+    d.uncard(700)
+    d.third(f'<div class="num">12</div><div><b>Try the specialist samples</b><span>Step 12 of {TOTAL}</span></div>')
+    d.zoom(".card-grid", 1.2, 900, pad=20)
+    d.say("s12a")
+    for pack in ["data", "security", "change"]:
+        d.hover(f'.sample-card:has([data-install-demo="{pack}"])', 550)
+        d.wait(0.6)
+    d.wait_voice()
+    d.unzoom(600)
+    d.say("s12b")
+    d.click('[data-install-demo="data"]', 600)
+    page.wait_for_selector(".demo-banner.active", timeout=30000)
+    d.wait(1.0)
+    d.zoom(".demo-banner", 1.45, 900, pad=30)
+    d.wait_voice()
+    d.unzoom(600)
+    d.click('.demo-actions [data-recipe="data-profile"]')
+    d.wait(1.2)
+    page.select_option('.modal [data-file-select="extract"]', label="Applications - source extract.csv")
+    page.select_option('.modal [data-file-select="dictionary"]', label="Data Dictionary - Applications.xlsx")
+    d.zoom(".modal", 1.35, 900, pad=20)
+    d.say("s12c")
+    d.hover('.modal [data-file-select="extract"]', 500)
+    d.wait(0.5)
+    d.hover('.modal [data-file-select="dictionary"]', 500)
+    d.wait_voice()
+    d.unzoom(600)
+    before = d.replies()
+    d.click(".modal-foot .btn.grad")
+    d.wait(1.6)
+    if d.exists(".msg.assistant:last-child .steps"):
+        d.js("() => document.querySelector('.msg.assistant:last-child .steps-head')?.click()")
+        d.zoom(".msg.assistant:last-child", 1.4, 800, pad=40)
+    d.wait_reply(before)
+    d.unzoom(600)
+    d.reveal(".msg.assistant:last-child .md table", "center", 1.0)
+    d.zoom(".msg.assistant:last-child .md table", 1.3, 1000, pad=40)
+    d.say("s12d")
+    scroll_msgs(d, 380)
+    d.wait_voice()
+    d.unzoom(700)
+    if d.exists(".msg.assistant:last-child .file-cards"):
+        d.reveal(".msg.assistant:last-child .file-cards", "center", 1.0)
+        d.zoom(".msg.assistant:last-child .file-cards", 1.8, 900, pad=40)
+    d.say("s12e")
+    d.wait_voice()
+    d.unzoom(700)
+
+    # ---------------- 13. Insights
+    step(d, 13, "See what's working", "t13")
     d.click('.nav-item[data-nav="insights"]')
     page.wait_for_selector("#insightsBody table, #insightsBody .insights-empty", timeout=30000)
     d.wait(0.6)
     d.zoom("#insightsBody", 1.3, 1000, pad=20)
-    d.say("s12")
+    d.say("s13")
     d.wait_voice()
     d.unzoom(600)
 
     # ---------------- 13. Microsoft 365 Copilot
-    step(d, 13, "Take it to Microsoft 365 Copilot", "t13")
+    step(d, 14, "Take it to Microsoft 365 Copilot", "t14")
     d.click('.nav-item[data-nav="assistants"]')
     d.wait(0.6)
     d.zoom(".page-head", 1.6, 900, pad=30)
@@ -789,7 +903,7 @@ def run_howto(d):
     d.unzoom(600)
     d.click('[data-assistant-menu="requirements-coach"]')
     d.wait(0.5)
-    d.say("s13a")
+    d.say("s14a")
     d.click('.menu-item:has-text("Export to Microsoft 365 Copilot")')
     page.wait_for_selector(".modal .option-cards", timeout=30000)
     d.wait(0.8)
@@ -799,7 +913,7 @@ def run_howto(d):
     d.click('.modal-foot button:has-text("Done")')
     d.click('.nav-item[data-nav="recipes"]')
     d.wait(0.6)
-    d.say("s13b")
+    d.say("s14b")
     d.click("[data-export-prompts]")
     page.wait_for_selector('.modal-foot button:has-text("Done")', timeout=30000)
     d.wait(0.6)
@@ -809,7 +923,7 @@ def run_howto(d):
     d.click('.modal-foot button:has-text("Done")')
     d.click('.nav-item[data-nav="assistants"]')
     d.wait(0.6)
-    d.say("s13c")
+    d.say("s14c")
     d.click('[data-assistant-menu="traceability-analyst"]')
     d.wait(0.5)
     d.click('.menu-item:has-text("Use in VS Code")')
@@ -819,20 +933,26 @@ def run_howto(d):
     d.wait_voice()
     d.unzoom(600)
     d.click('.modal-foot button:has-text("Done")')
+    d.wait(0.4)
+    d.zoom(".page-head", 1.6, 900, pad=30)
+    d.say("s14d")
+    d.hover("[data-export-engineering]", 700)
+    d.wait_voice()
+    d.unzoom(600)
 
-    # ---------------- 14. Make it yours
-    step(d, 14, "Make it yours", "t14")
+    # ---------------- 15. Make it yours
+    step(d, 15, "Make it yours", "t15")
     d.third(None)
     d.click("#settingsBtn")
     d.wait(0.8)
     d.zoom("#providerCards", 1.6, 1000, pad=40)
-    d.say("s14a")
+    d.say("s15a")
     d.hover('#providerCards [data-provider="copilot-cli"]', 600)
     d.wait(0.6)
     d.hover('#providerCards [data-provider="claude-cli"]', 600)
     d.wait_voice()
     d.unzoom(600)
-    d.say("s14b")
+    d.say("s15b")
     d.js("() => document.querySelector('#sTheme')?.scrollIntoView({ behavior: 'smooth', block: 'center' })")
     d.wait(1.0)
     d.click('#sTheme [data-v="dark"]', 600)
@@ -841,7 +961,7 @@ def run_howto(d):
     if d.exists('.modal-foot button[data-a]'):
         d.click('.modal-foot button:has-text("Close")')
     d.wait(0.8)
-    d.say("s14c")
+    d.say("s15c")
     d.key("Control+/")
     page.wait_for_selector(".kbd-list", timeout=10000)
     d.wait(0.5)
@@ -857,7 +977,7 @@ def run_howto(d):
     d.card(f'<div class="logo rise">{LOGO}</div><h1 class="rise" style="animation-delay:.2s"><em>Lumen</em></h1>'
            f'<p class="rise" style="animation-delay:.4s">Built for GitHub Copilot. Ready for Microsoft 365 Copilot.</p>'
            f'<div class="pills rise" style="animation-delay:.7s"><span>🐙 GitHub Copilot CLI</span><span>🟣 Claude Code</span><span>🤝 Agents</span><span>⚡ Prompt gallery</span>'
-           f'<span>📓 Notebook</span><span>📅 Project &amp; Excel</span><span>🔷 Azure DevOps</span><span>🧬 Guided lifecycle</span><span>🪟 Exports to Microsoft 365 Copilot</span></div>')
+           f'<span>📓 Notebook</span><span>📅 Project &amp; Excel</span><span>🔷 Azure DevOps</span><span>🧬 Guided lifecycle</span><span>🧪 Specialist samples</span><span>🎞️ PowerPoint decks</span><span>🪟 Exports to Microsoft 365 Copilot</span></div>')
     d.say("end")
     d.wait_voice(1.8)
 

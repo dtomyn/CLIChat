@@ -765,12 +765,10 @@ def whoosh(rng, soft=False):
     t = np.linspace(0, 1, n)
     noise = rng.standard_normal(n)
     # crude band-pass sweep: moving average of varying width
-    out = np.zeros(n)
     acc = np.cumsum(noise)
-    for i in range(n):
-        w = int(40 - 34 * np.sin(np.pi * t[i]))
-        lo = max(0, i - w)
-        out[i] = (acc[i] - acc[lo]) / (i - lo + 1)
+    i = np.arange(n)
+    lo = np.maximum(0, i - (40 - 34 * np.sin(np.pi * t)).astype(int))  # same as the old per-sample loop, vectorised
+    out = (acc[i] - acc[lo]) / (i - lo + 1)
     env = np.sin(np.pi * t) ** 2
     return (out * env * (0.5 if soft else 0.9)).astype("float32")
 
@@ -989,7 +987,7 @@ def finish(cap, events, args):
     write_srt(cues, OUT / f"{NAME}.srt")
     final = OUT / f"{NAME}.mp4"
     subprocess.run([ffmpeg, "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(listing), "-i", str(wav),
-                    "-vf", "fps=30,scale=1920:1080:flags=lanczos,format=yuv420p", "-c:v", "libx264", "-preset", "slow", "-crf", "18",
+                    "-vf", "fps=30,scale=1920:1080:flags=lanczos,format=yuv420p", "-c:v", "libx264", "-preset", "fast", "-crf", "18",
                     "-af", "loudnorm=I=-14:TP=-1.5:LRA=11", "-c:a", "aac", "-b:a", "256k", "-ar", "48000",
                     "-movflags", "+faststart", "-shortest", str(final)], check=True)
     # thumbnail from the title card
