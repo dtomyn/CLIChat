@@ -15,7 +15,7 @@ Last reviewed: 2026-11-08 (branch `feat/powerpoint-decks`)
 | 📝 Planned | 0 |
 | ⬜ Not started | 0 |
 
-Lumen runs on one computer and works on files in the notebook folder. Where the catalogue names a cloud target (SharePoint, Teams, Power BI, Fabric, ADO Test Plans), Lumen produces the file or proposal locally, and a person publishes it. "Done" means the use case works end to end in that model. The live Azure DevOps connection (Plan 08) is built, but it has only been tested against a mocked Azure DevOps (`test/ado-*.test.js`) and has not yet been run against a real organisation, so the use cases that depend on it stay 🟡 until it has.
+Lumen runs on one computer and works on files in the notebook folder. Where the catalogue names a cloud publishing target (SharePoint, Teams, Power BI, Fabric, ADO Test Plans), Lumen produces the file or proposal locally, and a person publishes it. Reading Microsoft 365 is also supported through the opt-in Work IQ connection ([intent 70](../../intents/70-sharepoint-workiq.md)); enabling it automatically supplies the skill to every agent in attended chats with file-read access. This does not add cloud publishing or guarantee complete search-index coverage. "Done" means the use case works end to end in that model. The live Azure DevOps connection (Plan 08) is built, but it has only been tested against a mocked Azure DevOps (`test/ado-*.test.js`) and has not yet been run against a real organisation, so the use cases that depend on it stay 🟡 until it has.
 
 ## Use cases
 

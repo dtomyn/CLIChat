@@ -70,7 +70,7 @@ needed.
 - Edits are accepted automatically in **Create & edit files** (`acceptEdits`); there is no per-file confirmation.
 
 ## Source
-`public/app.js` (`ACCESS`, `composerHTML`, `bindComposer` access and mode menus, `openSettings`); `server.js`
+`public/js/state.js`, `public/js/composer.js`, `public/js/settings.js` (`ACCESS`, `composerHTML`, `bindComposer` access and mode menus, `openSettings`); `lib/server/workspace.js`, `lib/server/chat.js`, `lib/server/routes/core.js`, `lib/server/routes/chat.js`
 (`ACCESS_LEVELS`, `cleanAccess`, `runTurn`, `PUT /api/settings`, `PATCH /api/conversations/:id`, `cleanItem`);
 `providers/claude-cli.js` (`ACCESS_TOOLS`, `models`); `providers/copilot-cli.js` (`ACCESS_FLAGS`, `models`);
 `lib/skills.js` (`toolConfig`, `promptFor`); `lib/scheduler.js`.

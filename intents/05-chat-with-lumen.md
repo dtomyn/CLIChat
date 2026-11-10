@@ -76,8 +76,8 @@ The message box on the home screen and at the bottom of every chat; the reply ar
   ([34](34-guided-lifecycle-runs.md)).
 
 ## Source
-`public/app.js` (`composerHTML`, `bindComposer`, `submit`, `sendMessage`, `stopConv`, `openConversation`,
-`waitForBackground`, `renderChat`, `assistantInner`, `usageMeta`, `friendlyError`, `md`); `server.js` (`handleChat`,
+`public/js/composer.js`, `public/js/streaming.js`, `public/js/chat.js`, `public/js/markdown.js` (`composerHTML`, `bindComposer`, `submit`, `sendMessage`, `stopConv`, `openConversation`,
+`waitForBackground`, `renderChat`, `assistantInner`, `usageMeta`, `friendlyError`, `md`); `lib/server/routes/chat.js`, `lib/server/chat.js` (`handleChat`,
 `runTurn`, `buildSystemPrompt`, `historyPrompt`, `running`, `POST /api/chat`, `POST /api/chat/:id/stop`,
 `GET /api/conversations/:id`); `providers/claude-cli.js`, `providers/copilot-cli.js` (`friendlyTool`, `run`);
 `lib/tool-labels.js`.

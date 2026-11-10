@@ -74,6 +74,6 @@ keys or new accounts.
 ## Source
 `providers/index.js` (`status`, `get`); `providers/claude-cli.js` (`detect`, `run`, `complete`, `ACCESS_TOOLS`);
 `providers/copilot-cli.js` (`detect`, `run`, `complete`, `sessionArgs`, `friendlyError`); `providers/README.md`;
-`lib/cli-bin.js` (`resolve`, `command`); `server.js` (`GET /api/status`, `PUT /api/settings`, `runTurn`,
-`historyPrompt`, `autoTitle`, `draftAssistant`); `public/app.js` (`providerCards`, `openSettings`, `openOnboarding`,
+`lib/cli-bin.js` (`resolve`, `command`); `lib/server/routes/core.js`, `lib/server/chat.js`, `lib/server/exports.js` (`GET /api/status`, `PUT /api/settings`, `runTurn`,
+`historyPrompt`, `autoTitle`, `draftAssistant`); `public/js/settings.js`, `public/js/onboarding.js`, `public/js/main.js`, `public/js/composer.js`, `public/js/chat.js` (`providerCards`, `openSettings`, `openOnboarding`,
 `renderUser`, `submit`, `friendlyError`).

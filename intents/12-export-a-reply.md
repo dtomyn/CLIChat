@@ -68,8 +68,8 @@ PowerPoint deck, or keep it as a Markdown file, so that I can hand over a real f
   deck with only a title slide plus an overview slide.
 
 ## Source
-- `public/app.js`: `assistantInner` (**Export**), `hasMdTable`, `hasMdSlides`, `saveReplyMenu`, `exportReply`.
-- `server.js`: `POST /api/export`, `stripSuggestion`.
+- `public/js/chat.js`, `public/js/chat-actions.js`: `assistantInner` (**Export**), `hasMdTable`, `hasMdSlides`, `saveReplyMenu`, `exportReply`.
+- `lib/server/routes/files.js`, `lib/server/chat.js`: `POST /api/export`, `stripSuggestion`.
 - `tools/md-export.js`: `markdownToDocx`, `toDocx`, `builtinDocx`, `markdownTablesToXlsx`, `findTables`, `coerceCell`,
   `sheetName`, `hasTable`.
 - `tools/pptx.js`: `toPptx`, `parseDeck`, `paginate`, `buildSlides`.

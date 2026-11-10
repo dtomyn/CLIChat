@@ -1,7 +1,8 @@
 // Knowledge publishing (UC 37): snapshot approved Markdown (lifecycle outputs, a wiki export folder) into Word and
 // HTML under Published/<library>/, keep Published/publishing-log.xlsx, and check freshness: snapshots whose source
 // changed since publishing, sources never published, and snapshots nothing in the log points at.
-// Uploading to SharePoint is out of scope: the notebook syncs through OneDrive/SharePoint.
+// Uploading to SharePoint is out of scope: the notebook syncs through OneDrive/SharePoint. (Reading SharePoint
+// content live is the separate WorkIQ connection, see skills/microsoft-365.)
 
 const fs = require('fs');
 const path = require('path');

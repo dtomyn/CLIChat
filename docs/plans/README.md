@@ -21,7 +21,7 @@ Plans 09–18 cover the AI use-case catalogue (AIThemes.pdf). Progress for all 4
 
 - **No new downloads.** `jszip` and `exceljs` are already in `node_modules`. If a plan seems to need a new package, stop and ask the owner first (see the owner's global CLAUDE.md).
 - **No new listening ports.** Everything goes through the existing server on `127.0.0.1:4317`.
-- **Keep the stack.** That means vanilla JS in [public/app.js](../../public/app.js), one CSS file, and a zero-framework [server.js](../../server.js). There is no build step.
+- **Keep the stack.** That means vanilla JS ES modules in [public/js/](../../public/js/), one CSS file, and a zero-framework [server.js](../../server.js) with [lib/server/](../../lib/server/). There is no build step.
 - **Write for business users.** Labels, toasts and errors use plain language. Never mention CLI, session or token in the UI.
 - **Data stays local.** New data goes into the JSON files under `data/` through [lib/store.js](../../lib/store.js). Older conversation files will lack the new fields, so code must tolerate them being missing.
 - **Verify in the running app.** Start it with `npm start` and exercise the feature in a browser. Also run `node --check` on every changed JS file. Add or update unit tests in `test/` (run with `node --test test/*.test.js`) for pure helpers such as parsers and converters, and browser tests in `e2e/` (`npm run test:e2e`) for screens.
@@ -30,14 +30,14 @@ Plans 09–18 cover the AI use-case catalogue (AIThemes.pdf). Progress for all 4
 
 | What | Where |
 |---|---|
-| Composer HTML and key handling | `composerHTML`, `bindComposer` in `public/app.js` |
-| Message rendering | `msgHTML`, `assistantInner` in `public/app.js` |
-| Message action clicks | `chatClicks` in `public/app.js` (uses `data-*` attributes) |
-| Streaming client | `sendMessage` in `public/app.js` |
-| Global shortcuts | `bindChrome` → `document.addEventListener('keydown', …)` |
-| Markdown renderer | `renderer.code` / `renderer.table` / `md()` near the top of `public/app.js` |
-| Chat endpoint | `handleChat` in `server.js` (it stores `userMsg` and `asstMsg` and resumes the CLI session through `conv.sessions[providerId]`) |
-| History replay when there's no session | `historyPrompt` in `server.js` |
-| REST router | `api()` in `server.js` (`/api/<resource>/<id>/<action>`) |
+| Composer HTML and key handling | `composerHTML`, `bindComposer` in `public/js/composer.js` |
+| Message rendering | `msgHTML`, `assistantInner` in `public/js/chat.js` |
+| Message action clicks | `chatClicks` in `public/js/chat-clicks.js` (uses `data-*` attributes) |
+| Streaming client | `sendMessage` in `public/js/streaming.js` |
+| Global shortcuts | `bindChrome` in `public/js/main.js` → `document.addEventListener('keydown', …)` |
+| Markdown renderer | `renderer.code` / `renderer.table` / `md()` in `public/js/markdown.js` |
+| Chat endpoint | `handleChat` in `lib/server/routes/chat.js` (it stores `userMsg` and `asstMsg` and resumes the CLI session through `conv.sessions[providerId]`) |
+| History replay when there's no session | `historyPrompt` in `lib/server/chat.js` |
+| REST router | `api()` in `server.js` dispatches `/api/<resource>/<id>/<action>` to `lib/server/routes/*.js` |
 | Storage | `lib/store.js` (`conversations`, `assistants`, `recipes`, `settings`) |
 | Provider events | `providers/claude-cli.js` emits `text`, `tool`, `tool_done`, `file`, `session`, `usage {costUsd, durationMs}` and `error` |

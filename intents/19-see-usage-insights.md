@@ -39,5 +39,5 @@ and how people rate their replies, so that I can fix the ones that get 👎 and 
 - Covers chats on this computer only (one user's `data/` folder); there is no team-wide roll-up.
 
 ## Source
-`server.js` (`insights`, `GET /api/insights`), `public/app.js` (`renderInsightsPage`, `fmtDuration`, `timeAgo`),
+`lib/server/insights.js`, `lib/server/routes/core.js` (`insights`, `GET /api/insights`), `public/js/insights.js`, `public/js/chat.js`, `public/js/utils.js` (`renderInsightsPage`, `fmtDuration`, `timeAgo`),
 `public/index.html` (**Insights** rail item).

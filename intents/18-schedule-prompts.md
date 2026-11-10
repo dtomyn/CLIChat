@@ -77,6 +77,6 @@ run it.
 
 ## Source
 `lib/scheduler.js` (`localTime`, `intervalWindow`, `inWindow`, `validateWhen`, `nextDue`, `dueFrom`, `start`),
-`server.js` (`/api/schedules` routes, `scheduleRunner`, `runTurn`), `lib/skills.js` (`toolConfig` `scheduled`),
-`public/app.js` (`openRecipeRunner` **Repeat…**, `openScheduleForm`, `renderRecipesPage` Scheduled tab,
+`lib/server/routes/schedules.js`, `lib/server/chat.js` (`/api/schedules` routes, `scheduleRunner`, `runTurn`), `lib/skills.js` (`toolConfig` `scheduled`),
+`public/js/prompts.js`, `public/js/sidebar.js`, `public/js/chat.js` (`openRecipeRunner` **Repeat…**, `openScheduleForm`, `renderRecipesPage` Scheduled tab,
 `pollSchedules`, `renderConvList`, `openConversation` unread), `lib/store.js` (`schedules`).

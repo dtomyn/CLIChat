@@ -76,7 +76,8 @@ the published knowledge stays trustworthy.
   published yet, and bad input).
 
 ## Limits
-- Uploading to SharePoint is out of scope: the notebook syncs through OneDrive/SharePoint.
+- Uploading to SharePoint is out of scope: the notebook syncs through OneDrive/SharePoint. Reading SharePoint is possible
+  separately through the WorkIQ connection ([intent 70](70-sharepoint-workiq.md)).
 - Only Markdown sources; a live ADO wiki is not a source (export it first, or see [39](39-approve-ado-changes.md) for the
   reverse direction).
 - There is no gallery prompt for publishing; it is asked for in chat.

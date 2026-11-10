@@ -73,9 +73,9 @@ Keyboard shortcuts (`openShortcuts`, handled in `bindChrome`; Ctrl is ⌘ on a M
 - Copy copies Markdown source, not rendered rich text (only tables are copied rich).
 
 ## Source
-- `public/app.js`: `assistantInner` (action row, chips), `renderer.table` / `renderer.code` (copy buttons), `md`,
+- `public/js/chat.js`, `public/js/markdown.js`, `public/js/chat-clicks.js`, `public/js/composer.js`, `public/js/chat-actions.js`, `public/js/main.js`, `public/js/settings.js`: `assistantInner` (action row, chips), `renderer.table` / `renderer.code` (copy buttons), `md`,
   `chatClicks`, `copyTable`, `flash`, `suggestedNextSteps`, `suggestedNextStep`, `bindComposer` (↑), `feedbackButtons`,
   `DOWN_REASONS`, `rateReply`, `renderChat` (**Copy whole conversation**), `openShortcuts`, `bindChrome` (keydown),
   `openSettings` (**Keyboard shortcuts**).
-- `server.js`: `buildSystemPrompt` (suggested-step line), `PATCH /api/conversations/:id/messages/:mid`, `runTurn`
+- `lib/server/chat.js`, `lib/server/routes/chat.js`: `buildSystemPrompt` (suggested-step line), `PATCH /api/conversations/:id/messages/:mid`, `runTurn`
   (keeps feedback written during a reply).

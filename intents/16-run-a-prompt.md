@@ -59,6 +59,6 @@ files, so that the right agent does a well-specified job without me writing the 
 - Prompts run with the global default AI engine and response mode.
 
 ## Source
-`public/app.js` (`renderRecipesPage`, `recipeCard`, `needsLocalTools`, `openRecipeRunner`, `fieldInput`,
-`sendMessage`, `renderHome`, `demoBanner`), `server.js` (`/api/recipes`, `/api/folder/files`, `/api/upload`,
+`public/js/prompts.js`, `public/js/home.js`, `public/js/streaming.js` (`renderRecipesPage`, `recipeCard`, `needsLocalTools`, `openRecipeRunner`, `fieldInput`,
+`sendMessage`, `renderHome`, `demoBanner`), `lib/server/routes/library.js`, `lib/server/routes/files.js`, `lib/server/chat.js` (`/api/recipes`, `/api/folder/files`, `/api/upload`,
 `runTurn` storing `recipeId`), `defaults/recipes.json`.

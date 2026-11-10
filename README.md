@@ -8,6 +8,10 @@ Lumen sits on top of the AI command-line tools your organization already deploys
 
 see: https://youtu.be/6uLWQEaM1PM
 
+### Why "Lumen"?
+
+A *lumen* is the unit of light, the measure of how much useful light a source gives off. That fits what the app is for: it shines light on the documents, plans and backlogs you already have, so you can see what's in them without learning new tools. The name is also short, easy to say, and doesn't sound like jargon, which suits an app built for business users rather than developers. It sits comfortably beside "Copilot" without copying it, and the ✨ icon nods to the same idea.
+
 ## Start it
 
 **Windows:** double-click **`Start Lumen.cmd`**. The first run installs dependencies, and then your browser opens at <http://localhost:4317>.
@@ -119,6 +123,19 @@ Lumen is a stepping stone. People who learn it now should feel at home in Micros
 
 **What stays different.** Lumen keeps its own name and logo, and every message box says *"You're in Lumen, powered by Claude/GitHub Copilot. This isn't Microsoft 365 Copilot."* That way nobody pastes in something they'd only trust to Copilot's data protections. Anything that won't carry over is marked **Lumen only**: the document skills, lifecycle runs, before/after file comparisons, and prompts that save files or read Microsoft Project plans.
 
+## SharePoint and Microsoft 365 (WorkIQ)
+
+Lumen reaches SharePoint two ways. Files in a notebook kept in **OneDrive** sync to your computer and are read like any other file. For documents you haven't synced (plus email, meetings and Teams), switch on **Settings › Connections › SharePoint & Microsoft 365**. Its skill is included automatically for every agent in new and existing chats; allow file-read access and use an attended chat. No separate skill selection is needed. **GitHub Copilot uses its existing [managed Work IQ connector](https://docs.github.com/en/copilot/concepts/customizations/copilot-connectors)**, the same `workiqmcp` integration available in the Copilot app. Lumen explicitly supplies GitHub's connector endpoint to its engine process and uses the engine's signed-in GitHub authentication, without copying credentials. Update Copilot if Lumen reports that this authentication option is unavailable. On Windows, **Open Work IQ connector** opens the engine dashboard: select the **Connectors** view, then **Work IQ**, not a similarly named user server or plugin. Lumen adds no duplicate `m365` server or separate Work IQ CLI sign-in to Copilot. **Claude's standalone `m365` connection is different** and requires its own Work IQ CLI consent; a connected Copilot connector does not grant that consent. Credentials and organisational policies remain engine-owned. Return to Lumen and send a Microsoft 365 question to update reported connection/tool status. Lumen instructs the engine not to use Microsoft 365 when it is off or the request is unattended; native managed connectors may still appear in the engine inventory. Read-only use is instructed, not enforced by a Microsoft 365 write-permission boundary. Details: [intents/70-sharepoint-workiq.md](intents/70-sharepoint-workiq.md).
+
+### Search results and troubleshooting
+
+- **"What is the last document I updated in SharePoint?"** uses the connector's supported, read-only search. Lumen checks the editor, modification date and source link. Give a site or library name for a narrower search.
+- SharePoint sites and personal OneDrive are separate search scopes. Lumen should not substitute a personal OneDrive result or a generated code/build file for a business document in SharePoint.
+- Results come from the search index, not a complete editing history. "Latest" means the latest verified match in the searched scope; no matches do not prove that you never edited a document.
+- **Access not enabled:** check that the Microsoft 365 connection is on and the chat allows **Read my files** or **Create & edit files**. No agent skill change is needed. Scheduled prompts cannot use this connection.
+- **An operation was refused:** an error such as `Access denied for GET path: /me/drive/recent` is not, by itself, a sign-in failure. Lumen must not guess unsupported paths or retry through another identity. Reconnect only when the actual error calls for sign-in.
+- **Connected / tools discovered:** these confirm connection setup, not access to a particular document. **Refresh status** shows the last status reported by a chat, not a fresh document search.
+
 ## Azure DevOps: work items and wiki
 
 Connect a project in **Settings › Connections › Azure DevOps**. Paste the organisation address (`https://dev.azure.com/<org>`), choose how Lumen signs in, click **Check connection**, then pick the project, team and wikis. Lumen signs in with the **Azure CLI** if you've run `az login`, or with a **personal access token** (Work Items and Wiki, Read & write). The token is stored encrypted for your Windows account (DPAPI) under `data/secrets/`, never in settings, and never passed to the AI. Lumen works with Azure DevOps in the cloud only (`dev.azure.com`), not on-premises Azure DevOps Server.
@@ -150,7 +167,9 @@ See [providers/README.md](providers/README.md). Each engine is one file that tur
 ## Project layout
 
 ```
-server.js            HTTP server, JSON API, NDJSON chat streaming
+server.js            HTTP shell: static files, security headers, API route list
+lib/server/          Chat turns, lifecycle runs, exports, folders; routes/ has one file per API area
+public/js/           Browser UI as ES modules (main.js is the entry point)
 lib/store.js         JSON file storage
 lib/cli-bin.js       Finds an engine's CLI and launches it without a shell (safe for long prompts on Windows)
 providers/           Pluggable AI engines (claude-cli, copilot-cli)

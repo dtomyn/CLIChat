@@ -120,6 +120,6 @@ weekend, so that the go/no-go call and the bridge updates rest on evidence rathe
 - `skills/release-cutover/SKILL.md`.
 - `defaults/assistants.json` (agents **Release Readiness**, **Cutover Coordinator**).
 - `defaults/recipes.json` (prompts **Readiness check**, **Generate cutover checklist**, **Cutover status update**).
-- `lib/scheduler.js` (`intervalWindow`, `inWindow`, `nextDue`); `public/app.js` (`openScheduleForm`, schedule list).
+- `lib/scheduler.js` (`intervalWindow`, `inWindow`, `nextDue`); `public/js/prompts.js` (`openScheduleForm`, schedule list).
 - `lib/tool-labels.js`.
 - `demo/Release Readiness Checklist - Go-live.xlsx`, `demo/Evidence/`, `demo/Cutover Run-sheet - Go-live weekend.xlsx`.

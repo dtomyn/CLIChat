@@ -71,7 +71,7 @@ keep the ones I use most in the sidebar, so that every chat starts with the righ
 - Pins are global (one `settings.json`), not per notebook.
 
 ## Source
-`public/app.js` (`renderAssistantsPage`, `agentSearchText`, `filterAgentCards`, `AGENT_SORTS`, `sortedAgents`, `pinnedAgentIds`, `togglePinAgent`, `renderAgentList`, `renderHome`,
+`public/js/agents.js`, `public/js/sidebar.js`, `public/js/home.js`, `public/js/composer.js` (`renderAssistantsPage`, `agentSearchText`, `filterAgentCards`, `AGENT_SORTS`, `sortedAgents`, `pinnedAgentIds`, `togglePinAgent`, `renderAgentList`, `renderHome`,
 `homeClicks`, `skillChips`, `#assistantPill` menu in `bindComposer`), `public/index.html` (`#agentList`),
-`server.js` (`/api/assistants` routes, `buildSystemPrompt`, `runTurn`), `lib/store.js` (`collection`: seeding,
+`lib/server/routes/library.js`, `lib/server/chat.js` (`/api/assistants` routes, `buildSystemPrompt`, `runTurn`), `lib/store.js` (`collection`: seeding,
 `removed.json`, `reset`), `defaults/assistants.json`.
