@@ -8,6 +8,10 @@ Lumen sits on top of the AI command-line tools your organization already deploys
 
 see: https://youtu.be/6uLWQEaM1PM
 
+### Why "Lumen"?
+
+A *lumen* is the unit of light, the measure of how much useful light a source gives off. That fits what the app is for: it shines light on the documents, plans and backlogs you already have, so you can see what's in them without learning new tools. The name is also short, easy to say, and doesn't sound like jargon, which suits an app built for business users rather than developers. It sits comfortably beside "Copilot" without copying it, and the ✨ icon nods to the same idea.
+
 ## Start it
 
 **Windows:** double-click **`Start Lumen.cmd`**. The first run installs dependencies, and then your browser opens at <http://localhost:4317>.

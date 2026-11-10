@@ -119,6 +119,7 @@ async function handleChat(req, res) {
       const index = run.stages.findIndex((s) => s.conversationId === body.conversationId);
       if (index < 0) continue;
       const stage = run.stages[index], later = run.stages.slice(index + 1);
+      if (stage.status === 'skipped') return send(res, 409, { error: 'Add this optional stage back to the run before continuing its chat.' });
       if (stage.checkRunning || later.some((s) => s.status === 'running' || s.checkRunning || running.has(s.conversationId))) return send(res, 409, { error: 'Wait for the traceability check and later stages to finish first.' });
       if (stage.status === 'review' && later.some((s) => s.status !== 'pending')) return send(res, 409, { error: 'Send this stage back before changing inputs used by later stages.' });
       stage.checkSummary = ''; stage.gateConversationId = null; store.runs.save(run);
@@ -260,6 +261,57 @@ const DEFAULT_PIPELINES = (() => { try { return JSON.parse(fs.readFileSync(path.
 function stageWordTemplate(pipelineId, def) {
   if (def.wordTemplate !== undefined) return def.wordTemplate || '';
   return DEFAULT_PIPELINES.find((p) => p.id === pipelineId)?.stages.find((s) => s.id === def.id)?.wordTemplate || '';
+}
+
+function validatePipeline(body, id) {
+  const invalid = (error) => ({ error });
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return invalid('Enter a workflow definition.');
+  const name = String(body.name || '').trim();
+  const emoji = String(body.emoji || '').trim();
+  if (!name || name.length > 80) return invalid('Give the workflow a name of 1 to 80 characters.');
+  if (emoji.length > 8 || /[\x00-\x1f]/.test(emoji)) return invalid('Choose a short workflow icon.');
+  if (!Array.isArray(body.stages) || !body.stages.length || body.stages.length > 30) return invalid('A workflow needs between 1 and 30 stages.');
+  const ids = new Set();
+  const stages = [];
+  for (const stage of body.stages) {
+    if (!stage || typeof stage !== 'object' || typeof stage.id !== 'string' || !/^[a-z0-9][a-z0-9-]{0,39}$/i.test(stage.id) || ids.has(stage.id)) return invalid('Each stage needs a unique, simple identifier.');
+    ids.add(stage.id);
+    const stageName = String(stage.name || '').trim();
+    const output = String(stage.output || '').trim();
+    const prompt = String(stage.prompt || '').trim();
+    if (!stageName || stageName.length > 80) return invalid('Give each stage a name of 1 to 80 characters.');
+    if (output.length > 120 || !/^[A-Za-z0-9][A-Za-z0-9 ._-]{0,115}\.(md|markdown)$/i.test(output) || /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(output)) return invalid('Each output must be a valid Markdown filename, such as 01-requirements.md.');
+    if (!prompt || prompt.length > 8000) return invalid('Each stage needs instructions of 1 to 8,000 characters.');
+    if (!stage.assistantId || !store.assistants.get(stage.assistantId)) return invalid(`Choose an available agent for "${stageName}".`);
+    if (stage.optional !== undefined && typeof stage.optional !== 'boolean') return invalid(`Set whether "${stageName}" is optional.`);
+    const wordTemplate = String(stage.wordTemplate || '').trim();
+    if (wordTemplate.length > 240 || /[\x00-\x1f]/.test(wordTemplate) || path.isAbsolute(wordTemplate) || /(^|[\\/])\.\.([\\/]|$)/.test(wordTemplate)) return invalid('Word template paths must stay inside the project folder.');
+    stages.push({ id: stage.id, name: stageName, assistantId: stage.assistantId, output, prompt, ...(stage.optional ? { optional: true } : {}), wordTemplate });
+  }
+  if (new Set(stages.map((s) => s.output.toLowerCase())).size !== stages.length) return invalid('Each stage must have a different output filename.');
+  let gateCheck = null;
+  if (body.gateCheck) {
+    const assistantId = String(body.gateCheck.assistantId || '');
+    const prompt = String(body.gateCheck.prompt || '').trim();
+    if (!store.assistants.get(assistantId)) return invalid('Choose an available agent for the traceability check.');
+    if (!prompt || prompt.length > 8000) return invalid('Traceability check instructions must be 1 to 8,000 characters.');
+    gateCheck = { assistantId, prompt };
+  }
+  return { pipeline: { id: id || body.id, name, emoji, stages, gateCheck } };
+}
+
+function snapshotRunPipeline(run) {
+  if (!run) return run;
+  if (run.pipelineDefinition) return run;
+  const pipeline = store.pipelines.get(run.pipelineId);
+  if (pipeline) {
+    run.pipelineDefinition = {
+      ...JSON.parse(JSON.stringify(pipeline)),
+      stages: pipeline.stages.map((stage) => ({ ...stage, wordTemplate: stageWordTemplate(pipeline.id, stage) })),
+    };
+    store.runs.save(run);
+  }
+  return run;
 }
 
 function stampOutput(stage, approvedBy, approvedAt) {
@@ -548,12 +600,35 @@ async function api(req, res, url) {
     return send(res, 200, { providers: await registry.status(url.searchParams.has('refresh')), settings: { ...s, workspace: resolveWorkspace(s.workspace) }, platform: process.platform, user: os.userInfo().username });
   }
   if (resource === 'skills' && m === 'GET') return send(res, 200, skills.all().map(({ body, raw, file, ...rest }) => rest));
-  if (resource === 'pipelines' && m === 'GET') return send(res, 200, store.pipelines.all().map((p) => ({ ...p, stages: p.stages.map((s) => ({ ...s, wordTemplate: stageWordTemplate(p.id, s) })) })));
+  if (resource === 'pipelines') {
+    if (m === 'GET' && !rid) return send(res, 200, store.pipelines.all().map((p) => ({ ...p, builtin: DEFAULT_PIPELINES.some((d) => d.id === p.id), stages: p.stages.map((s) => ({ ...s, wordTemplate: stageWordTemplate(p.id, s) })) })));
+    if (m === 'POST' && !rid) {
+      const { pipeline, error } = validatePipeline(await json(req));
+      if (error) return send(res, 400, { error });
+      if (store.pipelines.all().length >= 100) return send(res, 400, { error: 'You can save up to 100 workflows.' });
+      return send(res, 200, store.pipelines.upsert({ ...pipeline, id: store.id() }));
+    }
+    if (m === 'PUT' && rid) {
+      if (!store.pipelines.get(rid)) return send(res, 404, { error: 'Workflow not found.' });
+      const { pipeline, error } = validatePipeline(await json(req), rid);
+      if (error) return send(res, 400, { error });
+      const existing = store.pipelines.get(rid);
+      return send(res, 200, store.pipelines.upsert({ ...pipeline, ...(existing.defaultStagesSeen ? { defaultStagesSeen: existing.defaultStagesSeen } : {}) }));
+    }
+    if (m === 'DELETE' && rid) {
+      if (!store.pipelines.get(rid)) return send(res, 404, { error: 'Workflow not found.' });
+      if (DEFAULT_PIPELINES.some((p) => p.id === rid)) return send(res, 400, { error: 'Built-in workflows cannot be deleted. You can still customize or duplicate them.' });
+      store.pipelines.remove(rid);
+      return send(res, 200, { ok: true });
+    }
+  }
   if (resource === 'runs') {
-    if (!rid && m === 'GET') return send(res, 200, store.runs.list().map(reconcileRun));
+    if (!rid && m === 'GET') return send(res, 200, store.runs.list().map((run) => reconcileRun(snapshotRunPipeline(run))));
     if (!rid && m === 'POST') {
       const body = await json(req), pipeline = store.pipelines.get(body.pipelineId);
       if (!pipeline) return send(res, 400, { error: 'Choose a pipeline.' });
+      const { error: pipelineError } = validatePipeline(pipeline, pipeline.id);
+      if (pipelineError) return send(res, 400, { error: `This workflow needs attention before it can be run: ${pipelineError}` });
       const workspace = resolveWorkspace(body.workspace);
       const name = String(body.name || '').trim().replace(/[<>:"/\\|?*\x00-\x1f]/g, '').replace(/[. ]+$/, '').slice(0, 80);
       if (!name || name === '.' || name === '..') return send(res, 400, { error: 'Enter a valid run name.' });
@@ -564,23 +639,28 @@ async function api(req, res, url) {
       if (fs.existsSync(lifecycle) && !inside(fs.realpathSync(lifecycle), fs.realpathSync(workspace))) return send(res, 400, { error: 'The lifecycle folder must be inside your project folder.' });
       fs.mkdirSync(dir, { recursive: true });
       if (!inside(fs.realpathSync(dir), fs.realpathSync(workspace))) return send(res, 400, { error: 'The lifecycle folder must be inside your project folder.' });
-      const run = { id: store.id(), pipelineId: pipeline.id, name, workspace, sources: body.sources.map((p) => path.resolve(workspace, p)), createdAt: Date.now(),
+      const pipelineDefinition = {
+        ...JSON.parse(JSON.stringify(pipeline)),
+        stages: pipeline.stages.map((stage) => ({ ...stage, wordTemplate: stageWordTemplate(pipeline.id, stage) })),
+      };
+      const run = { id: store.id(), pipelineId: pipeline.id, pipelineDefinition, name, workspace, sources: body.sources.map((p) => path.resolve(workspace, p)), createdAt: Date.now(),
         stages: pipeline.stages.map((s) => ({ id: s.id, status: 'pending', outputPath: path.join(dir, s.output) })) };
       return send(res, 200, store.runs.save(run));
     }
-    const run = store.runs.get(rid);
+    const run = snapshotRunPipeline(store.runs.get(rid));
     if (!run) return send(res, 404, { error: 'Run not found.' });
     if (m === 'GET' && !action) return send(res, 200, reconcileRun(run));
     if (m === 'POST' && action === 'stages' && sub && parts[4]) {
-      const stage = run.stages.find((s) => s.id === sub), pipeline = store.pipelines.get(run.pipelineId);
+      const stage = run.stages.find((s) => s.id === sub), pipeline = run.pipelineDefinition || store.pipelines.get(run.pipelineId);
       const def = pipeline?.stages.find((s) => s.id === sub);
       if (!stage || !def) return send(res, 404, { error: 'Stage not found.' });
-      const operation = parts[4], index = run.stages.indexOf(stage), prev = run.stages[index - 1];
+      const operation = parts[4], index = run.stages.indexOf(stage), gatePrev = run.stages[index - 1];
+      const prev = run.stages.slice(0, index).reverse().find((s) => s.status !== 'skipped');
       const body = await json(req);
       if (operation === 'start') {
         if (!['pending', 'rework'].includes(stage.status) || (stage.conversationId && running.has(stage.conversationId))) return send(res, 409, { error: 'This stage cannot be started now.' });
-        if (prev && prev.status !== 'approved' && !body.override) return send(res, 409, { error: 'Approve the previous stage or explicitly override the approval gate.' });
-        if (prev && (prev.status === 'running' || running.has(prev.conversationId))) return send(res, 409, { error: 'Wait for the previous stage to finish first.' });
+        if (gatePrev && !['approved', 'skipped'].includes(gatePrev.status) && !body.override) return send(res, 409, { error: 'Approve the previous stage or explicitly override the approval gate.' });
+        if (gatePrev && (gatePrev.status === 'running' || running.has(gatePrev.conversationId))) return send(res, 409, { error: 'Wait for the previous stage to finish first.' });
         if (prev && !workspaceFile(prev.outputPath, run.workspace)) return send(res, 400, { error: 'The previous stage output is missing.' });
         if (!run.sources.every((p) => workspaceFile(p, run.workspace))) return send(res, 400, { error: 'A source file is missing from your project folder.' });
         if (!store.assistants.get(def.assistantId)) return send(res, 400, { error: 'The stage assistant is missing.' });
@@ -592,6 +672,17 @@ async function api(req, res, url) {
         const prompt = def.prompt.replaceAll('{{sources}}', run.sources.map((p) => JSON.stringify(path.relative(run.workspace, p))).join(', ')).replaceAll('{{prev}}', prev ? JSON.stringify(path.relative(run.workspace, prev.outputPath)) : '');
         startRunTurn(run, stage, `${prompt}\n\nSave your final output as a Markdown file at ${JSON.stringify(path.relative(run.workspace, stage.outputPath))}.${stage.unapprovedInputs ? ' Clearly label it as based on unapproved inputs.' : ''}`);
         return send(res, 200, run);
+      }
+      if (operation === 'skip') {
+        if (!def.optional || !['pending', 'rework'].includes(stage.status) || (stage.conversationId && running.has(stage.conversationId))) return send(res, 409, { error: 'Only an optional stage that has not started can be skipped.' });
+        if (gatePrev && !['approved', 'skipped'].includes(gatePrev.status)) return send(res, 409, { error: 'Approve the previous stage before skipping this one.' });
+        stage.status = 'skipped'; stage.error = ''; delete stage.unapprovedInputs;
+        return send(res, 200, store.runs.save(run));
+      }
+      if (operation === 'include') {
+        if (stage.status !== 'skipped' || run.stages.slice(index + 1).some((s) => !['pending', 'skipped'].includes(s.status))) return send(res, 409, { error: 'This optional stage cannot be added back after a later stage has started.' });
+        stage.status = 'pending';
+        return send(res, 200, store.runs.save(run));
       }
       if (operation === 'approve') {
         if (stage.status !== 'review' || running.has(stage.conversationId)) return send(res, 409, { error: 'The stage must be ready for review.' });
@@ -607,7 +698,7 @@ async function api(req, res, url) {
         if (later.some((s) => s.status === 'running' || s.checkRunning || running.has(s.conversationId))) return send(res, 409, { error: 'Wait for later stages and checks to finish first.' });
         if (stage.status === 'approved' && workspaceFile(stage.outputPath, run.workspace)) fs.writeFileSync(stage.outputPath, fs.readFileSync(stage.outputPath, 'utf8').replace(/^> Approved by .* on .*\r?\n(?:\r?\n)?/, ''));
         stage.status = 'rework'; delete stage.approvedBy; delete stage.approvedAt;
-        for (const downstream of later.filter((s) => s.status !== 'pending')) {
+        for (const downstream of later.filter((s) => !['pending', 'skipped'].includes(s.status))) {
           if (workspaceFile(downstream.outputPath, run.workspace)) {
             fs.writeFileSync(downstream.outputPath, fs.readFileSync(downstream.outputPath, 'utf8').replace(/^> Approved by .* on .*\r?\n(?:\r?\n)?/, ''));
             labelUnapproved(downstream);
@@ -633,6 +724,7 @@ async function api(req, res, url) {
         } catch (e) { return send(res, e.code === 'EBUSY' || e.code === 'EPERM' ? 409 : 500, { error: e.code === 'EBUSY' || e.code === 'EPERM' ? `Close ${path.basename(target)} in Word and try again.` : `Couldn't save the Word file: ${e.message}` }); }
       }
       if (operation === 'check') {
+        if (!pipeline.gateCheck) return send(res, 400, { error: 'This workflow has no traceability check.' });
         if (stage.status !== 'review' || stage.checkRunning) return send(res, 409, { error: 'The stage must be ready for review.' });
         const inputs = prev ? [prev.outputPath] : run.sources;
         if (![...inputs, stage.outputPath].every((p) => workspaceFile(p, run.workspace))) return send(res, 400, { error: 'A source or output file is missing.' });

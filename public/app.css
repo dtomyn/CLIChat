@@ -609,6 +609,32 @@ details.advanced[open] summary { margin-bottom: 14px; }
 .diff-table table { width:100%; border-collapse:collapse; }
 .diff-table th, .diff-table td { text-align:left; vertical-align:top; border-bottom:1px solid var(--border); padding:8px; overflow-wrap:anywhere; }
 .lifecycle-list { display:grid; gap:8px; margin-top:24px; }
+.workflow-list { display:grid; gap:10px; margin:16px 0 32px; }
+.workflow-card { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:16px; border:1px solid var(--border); border-radius:10px; background:var(--panel); }
+.workflow-info { display:flex; align-items:center; gap:12px; min-width:0; }
+.workflow-emoji { font-size:24px; }
+.workflow-info h3, .workflow-info p { margin:0; }
+.workflow-info p, .pipeline-help, .pipeline-stage .muted { color:var(--text-2); font-size:13px; }
+.workflow-actions { display:flex; flex-wrap:wrap; gap:6px; justify-content:flex-end; }
+.lifecycle-runs-heading { margin-top:28px; }
+.pipeline-editor { display:grid; gap:14px; }
+.pipeline-editor-top { display:grid; grid-template-columns:1fr 100px; gap:12px; }
+.pipeline-editor label { display:grid; gap:5px; font-size:13px; }
+.pipeline-editor .section-label { margin:8px 0 0; }
+.pipeline-help { margin:-8px 0 0; }
+.pipeline-stage-list { display:grid; gap:10px; }
+.pipeline-stage, .pipeline-gate { display:grid; gap:10px; padding:14px; border:1px solid var(--border); border-radius:8px; background:var(--panel); }
+.pipeline-stage-head { display:flex; justify-content:space-between; align-items:center; }
+.pipeline-stage-head > div { display:flex; gap:4px; }
+.pipeline-check { display:flex!important; align-items:center; gap:8px!important; }
+.pipeline-check input { width:auto; }
+.pipeline-gate > label { margin-bottom:2px; }
+.pipeline-gate [hidden] { display:none; }
+@media (max-width:680px) {
+  .workflow-card { align-items:flex-start; flex-direction:column; }
+  .workflow-actions { justify-content:flex-start; }
+  .pipeline-editor-top { grid-template-columns:1fr 82px; }
+}
 .run-stepper { display:flex; gap:8px; overflow-x:auto; margin:24px 0; }
 .run-step { min-width:160px; display:flex; flex-direction:column; gap:6px; text-align:left; padding:12px; border:1px solid var(--border); border-radius:10px; background:var(--panel); color:var(--text); cursor:pointer; }
 .run-step.selected { border-color:var(--accent); }

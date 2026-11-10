@@ -6,9 +6,11 @@ guided run, where each stage is reviewed and approved by a named person before t
 hand-offs are visible, auditable and never built on unapproved work without saying so.
 
 ## Where
-- **Lifecycle** in the left rail (`#/runs`, **Lifecycle runs**, marked **Lumen only**); also the home screen's
-  **Guided delivery** section ("🧬 Requirements to stories: guided stages with approval gates", **View lifecycle runs**).
-- **🧬 Start requirements to stories** opens the **Start requirements to stories** dialog.
+- **Lifecycle** in the left rail (`#/runs`, marked **Lumen only**); the page lists saved workflows and runs.
+- **Create workflow**, **Customize**, and **Duplicate** open the workflow editor. A workflow defines its ordered stages,
+  stage agent, instructions, Markdown output filename, optional Word template, optional-stage setting, and optional
+  traceability check. Built-in workflows can be customized or duplicated; user-created workflows can also be deleted.
+- **Start** on a workflow opens the run setup dialog.
 - The run page (`#/run/<id>`): a stepper with one step per stage and its status, and the selected stage's actions.
 
 ## Inputs & controls
@@ -16,6 +18,8 @@ hand-offs are visible, auditable and never built on unapproved work without sayi
 |---|---|
 | **Run name** | Up to 80 characters; `<>:"/\|?*` and control characters are removed, trailing dots/spaces trimmed. Names the folder `Lifecycle/<run name>/`. |
 | **Source files** | Checkboxes for every file in the current project folder; at least one is required. |
+| **Create workflow** / **Customize** / **Duplicate** | Opens the editor to configure workflow details, stage order and instructions, agents, output filenames, templates, optional stages and traceability checks. |
+| **Skip optional stage** / **Add this stage to the run** | Skips an optional stage, or restores it if no later stage has started. After a skip, the next stage uses the most recent prior non-skipped output. |
 | **Start stage** / **Run again** | Starts a `pending` or `rework` stage in its own chat. |
 | **Start anyway** (dialog "Use unapproved inputs?") | Overrides the gate when the previous stage isn't approved. |
 | **Open stage chat** / **Open output** | Opens the stage's chat, or its Markdown output in its app. |
@@ -26,7 +30,7 @@ hand-offs are visible, auditable and never built on unapproved work without sayi
 | **Publish to the Azure DevOps wiki** / **Create work items in Azure DevOps** | On approved stages when connected; see [39](39-approve-ado-changes.md). |
 
 ## Behaviour (as implemented)
-- **Pipeline** `aidlc` ("Requirements to stories", from `defaults/pipelines.json`):
+- **Built-in workflow** `aidlc` ("Requirements to stories", from `defaults/pipelines.json`):
   | Stage | Agent | Output |
   |---|---|---|
   | Refine requirements | **Requirements Refiner** | `01-requirements.md` |
@@ -35,10 +39,14 @@ hand-offs are visible, auditable and never built on unapproved work without sayi
   | Stories | **Story Writer** | `04-stories.md` |
   | Test cases (optional) | **Test Designer** | `05-test-cases.md` |
   The gate check uses **Traceability Analyst**.
-- **Creating a run** (`POST /api/runs`): sources must be existing files inside the project folder; a run folder that
+- **Workflow editor** (`/api/pipelines`): workflows are validated and saved in `data/pipelines.json`. Stages can be
+  added, removed and reordered. Output names must be distinct Markdown filenames; stage agents and prompt lengths are
+  validated. Optional stages can be skipped during a run, and may be added back if no later stage has started.
+- **Creating a run** (`POST /api/runs`): the workflow definition is copied into the run so later edits or deletion
+  won't change it; sources must be existing files inside the project folder; a run folder that
   already exists is refused (409); the `Lifecycle` folder must resolve inside the project folder. Runs are saved under
   `data/runs/` and survive a restart.
-- **Starting a stage**: allowed only from `pending` or `rework`. If the previous stage isn't approved the server
+- **Starting a stage**: allowed only from `pending` or `rework`. If the previous stage isn't approved or skipped the server
   refuses (409, "Approve the previous stage or explicitly override the approval gate") unless `override` is sent; it
   also waits for a previous stage that is still running, and needs the previous output and all sources to exist. The
   stage chat (title `<run>: <stage>`) runs with **Create & edit files** and pins the sources plus the previous output.
@@ -63,7 +71,7 @@ hand-offs are visible, auditable and never built on unapproved work without sayi
 - **Chat guards**: an approved stage's chat refuses new messages ("Send this approved stage back before changing
   it."); a stage in review whose later stages have started refuses them too ("Send this stage back before changing
   inputs used by later stages.").
-- Saved pipelines from before the **Test cases** stage get it once, after **Stories**; a stage the user removed is
+- Saved built-in pipelines from before the **Test cases** stage get it once, after **Stories**; a stage the user removed is
   not added back (`lib/pipeline-migrate.js`).
 
 ## Outputs
@@ -75,6 +83,9 @@ hand-offs are visible, auditable and never built on unapproved work without sayi
   can't start before approval (409); the check runs read-only; an overridden stage is labelled; approval stamps the
   file once; an approved stage's chat refuses messages; send back resets later stages; all 5 stages approve and the
   state survives a server restart.
+- `test/pipeline-editor.test.js` › workflows can be created, customized and removed without changing existing runs:
+  validates a workflow, verifies its run uses the saved snapshot after workflow edits/deletion, and exercises optional
+  stage skip/include.
 - `test/pipeline-migrate.test.js` › a saved pipeline from before the tests stage gets it once, after Stories, without
   touching other stages; › a stage the user removed is not added back; › only built-in pipelines are touched, and odd
   data is tolerated; › the store applies the migration to a saved pipelines file on start-up.
@@ -84,14 +95,12 @@ hand-offs are visible, auditable and never built on unapproved work without sayi
   the traceability check is advisory, not blocking (`docs/plans/06-guided-lifecycle-pipeline.md`).
 
 ## Limits
-- One pipeline: the UI always starts `aidlc`. Stages, prompts and templates can only be changed by editing
-  `data/pipelines.json`; there is no pipeline editor.
-- The optional **Test cases** stage is only labelled optional; there is no skip action.
+- Stages run sequentially; branching, parallel stages, and conditional steps are not supported.
 - Single-user approval; no external sign-off, branching pipelines or Jira sync.
 
 ## Source
-`server.js` (`/api/pipelines`, `/api/runs`, stage actions `start`/`approve`/`rework`/`check`/`word`/`azure-devops`,
+`server.js` (`/api/pipelines`, `/api/runs`, stage actions `start`/`skip`/`include`/`approve`/`rework`/`check`/`word`/`azure-devops`,
 `reconcileRun`, `startRunTurn`, `stampOutput`, `labelUnapproved`, `clearUnapproved`, `handleChat` guards),
-`public/app.js` (`renderRuns`, `startNewRun`, `renderRun`), `public/index.html` (rail item **Lifecycle**),
+`public/app.js` (`renderRuns`, `openPipelineEditor`, `startNewRun`, `renderRun`), `public/index.html` (rail item **Lifecycle**),
 `defaults/pipelines.json`, `lib/pipeline-migrate.js` (`migratePipelines`, `FIRST_RELEASE_STAGES`), `lib/store.js`
 (`runs`, `pipelines`).
