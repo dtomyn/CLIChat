@@ -15,7 +15,7 @@ const path = require('path');
 const os = require('os');
 const cli = require('../lib/cli-bin');
 const workiq = require('../lib/workiq');
-const { officeLabel, adoLabel, savedFile, pendingChangeSet, base } = require('../lib/tool-labels');
+const { officeLabel, adoLabel, lumenLabel, savedFile, pendingChangeSet, base } = require('../lib/tool-labels');
 
 const LOCAL = process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local');
 const BIN = cli.resolve('copilot', process.platform === 'win32'
@@ -66,6 +66,7 @@ const ACCESS_FLAGS = {
 
 function friendlyTool(name, input = {}, d = {}) {
   if (d.mcpServerName === 'office' && d.mcpToolName) return officeLabel(d.mcpToolName, input);
+  if (d.mcpServerName === 'lumen' && d.mcpToolName) return lumenLabel(d.mcpToolName, input);
   if (d.mcpServerName === 'ado' && d.mcpToolName) return adoLabel(d.mcpToolName, input);
   const file = input.path || input.file_path || input.filePath;
   switch (name) {

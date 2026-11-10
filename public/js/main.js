@@ -17,8 +17,8 @@ async function boot() {
   const [status, assistants, recipes, convs, skills, pipelines, runs, schedules] = await Promise.all([api('/api/status'), api('/api/assistants'), api('/api/recipes'), api('/api/conversations'), api('/api/skills'), api('/api/pipelines'), api('/api/runs'), api('/api/schedules')]);
   S.pipelines = pipelines; S.runs = runs;
   S.schedules = schedules;
-  S.skills = skills;
-  S.settings = status.settings; S.providers = status.providers; S.assistants = assistants; S.recipes = recipes; S.convs = convs; S.osUser = status.user;
+  S.skills = skills.sort((a, b) => (a.title || '').localeCompare(b.title || '', undefined, { sensitivity: 'base' }));
+  S.settings = status.settings; S.providers = status.providers; S.assistants = assistants.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })); S.recipes = recipes; S.convs = convs; S.osUser = status.user;
   applyTheme(S.settings.theme);
   if (innerWidth <= 860) $('#app').classList.add('collapsed'); // the chats panel overlays the page on small screens
   renderUser();

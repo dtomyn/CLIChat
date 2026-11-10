@@ -8,7 +8,8 @@ import { openMenu } from './menu.js';
 import { modal } from './modal.js';
 import { renderHome } from './home.js';
 import { renderChat } from './chat.js';
-import { rerenderCurrent } from './chat-actions.js';
+import { rerenderCurrent, switchAgent } from './chat-actions.js';
+import { openPromptPicker } from './prompts.js';
 import { sendMessage, stopConv } from './streaming.js';
 import { openAssistantBuilder } from './agents.js';
 import { openSettings } from './settings.js';
@@ -29,7 +30,7 @@ function composerHTML({ home = false, conv = null } = {}) {
         <textarea id="input" rows="1" placeholder="${esc(placeholder)}">${esc(d.text)}</textarea>
         <div class="composer-row">
           <button class="pill round" id="attachBtn" title="Add content">${icon('plus')}</button>
-          ${home ? `<button class="pill outline" id="assistantPill" data-color="${esc(a.color)}"><span class="a-badge sm">${esc(a.emoji)}</span><span class="lbl">${esc(a.name)}</span>${icon('chevron', 'caret')}</button>` : ''}
+          ${home || conv ? `<button class="pill outline" id="assistantPill" title="Which agent answers" data-color="${esc(a.color)}"><span class="a-badge sm">${esc(a.emoji)}</span><span class="lbl">${esc(a.name)}</span>${icon('chevron', 'caret')}</button>` : ''}
           <button class="pill" id="accessPill" title="What Lumen is allowed to do">${ACCESS[access]?.emoji || '👀'} <span class="lbl">${esc(ACCESS[access]?.short || 'Can read files')}</span>${icon('chevron', 'caret')}</button>
           <span class="spacer"></span>
           ${model && p.models.length > 1 ? `<button class="pill" id="modelPill" title="Response mode">${icon('gauge')}<span class="lbl">${esc(model.label)}</span>${icon('chevron', 'caret')}</button>` : ''}
@@ -162,14 +163,19 @@ function bindComposer(root, { conv = null } = {}) {
     { icon: 'upload', label: 'Upload from this device', hint: 'Saved to your notebook’s Attachments folder', run: () => $('#fileInput', root).click() },
     { icon: 'book', label: 'Reference a file in your notebook', hint: 'Or type / in the message box', run: () => mention.start() },
     { icon: 'pin', label: 'Pin a file to this chat', hint: 'Included with every message', run: () => pickPinnedFiles(conv) },
+    ...(conv ? [{ icon: 'wand', label: 'Use a prompt', hint: 'Fill in a prompt from the gallery and send it here', run: () => openPromptPicker(conv) }] : []),
   ]));
   $('#fileInput', root).addEventListener('change', (e) => { uploadFiles([...e.target.files]); e.target.value = ''; });
   $('#attachList', root).addEventListener('click', (e) => { const b = e.target.closest('[data-rm-attach]'); if (b) { S.draft.attachments.splice(+b.dataset.rmAttach, 1); refreshAttach(); } });
   $('#assistantPill', root)?.addEventListener('click', (e) => openMenu(e.currentTarget, [
     { heading: 'Who should help?' },
-    ...S.assistants.map((a) => ({ emoji: a.emoji, label: a.name, hint: a.tagline, selected: (S.draft.assistantId || 'lumen') === a.id, run: () => { S.draft.assistantId = a.id; if (a.access) S.draft.access = a.access; renderHome(); } })),
+    ...S.assistants.map((a) => ({ emoji: a.emoji, label: a.name, hint: a.tagline, selected: (conv ? conv.assistantId : S.draft.assistantId || 'lumen') === a.id, run: () => pickAgent(a) })),
     { sep: true }, { icon: 'plus', label: 'Create an agent', run: () => openAssistantBuilder() },
   ]));
+  async function pickAgent(a) {
+    if (!conv) { S.draft.assistantId = a.id; if (a.access) S.draft.access = a.access; renderHome(); return; }
+    await switchAgent(conv, a);
+  }
   $('#accessPill', root).addEventListener('click', (e) => {
     const cur = conv ? (conv.access || S.settings.access) : (S.draft.access || assistantById(S.draft.assistantId).access || S.settings.access);
     openMenu(e.currentTarget, [{ heading: 'What can Lumen do?' }, ...Object.entries(ACCESS).map(([k, v]) => ({ emoji: v.emoji, label: v.label, hint: v.desc, selected: cur === k, run: async () => {

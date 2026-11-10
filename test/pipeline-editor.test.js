@@ -96,3 +96,39 @@ test('workflows can be created, customized and removed without changing existing
   assert.equal((await request(`/api/runs/${run.data.id}/stages/optional/start`, 'POST', {})).status, 200);
   await runState(run.data.id, (r) => r.stages[1].status === 'review');
 });
+
+test('stages can fan out to run side by side and fan back in', async () => {
+  const source = path.join(workspace, 'brief.md');
+  fs.writeFileSync(source, '# Brief');
+  const stage = (id, extra = {}) => ({ id, name: id, assistantId: 'requirements-refiner', output: `${id}.md`, prompt: `Write ${id} from {{prev}} {{sources}}`, ...extra });
+  const bad = { name: 'Bad', stages: [stage('a', { after: ['b'] }), stage('b')] };
+  assert.equal((await request('/api/pipelines', 'POST', bad)).status, 400);
+  const created = await request('/api/pipelines', 'POST', { name: 'Diamond', stages: [stage('a'), stage('b'), stage('c', { after: ['a'] }), stage('d', { after: ['b', 'c'] })] });
+  assert.equal(created.status, 200);
+  assert.equal(created.data.stages[1].after, undefined);
+  assert.deepEqual(created.data.stages[3].after, ['b', 'c']);
+  const run = (await request('/api/runs', 'POST', { pipelineId: created.data.id, name: 'Diamond run', workspace, sources: [source] })).data;
+  const go = async (id, op) => (await request(`/api/runs/${run.id}/stages/${id}/${op}`, 'POST', {})).status;
+  const status = (r, id) => r.stages.find((s) => s.id === id).status;
+
+  assert.equal(await go('a', 'start'), 200);
+  await runState(run.id, (r) => status(r, 'a') === 'review');
+  assert.equal(await go('a', 'approve'), 200);
+  assert.equal(await go('b', 'start'), 200);
+  assert.equal(await go('c', 'start'), 200);
+  await runState(run.id, (r) => status(r, 'b') === 'review' && status(r, 'c') === 'review');
+  assert.equal(await go('d', 'start'), 409);
+  assert.equal(await go('b', 'approve'), 200);
+  assert.equal(await go('c', 'approve'), 200);
+  assert.equal(await go('d', 'start'), 200);
+  await runState(run.id, (r) => status(r, 'd') === 'review');
+  const prompt = calls.at(-1).prompt;
+  assert.match(prompt, /b\.md/);
+  assert.match(prompt, /c\.md/);
+
+  // Sending c back reworks d (which uses it) but not b (a sibling branch).
+  assert.equal(await go('c', 'rework'), 200);
+  const after = (await request(`/api/runs/${run.id}`)).data;
+  assert.equal(status(after, 'd'), 'rework');
+  assert.equal(status(after, 'b'), 'approved');
+});

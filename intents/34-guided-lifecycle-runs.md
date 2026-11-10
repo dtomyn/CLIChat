@@ -11,7 +11,7 @@ hand-offs are visible, auditable and never built on unapproved work without sayi
   stage agent, instructions, Markdown output filename, optional Word template, optional-stage setting, and optional
   traceability check. Built-in workflows can be customized or duplicated; user-created workflows can also be deleted.
 - **Start** on a workflow opens the run setup dialog.
-- The run page (`#/run/<id>`): a stepper with one step per stage and its status, and the selected stage's actions.
+- The run page (`#/run/<id>`): a flow diagram with one box per stage, coloured by status (click or Enter selects a stage), and the selected stage's actions. **Start all N ready stages** appears when more than one pending stage has its inputs approved.
 
 ## Inputs & controls
 | Control | Effect |
@@ -19,9 +19,9 @@ hand-offs are visible, auditable and never built on unapproved work without sayi
 | **Run name** | Up to 80 characters; `<>:"/\|?*` and control characters are removed, trailing dots/spaces trimmed. Names the folder `Lifecycle/<run name>/`. |
 | **Source files** | Checkboxes for every file in the current project folder; at least one is required. |
 | **Create workflow** / **Customize** / **Duplicate** | Opens the editor to configure workflow details, stage order and instructions, agents, output filenames, templates, optional stages and traceability checks. |
-| **Skip optional stage** / **Add this stage to the run** | Skips an optional stage, or restores it if no later stage has started. After a skip, the next stage uses the most recent prior non-skipped output. |
+| **Skip optional stage** / **Add this stage to the run** | Skips an optional stage, or restores it if no later stage has started. After a skip, the stages that start after it use what it would have used. |
 | **Start stage** / **Run again** | Starts a `pending` or `rework` stage in its own chat. |
-| **Start anyway** (dialog "Use unapproved inputs?") | Overrides the gate when the previous stage isn't approved. |
+| **Start anyway** (dialog "Use unapproved inputs?") | Overrides the gate when a stage it starts after isn't approved. |
 | **Open stage chat** / **Open output** | Opens the stage's chat, or its Markdown output in its app. |
 | **Traceability check** | Advisory read-only check of a stage in review (shows **Checking…** while it runs). |
 | **Approve** | Approves a stage in review. |
@@ -41,15 +41,21 @@ hand-offs are visible, auditable and never built on unapproved work without sayi
   The gate check uses **Traceability Analyst**.
 - **Workflow editor** (`/api/pipelines`): workflows are validated and saved in `data/pipelines.json`. Stages can be
   added, removed and reordered. Output names must be distinct Markdown filenames; stage agents and prompt lengths are
-  validated. Optional stages can be skipped during a run, and may be added back if no later stage has started.
+  validated. Optional stages can be skipped during a run, and may be added back if no stage that depends on them has started.
+  Each stage after the first has **Starts after** checkboxes listing the stages above it (saved as `after`, stage ids).
+  Without `after` a stage starts after the stage directly above it, so older workflows stay sequential. Ticking
+  several stages makes it wait for all of them (fan-in); several stages starting after the same one run side by side
+  (fan-out); ticking none makes it start from the sources. `after` may only name earlier stages (400 otherwise) and is
+  stored only when it differs from the default. A **Flow** diagram in the editor updates as you change it.
 - **Creating a run** (`POST /api/runs`): the workflow definition is copied into the run so later edits or deletion
   won't change it; sources must be existing files inside the project folder; a run folder that
   already exists is refused (409); the `Lifecycle` folder must resolve inside the project folder. Runs are saved under
   `data/runs/` and survive a restart.
-- **Starting a stage**: allowed only from `pending` or `rework`. If the previous stage isn't approved or skipped the server
-  refuses (409, "Approve the previous stage or explicitly override the approval gate") unless `override` is sent; it
-  also waits for a previous stage that is still running, and needs the previous output and all sources to exist. The
-  stage chat (title `<run>: <stage>`) runs with **Create & edit files** and pins the sources plus the previous output.
+- **Starting a stage**: allowed only from `pending` or `rework`. If a stage it starts after isn't approved or skipped the
+  server refuses (409, "Approve the stages this one starts after, or explicitly override the approval gate.") unless
+  `override` is sent; it also waits for those stages if still running, and needs their outputs (looking through skipped
+  stages to what they used) and all sources to exist. The stage chat (title `<run>: <stage>`) runs with **Create & edit
+  files** and pins the sources plus those outputs; `{{prev}}` lists them comma-separated.
   The prompt fills `{{sources}}` / `{{prev}}` and adds "Save your final output as a Markdown file at …" (and "Clearly
   label it as based on unapproved inputs" when overridden).
 - **Statuses**: `pending` → `running` → `review` when the reply ends and the output file exists; otherwise `rework`
@@ -59,17 +65,17 @@ hand-offs are visible, auditable and never built on unapproved work without sayi
 - **Unapproved inputs**: an overridden stage's output gets `> Based on unapproved inputs` at the top; the label is
   removed when the stage is redone from approved inputs.
 - **Traceability check**: only on a stage in `review`; a new **read**-access chat with **Traceability Analyst**,
-  pinned to the inputs (previous output, or the sources for the first stage) and the output. Prompt: "Report gaps and
+  pinned to the inputs (outputs of the stages it starts after, or the sources when there are none) and the output. Prompt: "Report gaps and
   findings only; do not change any files." The reply shows under **Traceability findings** with **Open check chat**. It
   is advisory: approving doesn't depend on it. A new message in the stage chat clears the findings.
 - **Approve**: needs your name in Settings (400 "Set your name in Settings before approving."). Records `approvedBy`,
   `approvedAt`, increments `version`, and writes `> Approved by <name> on <ISO time>` as the output's first line
   (replacing an earlier stamp).
-- **Send back**: removes the stamp; every later stage that has started goes to `rework`, loses its stamp and is
-  labelled as based on unapproved inputs. Refused while a later stage or check is running. A reply in the stage chat
+- **Send back**: removes the stamp; every stage that depends on it (directly or indirectly) and has started goes to `rework`, loses its stamp and is
+  labelled as based on unapproved inputs. Refused while one of those stages or checks is running. Stages on other branches are unaffected. A reply in the stage chat
   that leaves the output in place moves the stage back to `review`.
 - **Chat guards**: an approved stage's chat refuses new messages ("Send this approved stage back before changing
-  it."); a stage in review whose later stages have started refuses them too ("Send this stage back before changing
+  it."); a stage in review whose dependent stages have started refuses them too ("Send this stage back before changing
   inputs used by later stages.").
 - Saved built-in pipelines from before the **Test cases** stage get it once, after **Stories**; a stage the user removed is
   not added back (`lib/pipeline-migrate.js`).
@@ -100,7 +106,7 @@ hand-offs are visible, auditable and never built on unapproved work without sayi
 
 ## Source
 `lib/server/routes/pipelines.js`, `lib/server/routes/runs.js`, `lib/server/lifecycle.js`, `lib/server/stage-output.js`, `lib/server/routes/chat.js` (`/api/pipelines`, `/api/runs`, stage actions `start`/`skip`/`include`/`approve`/`rework`/`check`/`word`/`azure-devops`,
-`reconcileRun`, `startRunTurn`, `stampOutput`, `labelUnapproved`, `clearUnapproved`, `handleChat` guards),
-`public/js/runs.js` (`renderRuns`, `openPipelineEditor`, `startNewRun`, `renderRun`), `public/index.html` (rail item **Lifecycle**),
+`reconcileRun`, `startRunTurn`, `stageDeps`, `stageInputs`, `stageDependents`, `stampOutput`, `labelUnapproved`, `clearUnapproved`, `handleChat` guards),
+`public/js/runs.js` (`renderRuns`, `openPipelineEditor`, `startNewRun`, `renderRun`, `flowHTML`), `public/index.html` (rail item **Lifecycle**),
 `defaults/pipelines.json`, `lib/pipeline-migrate.js` (`migratePipelines`, `FIRST_RELEASE_STAGES`), `lib/store.js`
 (`runs`, `pipelines`).

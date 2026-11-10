@@ -139,4 +139,19 @@ async function branchAndSend(c, idx, text, attachments) {
 
 function rerenderCurrent() { if (S.view === 'chat') renderChat(); else if (S.view === 'home') renderHome(); }
 
-export { branchFrom, rateReply, rerenderCurrent, rewind, saveAsRecipe, saveEdit, saveReplyMenu, setEditing };
+// Switch the agent of an open chat. The server forgets the engine's session so the next turn replays the history.
+async function switchAgent(conv, a) {
+  if (conv.assistantId === a.id) return true;
+  if (isLive(conv)) { toast('Wait for the current reply to finish first.', 'alert'); return false; }
+  if (conv.id) {
+    try { await api(`/api/conversations/${conv.id}`, { method: 'PATCH', body: { assistantId: a.id } }); }
+    catch (e) { toast(e.message, 'alert'); return false; }
+  }
+  conv.assistantId = a.id; conv.sessions = {};
+  const listed = S.convs.find((x) => x.id === conv.id); if (listed) listed.assistantId = a.id;
+  renderChat();
+  toast(`${a.name} will answer from now on. It can see the conversation so far.`, 'check');
+  return true;
+}
+
+export { switchAgent, branchFrom, rateReply, rerenderCurrent, rewind, saveAsRecipe, saveEdit, saveReplyMenu, setEditing };

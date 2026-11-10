@@ -38,8 +38,8 @@ test.beforeAll(async ({ request }) => {
 
 async function openStage(page, name) {
   await page.goto(`/#run/${run.id}`);
-  await expect(page.locator('.run-stepper')).toBeVisible({ timeout: 15_000 });
-  await page.locator('.run-step', { hasText: name }).click();
+  await expect(page.locator('.flow-diagram')).toBeVisible({ timeout: 15_000 });
+  await page.locator('.flow-node', { hasText: name }).click();
   await expect(page.locator('#view h2')).toHaveText(name);
 }
 

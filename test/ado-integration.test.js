@@ -218,7 +218,7 @@ test('without a connection the Azure DevOps tools are left out and the AI is tol
   const saved = store.settings.get().ado;
   store.settings.set({ ado: { enabled: false } });
   await request('/api/chat', 'POST', { message: 'Sprint status?', assistantId: 'backlog-helper', access: 'edit', workspace });
-  assert.equal(runs.at(-1).tools, null);
+  assert.deepEqual(Object.keys(runs.at(-1).tools.servers), ['lumen'], 'only the always-on Lumen guide; no ado server');
   assert.match(runs.at(-1).systemPrompt, /Azure DevOps isn't connected yet/);
   store.settings.set({ ado: saved });
 });

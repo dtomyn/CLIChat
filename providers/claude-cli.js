@@ -7,7 +7,7 @@ const path = require('path');
 const os = require('os');
 const cli = require('../lib/cli-bin');
 const workiq = require('../lib/workiq');
-const { officeLabel, adoLabel, savedFile, pendingChangeSet } = require('../lib/tool-labels');
+const { officeLabel, adoLabel, lumenLabel, savedFile, pendingChangeSet } = require('../lib/tool-labels');
 
 const ACCESS_TOOLS = {
   // Plain-language access levels → the Claude Code tools they unlock.
@@ -42,6 +42,7 @@ function friendlyTool(name, input = {}) {
     case 'Skill': return { icon: 'spark', label: `Using skill ${input.skill || ''}`.trim() };
     default:
       if (name.startsWith('mcp__office__')) return officeLabel(name.slice('mcp__office__'.length), input); // Lumen's bundled Office tools
+      if (name.startsWith('mcp__lumen__')) return lumenLabel(name.slice('mcp__lumen__'.length), input); // questions about Lumen itself
       if (name.startsWith('mcp__ado__')) return adoLabel(name.slice('mcp__ado__'.length), input); // Lumen's Azure DevOps tools
       return { icon: 'spark', label: `Using ${name.replace(/^mcp__[^_]+__/, '').replace(/_/g, ' ')}` };
   }

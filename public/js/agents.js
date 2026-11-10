@@ -101,7 +101,7 @@ function sortedAgents() {
 
 // What the Agents page search looks at: name, tagline, description and skill titles.
 function agentSearchText(a) {
-  const skills = (a.skills || []).map((id) => S.skills.find((s) => s.id === id)?.title).filter(Boolean);
+  const skills = (a.skills || []).map((id) => S.skills.find((s) => s.id === id)?.title).filter(Boolean).sort((x, y) => x.localeCompare(y, undefined, { sensitivity: 'base' }));
   return [a.name, a.tagline, a.description, ...skills].filter(Boolean).join(' ').toLowerCase();
 }
 
@@ -121,7 +121,7 @@ function filterAgentCards() {
   const empty = $('#view .agent-search-empty'); if (empty) empty.hidden = shown > 0;
 }
 
-async function reloadAssistants() { S.assistants = await api('/api/assistants'); if (S.view === 'assistants') renderAssistantsPage(); else rerenderCurrent(); renderConvList(); }
+async function reloadAssistants() { S.assistants = (await api('/api/assistants')).sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })); if (S.view === 'assistants') renderAssistantsPage(); else rerenderCurrent(); renderConvList(); }
 
 async function exportAssistant(a) {
   const r = await api(`/api/assistants/${a.id}/export`, { method: 'POST', body: { workspace: currentWorkspace() } });
@@ -182,7 +182,7 @@ async function exportToCopilot(a, btn) {
 }
 
 function skillChips(a) {
-  const list = (a.skills || []).map((id) => S.skills.find((s) => s.id === id)).filter(Boolean);
+  const list = (a.skills || []).map((id) => S.skills.find((s) => s.id === id)).filter(Boolean).sort((x, y) => (x.title || '').localeCompare(y.title || '', undefined, { sensitivity: 'base' }));
   return list.length ? `<div class="skill-chips">${list.map((s) => `<span class="skill-chip" title="${esc(s.description)}">${esc(s.emoji)} ${esc(s.title)}</span>`).join('')}${lumenOnlyBadge('These skills use Lumen’s local document tools and aren’t part of Microsoft 365 Copilot.')}</div>` : '';
 }
 

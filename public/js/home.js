@@ -39,7 +39,7 @@ function renderHome() {
         </div>
 
         <div class="section-label"><span>From the prompt gallery</span><a data-go="recipes">See all prompts</a></div>
-        <div class="recipe-grid">${recipes.map(recipeCard).join('')}</div>
+        <div class="recipe-grid">${recipes.map((r) => recipeCard(r)).join('')}</div>
 
         <div class="section-label"><span>Guided delivery ${lumenOnlyBadge()}</span><a data-go="runs">View workflows</a></div>
         ${S.pipelines.slice(0, 3).map((p) => `<button class="starter" data-go="runs"><span>${esc(p.emoji || '🔄')} ${esc(p.name)} · ${p.stages.length} guided stages</span>${icon('right')}</button>`).join('') || '<p>No workflows yet.</p>'}
@@ -164,10 +164,11 @@ function homeClicks(e) {
   else if (t.dataset.go) go(t.dataset.go);
 }
 
-function recipeCard(r) {
+function recipeCard(r, showCategory = false) {
   const a = assistantById(r.assistantId);
   return `<button class="recipe-card" data-recipe="${esc(r.id)}" data-color="${esc(a.color)}">
     <span class="recipe-emoji">${esc(r.emoji || '✨')}</span>
+    ${showCategory ? `<span class="recipe-cat">${esc(r.category || 'Other')}</span>` : ''}
     <span class="recipe-name">${esc(r.name)}</span>
     <span class="recipe-desc">${esc(r.description || '')}</span>
     <span class="recipe-meta"><span class="a-badge sm" data-color="${esc(a.color)}" style="width:18px;height:18px;font-size:10px">${esc(a.emoji)}</span>${esc(a.name)}${r.access === 'edit' ? ' · <span class="badge accent">Saves a file</span>' : ''}${needsLocalTools(r) ? ` ${lumenOnlyBadge('This prompt relies on Lumen’s local document tools (saving files, or reading Microsoft Project plans). In Microsoft 365 Copilot you’d do those steps by hand.')}` : ''}</span>

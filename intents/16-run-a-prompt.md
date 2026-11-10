@@ -58,7 +58,14 @@ files, so that the right agent does a well-specified job without me writing the 
 - The file matching is a name heuristic; the user may need to change the choice.
 - Prompts run with the global default AI engine and response mode.
 
+## Use a prompt inside a chat
+- In an open chat, **+ → Use a prompt** opens a searchable list of the gallery. Picking one opens the same form,
+  with files from that chat's project folder. **Start** sends the filled-in prompt into the current chat (no new chat).
+- The chat's current agent answers. If the prompt was built for another agent, the form offers **Switch to …**.
+- If the prompt needs more access than the chat has, the form says so and Start raises the chat's access to match.
+- **Repeat…** isn't offered here; schedule prompts from the gallery. Covered by `e2e/chat-prompts.spec.js`.
+
 ## Source
-`public/js/prompts.js`, `public/js/home.js`, `public/js/streaming.js` (`renderRecipesPage`, `recipeCard`, `needsLocalTools`, `openRecipeRunner`, `fieldInput`,
+`public/js/prompts.js`, `public/js/home.js`, `public/js/streaming.js` (`renderRecipesPage`, `recipeCard`, `needsLocalTools`, `openRecipeRunner`, `openPromptPicker`, `fieldInput`,
 `sendMessage`, `renderHome`, `demoBanner`), `lib/server/routes/library.js`, `lib/server/routes/files.js`, `lib/server/chat.js` (`/api/recipes`, `/api/folder/files`, `/api/upload`,
 `runTurn` storing `recipeId`), `defaults/recipes.json`.
