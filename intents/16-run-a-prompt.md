@@ -1,12 +1,15 @@
-# 16 — Run a prompt from the gallery
+# 16 — Run a guided task
+
+> Guided tasks used to be called the "prompt gallery". Quick text prompts are in [72](72-quick-prompts-and-prompt-lab.md).
 
 ## Intent
 As a project manager (or any user), I want to pick a ready-made prompt, answer a few simple questions and choose my
 files, so that the right agent does a well-specified job without me writing the request.
 
 ## Where
-- **Prompts** in the left rail: the **Prompt gallery** page with category tabs (**All**, one tab per category,
-  **Scheduled prompts**).
+- **Tasks** in the left rail: the **Guided tasks** page with category tabs (**All**, one tab per category,
+  **Scheduled**).
+- The **Guided tasks** section and the search of the Prompt Lab ([72](72-quick-prompts-and-prompt-lab.md)).
 - Home: the demo banner's prompt buttons (the home screen no longer lists gallery prompts).
 - Clicking a card opens the prompt form (runner modal).
 
@@ -22,6 +25,7 @@ files, so that the right agent does a well-specified job without me writing the 
 | **Copy for Copilot** | Copies the filled-in request to the clipboard (see [20](20-export-to-m365-copilot.md)). |
 | **Repeat…** | Opens the schedule form (see [18](18-schedule-prompts.md)). |
 | **Edit** | Opens the prompt builder (see [17](17-save-and-build-prompts.md)). |
+| **Just give me the prompt** | Closes the form and puts the request in the message box with unanswered questions as `[blanks]` (see [72](72-quick-prompts-and-prompt-lab.md)). |
 
 ## Behaviour (as implemented)
 - 73 built-in prompts ship in `defaults/recipes.json`, across 16 categories (Project plans, Budgets & Excel, Analysis,
@@ -59,13 +63,13 @@ files, so that the right agent does a well-specified job without me writing the 
 - Prompts run with the global default AI engine and response mode.
 
 ## Use a prompt inside a chat
-- In the message box, **+ → Use a prompt** opens a searchable list of the gallery. Picking one opens the same form,
+- In the message box, **+ → Use a prompt** opens the Prompt Lab. Picking a guided task there opens the same form,
   with files from that chat's project folder. **Start** sends the filled-in prompt into the current chat (no new chat); from a new chat it starts the chat, as the gallery does.
 - The chat's current agent answers. If the prompt was built for another agent, the form offers **Switch to …**.
 - If the prompt needs more access than the chat has, the form says so and Start raises the chat's access to match.
 - **Repeat…** isn't offered here; schedule prompts from the gallery. Covered by `e2e/chat-prompts.spec.js`.
 
 ## Source
-`public/js/prompts.js`, `public/js/home.js`, `public/js/streaming.js` (`renderRecipesPage`, `recipeCard`, `needsLocalTools`, `openRecipeRunner`, `openPromptPicker`, `fieldInput`,
+`public/js/prompts.js`, `public/js/home.js`, `public/js/streaming.js` (`renderRecipesPage`, `recipeCard`, `needsLocalTools`, `openRecipeRunner`, `public/js/prompt-lab.js` (`openPromptLab`), `fieldInput`,
 `sendMessage`, `renderHome`, `demoBanner`), `lib/server/routes/library.js`, `lib/server/routes/files.js`, `lib/server/chat.js` (`/api/recipes`, `/api/folder/files`, `/api/upload`,
 `runTurn` storing `recipeId`), `defaults/recipes.json`.

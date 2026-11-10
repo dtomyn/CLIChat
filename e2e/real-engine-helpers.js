@@ -12,7 +12,7 @@ async function openPrompt(page, id) {
   await expect(page.getByText(/Checking/)).toHaveCount(0, { timeout: 90_000 }); // the app checks which engines are installed
   await expect(async () => {
     await page.locator('.nav-item[data-nav="recipes"]').click();
-    await expect(page.locator('.page-head h1')).toHaveText('Prompt gallery', { timeout: 1500 });
+    await expect(page.locator('.page-head h1')).toHaveText('Guided tasks', { timeout: 1500 });
   }).toPass({ timeout: 15_000 });
   await page.locator(`[data-recipe="${id}"]`).click();
   await expect(page.locator('.modal-head h2')).toBeVisible();

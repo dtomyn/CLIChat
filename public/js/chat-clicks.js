@@ -5,7 +5,7 @@ import { S, isLive } from './state.js';
 import { go } from './router.js';
 import { setPins, submit } from './composer.js';
 import { approvalCache, decideApproval } from './ado-approvals.js';
-import { branchFrom, rateReply, rewind, saveAsRecipe, saveEdit, saveReplyMenu, setEditing } from './chat-actions.js';
+import { branchFrom, rateReply, rewind, saveAsPrompt, saveEdit, saveReplyMenu, setEditing } from './chat-actions.js';
 import { showDiff } from './runs.js';
 
 function chatClicks(e) {
@@ -28,7 +28,7 @@ function chatClicks(e) {
   else if (t.dataset.toggleSteps) { const id = t.dataset.toggleSteps; S.openSteps.has(id) ? S.openSteps.delete(id) : S.openSteps.add(id); t.parentElement.classList.toggle('open'); }
   else if ('saveAs' in t.dataset) saveReplyMenu(c, mid, t);
   else if (t.dataset.rate) rateReply(c, mid, t.dataset.rate);
-  else if ('saveRecipe' in t.dataset) saveAsRecipe(c, mid);
+  else if ('saveRecipe' in t.dataset) saveAsPrompt(c, mid);
   else if (t.dataset.copyMsg) { const m = c.messages.find((x) => x.id === t.dataset.copyMsg); navigator.clipboard.writeText(m.content); flash(t, 'Copied'); }
   else if ('copyCode' in t.dataset) { navigator.clipboard.writeText(t.closest('pre').querySelector('code').innerText); flash(t, 'Copied'); }
   else if ('copyTable' in t.dataset) copyTable(t);

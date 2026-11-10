@@ -11,6 +11,7 @@ import { renderHome } from './home.js';
 import { hasMdSlides, hasMdTable, msgHTML, renderChat, rerenderMsg } from './chat.js';
 import { sendMessage } from './streaming.js';
 import { openRecipeBuilder } from './prompts.js';
+import { openPromptEditor } from './prompt-lab.js';
 
 // --- save a reply as Word / Excel / PowerPoint / Markdown
 function saveReplyMenu(c, mid, anchor) {
@@ -61,7 +62,18 @@ async function rateReply(c, mid, rating) {
   });
 }
 
-// --- turn a prompt that worked into a quick start
+// --- turn a prompt that worked into a quick prompt (attached files become [blanks]), or a guided task
+function saveAsPrompt(c, mid) {
+  const m = c.messages.find((x) => x.id === mid); if (!m) return;
+  let text = m.content || '';
+  (m.attachments || []).forEach((f, i) => {
+    const name = f.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const before = text;
+    text = text.replace(new RegExp(`["“]?${name}["”]?`, 'g'), `[file ${i + 1}]`);
+    if (text === before) text += ` [file ${i + 1}]`;
+  });
+  openPromptEditor(null, { title: c.title && c.title !== 'New chat' ? c.title : '', text, agentId: c.assistantId || 'lumen' }, () => {}, { guided: () => saveAsRecipe(c, mid) });
+}
 function saveAsRecipe(c, mid) {
   const m = c.messages.find((x) => x.id === mid); if (!m) return;
   const a = assistantById(c.assistantId);
@@ -154,4 +166,4 @@ async function switchAgent(conv, a) {
   return true;
 }
 
-export { switchAgent, branchFrom, rateReply, rerenderCurrent, rewind, saveAsRecipe, saveEdit, saveReplyMenu, setEditing };
+export { saveAsPrompt, switchAgent, branchFrom, rateReply, rerenderCurrent, rewind, saveAsRecipe, saveEdit, saveReplyMenu, setEditing };

@@ -890,3 +890,36 @@ body { font-size: 14.5px; }
 .prompt-pick .recipe-emoji { flex: 0 0 auto; width: 36px; height: 36px; margin: 0; font-size: 18px; }
 .prompt-pick small { display: block; color: var(--muted); font-size: 12px; }
 .prompt-agent-hint { margin-top: 8px; font-size: 13px; color: var(--muted); }
+
+/* Quick prompts: topic tabs under the home message box (like Microsoft 365 Copilot) and the Prompt Lab. */
+.qp { margin-top: 16px; text-align: left; animation: rise .6s .14s cubic-bezier(.2,.8,.2,1) both; }
+.qp-tabs { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.qp-tab { padding: 7px 13px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel); font-size: 13.5px; color: var(--text-2); }
+.qp-tab:hover { border-color: var(--border-strong); color: var(--text); }
+.qp-tab.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+.qp-tab.more { border-color: transparent; background: none; display: inline-flex; align-items: center; }
+.qp-list { display: flex; flex-direction: column; margin-top: 8px; }
+.qp-item { text-align: left; padding: 9px 12px; border-radius: 8px; font-size: 13.5px; color: var(--text); }
+.qp-item:hover { background: var(--panel-2); }
+.blank { color: var(--accent-text, var(--accent)); background: var(--accent-soft); border-radius: 4px; padding: 0 3px; }
+.blank-hint { color: var(--muted); }
+.lab { display: grid; grid-template-columns: 220px 1fr; gap: 20px; min-height: 420px; }
+.modal.lab-modal { width: min(920px, 96vw); max-width: none; }
+.lab-modal .lab { height: min(560px, 68vh); min-height: 0; }
+.lab-side { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.lab-nav { display: flex; flex-direction: column; overflow: auto; flex: 1; min-height: 0; }
+.lab-nav-head { font-size: 12.5px; font-weight: 600; color: var(--muted); margin: 14px 10px 4px; }
+.lab-nav-item { text-align: left; padding: 6px 10px; border-radius: 6px; font-size: 13.5px; color: var(--text-2); }
+.lab-nav-item:hover { background: var(--panel-2); color: var(--text); }
+.lab-nav-item.active { background: var(--accent-soft); color: var(--text); font-weight: 600; }
+.lab-search { display: flex; align-items: center; gap: 6px; }
+.lab-search .input { flex: 1; }
+.lab-main { overflow: auto; min-height: 0; }
+.lab-item { display: flex; gap: 8px; align-items: flex-start; border-bottom: 1px solid var(--border); }
+.lab-use { flex: 1; text-align: left; display: flex; flex-direction: column; gap: 3px; padding: 12px 8px; border-radius: 6px; }
+.lab-use:hover { background: var(--panel-2); }
+.lab-title { font-size: 12px; font-weight: 600; color: var(--muted); }
+.lab-text { font-size: 15px; color: var(--text); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.lab-meta { font-size: 12px; color: var(--muted); }
+.lab-actions { display: flex; gap: 4px; align-items: center; padding-top: 12px; }
+@media (max-width: 700px) { .lab { grid-template-columns: 1fr; } .lab-modal .lab { height: auto; } }

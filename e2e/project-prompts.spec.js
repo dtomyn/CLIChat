@@ -18,7 +18,7 @@ async function openGallery(page) {
   await page.goto('/');
   await expect(async () => {
     await page.locator('.nav-item[data-nav="recipes"]').click();
-    await expect(page.locator('.page-head h1')).toHaveText('Prompt gallery', { timeout: 1500 });
+    await expect(page.locator('.page-head h1')).toHaveText('Guided tasks', { timeout: 1500 });
   }).toPass({ timeout: 15_000 });
 }
 

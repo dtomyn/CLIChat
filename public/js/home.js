@@ -11,6 +11,7 @@ import { openDrawer, pickFolder } from './folder.js';
 import { openAssistantBuilder } from './agents.js';
 import { openRecipeRunner } from './prompts.js';
 import { celebrate } from './onboarding.js';
+import { bindPromptTabs, promptTabsHTML } from './prompt-lab.js';
 
 function greetingWord() { const h = new Date().getHours(); return h < 5 ? 'Burning the midnight oil' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; }
 
@@ -27,7 +28,7 @@ function renderHome() {
         <p class="home-sub">${a.id === 'lumen' ? 'How can I help today?' : esc(a.tagline || '')}</p>
         ${composerHTML({ home: true })}
 
-        ${a.starters?.length ? `<div class="prompt-chips" aria-label="Suggested prompts">${a.starters.map((s) => `<button class="prompt-chip" data-starter="${esc(s)}" title="${esc(s)}">${icon('spark')}<span>${esc(s)}</span></button>`).join('')}</div>` : ''}
+        ${promptTabsHTML(a.id)}
 
         ${demoBanner()}
 
@@ -37,6 +38,7 @@ function renderHome() {
     </div>`;
   const root = $('#view');
   bindComposer(root);
+  bindPromptTabs(root, a.id);
   root.firstElementChild.addEventListener('click', homeClicks);
   setTimeout(() => { if (!$('#modalRoot').children.length) $('#input')?.focus(); }, 50);
 }

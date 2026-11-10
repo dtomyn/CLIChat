@@ -35,7 +35,8 @@ Requirements: Node.js 18+ and at least one engine installed and signed in:
 | Concept in Lumen | What it really is |
 |---|---|
 | **Agents**: "Requirements Coach", "Project Partner"… | A persona/system prompt appended to the CLI session (`--append-system-prompt`). Can be exported as a Claude Code subagent (`.claude/agents/*.md`) and a Copilot custom agent (`.github/agents/*.agent.md`) with **⋯ → Use in VS Code**, or as a Microsoft 365 Copilot declarative agent with **⋯ → Export to Microsoft 365 Copilot**. Pin favourites to the sidebar with **⋯ → Pin to sidebar**. |
-| **Prompt gallery**: "Weekly status report", "Write user stories"… | Reusable prompt templates with a small form (short answer, long answer, pick-one, file). Save one from any chat with **Save prompt**. A friendlier version of skills or slash commands. |
+| **Prompts** (Prompt Lab) and topic tabs under the message box | One-line prompts you click, adjust and send. Tab moves between the [blanks]. Save your own from any chat with **Save prompt**. |
+| **Guided tasks**: "Weekly status report", "Write user stories"… | Reusable prompt templates with a small form (short answer, long answer, pick-one, file) that produce a finished deliverable. A friendlier version of skills or slash commands. |
 | **"What can Lumen do?"**: Just chat / Read my files / Create & edit files | Maps to the CLI's tool allow-list and permission mode. Shell commands are never enabled from the UI. |
 | **Notebook** (project folder) | The CLI's working directory. Type `/` in the message box (or use **+ › Reference a file**) to attach a file from it. Uploads are saved to `Attachments/` inside it, and files the AI writes show up as clickable cards. New installs default to `OneDrive\Lumen` when OneDrive is set up. |
 | **Response mode**: Auto / Quick response / Balanced / Think deeper | `--model default / haiku / sonnet / opus` |
@@ -109,7 +110,7 @@ Lumen is a stepping stone. People who learn it now should feel at home in Micros
 |---|---|
 | Left rail: Chat, Agents, Prompts, Notebook | Chat, Agents, Prompts, Notebooks |
 | Agents (name, description, instructions, starter prompts) | Agents, built in Agent Builder with the same fields |
-| Prompt gallery, **Save prompt**, scheduled prompts | Prompt gallery, Save prompt, scheduled prompts |
+| Prompts (Prompt Lab), guided tasks, **Save prompt**, scheduled prompts | Prompt Lab, Save prompt, scheduled prompts (guided tasks export as prompts with [blanks]) |
 | `/` or **+ › Reference a file** | `/` to reference a file |
 | Response mode: Auto / Quick response / Think deeper | Copilot's response modes (labels vary by tenant) |
 | Reply footer: Copy, 👍/👎, Export, "AI-generated content may be incorrect" | Same pattern |

@@ -72,12 +72,17 @@ function agentRows() {
 }
 function promptRows() {
   const agents = list('assistants'), u = usage().prompts;
-  return list('recipes').map((r) => ({
-    kind: 'prompt', id: r.id, name: r.name, emoji: r.emoji, category: r.category || '', description: r.description || '', builtIn: !!r.builtin,
+  const quick = list('prompts').map((p) => ({
+    kind: 'prompt', type: 'quick prompt', id: p.id, name: p.title, topic: p.topic || '', builtIn: !!p.builtin,
+    agent: agents.find((a) => a.id === (p.agentId || 'lumen'))?.name || p.agentId || 'Lumen', text: p.text,
+    blanks: (String(p.text || '').match(/\[[^[\]\n]{1,80}\]/g) || []), _text: [p.topic, p.group, p.text].join(' '),
+  }));
+  return [...list('recipes').map((r) => ({
+    kind: 'prompt', type: 'guided task', id: r.id, name: r.name, emoji: r.emoji, category: r.category || '', description: r.description || '', builtIn: !!r.builtin,
     agent: agents.find((a) => a.id === (r.assistantId || 'lumen'))?.name || r.assistantId || 'Lumen', access: r.access || '',
     asks: (r.fields || []).map((f) => f.label), uses: u[r.id]?.uses || 0, lastUsed: day(u[r.id]?.lastUsed),
     _text: [r.category, r.description, r.template, (r.fields || []).map((f) => f.label).join(' ')].join(' '),
-  }));
+  })), ...quick];
 }
 function workflowRows() {
   const agents = list('assistants');
@@ -115,9 +120,11 @@ const TOOLS = [
   { name: 'lumen_overview', description: 'Counts of agents, prompts, workflows, schedules and skills in this Lumen, plus the most and least used agents and prompts. Start here for broad questions.',
     inputSchema: { type: 'object', properties: {} },
     run() {
-      const a = agentRows(), p = promptRows();
+      const a = agentRows(), all = promptRows(), p = all.filter((x) => x.type === 'guided task'), q = all.filter((x) => x.type === 'quick prompt');
       const top = (rows, key) => rows.filter((r) => r[key]).sort((x, y) => y[key] - x[key]).slice(0, 5).map((r) => `${r.name} (${r[key]})`);
+      // "prompts" counts guided tasks (they have usage); quick prompts are counted on their own.
       return { agents: a.length, customAgents: a.filter((x) => !x.builtIn).length, prompts: p.length, customPrompts: p.filter((x) => !x.builtIn).length,
+        quickPrompts: q.length, savedQuickPrompts: q.filter((x) => !x.builtIn).length,
         workflows: workflowRows().length, schedules: scheduleRows().length, skills: skillRows().length,
         mostUsedAgents: top(a, 'chats'), mostUsedPrompts: top(p, 'uses'), neverUsedPrompts: p.filter((x) => !x.uses).length,
         promptCategories: [...new Set(p.map((x) => x.category).filter(Boolean))] };
@@ -125,9 +132,9 @@ const TOOLS = [
   { name: 'lumen_list_agents', description: 'List agents with their skills, linked prompts, number of chats and last use. Filter with query.',
     inputSchema: { type: 'object', properties: { ...queryProp, skill: { type: 'string', description: 'Only agents that use this skill id.' } } },
     run: ({ query, limit, skill }) => filterSort(agentRows().filter((a) => !skill || a.skills.includes(skill)), query, limit) },
-  { name: 'lumen_list_prompts', description: 'List saved prompts (the prompt gallery) with category, agent, the inputs they ask for, use count and last use. Filter with query.',
+  { name: 'lumen_list_prompts', description: 'List prompts. type "guided task": a form (category, agent, the inputs it asks for, use count, last use), found under Tasks. type "quick prompt": one line of text with [blanks], found under Prompts and the tabs under the home message box. Filter with query.',
     inputSchema: { type: 'object', properties: { ...queryProp, agent: { type: 'string', description: 'Only prompts run by this agent id or name.' } } },
-    run: ({ query, limit, agent }) => filterSort(promptRows().filter((r) => !agent || r.agent.toLowerCase() === String(agent).toLowerCase() || list('recipes').find((x) => x.id === r.id)?.assistantId === agent), query, limit) },
+    run: ({ query, limit, agent }) => filterSort(promptRows().filter((r) => !agent || r.agent.toLowerCase() === String(agent).toLowerCase() || [...list('recipes'), ...list('prompts')].find((x) => x.id === r.id && (x.assistantId || x.agentId) === agent)), query, limit) },
   { name: 'lumen_list_workflows', description: 'List guided workflows (staged lifecycle runs) with their stages and the agent for each stage.',
     inputSchema: { type: 'object', properties: queryProp }, run: ({ query, limit }) => filterSort(workflowRows(), query, limit) },
   { name: 'lumen_list_schedules', description: 'List scheduled prompts: what runs, how often, whether paused, and the last run result.',
@@ -140,7 +147,8 @@ const TOOLS = [
       const file = { agent: 'assistants', prompt: 'recipes', workflow: 'pipelines', schedule: 'schedules' }[kind];
       if (!file) throw friendly('kind must be agent, prompt, workflow or schedule.');
       const want = String(id || '').toLowerCase();
-      const item = list(file).find((x) => String(x.id).toLowerCase() === want || String(x.name || '').toLowerCase() === want);
+      const pool = kind === 'prompt' ? [...list('recipes'), ...list('prompts')] : list(file);
+      const item = pool.find((x) => String(x.id).toLowerCase() === want || String(x.name || x.title || '').toLowerCase() === want);
       if (!item) throw friendly(`No ${kind} called "${id}". Use lumen_list_${kind}s to find it.`);
       return item;
     } },

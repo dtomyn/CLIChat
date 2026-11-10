@@ -31,7 +31,8 @@ The browser UI is made of native ES modules. There is no bundler and no build st
 | `folder.js` | Project folder picker and files drawer |
 | `runs.js` | Guided lifecycle runs, workflow editor, `showDiff` |
 | `agents.js` | Agents page and agent builder |
-| `prompts.js` | Prompt gallery, prompt runner and schedules |
+| `prompts.js` | Guided tasks (recipes): gallery page, question form (runner), builder and schedules |
+| `prompt-lab.js` | Quick prompts: topic tabs under the home message box, Prompt Lab (dialog and page), [blanks] in the message box, saving your own |
 | `insights.js` | Insights page |
 | `settings.js` | Settings dialog |
 | `connections.js` | SharePoint & Microsoft 365 (WorkIQ) and Azure DevOps connection dialogs |

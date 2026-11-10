@@ -6,7 +6,7 @@ so that I (and later Microsoft 365 Copilot) can repeat it without retyping it.
 
 ## Where
 - **Save prompt** under any of my messages in a chat (next to **Edit**).
-- **Prompts › New prompt** or the **Create a prompt** card: **New prompt** form.
+- **Tasks › New guided task** or the **Create a guided task** card: **New prompt** form.
 - **Edit** on a prompt's form: **Edit prompt** form (same fields).
 
 ## Inputs & controls
@@ -24,7 +24,8 @@ so that I (and later Microsoft 365 Copilot) can repeat it without retyping it.
 | **Delete** (left, only for prompts the user made) | Removes the prompt. |
 
 ## Behaviour (as implemented)
-- **Save prompt** (`saveAsRecipe`) opens **New prompt** prefilled from the chat: name = chat title, icon = the agent's
+- **Save prompt** now saves a quick prompt by default (`saveAsPrompt`, see [72](72-quick-prompts-and-prompt-lab.md)).
+  Its **Make it a guided task instead** button runs `saveAsRecipe`, which opens **New prompt** prefilled from the chat: name = chat title, icon = the agent's
   emoji, agent and file access = the chat's, category **My prompts**, template = the message text. Each attached file
   becomes a question `file1`, `file2`… labelled "File 1", "File 2"… of type **A file**, with `accept` set to the file's
   extension, and the file's name (with or without quotes) in the text is replaced by `{{fileN}}`.

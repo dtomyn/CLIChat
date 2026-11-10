@@ -8,6 +8,7 @@ import { openConversation } from './chat.js';
 import { renderRun, renderRuns } from './runs.js';
 import { renderAssistantsPage } from './agents.js';
 import { renderRecipesPage } from './prompts.js';
+import { renderPromptsPage } from './prompt-lab.js';
 import { renderInsightsPage } from './insights.js';
 
 function route() {
@@ -19,7 +20,8 @@ function route() {
   S.current = null;
   if (h === 'runs') return renderRuns();
   if (h === 'assistants' || h === 'agents') return renderAssistantsPage();
-  if (h === 'recipes' || h === 'prompts') return renderRecipesPage();
+  if (h === 'prompts') return renderPromptsPage();
+  if (h === 'recipes' || h === 'tasks') return renderRecipesPage();
   if (h === 'insights') return renderInsightsPage();
   if (h === 'samples') return renderSamplesPage();
   renderHome();
