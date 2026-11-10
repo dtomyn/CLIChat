@@ -53,19 +53,19 @@ function renderRecipesPage() {
 }
 
 // "Use a prompt" from the + menu in an open chat: search the gallery, then fill in the prompt and send it into that chat.
-function openPromptPicker(conv) {
+function openPromptPicker(conv = null) {
   const listHTML = (q) => {
     const words = q.toLowerCase().split(/\s+/).filter(Boolean);
     const found = S.recipes.filter((r) => words.every((w) => `${r.name} ${r.description || ''} ${r.category || ''}`.toLowerCase().includes(w)));
     return found.length ? found.map((r) => `<button class="prompt-pick" data-pick-recipe="${esc(r.id)}"><span class="recipe-emoji">${esc(r.emoji)}</span><span><b>${esc(r.name)}</b><small>${esc(r.description || '')}</small></span></button>`).join('')
       : '<p class="muted">No prompts match.</p>';
   };
-  const m = modal({ title: 'Use a prompt', sub: 'Fill it in and it is sent into this chat', wide: true,
+  const m = modal({ title: 'Use a prompt', sub: conv ? 'Fill it in and it is sent into this chat' : 'Fill it in to start the chat', wide: true,
     body: `<input class="input" id="promptSearch" placeholder="Search prompts" autocomplete="off"><div class="prompt-pick-list" id="promptPickList">${listHTML('')}</div>` });
   const search = $('#promptSearch', m.el);
   search.focus();
   search.addEventListener('input', () => { $('#promptPickList', m.el).innerHTML = listHTML(search.value); });
-  m.el.addEventListener('click', (e) => { const b = e.target.closest('[data-pick-recipe]'); if (b) { m.close(); openRecipeRunner(b.dataset.pickRecipe, { conv }); } });
+  m.el.addEventListener('click', (e) => { const b = e.target.closest('[data-pick-recipe]'); if (b) { m.close(); openRecipeRunner(b.dataset.pickRecipe, conv ? { conv } : {}); } });
 }
 
 function openRecipeRunner(id, { conv = null } = {}) {

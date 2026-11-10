@@ -13,6 +13,7 @@ import { openPromptPicker } from './prompts.js';
 import { sendMessage, stopConv } from './streaming.js';
 import { openAssistantBuilder } from './agents.js';
 import { openSettings } from './settings.js';
+import { pinnedAgentIds } from './sidebar.js';
 
 function composerHTML({ home = false, conv = null } = {}) {
   const d = S.draft;
@@ -163,15 +164,22 @@ function bindComposer(root, { conv = null } = {}) {
     { icon: 'upload', label: 'Upload from this device', hint: 'Saved to your notebook’s Attachments folder', run: () => $('#fileInput', root).click() },
     { icon: 'book', label: 'Reference a file in your notebook', hint: 'Or type / in the message box', run: () => mention.start() },
     { icon: 'pin', label: 'Pin a file to this chat', hint: 'Included with every message', run: () => pickPinnedFiles(conv) },
-    ...(conv ? [{ icon: 'wand', label: 'Use a prompt', hint: 'Fill in a prompt from the gallery and send it here', run: () => openPromptPicker(conv) }] : []),
+    { icon: 'wand', label: 'Use a prompt', hint: conv ? 'Fill in a prompt from the gallery and send it here' : 'Start this chat from a prompt in the gallery', run: () => openPromptPicker(conv) },
   ]));
   $('#fileInput', root).addEventListener('change', (e) => { uploadFiles([...e.target.files]); e.target.value = ''; });
   $('#attachList', root).addEventListener('click', (e) => { const b = e.target.closest('[data-rm-attach]'); if (b) { S.draft.attachments.splice(+b.dataset.rmAttach, 1); refreshAttach(); } });
-  $('#assistantPill', root)?.addEventListener('click', (e) => openMenu(e.currentTarget, [
-    { heading: 'Who should help?' },
-    ...S.assistants.map((a) => ({ emoji: a.emoji, label: a.name, hint: a.tagline, selected: (conv ? conv.assistantId : S.draft.assistantId || 'lumen') === a.id, run: () => pickAgent(a) })),
-    { sep: true }, { icon: 'plus', label: 'Create an agent', run: () => openAssistantBuilder() },
-  ]));
+  // Many agents: a filter box, then the sidebar's pinned agents, then everyone else (A–Z), in a scrolling list.
+  $('#assistantPill', root)?.addEventListener('click', (e) => {
+    const cur = conv ? conv.assistantId : S.draft.assistantId || 'lumen';
+    const item = (a) => ({ emoji: a.emoji, label: a.name, hint: a.tagline, selected: cur === a.id, run: () => pickAgent(a) });
+    const top = S.assistants.filter((a) => a.id === 'lumen' || pinnedAgentIds().includes(a.id));
+    const rest = S.assistants.filter((a) => !top.includes(a)).sort((a, b) => a.name.localeCompare(b.name));
+    openMenu(e.currentTarget, [
+      { heading: 'Pinned' }, ...top.map(item),
+      ...(rest.length ? [{ heading: 'All agents' }, ...rest.map(item)] : []),
+      { sep: true }, { icon: 'plus', label: 'Create an agent', keep: true, run: () => openAssistantBuilder() },
+    ], { title: 'Who should help?', search: 'Search agents' });
+  });
   async function pickAgent(a) {
     if (!conv) { S.draft.assistantId = a.id; if (a.access) S.draft.access = a.access; renderHome(); return; }
     await switchAgent(conv, a);

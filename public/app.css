@@ -231,6 +231,10 @@ kbd { font: 500 11px var(--font); color: var(--muted); border: 1px solid var(--b
 .menu-item.selected .check { visibility: visible; }
 .menu-item .ico { width: 17px; height: 17px; }
 .menu-item.danger { color: var(--danger); }
+.menu-search { width: 360px; max-width: calc(100vw - 16px); display: flex; flex-direction: column; max-height: min(480px, calc(100vh - 16px)); }
+.menu-search .menu-list { overflow-y: auto; min-height: 0; }
+.menu-filter { margin: 2px 4px 6px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg, transparent); color: inherit; font: inherit; font-size: 14px; }
+.menu-filter:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
 .menu-sep { height: 1px; background: var(--border); margin: 5px 4px; }
 
 /* Chat */

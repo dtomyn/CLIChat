@@ -59,8 +59,8 @@ files, so that the right agent does a well-specified job without me writing the 
 - Prompts run with the global default AI engine and response mode.
 
 ## Use a prompt inside a chat
-- In an open chat, **+ → Use a prompt** opens a searchable list of the gallery. Picking one opens the same form,
-  with files from that chat's project folder. **Start** sends the filled-in prompt into the current chat (no new chat).
+- In the message box, **+ → Use a prompt** opens a searchable list of the gallery. Picking one opens the same form,
+  with files from that chat's project folder. **Start** sends the filled-in prompt into the current chat (no new chat); from a new chat it starts the chat, as the gallery does.
 - The chat's current agent answers. If the prompt was built for another agent, the form offers **Switch to …**.
 - If the prompt needs more access than the chat has, the form says so and Start raises the chat's access to match.
 - **Repeat…** isn't offered here; schedule prompts from the gallery. Covered by `e2e/chat-prompts.spec.js`.
