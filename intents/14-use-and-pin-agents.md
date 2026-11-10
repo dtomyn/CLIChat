@@ -9,7 +9,7 @@ keep the ones I use most in the sidebar, so that every chat starts with the righ
   **Customize** and **⋯** (**Customize**, **Pin to sidebar** / **Unpin from sidebar**, **Duplicate**, **Export to
   Microsoft 365 Copilot**, **Use in VS Code**, **Delete**), with a **Search agents** box and a **Sort by** list above
   the cards.
-- Home screen: the **Agents** row of chips (**See all agents**, **Create an agent**) and the agent pill in the composer
+- Home screen: the agent pill in the composer (no agent list on the home screen; use the pill or the **Agents** page)
   (**Who should help?** menu). The menu opens with a focused **Search agents** box (filters by name and tagline;
   arrow keys and Enter pick), lists Lumen and the sidebar's pinned agents first, then **All agents** A–Z, and scrolls
   inside a fixed height. **Create an agent** stays visible while filtering (`e2e/agent-search.spec.js`).

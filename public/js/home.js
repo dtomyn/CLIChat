@@ -17,7 +17,6 @@ function greetingWord() { const h = new Date().getHours(); return h < 5 ? 'Burni
 function renderHome() {
   S.view = 'home'; setNav('home');
   const a = assistantById(S.draft.assistantId || 'lumen');
-  const recipes = S.recipes.slice(0, 6);
   $('#view').innerHTML = `
     <div class="home">
       <div class="home-inner">
@@ -31,15 +30,6 @@ function renderHome() {
         ${a.starters?.length ? `<div class="prompt-chips" aria-label="Suggested prompts">${a.starters.map((s) => `<button class="prompt-chip" data-starter="${esc(s)}" title="${esc(s)}">${icon('spark')}<span>${esc(s)}</span></button>`).join('')}</div>` : ''}
 
         ${demoBanner()}
-
-        <div class="section-label"><span>Agents</span><a data-go="assistants">See all agents</a></div>
-        <div class="assistant-row">
-          ${S.assistants.map((x) => `<button class="a-chip ${x.id === (S.draft.assistantId || 'lumen') ? 'selected' : ''}" data-color="${esc(x.color)}" data-pick-assistant="${esc(x.id)}" title="${esc(x.tagline || '')}"><span class="a-badge">${esc(x.emoji)}</span>${esc(x.name)}</button>`).join('')}
-          <button class="a-chip" data-new-assistant><span class="a-badge" style="background:var(--panel-2)">${icon('plus')}</span>Create an agent</button>
-        </div>
-
-        <div class="section-label"><span>From the prompt gallery</span><a data-go="recipes">See all prompts</a></div>
-        <div class="recipe-grid">${recipes.map((r) => recipeCard(r)).join('')}</div>
 
         <div class="section-label"><span>Guided delivery ${lumenOnlyBadge()}</span><a data-go="runs">View workflows</a></div>
         ${S.pipelines.slice(0, 3).map((p) => `<button class="starter" data-go="runs"><span>${esc(p.emoji || '🔄')} ${esc(p.name)} · ${p.stages.length} guided stages</span>${icon('right')}</button>`).join('') || '<p>No workflows yet.</p>'}

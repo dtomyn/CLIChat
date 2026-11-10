@@ -7,7 +7,7 @@ files, so that the right agent does a well-specified job without me writing the 
 ## Where
 - **Prompts** in the left rail: the **Prompt gallery** page with category tabs (**All**, one tab per category,
   **Scheduled prompts**).
-- Home: **From the prompt gallery** (the first 6 prompts, **See all prompts**) and the demo banner's prompt buttons.
+- Home: the demo banner's prompt buttons (the home screen no longer lists gallery prompts).
 - Clicking a card opens the prompt form (runner modal).
 
 ## Inputs & controls
