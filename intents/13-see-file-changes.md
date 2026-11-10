@@ -70,9 +70,9 @@ plan before and after, cell by cell or task by task, so that I can check what th
 - Long comparisons stop at 500 changes with no "more" indicator beyond the subtitle.
 
 ## Source
-- `public/app.js`: `assistantInner` (file cards, `data-diff-file`), `chatClicks`, `showDiff`, `chooseWorkspaceFiles`,
+- `public/js/chat.js`, `public/js/chat-clicks.js`, `public/js/runs.js`, `public/js/composer.js`, `public/js/folder.js`, `public/js/main.js`, `public/js/home.js`: `assistantInner` (file cards, `data-diff-file`), `chatClicks`, `showDiff`, `chooseWorkspaceFiles`,
   `openDrawer` (**Files changed in this chat**), `bindChrome` (`data-jump-message`), `LUMEN_ONLY_TIP`.
-- `server.js`: `runTurn` (`asstMsg.files`, `LUMEN_SNAPSHOT_DIR`), `/api/file-pair`, `/api/diff`, `diffFiles`,
+- `lib/server/chat.js`, `lib/server/routes/files.js`, `lib/server/lifecycle.js`, `lib/server/workspace.js`: `runTurn` (`asstMsg.files`, `LUMEN_SNAPSHOT_DIR`), `/api/file-pair`, `/api/diff`, `diffFiles`,
   `/api/file-status`, `workspaceFile`.
 - `tools/excel.js`: `update` (snapshot), `open`. `tools/project.js`: `load`.
 - `providers/claude-cli.js`, `providers/copilot-cli.js`: tool events with `writes`.

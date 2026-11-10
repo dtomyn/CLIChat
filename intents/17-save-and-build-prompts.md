@@ -56,5 +56,5 @@ so that I (and later Microsoft 365 Copilot) can repeat it without retyping it.
   [20](20-export-to-m365-copilot.md)).
 
 ## Source
-`public/app.js` (`saveAsRecipe`, `openRecipeBuilder`, `msgHTML` **Save prompt** action, `rerenderPage`),
-`server.js` (`/api/recipes` POST/PUT/DELETE, `cleanItem`), `lib/store.js` (`collection('recipes')`).
+`public/js/chat-actions.js`, `public/js/prompts.js`, `public/js/chat.js` (`saveAsRecipe`, `openRecipeBuilder`, `msgHTML` **Save prompt** action, `rerenderPage`),
+`lib/server/routes/library.js` (`/api/recipes` POST/PUT/DELETE, `cleanItem`), `lib/store.js` (`collection('recipes')`).

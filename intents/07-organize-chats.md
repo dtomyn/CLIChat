@@ -60,6 +60,6 @@ delete, so that I can get back to earlier work quickly.
 - Pinned chats have no manual order (newest activity first).
 
 ## Source
-`public/app.js` (`renderConvList`, `convMenu`, `renameConv`, `deleteConv`, `refreshConvs`, `renderChat` header menu,
-`newChat`, `bindChrome`); `server.js` (`autoTitle`, `runTurn` `title` event, `GET|PATCH|DELETE /api/conversations`);
+`public/js/sidebar.js`, `public/js/chat.js`, `public/js/main.js` (`renderConvList`, `convMenu`, `renameConv`, `deleteConv`, `refreshConvs`, `renderChat` header menu,
+`newChat`, `bindChrome`); `lib/server/chat.js` (`autoTitle`, `runTurn` `title` event, `GET|PATCH|DELETE /api/conversations`);
 `lib/store.js` (`conversations.list`, `save`, `remove`); `tools/ado/changesets.js` (`removeConversation`).

@@ -67,6 +67,6 @@ A live **Preview** card follows every edit.
 - **Draft it** needs a working AI engine.
 
 ## Source
-`public/app.js` (`openAssistantBuilder`, `skillChips`, `lumenOnlyBadge`, `COLORS`, `EMOJIS`, `ACCESS`), `server.js`
+`public/js/agents.js`, `public/js/home.js`, `public/js/state.js` (`openAssistantBuilder`, `skillChips`, `lumenOnlyBadge`, `COLORS`, `EMOJIS`, `ACCESS`), `lib/server/exports.js`, `lib/server/routes/library.js`, `lib/server/routes/core.js`, `lib/server/chat.js`
 (`draftAssistant`, `cleanItem`, `/api/assistants`, `/api/skills`, `buildSystemPrompt`, `runTurn`), `lib/skills.js`
 (`all`, `parse`, `referencesOf`, `resolve`, `toolConfig`, `promptFor`), `skills/*/SKILL.md`.

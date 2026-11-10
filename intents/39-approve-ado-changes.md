@@ -95,8 +95,8 @@ written to our shared backlog or wiki until I click **Apply**, and my name is re
 ## Source
 `tools/ado-mcp.js` (`PROPOSAL_TOOLS`), `tools/ado/changesets.js` (`proposeWorkItems`, `proposeUpdate`,
 `proposeLinks`, `proposeComment`, `proposeWikiPage`, `stage`, `load`, `describe`, `apply`, `outcomeNote`, `audit`,
-`MAX_ITEMS`, `TTL`), `tools/ado/markup.js` (`mdToHtml`, `lineDiff`), `server.js` (`/api/chat/<id>/approvals`,
-`decideChangeSet`, `adoNotes` in `runTurn`, stage action `azure-devops`), `public/app.js` (`approvalCard`,
+`MAX_ITEMS`, `TTL`), `tools/ado/markup.js` (`mdToHtml`, `lineDiff`), `lib/server/routes/chat.js`, `lib/server/ado-decisions.js`, `lib/server/chat.js` (`/api/chat/<id>/approvals`,
+`decideChangeSet`, `adoNotes` in `runTurn`, stage action `azure-devops`), `public/js/ado-approvals.js` (`approvalCard`,
 `loadApproval`, `decideApproval`, `repaintApproval`), `lib/tool-labels.js` (`pendingChangeSet`),
 `providers/claude-cli.js`, `providers/copilot-cli.js`, `skills/azure-devops/SKILL.md`, `defaults/recipes.json`
 (`ado-stories-from-design`, `ado-publish-wiki`).

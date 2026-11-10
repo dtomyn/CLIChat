@@ -66,7 +66,7 @@ changes: each one waits for you to click Apply."
 - Tenant policy can block Azure CLI tokens or access tokens; Lumen has no other sign-in.
 
 ## Source
-`public/app.js` (`openAdoSettings`, `adoReady`, Settings **Connections** card), `server.js` (`/api/connections/ado`,
+`public/js/connections.js` (`openAdoSettings`, `adoReady`, Settings **Connections** card), `lib/server/routes/connections.js` (`/api/connections/ado`,
 `/test`, `/pat`), `tools/ado/client.js` (`normalizeOrgUrl`, `createClient` `request`), `tools/ado/auth.js`
 (`createAuth`, `azToken`, `ADO_RESOURCE`, `PAT_SECRET`, `hasAz`), `tools/ado/connection.js` (`fromSettings`,
 `fromEnv`, `configured`), `lib/secrets.js` (`save`, `load`, `has`, `clear`, `supported`), `lib/skills.js`

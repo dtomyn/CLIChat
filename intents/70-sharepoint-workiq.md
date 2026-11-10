@@ -90,7 +90,7 @@ selecting it manually in an agent's Customize screen or a chat's skills is not r
   while correcting connector selection. Offline tests do not establish tenant access or document permissions.
 
 ## Source
-`lib/workiq.js`, `lib/skills.js` (`workiqReady`, `toolConfig`, `promptFor`), `skills/microsoft-365/SKILL.md`, `server.js`
+`lib/workiq.js`, `lib/skills.js` (`workiqReady`, `toolConfig`, `promptFor`), `skills/microsoft-365/SKILL.md`, `lib/server/routes/connections.js`
 (`/api/connections/workiq`, `/api/connections/workiq/connect`), `providers/claude-cli.js`, `providers/copilot-cli.js`,
-`public/app.js` (`openWorkiqSettings`), `test/workiq.test.js`, `test/workiq-api.test.js`, `test/workiq-providers.test.js`,
+`public/js/connections.js` (`openWorkiqSettings`), `test/workiq.test.js`, `test/workiq-api.test.js`, `test/workiq-providers.test.js`,
 `e2e/workiq.spec.js`.

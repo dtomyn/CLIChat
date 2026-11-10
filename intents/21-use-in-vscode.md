@@ -56,8 +56,8 @@ works to the same standards outside Lumen.
 - Prompts and scheduled prompts are not exported to VS Code.
 
 ## Source
-`server.js` (`writeVsCodeKit`, `exportAssistant`, `exportEngineeringPacks`, `/api/assistants/:id/export`,
+`lib/server/exports.js`, `lib/server/routes/library.js` (`writeVsCodeKit`, `exportAssistant`, `exportEngineeringPacks`, `/api/assistants/:id/export`,
 `/api/assistants/export-engineering`), `lib/copilot-export.js` (`vsCodeKitFiles`, `ENGINEERING_PACKS`,
-`ENGINEERING_README`, `slug`), `lib/skills.js` (`MCP_SERVER`, `ADO_SERVER`, `adoReady`), `public/app.js`
+`ENGINEERING_README`, `slug`), `lib/skills.js` (`MCP_SERVER`, `ADO_SERVER`, `adoReady`), `public/js/`
 (`exportAssistant`, `exportEngineeringPacks`, `pickFolder`), `skills/dev-pack/`, `skills/test-automation/`,
 `skills/pipeline-readiness/`, `defaults/assistants.json`.

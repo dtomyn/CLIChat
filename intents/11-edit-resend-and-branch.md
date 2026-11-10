@@ -63,8 +63,8 @@ try an alternative in a separate copy of the chat, so that I can correct course 
 - No automated test covers edit, retry or fork; the behaviour above is from the code.
 
 ## Source
-- `public/app.js`: `msgHTML` (edit box, **Edit**), `assistantInner` (**Retry**, **Branch**, **Try again**), `chatClicks`,
+- `public/js/chat.js`, `public/js/chat-clicks.js`, `public/js/chat-actions.js`, `public/js/streaming.js`: `msgHTML` (edit box, **Edit**), `assistantInner` (**Retry**, **Branch**, **Try again**), `chatClicks`,
   `renderChat` (Enter/Esc in the edit box), `setEditing`, `saveEdit`, `rewind`, `forkConversation`, `openBranch`,
   `branchFrom`, `branchAndSend`, `forkedFromHTML`, `sendMessage` (`truncateFrom`).
-- `server.js`: `handleChat`, `runTurn` (`truncateFrom`, sessions reset), `historyPrompt`, `POST
+- `lib/server/routes/chat.js`, `lib/server/chat.js`, `lib/server/insights.js`: `handleChat`, `runTurn` (`truncateFrom`, sessions reset), `historyPrompt`, `POST
   /api/conversations/:id/fork`, `insights` (`copied`).

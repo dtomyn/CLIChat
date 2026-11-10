@@ -167,7 +167,9 @@ See [providers/README.md](providers/README.md). Each engine is one file that tur
 ## Project layout
 
 ```
-server.js            HTTP server, JSON API, NDJSON chat streaming
+server.js            HTTP shell: static files, security headers, API route list
+lib/server/          Chat turns, lifecycle runs, exports, folders; routes/ has one file per API area
+public/js/           Browser UI as ES modules (main.js is the entry point)
 lib/store.js         JSON file storage
 lib/cli-bin.js       Finds an engine's CLI and launches it without a shell (safe for long prompts on Windows)
 providers/           Pluggable AI engines (claude-cli, copilot-cli)

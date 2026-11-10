@@ -55,8 +55,8 @@ considers them on every message without my attaching them each time.
 - Missing pins are flagged but not removed automatically.
 
 ## Source
-- `public/app.js`: `pinsFor`, `pinnedHTML`, `checkPinnedFiles`, `setPins`, `pickPinnedFiles`, `chooseWorkspaceFiles`,
+- `public/js/composer.js`, `public/js/chat-clicks.js`, `public/js/folder.js`, `public/js/main.js`, `public/js/streaming.js`: `pinsFor`, `pinnedHTML`, `checkPinnedFiles`, `setPins`, `pickPinnedFiles`, `chooseWorkspaceFiles`,
   `bindComposer` (strip clicks, **+** menu), `chatClicks` (`data-pin-file`), `openDrawer` / `bindChrome` (drawer 📌),
   `sendMessage` (`pinned_files`).
-- `server.js`: `PATCH /api/conversations/:id`, `/api/file-status`, `runTurn` (`pinned`, `workspaceFile`, system prompt
+- `lib/server/routes/chat.js`, `lib/server/routes/files.js`, `lib/server/chat.js`, `lib/server/workspace.js`: `PATCH /api/conversations/:id`, `/api/file-status`, `runTurn` (`pinned`, `workspaceFile`, system prompt
   line), `/api/conversations/:id/fork`.

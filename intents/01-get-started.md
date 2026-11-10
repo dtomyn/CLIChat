@@ -68,6 +68,6 @@ screen that greets me by name and shows what I can do, so that I can start worki
 - Fonts (Inter, JetBrains Mono) load from Google Fonts; Segoe UI is used on Windows.
 
 ## Source
-`Start Lumen.cmd`; `public/index.html` (rail, sidebar, theme script); `public/app.js` (`boot`, `openOnboarding`,
+`Start Lumen.cmd`; `public/index.html` (rail, sidebar, theme script); `public/js/main.js`, `public/js/onboarding.js`, `public/js/home.js`, `public/js/utils.js`, `public/js/settings.js` (`boot`, `openOnboarding`,
 `celebrate`, `renderHome`, `greetingWord`, `firstName`, `renderUser`, `applyTheme`, `openSettings`, `saveSettings`);
-`server.js` (`PUT /api/settings`, `GET /api/status`, `buildSystemPrompt`, `--open`); `lib/store.js` (`settings` defaults).
+`lib/server/routes/core.js`, `lib/server/chat.js`, `server.js` (`PUT /api/settings`, `GET /api/status`, `buildSystemPrompt`, `--open`); `lib/store.js` (`settings` defaults).

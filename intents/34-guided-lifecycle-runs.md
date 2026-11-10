@@ -99,8 +99,8 @@ hand-offs are visible, auditable and never built on unapproved work without sayi
 - Single-user approval; no external sign-off, branching pipelines or Jira sync.
 
 ## Source
-`server.js` (`/api/pipelines`, `/api/runs`, stage actions `start`/`skip`/`include`/`approve`/`rework`/`check`/`word`/`azure-devops`,
+`lib/server/routes/pipelines.js`, `lib/server/routes/runs.js`, `lib/server/lifecycle.js`, `lib/server/stage-output.js`, `lib/server/routes/chat.js` (`/api/pipelines`, `/api/runs`, stage actions `start`/`skip`/`include`/`approve`/`rework`/`check`/`word`/`azure-devops`,
 `reconcileRun`, `startRunTurn`, `stampOutput`, `labelUnapproved`, `clearUnapproved`, `handleChat` guards),
-`public/app.js` (`renderRuns`, `openPipelineEditor`, `startNewRun`, `renderRun`), `public/index.html` (rail item **Lifecycle**),
+`public/js/runs.js` (`renderRuns`, `openPipelineEditor`, `startNewRun`, `renderRun`), `public/index.html` (rail item **Lifecycle**),
 `defaults/pipelines.json`, `lib/pipeline-migrate.js` (`migratePipelines`, `FIRST_RELEASE_STAGES`), `lib/store.js`
 (`runs`, `pipelines`).

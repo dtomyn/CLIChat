@@ -93,9 +93,9 @@ Copilot** card in the welcome, and the **Lumen only** badges.
 - `data/` is not encrypted apart from `secrets/`; chats are plain JSON readable by the Windows user.
 
 ## Source
-`server.js` (`HOST`, `allowedRequest`, `SECURITY_HEADERS`, `CSP`, `INLINE_HASHES`, `cleanAccess`, `workspaceFile`,
+`server.js`, `lib/server/workspace.js`, `lib/server/folders.js`, `lib/server/http-util.js`, `lib/server/routes/files.js`, `lib/server/routes/connections.js` (`HOST`, `allowedRequest`, `SECURITY_HEADERS`, `CSP`, `INLINE_HASHES`, `cleanAccess`, `workspaceFile`,
 `inside`, `OPENABLE`, `openPath`, `readBody`, `/api/upload`, `/api/folder/open`, `/api/connections/ado`);
-`public/app.js` (`md`, DOMPurify hook, `boundaryNote`, `lumenOnlyBadge`, `openOnboarding`); `public/index.html` (theme
+`public/js/markdown.js`, `public/js/composer.js`, `public/js/home.js`, `public/js/onboarding.js` (`md`, DOMPurify hook, `boundaryNote`, `lumenOnlyBadge`, `openOnboarding`); `public/index.html` (theme
 script); `lib/store.js` (`DATA`, `writeJson`); `lib/secrets.js` (`save`, `load`, `has`, `clear`, `supported`);
 `lib/cli-bin.js` (`resolve`, `command`, `cmdArg`); `lib/skills.js` (`toolConfig`); `providers/claude-cli.js`,
 `providers/copilot-cli.js`; `tools/office-mcp.js` (`realOf`, `outsideRoot`, `resolveIn`, `outputIn`);

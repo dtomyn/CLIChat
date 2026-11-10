@@ -71,5 +71,5 @@ checks.
   `references/branch-naming.md`.
 - `lib/skills.js` (`promptFor`, reference files); `lib/copilot-export.js` (`ENGINEERING_PACKS`, `ENGINEERING_README`,
   `vsCodeKitFiles`).
-- `server.js` (`POST /api/assistants/export-engineering`).
+- `lib/server/routes/library.js` (`POST /api/assistants/export-engineering`).
 - `defaults/assistants.json` (agent **Developer Copilot**); `defaults/recipes.json` (prompt **Write a PR description**).

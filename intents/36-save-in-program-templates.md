@@ -90,5 +90,5 @@ so that they look like program documents without retyping, and without Word, Pow
 `tools/md-export.js` (`toDocx`, `templateDocx`, `builtinDocx`, `fillFields`, `openTemplate`, `setCustomProperties`,
 `readDocxProperties`), `tools/pptx.js` (`toPptx`, `parseDeck`, `buildSlides`, `openTemplate`, `dropSlides`),
 `tools/change.js` (`saveDraft`, `findDeckTemplate`, `freeName`), `tools/office-mcp.js` (`save_draft_document`),
-`server.js` (stage action `word`, `stageWordTemplate`), `public/app.js` (`renderRun`, `data-run-word`),
+`lib/server/lifecycle.js` (stage action `word`, `stageWordTemplate`), `public/js/runs.js` (`renderRun`, `data-run-word`),
 `defaults/pipelines.json`, `samples/aidlc/Templates/`, `samples/change/Templates/Training Deck Template.potx`.

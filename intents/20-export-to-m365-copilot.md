@@ -64,7 +64,7 @@ accepts, with a clear list of what won't carry over, so that the switch to Copil
 
 ## Source
 `lib/copilot-export.js` (`exportAgents`, `writeAgent`, `declarativeAgent`, `appManifest`, `agentBuilderText`,
-`lumenOnly`, `starters`, `exportPrompts`, `promptText`, `README`, `LIMITS`, `stableUuid`, `png`), `server.js`
+`lumenOnly`, `starters`, `exportPrompts`, `promptText`, `README`, `LIMITS`, `stableUuid`, `png`), `lib/server/routes/library.js`
 (`/api/assistants/:id/export-copilot`, `/api/assistants/export-copilot`, `/api/recipes/export-copilot`),
-`public/app.js` (`exportToCopilot`, `exportPromptsToCopilot`, `openRecipeRunner` **Copy for Copilot**,
+`public/js/agents.js`, `public/js/prompts.js`, `public/js/home.js` (`exportToCopilot`, `exportPromptsToCopilot`, `openRecipeRunner` **Copy for Copilot**,
 `lumenOnlyBadge`, `needsLocalTools`).

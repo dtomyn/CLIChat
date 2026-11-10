@@ -72,7 +72,7 @@ find the same files later.
 - `POST /api/folder/check` exists but the UI does not use it.
 
 ## Source
-`server.js` (`oneDriveRoot`, `defaultWorkspace`, `resolveWorkspace`, `isDir`, `browseFolder`, `listFolder`, `openPath`,
+`lib/server/workspace.js`, `lib/server/folders.js`, `lib/server/routes/files.js`, `lib/server/routes/core.js`, `lib/server/routes/chat.js` (`oneDriveRoot`, `defaultWorkspace`, `resolveWorkspace`, `isDir`, `browseFolder`, `listFolder`, `openPath`,
 routes `/api/folder/browse|mkdir|open|files|check`, `PUT /api/settings`, `PATCH /api/conversations/:id`);
-`public/app.js` (`pickFolder`, `changeFolder`, `folderMenu`, `openDrawer`, `currentWorkspace`, `openSettings`,
+`public/js/folder.js`, `public/js/composer.js`, `public/js/settings.js`, `public/js/onboarding.js` (`pickFolder`, `changeFolder`, `folderMenu`, `openDrawer`, `currentWorkspace`, `openSettings`,
 `openOnboarding`); `public/index.html` (`#filesDrawer`).

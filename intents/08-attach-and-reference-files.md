@@ -66,8 +66,8 @@ that the reply is based on my real files rather than on what I paste into the me
 - Removing a chip does not delete the uploaded copy.
 
 ## Source
-- `public/app.js`: `composerHTML` (**+**, `#fileInput`), `bindComposer` (paste, **Add content** menu, Enter), `fileMention`,
+- `public/js/composer.js`, `public/js/main.js`: `composerHTML` (**+**, `#fileInput`), `bindComposer` (paste, **Add content** menu, Enter), `fileMention`,
   `notebookFiles`, `uploadFiles`, `attachChips`, `refreshAttach`, `submit`, `bindChrome` (drag and drop).
 - `public/index.html`: `#dropOverlay`.
-- `server.js`: `/api/upload`, `/api/folder/files` (`listFolder`), `runTurn` (attachments, access upgrade, skills).
+- `lib/server/routes/files.js`, `lib/server/folders.js`, `lib/server/chat.js`: `/api/upload`, `/api/folder/files` (`listFolder`), `runTurn` (attachments, access upgrade, skills).
 - `lib/skills.js`: `resolve`.
