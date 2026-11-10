@@ -24,7 +24,7 @@ own documents.
 | … on **Change sample** | Installs the Permit Renewal change, training and bilingual pack. |
 | Home hint **Try it on sample data** | Opens the Samples page. |
 | Home hint × (**Hide**) | Sets `demoDismissed`; the hint no longer shows (the Samples page and in-pack banner still do). |
-| In-pack buttons (home banner or **You're here** card) | Open the named prompt's form ([16](16-run-a-prompt.md)); **See the files** opens the Notebook drawer ([02](02-choose-notebook-folder.md)). |
+| In-pack buttons (home banner or **You're here** card) | Open the named prompt's form ([16](16-run-a-prompt.md)); **See the files** opens the Notebook drawer ([02](02-choose-notebook-folder.md)); **Leave sample** switches the project folder back to the one used before the sample (remembered as `demoPrevWorkspace`), or opens the folder picker if there was none or it no longer exists. |
 
 ## Behaviour (as implemented)
 - **Packs** (`PACKS` in `server.js`):

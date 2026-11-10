@@ -10,6 +10,7 @@ const store = require('./lib/store');
 const scheduler = require('./lib/scheduler');
 const registry = require('./providers');
 const skills = require('./lib/skills');
+const workiq = require('./lib/workiq');
 const mdExport = require('./tools/md-export');
 const copilotExport = require('./lib/copilot-export');
 const excel = require('./tools/excel');
@@ -163,8 +164,11 @@ async function runTurn(body, out = () => {}) {
   if ((attachments.length || pinned.length) && access === 'chat') access = 'read';
   // Files attached earlier in the chat keep their skills on, so follow-ups ("apply the approved changes") have the same tools.
   const earlier = (conv.messages || []).flatMap((m) => (m.attachments || []).map((a) => a.path)).filter(Boolean);
-  const activeSkills = skills.resolve([...(assistant?.skills || []), ...(conv.skills || [])], [...attachments, ...pinned, ...earlier]);
-  const skillCtx = { ado: settings.ado, dataDir: store.DATA, conversationId: conv.id, scheduled: !!conv.scheduled };
+  const skillCtx = { ado: settings.ado, workiq: settings.workiq, providerId, dataDir: store.DATA, conversationId: conv.id, scheduled: !!conv.scheduled };
+  const activeSkills = skills.resolve([
+    ...(assistant?.skills || []), ...(conv.skills || []),
+    ...(skills.workiqReady(settings.workiq, skillCtx) ? ['microsoft-365'] : []),
+  ], [...attachments, ...pinned, ...earlier]);
   const tools = skills.toolConfig(activeSkills, access, conv.workspace, skillCtx);
   // Outcomes of Azure DevOps change sets applied or discarded since the last turn, so the AI knows what really happened.
   const notes = (conv.adoNotes || []).slice();
@@ -191,6 +195,7 @@ ${message}`;
 
   let reported = null; // the engine's own { costUsd, durationMs }, when it reports one
   const emit = (ev) => {
+    if (ev.type === 'connection' && ev.server === 'm365') { workiq.record(providerId, ev); return; }
     if (ev.type === 'session') { conv.sessions = { ...(conv.sessions || {}), [providerId]: ev.id }; return; }
     if (ev.type === 'text') asstMsg.content += ev.text;
     if (ev.type === 'tool') asstMsg.tools.push({ id: ev.id, icon: ev.icon, label: ev.label, file: ev.file });
@@ -684,20 +689,58 @@ async function api(req, res, url) {
     const pack = (await json(req)).pack || 'crm';
     let target;
     try { target = installDemo(pack); } catch (e) { return send(res, 400, { error: e.message }); }
-    store.settings.set({ workspace: target, demoInstalled: target, demoPack: pack });
+    const cur = store.settings.get();
+    // Remember where the user was so "Leave sample" can take them back (switching between samples keeps the original).
+    const prev = cur.workspace === cur.demoInstalled ? cur.demoPrevWorkspace || '' : cur.workspace || '';
+    store.settings.set({ workspace: target, demoInstalled: target, demoPack: pack, demoPrevWorkspace: prev });
     return send(res, 200, { path: target, pack, files: fs.readdirSync(target).filter((f) => !f.startsWith('.')) });
   }
   if (resource === 'reset' && m === 'POST') { store.assistants.reset(); store.recipes.reset(); return send(res, 200, { ok: true }); }
   if (resource === 'settings' && m === 'PUT') {
     const patch = await json(req);
     if (!patch || typeof patch !== 'object' || Array.isArray(patch)) return send(res, 400, { error: 'Settings must be an object.' });
-    delete patch.ado; delete patch.demoInstalled; // the Azure DevOps connection is validated by /api/connections/ado
+    delete patch.ado; delete patch.workiq; delete patch.demoInstalled; // connections are validated by /api/connections/*
     if ('access' in patch) patch.access = cleanAccess(patch.access);
     if ('providerId' in patch && !registry.get(patch.providerId)) return send(res, 400, { error: `Unknown provider ${patch.providerId}` });
     if ('model' in patch && typeof patch.model !== 'string') return send(res, 400, { error: 'Choose a response mode.' });
     if ('userName' in patch) patch.userName = String(patch.userName || '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 80);
     if ('workspace' in patch && patch.workspace && !isDir(patch.workspace)) return send(res, 400, { error: 'Choose an existing project folder.' });
     return send(res, 200, store.settings.set(patch));
+  }
+
+  // OAuth stays in the selected engine's credential store, never in Lumen's settings.
+  if (resource === 'connections' && rid === 'workiq') {
+    const cur = store.settings.get().workiq || {};
+    const providerId = url.searchParams.get('providerId') || store.settings.get().providerId;
+    const provider = registry.get(providerId);
+    const view = () => ({ enabled: cur.enabled === true, providerId, integration: providerId === 'copilot-cli' ? 'connector' : 'standalone', canSignIn: process.platform === 'win32' && typeof provider?.connectWorkiq === 'function', connection: workiq.status(providerId) });
+    if (m === 'GET' && !action) return send(res, 200, view());
+    if (m === 'PUT' && !action) {
+      const b = await json(req);
+      if (!b || typeof b !== 'object' || Array.isArray(b) || typeof b.enabled !== 'boolean') return send(res, 400, { error: 'Choose whether Microsoft 365 search is on or off.' });
+      const next = { enabled: b.enabled };
+      store.settings.set({ workiq: next });
+      return send(res, 200, next);
+    }
+    if (m === 'POST' && action === 'connect') {
+      if (!provider?.connectWorkiq) return send(res, 400, { error: 'Choose Claude or GitHub Copilot to sign in to Microsoft 365.' });
+      if (process.platform !== 'win32') return send(res, 400, { error: 'Opening a Microsoft 365 sign-in window is currently supported on Windows only.' });
+      const detected = await provider.detect();
+      if (!detected.available) return send(res, 400, { error: `${provider.name} is not available on this computer. Check the AI engine in Settings.` });
+      const cwd = path.join(store.DATA, 'workiq-connection');
+      fs.mkdirSync(cwd, { recursive: true });
+      try {
+        await provider.connectWorkiq({ cwd });
+        const instructions = providerId === 'copilot-cli'
+          ? 'In the engine dashboard, open the Connectors view and select Work IQ. Lumen supplies the same workiqmcp service through GitHub using your engine\'s GitHub sign-in, not m365, WorkIQ or the workiq plugin. Lumen has not added another Work IQ CLI sign-in. Opening this window does not confirm document access.'
+          : 'In the engine window, select m365. This standalone Work IQ CLI connection requires its own consent, separate from GitHub\'s managed connector. If administrator approval is required, stop and request it; do not switch identities. Opening this window does not confirm a connection.';
+        workiq.record(providerId, { status: 'sign-in-opened', message: instructions });
+        return send(res, 202, view());
+      } catch (e) {
+        workiq.record(providerId, { status: 'failed', message: e.message });
+        return send(res, 502, { error: workiq.status(providerId).message });
+      }
+    }
   }
 
   // Azure DevOps connection (plan 08). Settings hold no secret; the access token lives in lib/secrets.js.

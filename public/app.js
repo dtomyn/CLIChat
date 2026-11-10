@@ -684,6 +684,7 @@ function demoBanner() {
         <div class="demo-actions">
           ${samplePromptButtons(p)}
           <button class="btn ghost sm" data-open-drawer>${icon('folder')}See the files</button>
+          <button class="btn ghost sm" data-leave-sample>${icon('x')}Leave sample</button>
         </div>
       </div></div>`;
   }
@@ -707,7 +708,7 @@ function renderSamplesPage() {
             <p class="sample-agent">Starts with <span class="a-badge sm" data-color="${esc(a.color)}">${esc(a.emoji)}</span>${esc(a.name)}</p>
             ${here ? `<div class="demo-actions">${samplePromptButtons(p)}</div>` : ''}
             <div class="a-card-actions">
-              ${here ? `<button class="btn soft sm" data-open-drawer>${icon('folder')}See the files</button>`
+              ${here ? `<button class="btn soft sm" data-open-drawer>${icon('folder')}See the files</button><button class="btn ghost sm" data-leave-sample>${icon('x')}Leave sample</button>`
                 : `<button class="btn primary sm" data-install-demo="${esc(p.id)}">${icon('package')}Use this sample</button>`}
             </div>
           </div>`;
@@ -730,10 +731,25 @@ async function installDemo(btn) {
   } catch (e) { toast(e.message, 'alert'); if (btn) { btn.disabled = false; btn.innerHTML = label; } }
 }
 
+// Back to the project folder used before the sample (or pick one if there wasn't any).
+async function leaveSample() {
+  const prev = S.settings.demoPrevWorkspace;
+  try {
+    if (prev) { await saveSettings({ workspace: prev }); toast(`Back in ${baseName(prev)}`, 'folder'); }
+    else { const p = await pickFolder(); if (!p) return; await saveSettings({ workspace: p }); toast(`Now working in ${baseName(p)}`, 'folder'); }
+  } catch (e) {
+    // Previous folder may have been moved or deleted; let the user choose another.
+    const p = await pickFolder(); if (!p) return;
+    await saveSettings({ workspace: p }); toast(`Now working in ${baseName(p)}`, 'folder');
+  }
+  if (S.view === 'samples') renderSamplesPage(); else rerenderCurrent();
+}
+
 function homeClicks(e) {
-  const t = e.target.closest('[data-pick-assistant],[data-new-assistant],[data-starter],[data-recipe],[data-go],[data-install-demo],[data-dismiss-demo],[data-open-drawer]');
+  const t = e.target.closest('[data-pick-assistant],[data-new-assistant],[data-starter],[data-recipe],[data-go],[data-install-demo],[data-dismiss-demo],[data-open-drawer],[data-leave-sample]');
   if (!t) return;
-  if ('installDemo' in t.dataset) installDemo(t);
+  if ('leaveSample' in t.dataset) leaveSample();
+  else if ('installDemo' in t.dataset) installDemo(t);
   else if ('dismissDemo' in t.dataset) { saveSettings({ demoDismissed: true }).then(renderHome); }
   else if ('openDrawer' in t.dataset) openDrawer();
   else if (t.dataset.pickAssistant) { S.draft.assistantId = t.dataset.pickAssistant; const a = assistantById(t.dataset.pickAssistant); S.draft.access = a.access || null; renderHome(); }
@@ -2048,7 +2064,9 @@ function openSettings(focus) {
         <div class="help">Lumen is pluggable — it runs on whichever AI tool is installed on this computer. Add more engines by dropping a file into the <code>providers</code> folder.</div></div>
       <div class="field" id="connectionsField"><label>Connections</label><div class="option-cards">
         <button type="button" class="option-card" id="sAdo"><span class="oc-icon">🔷</span><span class="oc-text"><span class="oc-title">Azure DevOps ${adoReady() ? `<span class="status-tag ok"><i class="dot ok" style="box-shadow:none"></i>Connected</span>` : '<span class="status-tag">Not set up</span>'}</span>
-          <span class="oc-desc">${adoReady() ? esc(`${S.settings.ado.project}${S.settings.ado.team ? ` · ${S.settings.ado.team}` : ''} · ${S.settings.ado.orgUrl.replace(/^https:\/\//, '')}`) : 'Search and update work items and wiki pages. Every change waits for your approval.'}</span></span></button></div></div>
+          <span class="oc-desc">${adoReady() ? esc(`${S.settings.ado.project}${S.settings.ado.team ? ` · ${S.settings.ado.team}` : ''} · ${S.settings.ado.orgUrl.replace(/^https:\/\//, '')}`) : 'Search and update work items and wiki pages. Every change waits for your approval.'}</span></span></button>
+        <button type="button" class="option-card" id="sWorkiq"><span class="oc-icon">🟦</span><span class="oc-text"><span class="oc-title">SharePoint &amp; Microsoft 365 ${S.settings.workiq?.enabled ? `<span class="status-tag ok"><i class="dot ok" style="box-shadow:none"></i>On</span>` : '<span class="status-tag">Off</span>'}</span>
+          <span class="oc-desc">Find and read documents on SharePoint, plus your email, meetings and Teams. Read only.</span></span></button></div></div>
       <div class="field"><label>Default file access</label><div class="seg" id="sAccess">${Object.entries(ACCESS).map(([k, v]) => `<button data-v="${k}" class="${s.access === k ? 'active' : ''}">${v.emoji} ${esc(v.label)}</button>`).join('')}</div></div>
       <div class="field"><label>Default notebook (project folder)</label><div class="row" style="align-items:center"><input class="input" id="sFolder" value="${esc(s.workspace)}" readonly style="flex:1"><button class="btn soft" id="sFolderBtn" style="flex:0 0 auto">${icon('folder')}Change</button></div><div class="help">Your notebook: where Lumen reads and saves documents unless a chat uses a different folder. Keep it in OneDrive so Microsoft 365 Copilot can find the same files later.</div></div>
       <div class="field"><label>Appearance</label><div class="seg" id="sTheme">${[['system', 'Match system'], ['light', 'Light'], ['dark', 'Dark']].map(([k, l]) => `<button data-v="${k}" class="${(s.theme || 'system') === k ? 'active' : ''}">${l}</button>`).join('')}</div></div>
@@ -2067,11 +2085,67 @@ function openSettings(focus) {
   seg('sAccess', 'access'); seg('sTheme', 'theme', () => applyTheme(s.theme));
   $('#sShowCost', el).addEventListener('click', (e) => { s.showCost = !s.showCost; e.currentTarget.classList.toggle('active', s.showCost); });
   $('#sAdo', el).addEventListener('click', () => { m.close(); openAdoSettings(); });
+  $('#sWorkiq', el).addEventListener('click', () => { m.close(); openWorkiqSettings(s.providerId); });
   $('#providerCards', el).addEventListener('click', (e) => { const b = e.target.closest('[data-provider]'); if (!b) return; s.providerId = b.dataset.provider; $('#providerCards', el).innerHTML = providerCards(s.providerId); });
   $('#refreshEngines', el).addEventListener('click', async () => { $('#providerCards', el).style.opacity = .5; const st = await api('/api/status?refresh=1'); S.providers = st.providers; $('#providerCards', el).innerHTML = providerCards(s.providerId); $('#providerCards', el).style.opacity = 1; renderUser(); });
   $('#sFolderBtn', el).addEventListener('click', async () => { const p = await pickFolder(s.workspace); if (p) { s.workspace = p; $('#sFolder', el).value = p; } });
   $('#sReset', el).addEventListener('click', () => modal({ title: 'Restore defaults?', sub: 'Built-in agents and prompts go back to how they shipped. Ones you created are removed.', actions: [{ label: 'Cancel' }, { label: 'Restore', danger: true, run: async () => { await api('/api/reset', { method: 'POST' }).catch(() => {}); toast('Defaults restored'); location.reload(); } }] }));
   if (focus === 'engine') setTimeout(() => $('#engineField', el).scrollIntoView({ block: 'center' }), 50);
+}
+
+// ---------------------------------------------------------------- SharePoint & Microsoft 365 (WorkIQ)
+function openWorkiqSettings(providerId = S.settings.providerId) {
+  const cur = S.settings.workiq || {};
+  const m = modal({
+    title: 'SharePoint & Microsoft 365', sub: 'Let Lumen look up documents on SharePoint and OneDrive, and related email, meetings and Teams messages. Lumen only reads; it sees what you can already see.',
+    body: `
+      <div class="field"><button type="button" class="option-card skill-toggle ${cur.enabled ? 'active' : ''}" id="wqOn"><span class="oc-icon">🟦</span><span class="oc-text"><span class="oc-title">Allow Lumen to search Microsoft 365</span><span class="oc-desc">Available to every agent in new and existing chats. Requires file-read access. Not used in scheduled prompts.</span></span><span class="switch"></span></button></div>
+      <div class="field"><label for="wqEngine">AI engine</label><select class="input" id="wqEngine">${S.providers.filter((p) => ['copilot-cli', 'claude-cli'].includes(p.id)).map((p) => `<option value="${esc(p.id)}" ${p.id === providerId ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select><div class="help">Use the same AI engine as your chat. Copilot's managed connector and Claude's separate connection have different consent requirements.</div></div>
+      <div class="row"><button class="btn soft" id="wqConnect" disabled>Sign in / check connection</button><button class="btn ghost" id="wqRefresh">Refresh status</button></div>
+      <div class="field" id="wqStatus" role="status" aria-live="polite">Loading connection status…</div>
+      <div class="help" id="wqConnectionHelp"></div>
+      <div class="help">Lumen's status comes from your most recent chat, not a live check. After signing in, send a Microsoft 365 question, then refresh this status. A connection does not prove access to a particular document.</div>`,
+    actions: [{ label: 'Cancel' }, { label: 'Save', primary: true, run: async (el) => {
+      S.settings.workiq = await api('/api/connections/workiq', { method: 'PUT', body: { enabled: $('#wqOn', el).classList.contains('active') } });
+      toast(S.settings.workiq.enabled ? 'Microsoft 365 search is on' : 'Microsoft 365 search is off'); rerenderCurrent();
+    } }],
+  });
+  const el = m.el, status = $('#wqStatus', el), connect = $('#wqConnect', el), engine = $('#wqEngine', el);
+  const endpoint = () => `/api/connections/workiq?providerId=${encodeURIComponent(engine.value)}`;
+  const labels = { 'not-checked': 'Not checked in Lumen', 'sign-in-opened': 'Connection window opened — access not confirmed',
+    connected: 'Engine connected to Microsoft 365', pending: 'Engine is checking the connection', 'needs-auth': 'Sign-in needed',
+    failed: 'Connection failed', disabled: 'Connection disabled in the engine', stopped: 'Connection stopped', not_configured: 'Connection not loaded by the engine' };
+  const show = (r) => {
+    connect.disabled = !r.canSignIn;
+    const managed = r.integration === 'connector';
+    connect.textContent = managed ? 'Open Work IQ connector' : 'Sign in / check connection';
+    $('#wqConnectionHelp', el).textContent = managed
+      ? 'Uses GitHub Copilot’s existing Work IQ connector (workiqmcp) through GitHub, with your engine’s GitHub sign-in. The button opens the engine dashboard; choose the Connectors view, then Work IQ. If already connected, no separate Work IQ CLI sign-in is needed. Do not select m365, WorkIQ user servers or the workiq plugin.'
+      : 'Claude uses the separate m365 connection. This is the Work IQ CLI application, not GitHub’s managed Work IQ connector, and it requires its own consent. If administrator approval is required, stop and request approval. Credentials stay with the engine, not Lumen.';
+    const c = r.connection;
+    status.innerHTML = `<b>${esc(labels[c.status] || 'Connection status unknown')}</b>${c.checkedAt ? `<div class="help">Last reported: ${esc(new Date(c.checkedAt).toLocaleString())}</div>` : ''}${Number.isInteger(c.toolCount) ? `<div class="help">Tools discovered: ${c.toolCount}</div>` : ''}${c.message ? `<div class="help">${esc(c.message)}</div>` : ''}${!r.canSignIn ? '<div class="help">Choose an installed Claude or GitHub Copilot engine. Opening a sign-in window is supported on Windows only.</div>' : ''}`;
+  };
+  let generation = 0;
+  const refresh = async () => {
+    const current = ++generation;
+    connect.disabled = true;
+    try { const r = await api(endpoint()); if (current === generation) show(r); }
+    catch (e) { if (current === generation) status.textContent = e.message; }
+  };
+  $('#wqOn', el).addEventListener('click', (e) => e.currentTarget.classList.toggle('active'));
+  engine.addEventListener('change', refresh);
+  $('#wqRefresh', el).addEventListener('click', refresh);
+  connect.addEventListener('click', async () => {
+    const current = ++generation;
+    const selected = engine.value;
+    connect.disabled = true; engine.disabled = true; $('#wqRefresh', el).disabled = true;
+    try {
+      const r = await api(`/api/connections/workiq/connect?providerId=${encodeURIComponent(selected)}`, { method: 'POST' });
+      if (current === generation) show(r);
+    } catch (e) { if (current === generation) { status.textContent = e.message; connect.disabled = false; } }
+    finally { engine.disabled = false; $('#wqRefresh', el).disabled = false; }
+  });
+  refresh();
 }
 
 // ---------------------------------------------------------------- Azure DevOps connection (plan 08)

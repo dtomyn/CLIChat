@@ -6,6 +6,7 @@ const { spawn, execFile } = require('child_process');
 const path = require('path');
 const os = require('os');
 const cli = require('../lib/cli-bin');
+const workiq = require('../lib/workiq');
 const { officeLabel, adoLabel, savedFile, pendingChangeSet } = require('../lib/tool-labels');
 
 const ACCESS_TOOLS = {
@@ -60,6 +61,11 @@ module.exports = {
   ],
   supportsResume: true,
 
+  async connectWorkiq({ cwd }) {
+    const config = workiq.mcpServers({ m365: workiq.server() }, [], 'claude-cli');
+    await workiq.openWindow(BIN, ['--mcp-config', JSON.stringify({ mcpServers: config }), '--strict-mcp-config', '--tools', '', '/mcp'], cwd);
+  },
+
   detect() {
     return new Promise((resolve) => {
       const c = cli.command(BIN, ['--version']);
@@ -83,9 +89,9 @@ module.exports = {
       if (sessionId) args.push('--resume', sessionId);
       if (systemPrompt) args.push('--append-system-prompt', systemPrompt);
       // Skills' tools arrive as MCP servers; only Lumen's servers load, and only the listed tools are allowed.
-      const mcpAllowed = (extra?.allow || []).map((t) => `mcp__${t.server}__${t.tool}`);
+      const mcpAllowed = (extra?.allow || []).map((t) => t.tool === '*' ? `mcp__${t.server}` : `mcp__${t.server}__${t.tool}`); // '*' = every tool the server offers
       if (extra?.servers) {
-        const mcpServers = Object.fromEntries(Object.entries(extra.servers).map(([k, v]) => [k, { type: 'stdio', command: v.command, args: v.args, env: v.env || {} }]));
+        const mcpServers = workiq.mcpServers(extra.servers, extra.allow || [], 'claude-cli');
         args.push('--mcp-config', JSON.stringify({ mcpServers }), '--strict-mcp-config');
       }
       if (access === 'full') {
@@ -97,6 +103,8 @@ module.exports = {
         if (access === 'edit') args.push('--permission-mode', 'acceptEdits');
       }
 
+      let workiqStatus;
+      if (extra?.servers?.m365) workiq.emitStatus(emit, 'pending');
       const child = launch(args, { cwd, env: { ...process.env } });
       child.stdin.end(prompt); // prompt via stdin: no quoting/length issues
 
@@ -112,7 +120,12 @@ module.exports = {
       let sentSession = false;
       const handle = (msg) => {
         if (msg.session_id && !sentSession) { sentSession = true; emit({ type: 'session', id: msg.session_id }); }
-        if (msg.type === 'stream_event' && !msg.parent_tool_use_id) {
+        if (msg.type === 'system' && msg.subtype === 'init' && extra?.servers?.m365) {
+          const m365 = (msg.mcp_servers || []).find((s) => s.name === 'm365');
+          workiqStatus = m365?.status || 'not_configured';
+          const count = (msg.tools || []).filter((t) => typeof t === 'string' && t.startsWith('mcp__m365__')).length;
+          workiq.emitStatus(emit, workiqStatus, m365?.error, count);
+        } else if (msg.type === 'stream_event' && !msg.parent_tool_use_id) {
           const ev = msg.event || {};
           if (ev.type === 'content_block_delta' && ev.delta?.type === 'text_delta') {
             sawText = true;
@@ -162,6 +175,8 @@ module.exports = {
       child.on('error', (err) => { emit({ type: 'error', message: `Could not start Claude: ${err.message}` }); });
       child.on('close', (code) => {
         if (signal) signal.removeEventListener('abort', onAbort);
+        if (extra?.servers?.m365 && (!workiqStatus || workiqStatus === 'pending')) workiq.emitStatus(emit, 'not-checked',
+          workiqStatus ? 'The AI engine ended before the Microsoft 365 connection check finished.' : 'The AI engine did not report a Microsoft 365 connection status.');
         if (!finished && !signal?.aborted && code !== 0) {
           const hint = /resume|session/i.test(stderr) ? ' (the previous conversation could not be resumed)' : '';
           emit({ type: 'error', message: (stderr.trim().split('\n').slice(-3).join(' ') || `Claude exited with code ${code}`) + hint });

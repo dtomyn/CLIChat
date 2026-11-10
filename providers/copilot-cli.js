@@ -14,6 +14,7 @@ const crypto = require('crypto');
 const path = require('path');
 const os = require('os');
 const cli = require('../lib/cli-bin');
+const workiq = require('../lib/workiq');
 const { officeLabel, adoLabel, savedFile, pendingChangeSet, base } = require('../lib/tool-labels');
 
 const LOCAL = process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local');
@@ -25,7 +26,8 @@ const run = (args, opts, cb) => { const c = cli.command(BIN, args); return execF
 
 // Flags every run shares: machine-readable output, no prompts, no self-update, no GitHub MCP server
 // (Lumen users work with documents, not repositories).
-const COMMON = ['--output-format', 'json', '--no-color', '--no-auto-update', '--no-ask-user', '--disable-builtin-mcps'];
+const STANDALONE_WORKIQ_FLAGS = ['--disable-mcp-server=m365', '--disable-mcp-server=WorkIQ', '--disable-mcp-server=workiq'];
+const COMMON = ['--output-format', 'json', '--no-color', '--no-auto-update', '--no-ask-user', '--disable-builtin-mcps', ...STANDALONE_WORKIQ_FLAGS];
 
 // With --no-auto-update the launcher may run an older bundled CLI than `copilot --version` reports.
 // Newer CLIs set or resume a session with --session-id; older ones (e.g. 1.0.10) only have --resume=<id>,
@@ -42,6 +44,16 @@ function runHelp() {
     });
   }
   return helpText;
+}
+
+function connectorArgs(help, servers = {}, allow = []) {
+  if (!/--mcp-github-auth\b/.test(help)) {
+    throw new Error('Update GitHub Copilot to use the Work IQ connector in Lumen. This engine does not support signed-in GitHub authentication for the connection.');
+  }
+  const mcpServers = workiq.mcpServers(servers, allow, 'copilot-cli');
+  mcpServers[workiq.CONNECTOR_NAME] = workiq.connector();
+  return ['--additional-mcp-config', JSON.stringify({ mcpServers }),
+    '--mcp-github-auth', `${workiq.CONNECTOR_NAME}=${new URL(workiq.CONNECTOR_URL).origin}`];
 }
 
 // Plain-language access levels → Copilot permission flags. Denials win over --allow-all-tools.
@@ -79,6 +91,9 @@ function friendlyTool(name, input = {}, d = {}) {
 }
 
 function friendlyError(msg) {
+  if (/\bworkiq\b|\bm365\b/i.test(msg)) {
+    return `Microsoft 365: ${workiq.diagnostic(msg)} Open Settings > Connections > SharePoint & Microsoft 365 to check sign-in and connection details.`;
+  }
   if (/no authentication|not (logged|signed) in|\/login|unauthori[sz]ed|401/i.test(msg)) {
     return 'GitHub Copilot isn\'t signed in on this computer. Open a terminal, run `copilot` and type `/login` (or run `gh auth login`), then try again.';
   }
@@ -118,6 +133,12 @@ module.exports = {
   supportsResume: true,
   sessionArgs, // exported for tests
 
+  async connectWorkiq({ cwd }) {
+    const config = connectorArgs(await runHelp());
+    await workiq.openWindow(BIN, ['--no-auto-update', '--disable-builtin-mcps', ...STANDALONE_WORKIQ_FLAGS, ...config, '--available-tools=',
+      '-i', '/mcp'], cwd);
+  },
+
   detect() {
     return new Promise((resolve) => {
       run(['--no-auto-update', '--version'], { timeout: 15000 }, (err, stdout) => {
@@ -135,21 +156,34 @@ module.exports = {
       const session = sessionId || crypto.randomUUID();
       emit({ type: 'session', id: session });
 
+      const managedWorkiq = extra?.workiq === 'managed';
+      const connectionPolicy = managedWorkiq
+        ? `For Microsoft 365, use only the existing GitHub-managed Work IQ connector, supplied as ${workiq.CONNECTOR_NAME} at ${workiq.CONNECTOR_URL}. Discover its advertised tools. Do not use standalone m365, WorkIQ user servers or the workiq plugin, add a connection, or switch identities after consent/access denial.`
+        : 'Microsoft 365 access is not enabled for this request. Do not use Work IQ connectors, standalone WorkIQ servers or plugins, even if they appear in the engine inventory. For Microsoft 365 requests explain that the user needs to turn on Settings > Connections > SharePoint & Microsoft 365, allow file-read access, and use an attended chat. Its skill is included automatically when the connection is on; do not ask the user to add it separately.';
+      const instructions = [systemPrompt, connectionPolicy].filter(Boolean).join('\n\n');
       let full = prompt;
-      if (systemPrompt && sentInstructions.get(session) !== systemPrompt) {
-        full = `Follow these instructions for the whole conversation:\n<instructions>\n${systemPrompt}\n</instructions>\n\n${prompt}`;
+      if (sentInstructions.get(session) !== instructions) {
+        full = `Follow these instructions for the whole conversation:\n<instructions>\n${instructions}\n</instructions>\n\n${prompt}`;
       }
 
       const args = [...COMMON, ...sessionArgs(help, session), ...(ACCESS_FLAGS[access] || ACCESS_FLAGS.read)];
       if (model && model !== 'default' && module.exports.models.some((m) => m.id === model)) args.push('--model', model);
-      // Skills' tools: hand Copilot the same MCP server Claude gets, limited to the allowed tools.
-      if (extra?.servers) {
-        const mcpServers = Object.fromEntries(Object.entries(extra.servers).map(([k, v]) => [k, {
-          type: 'local', command: v.command, args: v.args, env: v.env || {},
-          tools: (extra.allow || []).filter((t) => t.server === k).map((t) => t.tool),
-        }]));
-        args.push('--additional-mcp-config', JSON.stringify({ mcpServers }));
+      if (managedWorkiq) {
+        try { args.push(...connectorArgs(help, extra.servers, extra.allow)); }
+        catch (error) {
+          workiq.emitStatus(emit, 'failed', error.message);
+          emit({ type: 'error', message: error.message });
+          return resolve();
+        }
+      } else {
+        args.push(`--disable-mcp-server=${workiq.CONNECTOR_NAME}`);
+        const mcpServers = workiq.mcpServers(extra?.servers || {}, extra?.allow || [], 'copilot-cli');
+        if (Object.keys(mcpServers).length) args.push('--additional-mcp-config', JSON.stringify({ mcpServers }));
       }
+      let workiqStatus;
+      const managedName = workiq.CONNECTOR_NAME;
+      const discovery = new Map();
+      if (managedWorkiq) workiq.emitStatus(emit, 'pending');
 
       const child = launch(args, { cwd, env: { ...process.env, NO_COLOR: '1' } });
       child.stdin.on('error', () => {});
@@ -218,8 +252,26 @@ module.exports = {
               emit({ type: 'tool', id: 'ado-mcp', icon: 'board', label: 'Couldn\'t connect to Azure DevOps' });
               emit({ type: 'tool_done', id: 'ado-mcp', ok: false });
             }
+            if (managedWorkiq) {
+              const connector = (d.servers || []).find((s) => s.name === managedName);
+              workiqStatus = connector?.status || 'not-checked';
+              workiq.emitStatus(emit, workiqStatus, connector?.error || (!connector
+                ? 'The engine did not report the configured Work IQ connector. Check Work IQ in the Connectors view; similarly named user servers or plugins are not this connection.' : undefined), discovery.get(managedName));
+            }
             break;
           }
+          case 'session.mcp_server_status_changed':
+            if (managedWorkiq && d.serverName === managedName) {
+              workiqStatus = d.status;
+              workiq.emitStatus(emit, d.status, d.error);
+            }
+            break;
+          case 'session.mcp_server_tools_loaded':
+            if (managedWorkiq) {
+              discovery.set(d.serverName, d.toolCount);
+              if (d.serverName === managedName) workiq.emitStatus(emit, undefined, undefined, d.toolCount);
+            }
+            break;
           case 'session.error':
             failed = true;
             emit({ type: 'error', message: friendlyError(d.message || 'Copilot reported an error.') });
@@ -233,8 +285,10 @@ module.exports = {
       child.on('error', (err) => { failed = true; emit({ type: 'error', message: `Could not start Copilot: ${err.message}` }); });
       child.on('close', (code) => {
         if (signal) signal.removeEventListener('abort', onAbort);
+        if (managedWorkiq && (!workiqStatus || workiqStatus === 'pending')) workiq.emitStatus(emit, 'not-checked',
+          workiqStatus ? 'The AI engine ended before the Microsoft 365 connection check finished.' : 'The AI engine did not report a Microsoft 365 connection status.');
         if (!sawJson && plain.trim() && code === 0) text(plain.trim()); // very old CLIs ignore --output-format
-        if (code === 0 && sawText && systemPrompt) sentInstructions.set(session, systemPrompt);
+        if (code === 0 && sawText) sentInstructions.set(session, instructions);
         if (signal?.aborted || failed) return resolve();
         if (code !== 0) {
           const msg = (stderr.trim() || plain.trim()).split('\n').slice(-4).join(' ') || `Copilot exited with code ${code}`;
@@ -250,7 +304,7 @@ module.exports = {
   /** One-shot, tool-less completion used for small helper tasks (titles, drafting assistants). */
   complete({ prompt, cwd }) {
     return new Promise((resolve) => {
-      const child = launch([...COMMON, '--available-tools=', '--deny-tool=shell', '--deny-tool=write'], { cwd: cwd || os.tmpdir(), env: { ...process.env, NO_COLOR: '1' } });
+      const child = launch([...COMMON, `--disable-mcp-server=${workiq.CONNECTOR_NAME}`, '--available-tools=', '--deny-tool=shell', '--deny-tool=write'], { cwd: cwd || os.tmpdir(), env: { ...process.env, NO_COLOR: '1' } });
       let out = '';
       child.stdout.on('data', lineReader((ev) => {
         if (ev.type === 'assistant.message' && !ev.agentId && ev.data?.content) out = ev.data.content;
