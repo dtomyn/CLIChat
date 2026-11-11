@@ -52,3 +52,20 @@ test('Agents page sort order is A to Z by default, can be changed and is remembe
   await expect(page.locator('#agentSort')).toHaveValue('original', { timeout: 15_000 });
   await request.put('/api/settings', { data: { agentSort: null } });
 });
+
+// The "Who should help?" picker in the message box has a search box, so a long list of agents stays usable.
+test('agent picker in the message box can be searched and picked with the keyboard', async ({ page }) => {
+  await page.goto('/');
+  await expect(async () => {
+    await page.locator('#assistantPill').click();
+    await expect(page.locator('.menu-filter')).toBeFocused({ timeout: 1500 });
+  }).toPass({ timeout: 15_000 });
+  const items = page.locator('.menu-search .menu-item');
+  expect(await items.count()).toBeGreaterThan(10);
+  await page.keyboard.type('budget');
+  await expect(items.filter({ hasText: 'Budget Controller' })).toHaveCount(1);
+  await expect(items.filter({ hasText: 'Create an agent' })).toHaveCount(1);
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.menu')).toHaveCount(0);
+  await expect(page.locator('#assistantPill')).toContainText('Budget Controller');
+});

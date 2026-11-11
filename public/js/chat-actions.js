@@ -11,6 +11,7 @@ import { renderHome } from './home.js';
 import { hasMdSlides, hasMdTable, msgHTML, renderChat, rerenderMsg } from './chat.js';
 import { sendMessage } from './streaming.js';
 import { openRecipeBuilder } from './prompts.js';
+import { openPromptEditor } from './prompt-lab.js';
 
 // --- save a reply as Word / Excel / PowerPoint / Markdown
 function saveReplyMenu(c, mid, anchor) {
@@ -61,7 +62,18 @@ async function rateReply(c, mid, rating) {
   });
 }
 
-// --- turn a prompt that worked into a quick start
+// --- turn a prompt that worked into a quick prompt (attached files become [blanks]), or a guided task
+function saveAsPrompt(c, mid) {
+  const m = c.messages.find((x) => x.id === mid); if (!m) return;
+  let text = m.content || '';
+  (m.attachments || []).forEach((f, i) => {
+    const name = f.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const before = text;
+    text = text.replace(new RegExp(`["“]?${name}["”]?`, 'g'), `[file ${i + 1}]`);
+    if (text === before) text += ` [file ${i + 1}]`;
+  });
+  openPromptEditor(null, { title: c.title && c.title !== 'New chat' ? c.title : '', text, agentId: c.assistantId || 'lumen' }, () => {}, { guided: () => saveAsRecipe(c, mid) });
+}
 function saveAsRecipe(c, mid) {
   const m = c.messages.find((x) => x.id === mid); if (!m) return;
   const a = assistantById(c.assistantId);
@@ -139,4 +151,19 @@ async function branchAndSend(c, idx, text, attachments) {
 
 function rerenderCurrent() { if (S.view === 'chat') renderChat(); else if (S.view === 'home') renderHome(); }
 
-export { branchFrom, rateReply, rerenderCurrent, rewind, saveAsRecipe, saveEdit, saveReplyMenu, setEditing };
+// Switch the agent of an open chat. The server forgets the engine's session so the next turn replays the history.
+async function switchAgent(conv, a) {
+  if (conv.assistantId === a.id) return true;
+  if (isLive(conv)) { toast('Wait for the current reply to finish first.', 'alert'); return false; }
+  if (conv.id) {
+    try { await api(`/api/conversations/${conv.id}`, { method: 'PATCH', body: { assistantId: a.id } }); }
+    catch (e) { toast(e.message, 'alert'); return false; }
+  }
+  conv.assistantId = a.id; conv.sessions = {};
+  const listed = S.convs.find((x) => x.id === conv.id); if (listed) listed.assistantId = a.id;
+  renderChat();
+  toast(`${a.name} will answer from now on. It can see the conversation so far.`, 'check');
+  return true;
+}
+
+export { saveAsPrompt, switchAgent, branchFrom, rateReply, rerenderCurrent, rewind, saveAsRecipe, saveEdit, saveReplyMenu, setEditing };

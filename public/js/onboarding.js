@@ -22,7 +22,7 @@ function openOnboarding() {
       <button class="btn soft sm" id="obFolderBtn">${icon('folder')}Choose a different folder</button>
       <div class="feature-list" style="margin-top:22px">
         <div class="feature"><span class="fi">🤝</span><div><b>Agents</b><span>Specialists for requirements, status reports, writing and data.</span></div></div>
-        <div class="feature"><span class="fi">⚡</span><div><b>Prompt gallery</b><span>Answer a few questions, get a finished deliverable.</span></div></div>
+        <div class="feature"><span class="fi">⚡</span><div><b>Prompts &amp; guided tasks</b><span>Start from a ready-made prompt, or answer a few questions for a finished deliverable.</span></div></div>
         <div class="feature"><span class="fi">🛡️</span><div><b>Not Microsoft 365 Copilot</b><span>Lumen runs on ${esc(S.providers.find((p) => p.id === draft.providerId)?.name || 'your AI engine')}, so Copilot's data protections don't apply. Follow your organisation's rules on what you share.</span></div></div>
       </div></div>`,
   ];

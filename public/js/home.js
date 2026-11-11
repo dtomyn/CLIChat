@@ -11,13 +11,13 @@ import { openDrawer, pickFolder } from './folder.js';
 import { openAssistantBuilder } from './agents.js';
 import { openRecipeRunner } from './prompts.js';
 import { celebrate } from './onboarding.js';
+import { bindPromptTabs, promptTabsHTML } from './prompt-lab.js';
 
 function greetingWord() { const h = new Date().getHours(); return h < 5 ? 'Burning the midnight oil' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; }
 
 function renderHome() {
   S.view = 'home'; setNav('home');
   const a = assistantById(S.draft.assistantId || 'lumen');
-  const recipes = S.recipes.slice(0, 6);
   $('#view').innerHTML = `
     <div class="home">
       <div class="home-inner">
@@ -28,18 +28,9 @@ function renderHome() {
         <p class="home-sub">${a.id === 'lumen' ? 'How can I help today?' : esc(a.tagline || '')}</p>
         ${composerHTML({ home: true })}
 
-        ${a.starters?.length ? `<div class="prompt-chips" aria-label="Suggested prompts">${a.starters.map((s) => `<button class="prompt-chip" data-starter="${esc(s)}" title="${esc(s)}">${icon('spark')}<span>${esc(s)}</span></button>`).join('')}</div>` : ''}
+        ${promptTabsHTML(a.id)}
 
         ${demoBanner()}
-
-        <div class="section-label"><span>Agents</span><a data-go="assistants">See all agents</a></div>
-        <div class="assistant-row">
-          ${S.assistants.map((x) => `<button class="a-chip ${x.id === (S.draft.assistantId || 'lumen') ? 'selected' : ''}" data-color="${esc(x.color)}" data-pick-assistant="${esc(x.id)}" title="${esc(x.tagline || '')}"><span class="a-badge">${esc(x.emoji)}</span>${esc(x.name)}</button>`).join('')}
-          <button class="a-chip" data-new-assistant><span class="a-badge" style="background:var(--panel-2)">${icon('plus')}</span>Create an agent</button>
-        </div>
-
-        <div class="section-label"><span>From the prompt gallery</span><a data-go="recipes">See all prompts</a></div>
-        <div class="recipe-grid">${recipes.map(recipeCard).join('')}</div>
 
         <div class="section-label"><span>Guided delivery ${lumenOnlyBadge()}</span><a data-go="runs">View workflows</a></div>
         ${S.pipelines.slice(0, 3).map((p) => `<button class="starter" data-go="runs"><span>${esc(p.emoji || '🔄')} ${esc(p.name)} · ${p.stages.length} guided stages</span>${icon('right')}</button>`).join('') || '<p>No workflows yet.</p>'}
@@ -47,6 +38,7 @@ function renderHome() {
     </div>`;
   const root = $('#view');
   bindComposer(root);
+  bindPromptTabs(root, a.id);
   root.firstElementChild.addEventListener('click', homeClicks);
   setTimeout(() => { if (!$('#modalRoot').children.length) $('#input')?.focus(); }, 50);
 }
@@ -164,10 +156,11 @@ function homeClicks(e) {
   else if (t.dataset.go) go(t.dataset.go);
 }
 
-function recipeCard(r) {
+function recipeCard(r, showCategory = false) {
   const a = assistantById(r.assistantId);
   return `<button class="recipe-card" data-recipe="${esc(r.id)}" data-color="${esc(a.color)}">
     <span class="recipe-emoji">${esc(r.emoji || '✨')}</span>
+    ${showCategory ? `<span class="recipe-cat">${esc(r.category || 'Other')}</span>` : ''}
     <span class="recipe-name">${esc(r.name)}</span>
     <span class="recipe-desc">${esc(r.description || '')}</span>
     <span class="recipe-meta"><span class="a-badge sm" data-color="${esc(a.color)}" style="width:18px;height:18px;font-size:10px">${esc(a.emoji)}</span>${esc(a.name)}${r.access === 'edit' ? ' · <span class="badge accent">Saves a file</span>' : ''}${needsLocalTools(r) ? ` ${lumenOnlyBadge('This prompt relies on Lumen’s local document tools (saving files, or reading Microsoft Project plans). In Microsoft 365 Copilot you’d do those steps by hand.')}` : ''}</span>

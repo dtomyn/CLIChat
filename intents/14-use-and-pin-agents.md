@@ -9,8 +9,10 @@ keep the ones I use most in the sidebar, so that every chat starts with the righ
   **Customize** and **⋯** (**Customize**, **Pin to sidebar** / **Unpin from sidebar**, **Duplicate**, **Export to
   Microsoft 365 Copilot**, **Use in VS Code**, **Delete**), with a **Search agents** box and a **Sort by** list above
   the cards.
-- Home screen: the **Agents** row of chips (**See all agents**, **Create an agent**) and the agent pill in the composer
-  (**Who should help?** menu).
+- Home screen: the agent pill in the composer (no agent list on the home screen; use the pill or the **Agents** page)
+  (**Who should help?** menu). The menu opens with a focused **Search agents** box (filters by name and tagline;
+  arrow keys and Enter pick), lists Lumen and the sidebar's pinned agents first, then **All agents** A–Z, and scrolls
+  inside a fixed height. **Create an agent** stays visible while filtering (`e2e/agent-search.spec.js`).
 - Sidebar **Agents** list (`#agentList`).
 
 ## Inputs & controls
@@ -64,14 +66,16 @@ keep the ones I use most in the sidebar, so that every chat starts with the righ
 - Each domain's agents exist with their skills: `test/change.test.js` › change and bilingual agents, prompts and skills
   are wired up (and the matching "… are wired up" tests in `test/release.test.js`, `test/governance.test.js`,
   `test/data.test.js`, `test/openapi.test.js`, `test/controls.test.js`, `test/tests.test.js`, `test/drift.test.js`).
+- In an open chat, the agent pill in the message box switches the agent. The new agent answers from the next
+  message and sees the conversation so far (`test/switch-agent.test.js`).
   No automated test covers pinning. `e2e/agent-search.spec.js` covers the search box and the sort list.
 
 ## Limits
-- One agent per chat; switching means starting a new chat.
+- Workflow stage chats keep the agent the workflow chose, and the agent can't be switched while a reply is running.
 - Pins are global (one `settings.json`), not per notebook.
 
 ## Source
 `public/js/agents.js`, `public/js/sidebar.js`, `public/js/home.js`, `public/js/composer.js` (`renderAssistantsPage`, `agentSearchText`, `filterAgentCards`, `AGENT_SORTS`, `sortedAgents`, `pinnedAgentIds`, `togglePinAgent`, `renderAgentList`, `renderHome`,
-`homeClicks`, `skillChips`, `#assistantPill` menu in `bindComposer`), `public/index.html` (`#agentList`),
+`homeClicks`, `skillChips`, `#assistantPill` menu and `pickAgent` in `bindComposer`), `lib/server/routes/chat.js` (`PATCH /api/conversations/:id` `assistantId`), `public/index.html` (`#agentList`),
 `lib/server/routes/library.js`, `lib/server/chat.js` (`/api/assistants` routes, `buildSystemPrompt`, `runTurn`), `lib/store.js` (`collection`: seeding,
 `removed.json`, `reset`), `defaults/assistants.json`.

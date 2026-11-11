@@ -115,7 +115,7 @@ function msgHTML(m, c) {
     }
     return `<div class="msg user" data-mid="${m.id}">${attach}
       <div class="bubble">${esc(m.content)}</div>
-      <div class="msg-actions"><button data-edit-msg title="Edit and resend">${icon('pen')}Edit</button><button data-save-recipe title="Save this request to your prompt gallery">${icon('wand')}Save prompt</button></div>
+      <div class="msg-actions"><button data-edit-msg title="Edit and resend">${icon('pen')}Edit</button><button data-save-recipe title="Save this request to Your saved prompts">${icon('wand')}Save prompt</button></div>
     </div>`;
   }
   const a = assistantById(c.assistantId);

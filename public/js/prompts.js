@@ -1,39 +1,44 @@
-// Lumen front-end: Prompt gallery (recipes).
+// Lumen front-end: Guided tasks (recipes): the gallery page, the question form (runner), the builder and schedules.
+// Quick text prompts and the Prompt Lab live in prompt-lab.js.
 import { icon } from './icons.js';
 import { $, $$, api, esc, toast } from './utils.js';
-import { ACCESS, S, assistantById } from './state.js';
+import { ACCESS, S, assistantById, isLive } from './state.js';
 import { go, setNav } from './router.js';
 import { modal } from './modal.js';
 import { currentWorkspace } from './composer.js';
 import { recipeCard } from './home.js';
-import { rerenderCurrent } from './chat-actions.js';
+import { rerenderCurrent, switchAgent } from './chat-actions.js';
 import { sendMessage } from './streaming.js';
+import { quickFromRecipe, usePrompt } from './prompt-lab.js';
 
 function renderRecipesPage() {
   S.view = 'recipes'; setNav('recipes');
-  const cats = ['All', ...new Set(S.recipes.map((r) => r.category || 'Other').filter((c) => c !== 'Scheduled')), 'Scheduled'];
+  const catOf = (r) => r.category || 'Other';
+  const cats = ['All', ...[...new Set(S.recipes.map(catOf).filter((c) => c !== 'Scheduled'))].sort((a, b) => a.localeCompare(b)), 'Scheduled'];
   if (!cats.includes(S.recipeTab)) S.recipeTab = 'All';
-  const list = S.recipes.filter((r) => S.recipeTab === 'All' || (r.category || 'Other') === S.recipeTab);
+  const list = S.recipes.filter((r) => S.recipeTab === 'All' || catOf(r) === S.recipeTab)
+    .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   $('#view').innerHTML = `
     <div class="page"><div class="page-inner">
       <div class="page-head">
-        <div><h1>Prompt gallery</h1><p>Saved prompts that ask you a few simple questions, then hand the work to the right agent. Save your own from any chat with <b>Save prompt</b>, just like in Microsoft 365 Copilot.</p></div>
-        <div class="row" style="flex:0 0 auto;gap:8px"><button class="btn soft" data-export-prompts title="Save every prompt as plain text you can use in Microsoft 365 Copilot">${icon('external')}Export to Copilot</button><button class="btn grad" data-new-recipe>${icon('plus')}New prompt</button></div>
+        <div><h1>Guided tasks</h1><p>Answer a few simple questions, choose your files, and the right agent produces a finished deliverable. For a quick prompt you can change yourself, see <a data-go-prompts>Prompts</a>.</p></div>
+        <div class="row" style="flex:0 0 auto;gap:8px"><button class="btn soft" data-export-prompts title="Save every prompt as plain text you can use in Microsoft 365 Copilot">${icon('external')}Export to Copilot</button><button class="btn grad" data-new-recipe>${icon('plus')}New guided task</button></div>
       </div>
-      <div class="tabs">${cats.map((c) => `<button class="tab ${c === S.recipeTab ? 'active' : ''}" data-tab="${esc(c)}">${esc(c === 'Scheduled' ? 'Scheduled prompts' : c)}</button>`).join('')}</div>
+      <div class="tabs">${cats.map((c) => `<button class="tab ${c === S.recipeTab ? 'active' : ''}" data-tab="${esc(c)}">${esc(c === 'Scheduled' ? 'Scheduled' : c)}</button>`).join('')}</div>
       ${S.recipeTab === 'Scheduled' ? `<div class="help schedule-notice">Scheduled prompts run only while Lumen is running. Missed runs happen once when Lumen starts again. Monthly dates that don't exist in a month are skipped.</div>
       <div class="schedule-list">${S.schedules.length ? S.schedules.map((s) => {
         const r = S.recipes.find((x) => x.id === s.recipeId);
         const result = s.running ? 'Running or waiting' : s.lastStatus === 'error' ? `Error: ${s.lastError || 'The check failed.'}` : s.lastStatus === 'late' ? 'Ran late' : s.lastStatus === 'ok' ? 'Ready' : 'Not run yet';
         return `<div class="schedule-card"><div><strong>${esc(r?.name || 'Deleted prompt')}</strong><div class="help">${!s.enabled ? 'Paused' : s.nextRunAt ? `Next run: ${esc(new Date(s.nextRunAt).toLocaleString())}` : 'Window finished'} · ${esc(result)}</div>${s.lastConversationId ? `<button class="schedule-link" data-schedule-chat="${esc(s.lastConversationId)}">Open last chat</button>` : ''}</div>
           <div class="schedule-actions"><button class="btn soft sm" data-schedule-toggle="${esc(s.id)}">${s.enabled ? 'Pause' : 'Resume'}</button><button class="btn soft sm" data-schedule-run="${esc(s.id)}" ${s.running ? 'disabled' : ''}>Run now</button><button class="btn soft sm" data-schedule-delete="${esc(s.id)}">Delete</button></div></div>`;
-      }).join('') : '<div class="conv-empty">No scheduled prompts yet. Open a prompt and choose Repeat…</div>'}</div>` : `<div class="recipe-grid" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr))">
-        ${list.map(recipeCard).join('')}
-        <button class="recipe-card new-card" data-new-recipe style="min-height:170px"><span class="plus" style="width:40px;height:40px">${icon('plus')}</span><b>Create a prompt</b></button>
+      }).join('') : '<div class="conv-empty">No scheduled tasks yet. Open a guided task and choose Repeat…</div>'}</div>` : `<div class="recipe-grid" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr))">
+        ${list.map((r) => recipeCard(r, true)).join('')}
+        <button class="recipe-card new-card" data-new-recipe style="min-height:170px"><span class="plus" style="width:40px;height:40px">${icon('plus')}</span><b>Create a guided task</b></button>
       </div>`}
     </div></div>`;
   $('#view').firstElementChild.addEventListener('click', async (e) => {
-    const t = e.target.closest('[data-tab],[data-recipe],[data-new-recipe],[data-schedule-toggle],[data-schedule-run],[data-schedule-delete],[data-schedule-chat],[data-export-prompts]'); if (!t) return;
+    const t = e.target.closest('[data-tab],[data-recipe],[data-new-recipe],[data-schedule-toggle],[data-schedule-run],[data-schedule-delete],[data-schedule-chat],[data-export-prompts],[data-go-prompts]'); if (!t) return;
+    if ('goPrompts' in t.dataset) return go('prompts');
     if ('exportPrompts' in t.dataset) exportPromptsToCopilot();
     else if (t.dataset.tab) { S.recipeTab = t.dataset.tab; renderRecipesPage(); }
     else if (t.dataset.recipe) openRecipeRunner(t.dataset.recipe);
@@ -50,9 +55,13 @@ function renderRecipesPage() {
   });
 }
 
-function openRecipeRunner(id) {
+function openRecipeRunner(id, { conv = null } = {}) {
   const r = S.recipes.find((x) => x.id === id); if (!r) return;
-  const a = assistantById(r.assistantId);
+  const a = assistantById(conv ? conv.assistantId : r.assistantId);
+  const built = assistantById(r.assistantId);
+  const ws = conv?.workspace || S.settings.workspace;
+  const order = ['chat', 'read', 'edit'];
+  const needsMore = conv && order.indexOf(r.access || 'chat') > order.indexOf(conv.access || S.settings.access);
   const files = {};
   const readValues = (el, filePaths = false) => {
     const vals = {};
@@ -64,7 +73,10 @@ function openRecipeRunner(id) {
   const m = modal({
     head: `<div class="modal-head"><span class="recipe-emoji" style="font-size:24px;width:48px;height:48px;border-radius:14px;margin:0">${esc(r.emoji)}</span><div><h2>${esc(r.name)}</h2><p>${esc(r.description || '')}</p></div><button class="icon-btn" data-x>${icon('x')}</button></div>`,
     body: `${(r.fields || []).map((f) => `<div class="field"><label>${esc(f.label)}</label>${fieldInput(f)}</div>`).join('')}
-      <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-top:4px" data-color="${esc(a.color)}"><span class="a-badge sm">${esc(a.emoji)}</span>${esc(a.name)} will take it from here${r.access === 'edit' ? ' and save the result to your project folder' : ''}.</div>`,
+      <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-top:4px" data-color="${esc(a.color)}"><span class="a-badge sm">${esc(a.emoji)}</span>${esc(a.name)} will take it from here${r.access === 'edit' ? ' and save the result to your project folder' : ''}.</div>
+      ${conv && built.id !== a.id ? `<div class="prompt-agent-hint">Built for ${esc(built.emoji)} ${esc(built.name)}. <button class="link" data-switch-agent>Switch to ${esc(built.name)}</button></div>` : ''}
+      <div class="prompt-agent-hint"><button class="link" data-just-prompt>Just give me the prompt</button> to change it yourself in the message box.</div>
+      ${needsMore ? `<div class="prompt-agent-hint">This prompt needs “${esc(ACCESS[r.access]?.label || r.access)}”. Starting it changes this chat to that.</div>` : ''}`,
     leftAction: { label: 'Edit', icon: 'edit', run: () => openRecipeBuilder(r) },
     actions: [{ label: 'Cancel' }, { label: 'Copy for Copilot', icon: 'copy', run: async (el) => {
       // Answers filled in so far go in; anything blank stays as a [placeholder]. Files become "/name", the way
@@ -76,14 +88,23 @@ function openRecipeRunner(id) {
       });
       try { await navigator.clipboard.writeText(text); toast('Copied. Paste it into Microsoft 365 Copilot and choose Save prompt'); } catch { toast("Couldn't copy the prompt", 'alert'); }
       return false;
-    } }, { label: 'Repeat…', run: (el) => {
+    } }, ...(conv ? [] : [{ label: 'Repeat…', run: (el) => {
       const values = readValues(el, true); if (!values) return false;
       openScheduleForm(r, values, () => m.close()); return false;
-    } }, { label: 'Start', icon: 'play', grad: true, run: (el) => {
+    } }]), { label: 'Start', icon: 'play', grad: true, run: async (el) => {
       const vals = readValues(el); if (!vals) return false;
       const text = r.template.replace(/\{\{(\w+)\}\}/g, (_, k) => vals[k] || '(not specified)');
       const attachments = Object.values(files).filter(Boolean);
-      const order = ['chat', 'read', 'edit'];
+      if (conv) {
+        if (S.current !== conv || S.view !== 'chat') { toast('Open the chat again to send this prompt.', 'alert'); return false; }
+        if (isLive(conv)) { toast('Wait for the current reply to finish first.', 'alert'); return false; }
+        if (needsMore) {
+          if (conv.id) { try { await api(`/api/conversations/${conv.id}`, { method: 'PATCH', body: { access: r.access } }); } catch (e) { toast(e.message, 'alert'); return false; } }
+          conv.access = r.access;
+        }
+        sendMessage({ text, attachments, recipeId: r.id });
+        return;
+      }
       const access = order[Math.max(order.indexOf(r.access || 'chat'), order.indexOf(S.settings.access), attachments.length ? 1 : 0)];
       S.current = null; S.view = 'home';
       sendMessage({ text, attachments, assistantId: r.assistantId, access, recipeId: r.id });
@@ -92,7 +113,7 @@ function openRecipeRunner(id) {
   // File fields: offer matching files from the project folder (best guess pre-selected), or upload one.
   const fileFields = (r.fields || []).filter((f) => f.type === 'file');
   if (fileFields.length) {
-    api(`/api/folder/files?workspace=${encodeURIComponent(S.settings.workspace)}&all=1`).then(({ files: found }) => {
+    api(`/api/folder/files?workspace=${encodeURIComponent(ws)}&all=1`).then(({ files: found }) => {
       for (const f of fileFields) {
         const sel = $(`[data-file-select="${f.key}"]`, m.el); if (!sel) continue;
         const exts = (f.accept || '').split(',').map((x) => x.trim().toLowerCase()).filter(Boolean);
@@ -111,6 +132,24 @@ function openRecipeRunner(id) {
       }
     }).catch(() => {});
   }
+  m.el.addEventListener('click', async (e) => {
+    if (e.target.closest('[data-just-prompt]')) {
+      // Answers so far go in; blank questions stay as [blanks]; chosen files are attached and named in the text.
+      const q = quickFromRecipe(r);
+      const text = r.template.replace(/\{\{(\w+)\}\}/g, (whole, k) => {
+        const f = (r.fields || []).find((x) => x.key === k);
+        const v = f?.type === 'file' ? (files[k]?.name ? `"${files[k].name}"` : '') : ($(`[data-field="${k}"]`, m.el)?.value || '').trim();
+        return v || quickFromRecipe({ ...r, template: whole }).text;
+      });
+      const attach = Object.values(files).filter(Boolean);
+      m.close();
+      for (const f of attach) if (!S.draft.attachments.some((x) => x.path === f.path)) S.draft.attachments.push(f);
+      usePrompt({ ...q, agentId: conv ? undefined : q.agentId, text }, conv);
+      return;
+    }
+    const b = e.target.closest('[data-switch-agent]'); if (!b) return;
+    if (await switchAgent(conv, built)) { b.parentElement.remove(); const who = $('.modal-body > div[data-color]', m.el); if (who) who.lastChild.textContent = ` ${built.name} will take it from here${r.access === 'edit' ? ' and save the result to your project folder' : ''}.`; }
+  });
   m.el.addEventListener('change', (e) => {
     const sel = e.target.closest('[data-file-select]'); if (!sel) return;
     const key = sel.dataset.fileSelect;
@@ -119,7 +158,7 @@ function openRecipeRunner(id) {
     const f = fileFields.find((x) => x.key === key); if (f?.accept) input.accept = f.accept;
     input.onchange = async () => {
       const file = input.files[0]; if (!file) { sel.value = ''; return; }
-      const res = await fetch(`/api/upload?workspace=${encodeURIComponent(S.settings.workspace)}&name=${encodeURIComponent(file.name)}`, { method: 'POST', body: file });
+      const res = await fetch(`/api/upload?workspace=${encodeURIComponent(ws)}&name=${encodeURIComponent(file.name)}`, { method: 'POST', body: file });
       const data = await res.json();
       files[key] = data;
       sel.insertAdjacentHTML('afterbegin', `<option value="${esc(data.path)}">${esc(data.name)}</option>`);

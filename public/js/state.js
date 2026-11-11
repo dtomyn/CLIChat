@@ -1,11 +1,11 @@
 // Lumen front-end: Shared app state and lookup helpers.
 
 const S = {
-  settings: {}, providers: [], assistants: [], recipes: [], convs: [], pipelines: [], runs: [], schedules: [],
+  settings: {}, providers: [], assistants: [], recipes: [], prompts: [], convs: [], pipelines: [], runs: [], schedules: [],
   view: 'home', current: null, search: '',
   live: new Map(), // conversationId -> { ac, msg }
   draft: { text: '', attachments: [], assistantId: null, access: null },
-  openSteps: new Set(), recipeTab: 'All',
+  openSteps: new Set(), recipeTab: 'All', promptTab: '',
   editing: null, // id of the user message being edited inline
 };
 const isLive = (conv) => !!conv && [...S.live.values()].some((l) => l.conv === conv);

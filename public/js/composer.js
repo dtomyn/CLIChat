@@ -8,10 +8,12 @@ import { openMenu } from './menu.js';
 import { modal } from './modal.js';
 import { renderHome } from './home.js';
 import { renderChat } from './chat.js';
-import { rerenderCurrent } from './chat-actions.js';
+import { rerenderCurrent, switchAgent } from './chat-actions.js';
+import { blankSelected, openPromptLab, selectBlank } from './prompt-lab.js';
 import { sendMessage, stopConv } from './streaming.js';
 import { openAssistantBuilder } from './agents.js';
 import { openSettings } from './settings.js';
+import { pinnedAgentIds } from './sidebar.js';
 
 function composerHTML({ home = false, conv = null } = {}) {
   const d = S.draft;
@@ -29,7 +31,7 @@ function composerHTML({ home = false, conv = null } = {}) {
         <textarea id="input" rows="1" placeholder="${esc(placeholder)}">${esc(d.text)}</textarea>
         <div class="composer-row">
           <button class="pill round" id="attachBtn" title="Add content">${icon('plus')}</button>
-          ${home ? `<button class="pill outline" id="assistantPill" data-color="${esc(a.color)}"><span class="a-badge sm">${esc(a.emoji)}</span><span class="lbl">${esc(a.name)}</span>${icon('chevron', 'caret')}</button>` : ''}
+          ${home || conv ? `<button class="pill outline" id="assistantPill" title="Which agent answers" data-color="${esc(a.color)}"><span class="a-badge sm">${esc(a.emoji)}</span><span class="lbl">${esc(a.name)}</span>${icon('chevron', 'caret')}</button>` : ''}
           <button class="pill" id="accessPill" title="What Lumen is allowed to do">${ACCESS[access]?.emoji || '👀'} <span class="lbl">${esc(ACCESS[access]?.short || 'Can read files')}</span>${icon('chevron', 'caret')}</button>
           <span class="spacer"></span>
           ${model && p.models.length > 1 ? `<button class="pill" id="modelPill" title="Response mode">${icon('gauge')}<span class="lbl">${esc(model.label)}</span>${icon('chevron', 'caret')}</button>` : ''}
@@ -146,6 +148,9 @@ function bindComposer(root, { conv = null } = {}) {
   input.addEventListener('input', () => { S.draft.text = input.value; autosize(); syncSend(); mention.update(); });
   input.addEventListener('keydown', (e) => {
     if (mention.key(e)) return;
+    // [blanks] from a prompt: Tab jumps to the next one; "/" typed over one picks a file and keeps its name in the text.
+    if (e.key === 'Tab' && !e.shiftKey && !e.ctrlKey && !e.altKey && selectBlank(input, blankSelected(input) ? input.selectionEnd : input.selectionStart)) { e.preventDefault(); return; }
+    if (e.key === '/' && blankSelected(input)) mention.keepName = true;
     if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); if (!isLive(conv)) submit(); return; }
     if (e.key === 'ArrowUp' && !e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey && !input.value.trim() && !isLive(conv)) {
       const s = suggestedNextStep(conv); if (!s) return;
@@ -162,14 +167,26 @@ function bindComposer(root, { conv = null } = {}) {
     { icon: 'upload', label: 'Upload from this device', hint: 'Saved to your notebook’s Attachments folder', run: () => $('#fileInput', root).click() },
     { icon: 'book', label: 'Reference a file in your notebook', hint: 'Or type / in the message box', run: () => mention.start() },
     { icon: 'pin', label: 'Pin a file to this chat', hint: 'Included with every message', run: () => pickPinnedFiles(conv) },
+    { icon: 'wand', label: 'Use a prompt', hint: 'Pick a ready-made prompt or a guided task', run: () => openPromptLab(conv) },
   ]));
   $('#fileInput', root).addEventListener('change', (e) => { uploadFiles([...e.target.files]); e.target.value = ''; });
   $('#attachList', root).addEventListener('click', (e) => { const b = e.target.closest('[data-rm-attach]'); if (b) { S.draft.attachments.splice(+b.dataset.rmAttach, 1); refreshAttach(); } });
-  $('#assistantPill', root)?.addEventListener('click', (e) => openMenu(e.currentTarget, [
-    { heading: 'Who should help?' },
-    ...S.assistants.map((a) => ({ emoji: a.emoji, label: a.name, hint: a.tagline, selected: (S.draft.assistantId || 'lumen') === a.id, run: () => { S.draft.assistantId = a.id; if (a.access) S.draft.access = a.access; renderHome(); } })),
-    { sep: true }, { icon: 'plus', label: 'Create an agent', run: () => openAssistantBuilder() },
-  ]));
+  // Many agents: a filter box, then the sidebar's pinned agents, then everyone else (A–Z), in a scrolling list.
+  $('#assistantPill', root)?.addEventListener('click', (e) => {
+    const cur = conv ? conv.assistantId : S.draft.assistantId || 'lumen';
+    const item = (a) => ({ emoji: a.emoji, label: a.name, hint: a.tagline, selected: cur === a.id, run: () => pickAgent(a) });
+    const top = S.assistants.filter((a) => a.id === 'lumen' || pinnedAgentIds().includes(a.id));
+    const rest = S.assistants.filter((a) => !top.includes(a)).sort((a, b) => a.name.localeCompare(b.name));
+    openMenu(e.currentTarget, [
+      { heading: 'Pinned' }, ...top.map(item),
+      ...(rest.length ? [{ heading: 'All agents' }, ...rest.map(item)] : []),
+      { sep: true }, { icon: 'plus', label: 'Create an agent', keep: true, run: () => openAssistantBuilder() },
+    ], { title: 'Who should help?', search: 'Search agents' });
+  });
+  async function pickAgent(a) {
+    if (!conv) { S.draft.assistantId = a.id; if (a.access) S.draft.access = a.access; renderHome(); return; }
+    await switchAgent(conv, a);
+  }
   $('#accessPill', root).addEventListener('click', (e) => {
     const cur = conv ? (conv.access || S.settings.access) : (S.draft.access || assistantById(S.draft.assistantId).access || S.settings.access);
     openMenu(e.currentTarget, [{ heading: 'What can Lumen do?' }, ...Object.entries(ACCESS).map(([k, v]) => ({ emoji: v.emoji, label: v.label, hint: v.desc, selected: cur === k, run: async () => {
@@ -194,11 +211,13 @@ function fileMention(input, workspace) {
   const st = { el: null, items: [], i: 0, files: null };
   const TRIGGER = /(^|\s)\/([^\s/\\]*)$/;
   const query = () => { const m = TRIGGER.exec(input.value.slice(0, input.selectionStart)); return m ? m[2] : null; };
-  const close = () => { st.el?.remove(); st.el = null; st.items = []; };
+  const close = () => { st.el?.remove(); st.el = null; st.items = []; ctl.keepName = false; };
   const pick = (f) => {
     const caret = input.selectionStart, q = query();
     if (q !== null) input.value = input.value.slice(0, caret - q.length - 1) + input.value.slice(caret);
-    const pos = caret - (q === null ? 0 : q.length + 1);
+    let pos = caret - (q === null ? 0 : q.length + 1);
+    const keep = ctl.keepName;
+    if (keep) { const name = `"${f.name}"`; input.value = input.value.slice(0, pos) + name + input.value.slice(pos); pos += name.length; }
     S.draft.text = input.value;
     if (!S.draft.attachments.some((a) => a.path === f.path)) S.draft.attachments.push({ name: f.name, path: f.path });
     close(); refreshAttach();
@@ -228,7 +247,8 @@ function fileMention(input, workspace) {
     draw();
   };
   input.addEventListener('blur', () => setTimeout(close, 120));
-  return {
+  const ctl = {
+    keepName: false,
     update,
     // Open the picker from the "+" menu: insert a "/" at the caret.
     start() {
@@ -243,10 +263,11 @@ function fileMention(input, workspace) {
       if (!st.el) return false;
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); if (st.items.length) { st.i = (st.i + (e.key === 'ArrowDown' ? 1 : -1) + st.items.length) % st.items.length; draw(); } return true; }
       if ((e.key === 'Enter' || e.key === 'Tab') && st.items.length) { e.preventDefault(); pick(st.items[st.i]); return true; }
-      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); return true; }
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); ctl.keepName = false; return true; }
       return false;
     },
   };
+  return ctl;
 }
 
 function refreshAttach() { const l = $('#attachList'); if (l) l.innerHTML = attachChips(); syncAnySend(); }
@@ -277,4 +298,4 @@ function submit(textOverride) {
   sendMessage({ text: text || 'Please take a look at the attached file(s).', attachments });
 }
 
-export { bindComposer, chooseWorkspaceFiles, composerHTML, currentWorkspace, setPins, submit, suggestedNextSteps, uploadFiles };
+export { refreshAttach, bindComposer, chooseWorkspaceFiles, composerHTML, currentWorkspace, setPins, submit, suggestedNextSteps, uploadFiles };

@@ -1,0 +1,236 @@
+[
+  {
+    "id": "qp-key-points",
+    "group": "File insights",
+    "topic": "Summarize",
+    "title": "Key points",
+    "text": "List the key points from [file]",
+    "agentId": "lumen",
+    "builtin": true
+  },
+  {
+    "id": "qp-summarize-a-file",
+    "group": "File insights",
+    "topic": "Summarize",
+    "title": "Summarize a file",
+    "text": "Summarize [file] in five bullets, then one sentence on what it means for [audience]",
+    "agentId": "lumen",
+    "builtin": true
+  },
+  {
+    "id": "qp-prepare-for-a-review",
+    "group": "File insights",
+    "topic": "Prepare",
+    "title": "Prepare for a review",
+    "text": "Help me prepare for a review of [file] with [business leadership]: likely questions, weak spots and how to answer them",
+    "agentId": "lumen",
+    "builtin": true
+  },
+  {
+    "id": "qp-faq-from-a-document",
+    "group": "File insights",
+    "topic": "Create",
+    "title": "FAQ from a document",
+    "text": "Create an FAQ based on [file] for [audience]",
+    "agentId": "lumen",
+    "builtin": true
+  },
+  {
+    "id": "qp-decisions-and-open-questions",
+    "group": "File insights",
+    "topic": "Analyze",
+    "title": "Decisions and open questions",
+    "text": "List the decisions made and the open questions left in [file], with who owns each",
+    "agentId": "lumen",
+    "builtin": true
+  },
+  {
+    "id": "qp-what-changed",
+    "group": "Catch up",
+    "topic": "Catch up",
+    "title": "What changed",
+    "text": "Compare [older file] with [newer file] and tell me what changed and why it matters",
+    "agentId": "lumen",
+    "builtin": true
+  },
+  {
+    "id": "qp-catch-up-on-a-folder",
+    "group": "Catch up",
+    "topic": "Catch up",
+    "title": "Catch up on a folder",
+    "text": "Look through my notebook and tell me what was added or changed recently, grouped by topic",
+    "agentId": "lumen",
+    "builtin": true
+  },
+  {
+    "id": "qp-explain-like-i-am-new",
+    "group": "Catch up",
+    "topic": "Ask",
+    "title": "Explain like I am new",
+    "text": "Explain [topic] as if I just joined the project: what it is, why it matters and who to talk to",
+    "agentId": "lumen",
+    "builtin": true
+  },
+  {
+    "id": "qp-meeting-notes-to-actions",
+    "group": "Catch up",
+    "topic": "Summarize",
+    "title": "Meeting notes to actions",
+    "text": "Turn these meeting notes into decisions, actions (owner, due date) and risks: [paste notes or file]",
+    "agentId": "lumen",
+    "builtin": true
+  },
+  {
+    "id": "qp-draft-an-email",
+    "group": "Write",
+    "topic": "Create",
+    "title": "Draft an email",
+    "text": "Draft a short email to [recipient] about [topic]. Tone: [friendly / formal]. End with a clear ask.",
+    "agentId": "lumen",
+    "builtin": true
+  },
+  {
+    "id": "qp-make-it-clearer",
+    "group": "Write",
+    "topic": "Edit",
+    "title": "Make it clearer",
+    "text": "Rewrite this so it is clear and concise for [audience], keeping the meaning: [paste text]",
+    "agentId": "lumen",
+    "builtin": true
+  },
+  {
+    "id": "qp-executive-summary",
+    "group": "Write",
+    "topic": "Create",
+    "title": "Executive summary",
+    "text": "Write a half-page executive summary of [file] for [sponsor]: situation, what we need, and the decision required",
+    "agentId": "lumen",
+    "builtin": true
+  },
+  {
+    "id": "qp-shorten-to-bullets",
+    "group": "Write",
+    "topic": "Edit",
+    "title": "Shorten to bullets",
+    "text": "Turn [paste text or file] into no more than seven plain-language bullets",
+    "agentId": "lumen",
+    "builtin": true
+  },
+  {
+    "id": "qp-announcement",
+    "group": "Write",
+    "topic": "Create",
+    "title": "Announcement",
+    "text": "Write an announcement for [audience] about [change], covering what, when, why and what they need to do",
+    "agentId": "lumen",
+    "builtin": true
+  },
+  {
+    "id": "qp-plan-a-piece-of-work",
+    "group": "Plan & track",
+    "topic": "Plan",
+    "title": "Plan a piece of work",
+    "text": "Break [goal] into phases, tasks and milestones with rough durations, assuming a deadline of [date]",
+    "agentId": "lumen",
+    "builtin": true
+  },
+  {
+    "id": "qp-find-the-risks",
+    "group": "Plan & track",
+    "topic": "Analyze",
+    "title": "Find the risks",
+    "text": "List the top risks in [file or topic], each with likelihood, impact and a mitigation",
+    "agentId": "lumen",
+    "builtin": true
+  },
+  {
+    "id": "qp-status-update",
+    "group": "Plan & track",
+    "topic": "Track",
+    "title": "Status update",
+    "text": "Draft a status update for [project] from [file]: RAG, progress, next steps, risks and asks",
+    "agentId": "lumen",
+    "builtin": true
+  },
+  {
+    "id": "qp-compare-options",
+    "group": "Plan & track",
+    "topic": "Analyze",
+    "title": "Compare options",
+    "text": "Compare [option A] and [option B] for [goal] in a table: cost, effort, risk and benefits, then recommend one",
+    "agentId": "lumen",
+    "builtin": true
+  },
+  {
+    "id": "qp-raci",
+    "group": "Plan & track",
+    "topic": "Create",
+    "title": "RACI",
+    "text": "Create a RACI for [activity or project] with roles [roles]",
+    "agentId": "lumen",
+    "builtin": true
+  },
+  {
+    "id": "qp-user-stories",
+    "group": "Requirements",
+    "topic": "Create",
+    "title": "User stories",
+    "text": "Turn [file or notes] into user stories with acceptance criteria in Given/When/Then",
+    "agentId": "lumen",
+    "builtin": true
+  },
+  {
+    "id": "qp-find-gaps",
+    "group": "Requirements",
+    "topic": "Review",
+    "title": "Find gaps",
+    "text": "Review [file] for ambiguous, missing or conflicting requirements and suggest wording fixes",
+    "agentId": "lumen",
+    "builtin": true
+  },
+  {
+    "id": "qp-questions-to-ask",
+    "group": "Requirements",
+    "topic": "Ask",
+    "title": "Questions to ask",
+    "text": "What questions should I ask [stakeholder] to clarify [topic]?",
+    "agentId": "lumen",
+    "builtin": true
+  },
+  {
+    "id": "qp-explain-a-spreadsheet",
+    "group": "Data",
+    "topic": "Analyze",
+    "title": "Explain a spreadsheet",
+    "text": "Explain what is in [workbook]: sheets, what each column means and anything that looks wrong",
+    "agentId": "lumen",
+    "builtin": true
+  },
+  {
+    "id": "qp-trends",
+    "group": "Data",
+    "topic": "Analyze",
+    "title": "Trends",
+    "text": "Look at [workbook] and tell me the three biggest trends or outliers, with the cells you used",
+    "agentId": "lumen",
+    "builtin": true
+  },
+  {
+    "id": "qp-teach-me",
+    "group": "Learn",
+    "topic": "Learn",
+    "title": "Teach me",
+    "text": "Teach me the basics of [topic] in ten minutes, with one worked example from my project",
+    "agentId": "lumen",
+    "builtin": true
+  },
+  {
+    "id": "qp-what-can-you-do",
+    "group": "Learn",
+    "topic": "Ask",
+    "title": "What can you do",
+    "text": "What can Lumen help me with on [project or role]? Give examples I can try",
+    "agentId": "lumen",
+    "builtin": true
+  }
+]

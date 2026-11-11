@@ -2,12 +2,12 @@
 import { icon } from './icons.js';
 import { $, $$, esc, toast } from './utils.js';
 
-function modal({ title, sub, body = '', actions = [], wide = false, onOpen, head, leftAction, dismissable = true }) {
+function modal({ title, sub, body = '', actions = [], wide = false, className = '', onOpen, head, leftAction, dismissable = true }) {
   const root = $('#modalRoot');
   const wrap = document.createElement('div');
   wrap.className = 'modal-backdrop';
   wrap.innerHTML = `
-    <div class="modal ${wide ? 'wide' : ''}" role="dialog" aria-modal="true">
+    <div class="modal ${wide ? 'wide' : ''} ${className}" role="dialog" aria-modal="true">
       ${head ?? `<div class="modal-head"><div><h2>${esc(title)}</h2>${sub ? `<p>${esc(sub)}</p>` : ''}</div>${dismissable ? `<button class="icon-btn" data-x>${icon('x')}</button>` : ''}</div>`}
       ${body ? `<div class="modal-body">${body}</div>` : ''}
       ${actions.length || leftAction ? `<div class="modal-foot">${leftAction ? `<button class="btn ${leftAction.danger ? 'danger' : 'ghost'} left" data-left>${leftAction.icon ? icon(leftAction.icon) : ''}${esc(leftAction.label)}</button>` : ''}${actions.map((a, i) => `<button class="btn ${a.primary ? 'primary' : a.grad ? 'grad' : a.danger ? 'primary' : 'ghost'}" data-a="${i}" ${a.danger ? 'style="background:var(--danger);color:#fff"' : ''}>${a.icon ? icon(a.icon) : ''}${esc(a.label)}</button>`).join('')}</div>` : ''}
