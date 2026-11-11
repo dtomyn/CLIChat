@@ -2,7 +2,7 @@
 
   python film/make_howto.py --record [--resume]   Run every new conversation once against the real AI engine (Claude Code) and save it.
   python film/make_howto.py --voice                Make the narration only and print each line's length.
-  python film/make_howto.py                        Film (replaying the recording, shown as GitHub Copilot), mix and encode film/out/lumen-howto.mp4.
+  python film/make_howto.py                        Film (replaying the recording, shown as GitHub Copilot), mix and encode film/out/lumen-howto-v2.mp4.
   python film/make_howto.py --stills               Film, then save a contact sheet instead of encoding.
 
 The film presents Lumen running on GitHub Copilot (the Copilot CLI agent that also powers Copilot Chat in VS Code). Answers are recorded once with whichever engine is installed here
@@ -173,7 +173,7 @@ def start_server(mode, resume=False):
     if mode == "record":
         REC.parent.mkdir(parents=True, exist_ok=True)
         if not resume or not REC.exists():
-            # Start from the explainer's recording: identical requests replay, only new ones reach the engine.
+            # Start from the first how-to's recording (SEED): identical requests replay, only new ones reach the engine.
             shutil.rmtree(REC.parent, ignore_errors=True)
             shutil.copytree(SEED, REC.parent)
         env["LUMEN_RECORD_RESUME"] = "1"

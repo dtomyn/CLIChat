@@ -101,8 +101,8 @@ hand-offs are visible, auditable and never built on unapproved work without sayi
   the traceability check is advisory, not blocking (`docs/plans/06-guided-lifecycle-pipeline.md`).
 
 ## Limits
-- Stages run sequentially; branching, parallel stages, and conditional steps are not supported.
-- Single-user approval; no external sign-off, branching pipelines or Jira sync.
+- Stages can fan out and fan in through "Starts after", but there are no conditional steps (a stage cannot run or skip itself based on another stage's output).
+- Single-user approval; no external sign-off or Jira sync.
 
 ## Source
 `lib/server/routes/pipelines.js`, `lib/server/routes/runs.js`, `lib/server/lifecycle.js`, `lib/server/stage-output.js`, `lib/server/routes/chat.js` (`/api/pipelines`, `/api/runs`, stage actions `start`/`skip`/`include`/`approve`/`rework`/`check`/`word`/`azure-devops`,

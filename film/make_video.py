@@ -3,7 +3,7 @@
   python film/make_video.py --record    Run every conversation once against the real AI engine and save it (slow, ~15 min).
   python film/make_video.py --record --resume   Same, but replay what is already recorded and only run the missing requests.
   python film/make_video.py --voice     Make the narration only (Kokoro, local) and print each line's length.
-  python film/make_video.py             Film the app (replaying the recording), then mix and encode film/out/lumen-explainer.mp4.
+  python film/make_video.py             Film the app (replaying the recording), then mix and encode film/out/lumen-explainer-v2.mp4.
   python film/make_video.py --stills    Film, then save a contact sheet of frames instead of encoding (quick check).
 
 Needs: .venv with playwright, kokoro-onnx, soundfile, imageio-ffmpeg, numpy; Microsoft Edge; Kokoro model files in .venv/kokoro
