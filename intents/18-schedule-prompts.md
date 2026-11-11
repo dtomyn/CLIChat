@@ -6,8 +6,8 @@ As a project manager or cutover lead, I want a prompt to run by itself every mor
 run it.
 
 ## Where
-- **Repeat…** on a prompt's form opens **Repeat <prompt name>**.
-- **Prompts › Scheduled prompts** tab: the schedule list.
+- **Repeat…** on a guided task's form (opened from **Tasks**, not inside a chat) opens **Repeat <prompt name>**.
+- **Tasks** in the left rail › **Scheduled** tab (on the **Guided tasks** page): the schedule list.
 - Sidebar chat list: scheduled chats show 🕘 and an unread dot.
 
 ## Inputs & controls
