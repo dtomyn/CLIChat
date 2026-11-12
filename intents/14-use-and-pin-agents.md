@@ -41,6 +41,7 @@ keep the ones I use most in the sidebar, so that every chat starts with the righ
   the first built-ins, never **Lumen**. Empty list text: "Pin agents here from the Agents page."
 - Deleting a built-in agent records it in `data/assistants.removed.json`, so it is not re-added on the next start;
   **Settings › Advanced › Restore defaults** brings it back (and removes agents the user created).
+- Each agent is its own file, `data/agents/<id>.json`. An older single `data/assistants.json` is split into that folder on first start and kept as `assistants.json.bak`.
 - New built-ins from a newer version are added to the saved list on start unless the user deleted them.
 - Each card shows its skills as chips with a **Lumen only** badge (`skillChips`).
 - **Search** (`agentSearchText`, `filterAgentCards`): case-insensitive; every typed word must appear in the agent's
@@ -77,5 +78,5 @@ keep the ones I use most in the sidebar, so that every chat starts with the righ
 ## Source
 `public/js/agents.js`, `public/js/sidebar.js`, `public/js/home.js`, `public/js/composer.js` (`renderAssistantsPage`, `agentSearchText`, `filterAgentCards`, `AGENT_SORTS`, `sortedAgents`, `pinnedAgentIds`, `togglePinAgent`, `renderAgentList`, `renderHome`,
 `homeClicks`, `skillChips`, `#assistantPill` menu and `pickAgent` in `bindComposer`), `lib/server/routes/chat.js` (`PATCH /api/conversations/:id` `assistantId`), `public/index.html` (`#agentList`),
-`lib/server/routes/library.js`, `lib/server/chat.js` (`/api/assistants` routes, `buildSystemPrompt`, `runTurn`), `lib/store.js` (`collection`: seeding,
+`lib/server/routes/library.js`, `lib/server/chat.js` (`/api/assistants` routes, `buildSystemPrompt`, `runTurn`), `lib/store.js` (`folderCollection`: one file per agent, legacy split, seeding,
 `removed.json`, `reset`), `defaults/assistants.json`.

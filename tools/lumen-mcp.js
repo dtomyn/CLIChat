@@ -12,7 +12,8 @@ const INTENTS = path.join(APP, 'intents');
 const SKILLS = path.join(APP, 'skills');
 
 const readJson = (file, fallback) => { try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; } };
-const list = (name) => { const v = readJson(path.join(DATA, `${name}.json`), null) ?? readJson(path.join(APP, 'defaults', `${name}.json`), []); return Array.isArray(v) ? v : []; };
+const agentFiles = () => { try { return fs.readdirSync(path.join(DATA, 'agents')).filter((f) => f.endsWith('.json')).map((f) => readJson(path.join(DATA, 'agents', f), null)).filter(Boolean); } catch { return null; } };
+const list = (name) => { if (name === 'assistants') { const a = agentFiles(); if (a) return a; } const v = readJson(path.join(DATA, `${name}.json`), null) ?? readJson(path.join(APP, 'defaults', `${name}.json`), []); return Array.isArray(v) ? v : []; };
 const friendly = (msg) => Object.assign(new Error(msg), { friendly: true });
 const day = (ms) => (ms ? new Date(ms).toISOString().slice(0, 10) : null);
 const clip = (s, n = 200) => { const t = String(s || '').replace(/\s+/g, ' ').trim(); return t.length > n ? `${t.slice(0, n - 1)}…` : t; };

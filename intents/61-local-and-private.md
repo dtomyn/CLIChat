@@ -28,7 +28,7 @@ Copilot** card in the welcome, and the **Lumen only** badges.
 - **Replies are sanitised** (`md`): DOMPurify with no `data-*` attributes except the two copy buttons, no `id`, `name`,
   `form` or `formaction` attributes, and no `form`, `textarea`, `select`, `option` or `style` tags, so a reply can't
   fake Lumen's Apply, open-file or send controls; links open in a new tab with `noopener noreferrer`.
-- **Data folder** (`lib/store.js`): `data/` (or `LUMEN_DATA`) holds plain JSON: `settings.json`, `assistants.json`,
+- **Data folder** (`lib/store.js`): `data/` (or `LUMEN_DATA`) holds plain JSON: `settings.json`, `agents/<id>.json` (one file per agent),
   `recipes.json`, `pipelines.json`, `schedules.json`, `conversations/<id>.json`, `runs/<id>.json`, plus
   `secrets/`, the Azure DevOps change sets (`ado-pending/<chat>/`) and audit log `ado-audit.jsonl`
   ([39](39-approve-ado-changes.md)).
