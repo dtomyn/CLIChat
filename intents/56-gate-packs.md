@@ -74,5 +74,5 @@ and what is still outstanding.
 - `tools/governance.js` (`assembleGatePack`, `approvalOfFile`, `artefactCandidates`, `versionOf`, `stemOf`).
 - `tools/publish.js` (`approvalOf`); `tools/md-export.js` (`toDocx`, `readDocxProperties`); `tools/status.js` (`readRaid`).
 - `tools/office-mcp.js` (tool `assemble_gate_pack`); `skills/architecture/SKILL.md`.
-- `defaults/assistants.json` (agent **Gate Pack Assembler**); `defaults/recipes.json` (prompt **Assemble a gate pack**).
+- `agents/<id>.json` (agent **Gate Pack Assembler**); `defaults/recipes.json` (prompt **Assemble a gate pack**).
 - `samples/aidlc/Architecture/Design gate.json`, `samples/aidlc/Architecture/Design/`.

@@ -63,6 +63,6 @@ The prompt also reads the interface catalogue and `Knowledge/HIP Patterns.md`, a
 ## Source
 `tools/openapi.js` (`ICD_SECTIONS`, `sectionsOf`, `meaningful`, `icdCompleteness`, `checkIcd`), `tools/governance.js`
 (`readText`), `tools/change.js` (`saveDraft`), `tools/office-mcp.js` (`check_icd`, `save_draft_document`),
-`defaults/assistants.json` (agent **Interface Designer**), `defaults/recipes.json` (prompt **Draft an ICD**),
+`agents/<id>.json` (agent **Interface Designer**), `defaults/recipes.json` (prompt **Draft an ICD**),
 `skills/integration-design/SKILL.md`, `samples/aidlc/Integration/ICD - Case API (draft).md`,
 `samples/aidlc/Knowledge/HIP Patterns.md`, `samples/aidlc/Templates/ICD Template.dotx`.

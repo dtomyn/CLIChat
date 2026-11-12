@@ -74,6 +74,6 @@ recorded and current and we don't build what already exists.
 - `tools/governance.js` (`parseAdr`, `readAdrs`, `adrRefs`); `tools/tests.js` (`similarity`).
 - `tools/office-mcp.js` (tools `index_adrs`, `read_spreadsheet`, `save_draft_document`).
 - `skills/architecture/SKILL.md`.
-- `defaults/assistants.json` (agent **ADR & Reuse Advisor**).
+- `agents/<id>.json` (agent **ADR & Reuse Advisor**).
 - `defaults/recipes.json` (prompts **Draft an ADR**, **Reuse vs. build assessment**).
 - `samples/aidlc/Architecture/ADRs/`, `samples/aidlc/Architecture/Reusable assets.xlsx`.

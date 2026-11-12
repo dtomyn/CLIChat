@@ -178,7 +178,7 @@ test('security tools are exposed; write_sctm needs edit access', () => {
 });
 
 test('security agents, prompts and skill are wired up', () => {
-  const assistants = require('../defaults/assistants.json');
+  const assistants = require('../lib/builtin-agents').all();
   const recipes = require('../defaults/recipes.json');
   const skills = require('../lib/skills').all();
   const skill = skills.find((s) => s.id === 'security-saa');

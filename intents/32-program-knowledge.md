@@ -68,4 +68,4 @@ rather than general knowledge, and conflicts between documents are flagged inste
 `skills/program-knowledge/SKILL.md`, `tools/docx.js` (`readDocument`, `docxToText`, `unzipEntry`),
 `tools/office-mcp.js` (`list_office_files`, `read_document`, `resolveIn`, `walk`), `lib/skills.js` (`resolve`),
 `lib/tool-labels.js` (`officeLabel`), `defaults/recipes.json` (prompt **Inventory the program knowledge**,
-`aidlc-knowledge-inventory`), `defaults/assistants.json`, `samples/aidlc/Knowledge/`.
+`aidlc-knowledge-inventory`), `agents/<id>.json`, `samples/aidlc/Knowledge/`.

@@ -86,5 +86,5 @@ deviation log and a remediation backlog with evidence for every finding.
 - `tools/governance.js` (`checkConsistency`, `extractNames`, `mentions`, `scan`, `adrRefs`, `readDataModel`, `readText`).
 - `tools/data.js` (`readSchema`); `tools/office-mcp.js` (tool `check_consistency`).
 - `skills/architecture/SKILL.md`.
-- `defaults/assistants.json` (agent **Architecture Reviewer**); `defaults/recipes.json` (prompt **Architecture review**).
+- `agents/<id>.json` (agent **Architecture Reviewer**); `defaults/recipes.json` (prompt **Architecture review**).
 - `samples/aidlc/Knowledge/`, `samples/aidlc/Architecture/ADRs/`.

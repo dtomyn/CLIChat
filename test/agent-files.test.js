@@ -12,7 +12,7 @@ const run = (data, code) => {
   return r.stdout.trim();
 };
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'lumen-agents-'));
-const defaults = require('../defaults/assistants.json');
+const defaults = require('../lib/builtin-agents').all();
 
 test('fresh install writes one file per built-in agent, in default order', () => {
   const d = tmp();

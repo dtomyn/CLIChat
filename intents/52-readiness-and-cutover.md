@@ -118,7 +118,7 @@ weekend, so that the go/no-go call and the bridge updates rest on evidence rathe
 - `tools/release.js` (`readinessCheck`, `cutoverStatus`, `renderCutover`, `readSheet`, `wall`).
 - `tools/office-mcp.js` (tools `check_readiness`, `cutover_status`).
 - `skills/release-cutover/SKILL.md`.
-- `defaults/assistants.json` (agents **Release Readiness**, **Cutover Coordinator**).
+- `agents/<id>.json` (agents **Release Readiness**, **Cutover Coordinator**).
 - `defaults/recipes.json` (prompts **Readiness check**, **Generate cutover checklist**, **Cutover status update**).
 - `lib/scheduler.js` (`intervalWindow`, `inWindow`, `nextDue`); `public/js/prompts.js` (`openScheduleForm`, schedule list).
 - `lib/tool-labels.js`.

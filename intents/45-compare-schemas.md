@@ -69,6 +69,6 @@ The prompt runs with **Read my files**; it changes no files.
 ## Source
 `tools/data.js` (`readSchema`, `parseDdl`, `parseJsonSchema`, `readDictionary`, `compareSchemas`, `nameSimilarity`,
 `typeFamily`, `typeCompatibility`), `tools/office-mcp.js` (`read_schema`, `compare_schemas`), `tools/governance.js`
-(`readDataModel` uses `readSchema`), `defaults/assistants.json` (agent **Mapping Analyst**), `defaults/recipes.json`
+(`readDataModel` uses `readSchema`), `agents/<id>.json` (agent **Mapping Analyst**), `defaults/recipes.json`
 (prompt **Compare schemas**), `skills/data-engineering/SKILL.md`, `samples/data/Source DDL - Applications.sql`,
 `samples/data/Silver - Canonical Application.schema.json`, `samples/data/Gold - Application model.sql`.

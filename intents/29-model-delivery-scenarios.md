@@ -71,5 +71,5 @@ plan copy.
 ## Source
 `tools/scenario.js` (`runScenario`, `network`, `schedule`, `topoOrder`, `overload`, `describe`, `findTask`),
 `tools/project.js` (`load`, working-day helpers), `tools/office-mcp.js` (`model_scenario`),
-`skills/ms-project/SKILL.md`, `defaults/assistants.json` (agent **Schedule Analyst**), `defaults/recipes.json`
+`skills/ms-project/SKILL.md`, `agents/<id>.json` (agent **Schedule Analyst**), `defaults/recipes.json`
 (prompt **Delivery scenarios**, `delivery-scenarios`).

@@ -195,7 +195,7 @@ test('architecture tools are exposed; gate packs and inventory proposals need ed
 });
 
 test('architecture agents, prompts and skill are wired up', () => {
-  const assistants = require('../defaults/assistants.json');
+  const assistants = require('../lib/builtin-agents').all();
   const recipes = require('../defaults/recipes.json');
   const skills = require('../lib/skills').all();
   const skill = skills.find((s) => s.id === 'architecture');

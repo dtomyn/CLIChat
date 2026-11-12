@@ -83,7 +83,7 @@ the test effort follows risk.
 
 ## Source
 `tools/tests.js` (`writeTestCases`, `freeName`, `testType`), `tools/traceability.js` (test layer),
-`tools/office-mcp.js` (`write_test_cases`, `analyze_traceability`), `lib/tool-labels.js`, `defaults/assistants.json`
+`tools/office-mcp.js` (`write_test_cases`, `analyze_traceability`), `lib/tool-labels.js`, `agents/<id>.json`
 (agents **Test Designer**, **Test Planner**), `defaults/recipes.json` (prompts **Generate test cases from stories**,
 **Coverage gaps**, **Draft the test strategy**), `defaults/pipelines.json` (stage `tests`, output `05-test-cases.md`),
 `skills/test-design/SKILL.md`, `samples/aidlc/Requirements Traceability (sample).xlsx`.

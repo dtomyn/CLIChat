@@ -72,6 +72,6 @@ The prompt runs with **Create & edit files** so it can save the report.
 ## Source
 `tools/data.js` (`profileTable`, `readTable`, `parseCsv`, `kindOf`, `looksPersonal`, `mask`, `profilingScripts`,
 `readSchema`), `tools/office-mcp.js` (`profile_data`, `save_draft_document`), `tools/change.js` (`saveDraft`),
-`defaults/assistants.json` (agent **Data Profiler**), `defaults/recipes.json` (prompt **Profile a dataset**),
+`agents/<id>.json` (agent **Data Profiler**), `defaults/recipes.json` (prompt **Profile a dataset**),
 `skills/data-engineering/SKILL.md`, `samples/data/` (`Applications - source extract.csv`,
 `Data Dictionary - Applications.xlsx`), `lib/server/exports.js` (`PACKS.data`).

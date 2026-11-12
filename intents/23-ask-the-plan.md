@@ -71,5 +71,5 @@ filters used and a follow-up suggestion; for the look-ahead, a one-page per-work
 
 ## Source
 `tools/project.js` (`queryPlan`, `taskFacts`, `related`, `findTask`, `lookahead`, `workstreamOf`),
-`tools/office-mcp.js` (`query_plan`, `plan_lookahead`), `skills/ms-project/SKILL.md`, `defaults/assistants.json`
+`tools/office-mcp.js` (`query_plan`, `plan_lookahead`), `skills/ms-project/SKILL.md`, `agents/<id>.json`
 (agent **Ask the Plan**), `defaults/recipes.json` (prompt **Weekly look-ahead**, `plan-lookahead`).

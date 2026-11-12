@@ -73,6 +73,6 @@ the real items and pages, so that I don't have to build queries or browse the wi
 `tools/ado-mcp.js` (`READ_TOOLS`), `tools/ado/read.js` (`searchWorkItems`, `queryWorkItems`, `getWorkItems`,
 `describeType`, `listPaths`, `searchWiki`, `listWikiPages`, `readWikiPage`, `resolveWiki`, `envelope`),
 `tools/ado/wiql.js` (`build`, `quote`), `tools/ado/markup.js` (`htmlToMd`), `tools/ado/client.js` (`createClient`),
-`lib/tool-labels.js` (`adoLabel`), `skills/azure-devops/SKILL.md`, `defaults/assistants.json` (`backlog-helper`),
+`lib/tool-labels.js` (`adoLabel`), `skills/azure-devops/SKILL.md`, `agents/<id>.json` (`backlog-helper`),
 `defaults/recipes.json` (`ado-my-work`, `ado-sprint-status`, `ado-wiki-find`, `ado-stale-items`,
 `ado-release-notes`).

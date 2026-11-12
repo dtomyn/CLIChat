@@ -28,7 +28,7 @@ keep the ones I use most in the sidebar, so that every chat starts with the righ
 | **⋯ › Delete** | Confirms "Delete <name>?" ("Existing chats with this agent are kept."), then removes it. |
 
 ## Behaviour (as implemented)
-- 39 built-in agents ship in `defaults/assistants.json`; **Lumen** ✨ is the default when none is picked.
+- 39 built-in agents ship in `agents/<id>.json`; **Lumen** ✨ is the default when none is picked.
 - An agent is a system prompt (`instructions`), a tagline, up to 3 starters, a colour, an emoji, an optional default
   file `access` and a list of `skills`. `buildSystemPrompt` puts the instructions first, then Lumen's own rules, then
   each active skill's text (see [15](15-build-an-agent.md)).
@@ -41,7 +41,7 @@ keep the ones I use most in the sidebar, so that every chat starts with the righ
   the first built-ins, never **Lumen**. Empty list text: "Pin agents here from the Agents page."
 - Deleting a built-in agent records it in `data/assistants.removed.json`, so it is not re-added on the next start;
   **Settings › Advanced › Restore defaults** brings it back (and removes agents the user created).
-- Each agent is its own file, `data/agents/<id>.json`. An older single `data/assistants.json` is split into that folder on first start and kept as `assistants.json.bak`.
+- Each agent is its own file, `data/agents/<id>.json` (built-ins ship as `agents/<id>.json` in the app folder). An older single `data/assistants.json` is split into that folder on first start and kept as `assistants.json.bak`.
 - New built-ins from a newer version are added to the saved list on start unless the user deleted them.
 - Each card shows its skills as chips with a **Lumen only** badge (`skillChips`).
 - **Search** (`agentSearchText`, `filterAgentCards`): case-insensitive; every typed word must appear in the agent's
@@ -79,4 +79,4 @@ keep the ones I use most in the sidebar, so that every chat starts with the righ
 `public/js/agents.js`, `public/js/sidebar.js`, `public/js/home.js`, `public/js/composer.js` (`renderAssistantsPage`, `agentSearchText`, `filterAgentCards`, `AGENT_SORTS`, `sortedAgents`, `pinnedAgentIds`, `togglePinAgent`, `renderAgentList`, `renderHome`,
 `homeClicks`, `skillChips`, `#assistantPill` menu and `pickAgent` in `bindComposer`), `lib/server/routes/chat.js` (`PATCH /api/conversations/:id` `assistantId`), `public/index.html` (`#agentList`),
 `lib/server/routes/library.js`, `lib/server/chat.js` (`/api/assistants` routes, `buildSystemPrompt`, `runTurn`), `lib/store.js` (`folderCollection`: one file per agent, legacy split, seeding,
-`removed.json`, `reset`), `defaults/assistants.json`.
+`removed.json`, `reset`), `lib/builtin-agents.js`, `agents/<id>.json`.

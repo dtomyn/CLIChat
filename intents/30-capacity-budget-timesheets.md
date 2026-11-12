@@ -71,6 +71,6 @@ Chat answers with tables and cited cells; `analyze_capacity` JSON (`summary`, `c
 ## Source
 `tools/capacity.js` (`readCapacity`, `analyzeCapacity`, `sheetRows`, `asShare`), `tools/backlog.js` (`linkedItems`),
 `tools/office-mcp.js` (`analyze_capacity`), `skills/ms-project/SKILL.md`, `skills/excel/SKILL.md`,
-`defaults/assistants.json` (agents **Schedule Analyst**, **Budget Controller**), `defaults/recipes.json` (prompts
+`agents/<id>.json` (agents **Schedule Analyst**, **Budget Controller**), `defaults/recipes.json` (prompts
 **Who's overloaded?** `resource-load`, **Budget variance review** `budget-variance`, **Timesheets vs. plan**
 `effort-vs-plan`).

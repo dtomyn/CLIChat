@@ -91,7 +91,7 @@ test('VS Code kit copies skill reference files next to SKILL.md and points the a
 });
 
 test('the engineering packs bundle names three shipped agents and explains how to load them', () => {
-  const assistants = require('../defaults/assistants.json');
+  const assistants = require('../lib/builtin-agents').all();
   const agents = ex.ENGINEERING_PACKS.map((id) => assistants.find((a) => a.id === id));
   assert.equal(agents.filter(Boolean).length, 3);
   const all = require('../lib/skills').all();

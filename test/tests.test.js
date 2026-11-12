@@ -184,7 +184,7 @@ test('quality tools are exposed; writing needs edit access', () => {
 });
 
 test('quality engineering agents, prompts, skill and lifecycle stage are wired up', () => {
-  const assistants = require('../defaults/assistants.json');
+  const assistants = require('../lib/builtin-agents').all();
   const recipes = require('../defaults/recipes.json');
   const pipeline = require('../defaults/pipelines.json').find((p) => p.id === 'aidlc');
   const skills = require('../lib/skills').all();
