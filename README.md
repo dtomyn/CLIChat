@@ -219,6 +219,12 @@ film/                Explainer and how-to video pipeline
 Start Lumen.cmd      Double-click launcher for Windows
 ```
 
+## Dev container
+
+`.devcontainer/` opens the project in a Linux container from VS Code (**Dev Containers: Reopen in Container**). It has Node 24, Claude Code, GitHub Copilot CLI and Microsoft Edge (for the Playwright tests; x64 hosts only), and runs `npm ci` on first start. Run `claude` or `copilot` once in the container terminal to sign in; sign-ins, `node_modules` and Lumen's data (`LUMEN_DATA=/home/node/lumen-data`) are kept in Docker volumes, so the host's `data/` folder is not used. Port 4317 is forwarded to <http://localhost:4317>.
+
+Windows-only features don't work in the container: saving the Azure DevOps token (it uses Windows DPAPI) and the Microsoft 365 sign-in window.
+
 ## Tests
 
 `node --test test/*.test.js` runs the unit and tool tests.

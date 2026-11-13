@@ -1,0 +1,43 @@
+{
+  "name": "Lumen",
+  "build": { "dockerfile": "Dockerfile" },
+
+  "mounts": [
+    // Linux node_modules kept apart from any Windows install in the host folder.
+    "source=lumen-node_modules,target=${containerWorkspaceFolder}/node_modules,type=volume",
+    // Engine sign-ins survive container rebuilds.
+    "source=lumen-claude-config,target=/home/node/.claude,type=volume",
+    "source=lumen-copilot-config,target=/home/node/.copilot,type=volume",
+    // App data lives in a volume, not the host's data/ folder (its workspace paths are Windows paths).
+    "source=lumen-data,target=/home/node/lumen-data,type=volume"
+  ],
+
+  "containerEnv": {
+    "LUMEN_DATA": "/home/node/lumen-data",
+    // Keeps Claude Code's settings file (~/.claude.json) inside the persisted volume too.
+    "CLAUDE_CONFIG_DIR": "/home/node/.claude"
+  },
+
+  "remoteUser": "node",
+
+  // The volume mount point is created by Docker as root; hand it to "node", then install exactly what the lock file says.
+  "postCreateCommand": "sudo chown node:node node_modules && npm ci",
+
+  // server.js listens on 127.0.0.1 only; VS Code's port forwarding reaches it from inside the container,
+  // and the browser on the host sees http://localhost:<port>, which allowedRequest() accepts.
+  "forwardPorts": [4317, 4391],
+  "portsAttributes": {
+    "4317": { "label": "Lumen", "onAutoForward": "openBrowser" },
+    "4391": { "label": "Lumen (e2e scratch)", "onAutoForward": "silent" }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-playwright.playwright",
+        "anthropic.claude-code",
+        "GitHub.copilot-chat"
+      ]
+    }
+  }
+}
