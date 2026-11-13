@@ -85,6 +85,6 @@ All three run with **Create & edit files**. `analyze_controls` also takes `docum
 ## Source
 `tools/controls.js` (`readControlCatalogue`, `readSctm`, `writeSctm`, `citation`, `indexEvidence`, `analyzeControls`,
 `proposeSctm`), `tools/office-mcp.js` (`analyze_controls`, `write_sctm`, `save_draft_document`, `create_spreadsheet`),
-`lib/tool-labels.js`, `defaults/assistants.json` (agents **Security Control Mapper**, **Security Documentation**,
+`lib/tool-labels.js`, `agents/<id>.json` (agents **Security Control Mapper**, **Security Documentation**,
 **CAE Evidence**), `defaults/recipes.json` (prompts **Draft the SCTM**, **Security design document**, **Evidence gap
 check**), `skills/security-saa/SKILL.md`, `samples/security/`.

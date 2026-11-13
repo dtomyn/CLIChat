@@ -72,6 +72,6 @@ invented along the way.
 
 ## Source
 `skills/aidlc-lifecycle/SKILL.md`, `skills/program-knowledge/SKILL.md`, `skills/traceability/SKILL.md`,
-`defaults/assistants.json` (`requirements-refiner`, `functional-designer`, `technical-designer`, `story-writer`),
+`agents/<id>.json` (`requirements-refiner`, `functional-designer`, `technical-designer`, `story-writer`),
 `defaults/recipes.json` (`aidlc-refine-requirements`, `aidlc-functional-design`, `aidlc-technical-design`,
 `aidlc-write-backlog`), `samples/aidlc/`.

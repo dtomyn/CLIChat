@@ -74,6 +74,6 @@ publishing.
 ## Source
 `tools/glossary.js` (`readGlossary`, `readText`, `paragraphs`, `anchors`, `align`, `compare`, `checkTerminology`),
 `tools/change.js` (`saveDraft`), `tools/office-mcp.js` (`check_terminology`, `save_draft_document`),
-`lib/tool-labels.js`, `defaults/assistants.json` (agent **Bilingual Reviewer**), `defaults/recipes.json` (prompts
+`lib/tool-labels.js`, `agents/<id>.json` (agent **Bilingual Reviewer**), `defaults/recipes.json` (prompts
 **Draft French version**, **Bilingual QA**), `skills/bilingual/SKILL.md`, `samples/change/EN-FR Glossary.xlsx`,
 `samples/change/Renewal guide (EN).docx`, `samples/change/Guide de renouvellement (FR).docx`.

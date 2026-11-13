@@ -172,7 +172,7 @@ test('engineering tools are exposed; generating tests needs edit access', () => 
 });
 
 test('engineering agents, prompts, skills and labels are wired up', () => {
-  const assistants = require('../defaults/assistants.json');
+  const assistants = require('../lib/builtin-agents').all();
   const recipes = require('../defaults/recipes.json');
   const skills = require('../lib/skills').all();
   const { TOOLS } = require('../tools/office-mcp');

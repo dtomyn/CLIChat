@@ -1,0 +1,56 @@
+TITLE
+AI Agents for Everyone: Project, Excel, Word and a Traceable Delivery Lifecycle | Lumen Demo
+
+DESCRIPTION
+Your whole team has VS Code, GitHub Copilot and the Claude command line. Powerful tools, but most business analysts, project managers and delivery leads don't want to live in a terminal. Lumen puts the same AI agents and skills behind a friendly chat window that runs on your own computer.
+
+In this demo, three people use Lumen to get real work done:
+
+🧭 Marcus, Business Analyst
+• Searches the agent picker in the message box, picks the Requirements Coach and starts from one of its suggested prompts
+• Gets user stories with Given/When/Then acceptance criteria in seconds, and follows a suggested next step with one click
+• Retries, branches, rates or exports any reply (Word, PowerPoint or Markdown), and saves this one as a Word document
+• Searches nearly forty built-in agents, then describes a new one in a sentence; Lumen drafts its name, instructions and example requests, and switches on the right skills
+
+📋 Priya, Project Manager
+• Sets up a practice project from the Samples page in one click
+• Runs a health check on a Microsoft Project plan: RAG status, critical path, slippage against baseline and the bottleneck
+• Copies any table straight into Excel or Outlook, and sets the health check to repeat every Monday at 9:00 (listed under Tasks)
+• Updates the plan straight from an Excel progress sheet, saved as a new version, then uses See changes to view every task field before and after
+• Turns the plan into a colour-coded Excel tracker with a Gantt chart
+
+🧬 Dana, Delivery Lead
+• Runs a traceability check on the program's traceability workbook: coverage per layer, stories that would build the wrong thing, broken links, design bypass and source conflicts, each with its cell reference and owner
+• Reshapes the lifecycle workflow by dragging technical design alongside functional design, so both run side by side and stories wait for both
+• Starts a guided lifecycle run with the source documents pinned to each stage, runs an advisory traceability check at the gate, then approves, which stamps her name and the time on the output and makes both design stages ready to start
+
+Also shown: Insights (thumbs up and down per agent and prompt, kept on your computer), Ask about Lumen (it knows every agent, prompt, workflow and schedule), a pluggable AI engine (Claude Code today, GitHub Copilot one setting away), connections to Azure DevOps and SharePoint & Microsoft 365, and exporting agents and prompts to Microsoft 365 Copilot and VS Code.
+
+CHAPTERS
+0:00 Why Lumen
+0:18 A tour of the home screen
+0:42 Marcus: pick an agent, get user stories
+1:22 Suggested next steps, reply actions and Save as Word
+1:46 Marcus: search agents and build your own
+2:28 Priya: start from a sample project
+3:12 Microsoft Project health check
+3:43 Copy a table and schedule a weekly check
+4:10 Update the plan from an Excel progress sheet
+4:43 See changes: before and after
+4:51 Excel tracker with a Gantt chart
+5:07 Dana: the delivery lifecycle sample
+5:45 Traceability check
+6:26 Shape the workflow: stages side by side
+6:54 Guided lifecycle run
+7:46 Gate check and approval
+8:24 Insights
+8:38 Ask about Lumen
+8:54 AI engines and connections
+9:20 Export to Microsoft 365 Copilot and VS Code
+9:30 Wrap-up
+
+ABOUT THIS VIDEO
+Everything on screen is the real Lumen app, and every AI answer is a genuine response from Claude, sped up for the video. The projects, people, plans, documents and figures are fictional demo data. Narration uses a synthetic voice (Kokoro, generated locally).
+
+TAGS
+AI agents, Claude, Claude Code, GitHub Copilot, Microsoft Project, Excel, Word, PowerPoint, project management, business analysis, requirements traceability, AIDLC, delivery lifecycle, workflow, user stories, Gantt chart, Azure DevOps, SharePoint, Microsoft 365 Copilot, AI for business, no-code AI, VS Code, productivity

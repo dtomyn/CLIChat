@@ -60,4 +60,4 @@ works to the same standards outside Lumen.
 `/api/assistants/export-engineering`), `lib/copilot-export.js` (`vsCodeKitFiles`, `ENGINEERING_PACKS`,
 `ENGINEERING_README`, `slug`), `lib/skills.js` (`MCP_SERVER`, `ADO_SERVER`, `adoReady`), `public/js/`
 (`exportAssistant`, `exportEngineeringPacks`, `pickFolder`), `skills/dev-pack/`, `skills/test-automation/`,
-`skills/pipeline-readiness/`, `defaults/assistants.json`.
+`skills/pipeline-readiness/`, `agents/<id>.json`.

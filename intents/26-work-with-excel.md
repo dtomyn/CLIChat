@@ -62,4 +62,4 @@ Answers that cite cells; new or updated workbooks as file cards in the reply; fo
 `tools/excel.js` (`open`, `read`, `cellText`, `write`, `update`, `styleSheet`, `coerce`, `FORMATS`, `recalc`, `save`),
 `tools/office-mcp.js` (`list_office_files`, `read_spreadsheet`, `create_spreadsheet`, `update_spreadsheet`,
 `resolveIn`, `outputIn`, `write`), `skills/excel/SKILL.md`, `lib/skills.js` (`resolve`, `toolConfig`), `lib/server/chat.js`
-(`LUMEN_SNAPSHOT_DIR`), `defaults/assistants.json` (agents **Data Explorer**, **Budget Controller**).
+(`LUMEN_SNAPSHOT_DIR`), `agents/<id>.json` (agents **Data Explorer**, **Budget Controller**).

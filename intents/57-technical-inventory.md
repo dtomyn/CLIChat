@@ -74,5 +74,5 @@ approve them row by row instead of hunting for changes myself.
 - `tools/governance.js` (`diffInventory`, `readInventory`, `readChangeItems`, `parseGitLog`, `componentOfPath`,
   `extractNames`).
 - `tools/office-mcp.js` (tool `propose_inventory_updates`); `skills/architecture/SKILL.md`.
-- `defaults/assistants.json` (agent **Inventory Keeper**); `defaults/recipes.json` (prompt **Update technical inventory**).
+- `agents/<id>.json` (agent **Inventory Keeper**); `defaults/recipes.json` (prompt **Update technical inventory**).
 - `samples/aidlc/Architecture/Technical Inventory.xlsx`, `samples/aidlc/Architecture/Delivery changes - git log.txt`.

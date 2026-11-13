@@ -72,5 +72,5 @@ that I can approve them in Excel instead of re-listening to the meeting.
 ## Source
 `tools/raid.js` (`readTranscript`, `parseVtt`, `parsePlain`, `locateQuote`, `verifyQuotes`, `applyOne`, `propose`,
 `huddleChecks`, `applyApproved`, `latestRaid`), `tools/office-mcp.js` (`read_transcript`, `propose_raid_updates`,
-`apply_raid_updates`), `skills/huddle-raid/SKILL.md`, `defaults/assistants.json` (agent **Project Partner**),
+`apply_raid_updates`), `skills/huddle-raid/SKILL.md`, `agents/<id>.json` (agent **Project Partner**),
 `defaults/recipes.json` (prompts **Huddle → RAID log** `huddle-to-raid`, **RAID log review** `raid-review`).

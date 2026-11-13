@@ -104,6 +104,6 @@ no approval gate is caught before it causes an incident.
   `lintPipeline`, `envFromPath`, `canonicalEnv`, `MASK`); `tools/openapi.js` (`parseYaml`).
 - `tools/office-mcp.js` (tools `compare_configs`, `lint_pipeline`).
 - `skills/pipeline-readiness/SKILL.md` and `references/config-rules-example.md`, `references/pipeline-checklist.md`.
-- `defaults/assistants.json` (agent **Pipeline & Environment Readiness**).
+- `agents/<id>.json` (agent **Pipeline & Environment Readiness**).
 - `defaults/recipes.json` (prompts **Compare environment configs**, **Check a pipeline**).
 - `samples/aidlc/Environments/`.

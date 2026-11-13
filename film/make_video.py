@@ -1,9 +1,9 @@
 """Lumen explainer video: two personas, filmed from the real app.
 
-  python film/make_video.py --record    Run every conversation once against the real AI engine and save it (slow, ~15 min).
+  python film/make_video.py --record    Replay the v2 answers and run only new requests against the real AI engine (Claude Code), saving them.
   python film/make_video.py --record --resume   Same, but replay what is already recorded and only run the missing requests.
   python film/make_video.py --voice     Make the narration only (Kokoro, local) and print each line's length.
-  python film/make_video.py             Film the app (replaying the recording), then mix and encode film/out/lumen-explainer-v2.mp4.
+  python film/make_video.py             Film the app (replaying the recording), then mix and encode film/out/lumen-explainer-v3.mp4.
   python film/make_video.py --stills    Film, then save a contact sheet of frames instead of encoding (quick check).
 
 Needs: .venv with playwright, kokoro-onnx, soundfile, imageio-ffmpeg, numpy; Microsoft Edge; Kokoro model files in .venv/kokoro
@@ -30,7 +30,8 @@ FILM = ROOT / "film"
 WORK = FILM / ".work"
 OUT = FILM / "out"
 VO = FILM / "vo"
-REC = FILM / "recordings" / "v2" / "recording.json"  # v2: three personas, filmed after the chat-workflow and lifecycle updates
+REC = FILM / "recordings" / "v3" / "recording.json"  # v3: refreshed for the agent picker, Samples page, workflow editor, Ask about Lumen and connections
+SEED = FILM / "recordings" / "v2"  # answers recorded for v2 are reused when the request is identical
 KOKORO = ROOT / ".venv" / "kokoro"
 VOICE, VOICE_SPEED, VOICE_RATE = "af_heart", 1.0, 24000
 RATE = 48000
@@ -38,32 +39,33 @@ PORT = 4395
 VIEW, DSF = (1600, 900), 1.2  # renders at 1920x1080
 WORKSPACE = WORK / "Lumen"
 DEMO = WORKSPACE / "Contoso CRM Migration (demo)"
-NAME = "lumen-explainer-v2"
+NAME = "lumen-explainer-v3"
 
 # ------------------------------------------------------------------ narration
 LINES = {
     "intro1": "Everyone on the team now has V S Code, GitHub Copilot, and the Claude command line. Powerful tools. But not everyone wants to live in a terminal.",
     "intro2": "Meet Lumen. The same A I agents and skills, behind a friendly chat window that runs on your own computer.",
-    "overview2": "Lumen greets you by name. Instead of agents and prompts, you pick an assistant, a specialist with its own skills, start from a quick start, or follow a guided delivery lifecycle.",
+    "overview2": "Lumen greets you by name. Pick an agent, a specialist with its own skills, right in the message box. Or start from one of the quick prompts underneath.",
+    "overview3": "Along the left, the same rail as Microsoft 365 Copilot. Chat, agents, prompts, and tasks, your notebook, a guided delivery lifecycle, insights, and samples to practise on.",
     "marcus1": "Marcus is a business analyst on the Contoso C R M project. He needs user stories by Friday, and he has never written a prompt in his life.",
-    "marcus2": "So he picks the Requirements Coach, and clicks one of its suggestions.",
+    "marcus2": "So he opens the agent picker, searches for requirements, and picks the Requirements Coach. Its suggestions appear right under the box.",
     "marcus3": "The answer streams in, like chatting with a colleague who has done this a hundred times.",
     "marcus4": "User stories, Given, When, Then acceptance criteria, and the open questions to take back to the business.",
     "marcus_next": "It even suggests a next step. One click away.",
-    "marcus_actions": "Every reply can be retried, branched into a new chat, rated, or saved as a document.",
+    "marcus_actions": "Every reply can be retried, branched into a new chat, rated, or exported. Word, PowerPoint, or Markdown.",
     "marcus_word": "The business wants Word, so, Save as, Word document. Real headings, lists, and tables, saved to his project folder.",
-    "marcus5":"Next, Marcus wants a helper for test scripts. One sentence is enough.",
+    "marcus5": "Next, Marcus wants a helper for test scripts. There are nearly forty built in agents to search, but he wants one of his own. One sentence is enough.",
     "marcus6": "Lumen drafts the name, the icon, the instructions, and example requests. It even switches on the Excel skill.",
-    "marcus7": "No configuration files. No jargon. Just a new teammate.",
+    "marcus7": "No jargon, no setup. Just a new teammate, with its own suggestions, ready to chat. Each agent is saved as its own small file, easy to back up or pass to a colleague.",
     "priya1": "Now meet Priya, the project manager. Her world is a Microsoft Project plan and a stack of Excel workbooks, and the steering committee is on Thursday.",
-    "priya2": "One click sets up the project folder.",
+    "priya2": "To try it safely, she opens Samples. Realistic, made up projects to practise on. One click sets up the project management demo.",
     "priya3": "Here is the plan from Microsoft Project, forty two tasks with a baseline, plus a budget tracker, a raid log, timesheets, and this week's progress update in Excel.",
     "priya4": "She asks for a health check. Lumen has already picked the right plan from her folder.",
     "priya5": "The Schedule Analyst reads the actual plan. Critical path, slippage against baseline, and who is over allocated.",
     "priya6": "Amber, trending red. Go-live has slipped ten working days, there is no float left, and one integration developer is the bottleneck. It even warns that the progress data is two weeks old.",
     "priya_repeat": "Any table copies straight into Excel or Outlook. And because she wants this check every week, she sets it to repeat.",
-    "priya_weekly": "Mondays at nine. Lumen runs it while it is open, and leaves the result waiting as an unread chat.",
-    "priya7":"Friday's progress arrived as a spreadsheet. Instead of retyping it into Project, Priya hands it over.",
+    "priya_weekly": "Mondays at nine. It waits under Tasks, and Lumen runs it while it is open, leaving the result as an unread chat.",
+    "priya7": "Friday's progress arrived as a spreadsheet. Instead of retyping it into Project, Priya hands it over.",
     "priya8": "Lumen reads the workbook, updates the plan, saves a new version without touching the original, and checks the schedule again.",
     "priya9": "Every change is listed, before and after. Progress is up from forty seven to fifty three percent, and it warns that the E R P delay will push go-live back another three days.",
     "priya_diff": "And See changes shows exactly what moved. Every task field, before and after.",
@@ -73,15 +75,18 @@ LINES = {
     "dana2": "The lifecycle sample sets up her program documents. A project definition and requirements in Word, a solution blueprint, a data model, and a traceability workbook.",
     "dana3": "First, a traceability check. The Traceability Analyst reads every layer of the workbook, from business requirement to story.",
     "dana4": "Coverage for every layer, and a red status. Two stories marked ready would build the wrong thing. One builds a withdrawn requirement, and one still uses the old photo rule. It also catches a link to a requirement that does not exist, a story that skips design, and conflicting sources on S M S. Every finding has its cell reference and an owner.",
-    "dana5": "Next, the guided lifecycle. Refine the requirements, then functional design, technical design, and stories, with an approval gate between every stage.",
+    "dana5": "Next, the guided lifecycle. A workflow takes requirements through functional design, technical design, stories, and test cases, with an approval gate between every stage.",
+    "dana5b": "And the workflow is hers to shape. She drags technical design alongside functional design. Now both run side by side, and stories wait for both. The diagram redraws as she goes.",
     "dana6": "She names the run, picks the requirements and the project definition, and starts the first stage.",
     "dana7": "The Requirements Refiner works in its own chat, with the source documents already pinned, and saves its output to the project folder.",
     "dana8": "Thirty eight requirements, each with acceptance criteria and a source, all marked draft until approved. It spots the S M S conflict, follows the project definition, and lists the questions to take back to the business owner.",
     "dana9": "Before signing off, an advisory traceability check. It reports gaps, and never changes a file.",
-    "dana10": "Dana approves. Her name and the time are stamped on the document, and the next stage unlocks. Send a stage back later, and everything downstream is flagged for review.",
-    "close0": "Every thumbs up and down lands in Insights, so the team can see which assistants and quick starts are earning their keep. It all stays on this computer.",
-    "close1":"Under the hood, Lumen drives the Claude command line, and it is pluggable. GitHub Copilot is one setting away.",
-    "close2": "And every assistant and skill exports straight into V S Code, for the day you are ready for more.",
+    "dana10": "Dana approves. Her name and the time are stamped on the document, and both design stages are now ready to start together. Send a stage back later, and everything downstream is flagged for review.",
+    "close0": "Every thumbs up and down lands in Insights, so the team can see which agents and prompts are earning their keep. It all stays on this computer.",
+    "close_ask": "Not sure where to start? Just ask Lumen about itself. It knows every agent, prompt, workflow, and schedule on this computer.",
+    "close1": "Under the hood, Lumen drives the Claude command line, and it is pluggable. GitHub Copilot is one setting away.",
+    "close_conn": "Connect Azure DevOps, and SharePoint and Microsoft 365, and agents can read work items, documents, and meetings. Nothing changes in Azure DevOps until you approve it.",
+    "close2": "And every agent and prompt exports to Microsoft 365 Copilot, or straight into V S Code, for the day you are ready for more.",
     "end": "Lumen. The power of A I agents, made friendly for everyone on the team.",
 }
 
@@ -122,12 +127,11 @@ def start_server(mode, resume=False):
     env = {**os.environ, "PORT": str(PORT), "LUMEN_DATA": str(WORK / "data")}
     if mode == "record":
         REC.parent.mkdir(parents=True, exist_ok=True)
-        if resume:
-            env["LUMEN_RECORD_RESUME"] = "1"  # keep what was recorded; only new requests reach the real engine
-        else:
-            if REC.exists():
-                REC.unlink()
-            shutil.rmtree(REC.parent / "artifacts", ignore_errors=True)
+        if not resume or not REC.exists():
+            # Start from the v2 recording (SEED): identical requests replay, only new ones reach the real engine.
+            shutil.rmtree(REC.parent, ignore_errors=True)
+            shutil.copytree(SEED, REC.parent)
+        env["LUMEN_RECORD_RESUME"] = "1"
         env["LUMEN_RECORD"] = str(REC)
     else:
         env.update({"LUMEN_REPLAY": str(REC), "LUMEN_REPLAY_CPS": "1500", "LUMEN_REPLAY_STEP_MS": "650", "LUMEN_REPLAY_COMPLETE_MS": "1400"})
@@ -185,6 +189,12 @@ class Director:
             loc.evaluate("el => el.scrollIntoView({ behavior: 'smooth', block: 'center' })")
             self.wait(0.9 if self.film else 0.4)
             box = loc.bounding_box()
+        for _ in range(20):  # a smooth scroll may still be moving the target; wait until it settles
+            self.page.wait_for_timeout(120)
+            again = loc.bounding_box()
+            if again and abs(again["y"] - box["y"]) < 1 and abs(again["x"] - box["x"]) < 1:
+                break
+            box = again
         return loc, box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
 
     def hover(self, target, ms=750):
@@ -199,6 +209,28 @@ class Director:
         self.log("click")
         self.page.mouse.click(x, y)
         self.wait(after if self.film else 0.3)
+
+    def drag(self, source, target, ms=1100, fx=0.5):
+        """Press on `source`, glide to `target` (fx = where across its width to drop), release."""
+        _, x0, y0 = self.center(source)
+        _, x1, y1 = self.center(target)
+        x1 = self.page.locator(target).first.bounding_box()["x"] + self.page.locator(target).first.bounding_box()["width"] * fx
+        self.js("([x, y, ms]) => Film.moveTo(x, y, ms)", [x0, y0, 600 if self.film else 60])
+        self.page.mouse.move(x0, y0)
+        self.wait(0.6 if self.film else 0.1)
+        self.js("Film.press()")
+        self.log("click")
+        self.page.mouse.down()
+        steps = 24
+        for i in range(1, steps + 1):
+            x, y = x0 + (x1 - x0) * i / steps, y0 + (y1 - y0) * i / steps
+            self.js("([x, y, ms]) => Film.moveTo(x, y, ms)", [x, y, ms / steps if self.film else 10])
+            self.page.mouse.move(x, y)
+            self.wait(ms / steps / 1000 if self.film else 0.01)
+        self.wait(0.5 if self.film else 0.1)
+        self.page.mouse.up()
+        self.log("click")
+        self.wait(0.4 if self.film else 0.2)
 
     def type(self, text, delay=0.034):
         for ch in text:
@@ -318,17 +350,24 @@ def run_film(d):
     page.evaluate("Film.hideCursor(false)")
     d.wait_voice()
 
-    # Overview
-    d.zoom(".greeting", 1.35, 1200, pad=120)
+    # Overview: greeting, agent picker in the message box, quick prompts, the rail
+    d.zoom(".home-inner", 1.3, 1200, pad=40)
     d.say("overview2")
-    d.wait(1.2)
+    d.wait(0.8)
+    d.hover("#assistantPill", 700)
+    d.wait(0.8)
+    for i in range(min(3, page.locator(".qp-tab:not(.more)").count())):
+        d.hover(page.locator(".qp-tab:not(.more)").nth(i), 550)
+        d.wait(0.3)
+    d.hover(".qp-item", 600)
+    d.wait_voice()
     d.unzoom(900)
-    d.zoom(".assistant-row", 1.45, 1100, pad=40)
-    for sel in ['[data-pick-assistant="requirements-coach"]', '[data-pick-assistant="schedule-analyst"]', '[data-pick-assistant="traceability-analyst"]']:
-        d.hover(sel, 650)
-        d.wait(0.35)
-    d.unzoom(900)
-    d.hover('.starter[data-go="runs"]', 700)
+    d.say("overview3")
+    for nav in ["home", "assistants", "prompts", "recipes", "files", "runs", "insights", "samples"]:
+        sel = f'.rail-item[data-nav="{nav}"]' if nav != "files" else "#filesNavBtn"
+        if d.exists(sel):
+            d.hover(sel, 420)
+            d.wait(0.35)
     d.wait_voice()
 
     # ---------------- Marcus
@@ -338,10 +377,18 @@ def run_film(d):
     d.uncard()
     d.third(third_html(*MARCUS, "Marcus", "Business Analyst"))
     d.say("marcus2")
-    d.click('[data-pick-assistant="requirements-coach"]')
-    d.wait(0.6)
-    d.click('[data-starter^="Write user stories"]')
+    d.click("#assistantPill")
     d.wait(0.5)
+    d.type("requirements")
+    d.wait(0.6)
+    d.click('.menu-item:has-text("Requirements Coach")')
+    d.wait(0.8)
+    d.zoom(".qp", 1.5, 900, pad=30)
+    d.wait(0.8)
+    d.click('[data-qp="starter:requirements-coach:0"]')
+    d.wait(0.5)
+    d.unzoom(600)
+    d.wait_voice()
     before = d.replies()
     d.click("#sendBtn")
     d.say("marcus3")
@@ -356,7 +403,7 @@ def run_film(d):
     d.wait_voice()
     d.unzoom()
 
-    # Reply actions: suggested next step, retry / branch / rate, save as Word
+    # Reply actions: suggested next step, retry / branch / rate, export, save as Word
     if d.exists(".msg.assistant:last-child .suggest-chips"):
         d.reveal(".msg.assistant:last-child .suggest-chips", "center", 1.0)
         d.zoom(".msg.assistant:last-child .suggest-chips", 1.6, 900, pad=40)
@@ -372,10 +419,10 @@ def run_film(d):
     d.hover(".msg.assistant:last-child [data-branch]", 600)
     d.wait(0.4)
     d.click(".msg.assistant:last-child [data-rate='up']", 600)
+    d.wait(0.3)
+    d.click(".msg.assistant:last-child [data-save-as]", 600)
     d.wait_voice()
     d.say("marcus_word")
-    d.click(".msg.assistant:last-child [data-save-as]", 600)
-    d.wait(0.5)
     d.click('.menu-item:has-text("Word document")', 500)
     d.page.wait_for_selector(".msg.assistant:last-child .file-card", timeout=30000)
     d.unzoom(700)
@@ -384,10 +431,18 @@ def run_film(d):
     d.wait_voice()
     d.unzoom()
 
-    # Create an assistant
+    # Agents page: search the built-in agents, then create one from a sentence
     d.click('.nav-item[data-nav="assistants"]')
     d.wait(0.8)
     d.say("marcus5")
+    d.click("#agentSearch", 500)
+    d.type("test")
+    d.wait(0.6)
+    d.zoom(".page-inner", 1.2, 900, pad=10)
+    d.wait(1.6)
+    d.unzoom(600)
+    d.key("Escape")
+    d.wait(0.4)
     d.click(".page-head [data-new-assistant]")
     d.wait(0.6)
     d.click("#magicInput", 500)
@@ -395,6 +450,7 @@ def run_film(d):
     d.click("#magicBtn")
     d.page.wait_for_function("() => { const b = document.querySelector('#magicBtn'); return b && !b.disabled; }", timeout=180000, polling=200)
     d.wait(0.4)
+    d.wait_voice()
     d.zoom("#previewPane", 1.55, 1000, pad=30)
     d.say("marcus6")
     d.wait_voice()
@@ -405,9 +461,10 @@ def run_film(d):
     d.wait(1.0)
     d.unzoom(700)
     d.click(".modal-foot .btn.grad")
+    d.page.wait_for_selector(".home .greeting")
     d.say("marcus7")
-    d.wait(1.0)
-    d.zoom(".assistant-row", 1.4, 900, pad=30)
+    d.wait(0.8)
+    d.zoom(".home-inner", 1.3, 900, pad=30)
     d.wait_voice()
     d.unzoom()
     d.third(None)
@@ -416,14 +473,21 @@ def run_film(d):
     d.card(persona_card(*PRIYA, "Priya", "Project Manager", "Steering committee on Thursday"), persist=True)
     d.say("priya1")
     fresh_persona(page, "Priya")
-    page.wait_for_selector(".demo-banner")
+    page.wait_for_selector(".greeting")
     d.wait_voice(0.4)
     d.uncard()
     d.third(third_html(*PRIYA, "Priya", "Project Manager"))
+    d.click('.nav-item[data-nav="samples"]')
+    d.wait(0.6)
     d.say("priya2")
-    d.click("[data-install-demo=\"crm\"]")
-    d.wait(2.2)
-    d.click("[data-open-drawer]")
+    d.zoom(".card-grid", 1.25, 900, pad=20)
+    d.wait(1.8)
+    d.unzoom(600)
+    d.click('[data-install-demo="crm"]')
+    page.wait_for_selector(".demo-banner")
+    d.wait(1.6)
+    d.wait_voice()
+    d.click(".demo-banner [data-open-drawer]")
     d.wait(1.0)
     d.zoom("#filesDrawer", 1.35, 1000)
     d.say("priya3")
@@ -548,13 +612,16 @@ def run_film(d):
     d.card(persona_card(*DANA, "Dana", "Delivery Lead", "Requirements to stories, fully traceable"), persist=True)
     d.say("dana1")
     fresh_persona(page, "Dana", {"workspace": str(WORKSPACE), "demoInstalled": "", "demoPack": "", "access": "read"})
-    page.wait_for_selector('[data-install-demo="aidlc"]')
+    page.wait_for_selector(".greeting")
     d.wait_voice(0.4)
     d.uncard()
     d.third(third_html(*DANA, "Dana", "Delivery Lead"))
+    d.click('.nav-item[data-nav="samples"]')
+    d.wait(0.6)
     d.click('[data-install-demo="aidlc"]')
-    d.wait(2.2)
-    d.click("[data-open-drawer]")
+    page.wait_for_selector(".demo-banner")
+    d.wait(1.6)
+    d.click(".demo-banner [data-open-drawer]")
     d.wait(1.0)
     d.zoom("#filesDrawer", 1.35, 1000)
     d.say("dana2")
@@ -586,16 +653,29 @@ def run_film(d):
     d.click(".msg.assistant:last-child [data-rate='up']", 600)
     d.wait(0.6)
 
-    # Guided lifecycle run
+    # Lifecycle: shape the workflow (fan out / fan in), then run it
     d.click('.nav-item[data-nav="runs"]')
-    d.wait(0.8)
+    page.wait_for_selector('[data-edit-pipeline="aidlc"]')
+    d.wait(0.6)
     d.say("dana5")
-    d.zoom(".page-inner", 1.25, 900, pad=20)
-    d.wait(1.5)
+    d.zoom(".workflow-list", 1.4, 900, pad=30)
+    d.wait(1.2)
     d.unzoom(600)
-    d.click("#newRun")
-    d.page.wait_for_selector("#runName")
+    d.click('[data-edit-pipeline="aidlc"]')
+    page.wait_for_selector("#pipelineFlow .flow-node")
+    d.wait(0.6)
+    d.zoom("#pipelineFlow .flow-diagram svg", 1.3, 900, pad=30)
     d.wait_voice()
+    d.say("dana5b")
+    d.drag('#pipelineFlow .flow-node[data-flow-id="technical"] rect', '#pipelineFlow .flow-node[data-flow-id="functional"] rect')
+    d.wait(1.0)
+    d.hover('#pipelineFlow .flow-node[data-flow-id="stories"] rect', 700)
+    d.wait_voice()
+    d.unzoom(600)
+    d.click('.modal-foot button:has-text("Save workflow")')
+    d.wait(0.8)
+    d.click('[data-start-pipeline="aidlc"]')
+    d.page.wait_for_selector("#runName")
     d.say("dana6")
     d.click("#runName", 500)
     d.type("Release 1")
@@ -606,9 +686,9 @@ def run_film(d):
     d.wait(1.2)
     d.unzoom(600)
     d.click('.modal-foot button:has-text("Create run")')
-    d.page.wait_for_selector(".run-stepper")
+    d.page.wait_for_selector(".page-inner .flow-diagram")
     d.wait(0.8)
-    d.zoom(".run-stepper", 1.5, 900, pad=40)
+    d.zoom(".page-inner .flow-diagram", 1.5, 900, pad=30)
     d.wait(0.8)
     d.unzoom(600)
     d.wait_voice()
@@ -616,7 +696,7 @@ def run_film(d):
     d.say("dana7")
     run_id = page.evaluate("location.hash.split('run/')[1]")
     d.wait_for(lambda: api("GET", f"/api/runs/{run_id}")["stages"][0]["status"] in ("review", "rework"), 900)
-    d.js("() => document.querySelector('.run-step.selected')?.click()")  # re-render: the page's own 2 s refresh stops after any failed request
+    d.js(RERENDER_RUN)  # re-render: the page's own 2 s refresh stops after any failed request
     d.page.wait_for_selector('[data-run-action="approve"]', timeout=30000)
     d.wait_voice()
 
@@ -643,7 +723,7 @@ def run_film(d):
     d.say("dana9")
     d.click('[data-run-action="check"]')
     d.wait_for(lambda: not api("GET", f"/api/runs/{run_id}")["stages"][0].get("checkRunning"), 900)
-    d.js("() => document.querySelector('.run-step.selected')?.click()")
+    d.js(RERENDER_RUN)
     d.page.wait_for_selector(".run-findings", timeout=30000)
     d.wait(0.6)
     d.reveal(".run-findings", "start", 1.0)
@@ -651,23 +731,26 @@ def run_film(d):
     d.wait_voice()
     d.wait(1.5)
     d.unzoom(700)
-    d.js("() => window.scrollTo({ top: 0, behavior: 'smooth' }) || document.querySelector('.run-actions')?.scrollIntoView({ behavior: 'smooth', block: 'center' })")
-    d.wait(0.8)
+    d.reveal(".run-actions", "center", 0.8)
     d.say("dana10")
     d.click('[data-run-action="approve"]')
     d.page.wait_for_selector('.page-inner p:has-text("Approved by")', timeout=30000)
     d.wait(0.6)
+    d.js("() => window.scrollTo({ top: 0, behavior: 'smooth' }) || document.querySelector('.page-inner .flow-diagram')?.scrollIntoView({ behavior: 'smooth', block: 'start' })")
+    d.wait(0.8)
     d.zoom(".page-inner", 1.2, 900, pad=10)
     d.wait(2.2)
     d.unzoom(600)
-    d.click('.run-step:nth-child(2)')
-    d.wait(0.8)
+    d.click('.page-inner .flow-node[data-stage="functional"] rect')
+    d.page.wait_for_selector("[data-start-ready]", timeout=30000)
+    d.wait(0.6)
     d.zoom(".page-inner", 1.2, 900, pad=10)
+    d.hover("[data-start-ready]", 700)
     d.wait_voice()
     d.unzoom(700)
     d.third(None)
 
-    # Closing: insights, pluggable engines, VS Code
+    # Closing: insights, ask Lumen about itself, engines and connections, exports
     d.click('.nav-item[data-nav="insights"]')
     d.page.wait_for_selector("#insightsBody table, #insightsBody .insights-empty", timeout=30000)
     d.wait(0.6)
@@ -675,10 +758,36 @@ def run_film(d):
     d.say("close0")
     d.wait_voice()
     d.unzoom(600)
+    d.click("#newChatBtn")
+    d.wait(0.6)
+    d.click("#assistantPill")
+    d.wait(0.4)
+    d.type("Lumen")
+    d.key("Enter")
+    d.wait(0.6)
+    d.say("close_ask")
+    d.click("#input", 500)
+    d.type("Which agent should I use to check our budget against actuals?", 0.03)
+    before = d.replies()
+    d.key("Enter")
+    d.wait_reply(before)
+    d.reveal(".msg.assistant:last-child .md", "start", 0.8)
+    d.zoom(".msg.assistant:last-child .md", 1.3, 1000)
+    d.wait_voice()
+    d.wait(1.5)
+    d.unzoom(600)
     d.click("#settingsBtn")
     d.wait(0.8)
     d.zoom("#providerCards", 1.5, 1000, pad=40)
     d.say("close1")
+    d.wait_voice()
+    d.unzoom(600)
+    d.reveal("#connectionsField", "center", 0.8)
+    d.zoom("#connectionsField", 1.5, 1000, pad=30)
+    d.say("close_conn")
+    d.hover("#sAdo", 600)
+    d.wait(0.8)
+    d.hover("#sWorkiq", 600)
     d.wait_voice()
     d.unzoom(600)
     d.click(".modal-head [data-x]")
@@ -698,10 +807,13 @@ def run_film(d):
     page.evaluate("Film.hideCursor(true)")
     d.card(f'<div class="logo rise">{LOGO}</div><h1 class="rise" style="animation-delay:.2s"><em>Lumen</em></h1>'
            f'<p class="rise" style="animation-delay:.4s">The power of AI agents, made friendly for everyone on the team.</p>'
-           f'<div class="pills rise" style="animation-delay:.7s"><span>💬 Chat-first</span><span>📅 Microsoft Project</span><span>📗 Excel &amp; Word</span>'
-           f'<span>🧬 Guided lifecycle</span><span>🔗 Traceability</span><span>🕘 Scheduled checks</span><span>🔌 Claude · Copilot</span><span>🧩 Exports to VS Code</span></div>')
+           f'<div class="pills rise" style="animation-delay:.7s"><span>💬 Chat-first</span><span>🧭 Agent library</span><span>📅 Microsoft Project</span><span>📗 Excel, Word &amp; PowerPoint</span>'
+           f'<span>🧬 Guided lifecycle</span><span>🔗 Traceability</span><span>🕘 Scheduled tasks</span><span>🔷 Azure DevOps · SharePoint</span><span>🔌 Claude · Copilot</span><span>🧩 Exports to VS Code &amp; M365 Copilot</span></div>')
     d.say("end")
     d.wait_voice(1.6)
+
+
+RERENDER_RUN = "() => document.querySelector('.page-inner .flow-node.selected')?.dispatchEvent(new MouseEvent('click', { bubbles: true }))"
 
 
 # ------------------------------------------------------------------ capture
@@ -897,6 +1009,9 @@ def main():
         return
 
     from playwright.sync_api import sync_playwright
+    if sys.platform == "win32":  # an idle sleep mid-film freezes the screencast for as long as the machine sleeps
+        import ctypes
+        ctypes.windll.kernel32.SetThreadExecutionState(0x80000000 | 0x00000001)  # ES_CONTINUOUS | ES_SYSTEM_REQUIRED
     mode = "record" if args.record else "film"
     server = start_server(mode, args.resume)
     try:
@@ -916,7 +1031,11 @@ def main():
                 cap = Capture(page)
                 cap.start()
             started = time.time()
-            run_film(d)
+            try:
+                run_film(d)
+            except Exception:
+                page.screenshot(path=str(WORK / "failed.png"))  # what the screen showed when a step broke
+                raise
             if cap:
                 cap.stop()
             browser.close()

@@ -77,6 +77,6 @@ In `Status reports/<status date>/` (re-running on the same date replaces them):
 ## Source
 `tools/status.js` (`buildModel`, `readRaid`, `severity`, `deliveryProgress`, `renderMarkdown`, `renderHtml`,
 `buildReport`), `tools/raid.js` (`latestRaid`), `tools/office-mcp.js` (`get_status_facts`, `build_status_report`),
-`skills/ms-project/SKILL.md`, `defaults/assistants.json` (agent **Project Partner**), `defaults/recipes.json` (prompts
+`skills/ms-project/SKILL.md`, `agents/<id>.json` (agent **Project Partner**), `defaults/recipes.json` (prompts
 **Weekly executive status** `exec-status-pack`, **Status report from my files** `plan-status-report`, **Weekly status
 report** `status-report`).

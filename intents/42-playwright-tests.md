@@ -59,7 +59,7 @@ The prompt runs with **Create & edit files** (**Saves a file**).
 
 ## Source
 `tools/tests.js` (`readTestCases`, `playwrightFiles`, `generatePlaywrightTests`), `tools/office-mcp.js`
-(`generate_playwright_tests`), `lib/tool-labels.js`, `defaults/assistants.json` (agent **Test Automation Copilot**),
+(`generate_playwright_tests`), `lib/tool-labels.js`, `agents/<id>.json` (agent **Test Automation Copilot**),
 `defaults/recipes.json` (prompt **Turn test cases into Playwright tests**), `skills/test-automation/SKILL.md`
 (+ `references/playwright-conventions.md`, `references/worked-example.md`),
 `samples/aidlc/Quality/Test cases - Photo upload (SIT).xlsx`.

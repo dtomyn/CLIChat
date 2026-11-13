@@ -89,5 +89,5 @@ that the change plan rests on what people actually said and training goes where 
 `tools/change.js` (`proposeImpacts`, `applyImpacts`, `readImpacts`, `readRoles`, `consolidateCia`, `CIA_COLUMNS`),
 `tools/raid.js` (`readTranscript`, `verifyQuotes`), `tools/tests.js` (`similarity`), `tools/office-mcp.js`
 (`propose_change_impacts`, `apply_change_impacts`, `consolidate_cia`), `lib/tool-labels.js`,
-`defaults/assistants.json` (agent **Change Impact Analyst**), `defaults/recipes.json` (prompts **Interview → change
+`agents/<id>.json` (agent **Change Impact Analyst**), `defaults/recipes.json` (prompts **Interview → change
 impacts**, **Consolidate the CIA**, **Training needs analysis**), `skills/change-management/SKILL.md`, `samples/change/`.

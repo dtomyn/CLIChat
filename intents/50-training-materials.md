@@ -62,6 +62,6 @@ The prompt runs with **Create & edit files**. `save_draft_document` options: `pa
 
 ## Source
 `tools/change.js` (`saveDraft`, `findDeckTemplate`), `tools/pptx.js` (`toPptx`), `tools/md-export.js` (`toDocx`),
-`tools/office-mcp.js` (`save_draft_document`), `lib/tool-labels.js`, `defaults/assistants.json` (agent **Training
+`tools/office-mcp.js` (`save_draft_document`), `lib/tool-labels.js`, `agents/<id>.json` (agent **Training
 Content**), `defaults/recipes.json` (prompt **Draft training materials**), `skills/change-management/SKILL.md`,
 `samples/change/Templates/Training Deck Template.potx`.

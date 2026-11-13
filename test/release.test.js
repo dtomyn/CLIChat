@@ -148,7 +148,7 @@ test('release tools are exposed and read-only; the cutover snapshot needs edit a
 });
 
 test('release agents, prompts and skill are wired up', () => {
-  const assistants = require('../defaults/assistants.json');
+  const assistants = require('../lib/builtin-agents').all();
   const recipes = require('../defaults/recipes.json');
   const skills = require('../lib/skills').all();
   const skill = skills.find((s) => s.id === 'release-cutover');
@@ -176,7 +176,7 @@ test('the runbook is saved as Word in the program runbook template', async () =>
   assert.ok(field && field.optional && /\.dotx/.test(field.accept), 'optional Word template field');
   assert.match(recipe.template, /word: true and the Word template \{\{template\}\}/);
   assert.match(recipe.template, /Templates\/Runbook Template\.dotx/);
-  const writer = require('../defaults/assistants.json').find((a) => a.id === 'runbook-writer');
+  const writer = require('../lib/builtin-agents').all().find((a) => a.id === 'runbook-writer');
   assert.match(writer.instructions, /Runbook Template\.dotx/);
 
   const JSZip = require('jszip');

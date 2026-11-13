@@ -68,5 +68,5 @@ reading every task.
 ## Source
 `tools/project.js` (`load`, `analyze`, `criticalPath`, `overallocations`, `readPlan`, `mppToXml`, `hasMsProject`),
 `tools/office-mcp.js` (`analyze_project_plan`, `read_project_plan`), `skills/ms-project/SKILL.md`,
-`defaults/assistants.json` (agent **Schedule Analyst**), `defaults/recipes.json` (prompt **Project health check**,
+`agents/<id>.json` (agent **Schedule Analyst**), `defaults/recipes.json` (prompt **Project health check**,
 `plan-health-check`), `lib/tool-labels.js`.

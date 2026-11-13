@@ -61,7 +61,7 @@ function renderAssistantsPage() {
       openMenu(t, [
         { icon: 'edit', label: 'Customize', run: () => openAssistantBuilder(a) },
         { icon: 'pin', label: pinnedAgentIds().includes(a.id) ? 'Unpin from sidebar' : 'Pin to sidebar', run: () => togglePinAgent(a.id) },
-        { icon: 'copy', label: 'Duplicate', run: async () => { const { id, builtin, createdAt, updatedAt, ...rest } = a; await api('/api/assistants', { method: 'POST', body: { ...rest, name: `${a.name} (copy)` } }); await reloadAssistants(); toast('Agent duplicated'); } },
+        { icon: 'copy', label: 'Duplicate', run: async () => { const { id, builtin, order, createdAt, updatedAt, ...rest } = a; await api('/api/assistants', { method: 'POST', body: { ...rest, name: `${a.name} (copy)` } }); await reloadAssistants(); toast('Agent duplicated'); } },
         { sep: true },
         ...(a.id === 'lumen' ? [] : [{ icon: 'external', label: 'Export to Microsoft 365 Copilot', hint: 'For Agent Builder, or as an app package for IT', run: () => exportToCopilot(a) }]),
         { icon: 'code', label: 'Use in VS Code', hint: 'Save for Claude Code & GitHub Copilot', run: () => exportAssistant(a) },

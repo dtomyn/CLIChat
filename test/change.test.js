@@ -202,7 +202,7 @@ test('change tools are exposed; writing needs edit access and stays in the folde
 });
 
 test('change and bilingual agents, prompts and skills are wired up', () => {
-  const assistants = require('../defaults/assistants.json');
+  const assistants = require('../lib/builtin-agents').all();
   const recipes = require('../defaults/recipes.json');
   const skills = require('../lib/skills').all();
   const cm = skills.find((s) => s.id === 'change-management');

@@ -86,7 +86,7 @@ like "C# on .NET 8") and `outDir`.
 `tools/openapi.js` (`parseYaml`, `toYaml`, `parseStandards`, `readStandards`, `validateSpec`, `validateOpenApi`,
 `schemasFromModel`, `writeOpenApi`, `generateScaffold`, `scaffoldFiles`, `STACKS`), `tools/data.js` (`readSchema`),
 `tools/office-mcp.js` (`validate_openapi`, `write_openapi`, `generate_api_scaffold`), `lib/tool-labels.js`,
-`defaults/assistants.json` (agent **API Designer**), `defaults/recipes.json` (prompts **Design an API**, **Review an
+`agents/<id>.json` (agent **API Designer**), `defaults/recipes.json` (prompts **Design an API**, **Review an
 OpenAPI spec**, **Generate API scaffolding**), `skills/integration-design/SKILL.md`,
 `samples/aidlc/Integration/permit-renewal-api.yaml`, `samples/aidlc/Knowledge/API Standards.md`,
 `samples/aidlc/Knowledge/Solution Blueprint - Permit Renewal.md`.

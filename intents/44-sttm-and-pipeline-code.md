@@ -70,6 +70,6 @@ Both run with **Create & edit files**. Tool-only options: `write_sttm` `rows`, `
 
 ## Source
 `tools/data.js` (`writeSttm`, `readSttm`, `translateRule`, `generatePipelineCode`, `dqPy`, `STTM_COLUMNS`),
-`tools/office-mcp.js` (`write_sttm`, `generate_pipeline_code`), `lib/tool-labels.js`, `defaults/assistants.json`
+`tools/office-mcp.js` (`write_sttm`, `generate_pipeline_code`), `lib/tool-labels.js`, `agents/<id>.json`
 (agents **Mapping Analyst**, **Data Engineer**), `defaults/recipes.json` (prompts **Draft the STTM**, **Generate
 pipeline code from the STTM**), `skills/data-engineering/SKILL.md`, `samples/data/`.

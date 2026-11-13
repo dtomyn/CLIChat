@@ -85,6 +85,6 @@ and the hypercare exit decision rests on the defect data.
   `analyzeDefects`); `tools/change.js` (`saveDraft`); `tools/md-export.js` (`toDocx`).
 - `tools/office-mcp.js` (tools `hypercare_trends`, `analyze_defects`, `save_draft_document`).
 - `skills/release-cutover/SKILL.md`.
-- `defaults/assistants.json` (agents **Runbook Writer**, **Hypercare Analyst**).
+- `agents/<id>.json` (agents **Runbook Writer**, **Hypercare Analyst**).
 - `defaults/recipes.json` (prompts **Draft the runbook**, **Hypercare closure report**).
 - `samples/aidlc/Templates/Runbook Template.dotx`; `demo/Hypercare Defects - 1 Feb 2027.xlsx`.

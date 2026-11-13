@@ -73,6 +73,6 @@ I know what is missing or needs review before a gate, with every finding pointin
 ## Source
 `tools/traceability.js` (`analyze`, `LAYERS`), `tools/office-mcp.js` (`analyze_traceability`),
 `tools/ado/backlog.js` (`exportBacklog`, `backlogRows`, `TRACE_TAG`), `tools/ado-mcp.js` (`ado_export_backlog`),
-`skills/traceability/SKILL.md`, `defaults/assistants.json` (`traceability-analyst`), `defaults/recipes.json`
+`skills/traceability/SKILL.md`, `agents/<id>.json` (`traceability-analyst`), `defaults/recipes.json`
 (`aidlc-trace-check`, `aidlc-change-impact`, `ado-traceability-live`),
 `samples/aidlc/Requirements Traceability (sample).xlsx`.

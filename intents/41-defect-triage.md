@@ -71,6 +71,6 @@ The prompt runs with **Create & edit files** (**Saves a file**); the agent defau
 
 ## Source
 `tools/tests.js` (`readDefects`, `analyzeDefects`, `proposeDefectChanges`, `similarity`, `rank`),
-`tools/office-mcp.js` (`analyze_defects`, `propose_defect_changes`), `lib/tool-labels.js`, `defaults/assistants.json`
+`tools/office-mcp.js` (`analyze_defects`, `propose_defect_changes`), `lib/tool-labels.js`, `agents/<id>.json`
 (agent **Defect Triage**), `defaults/recipes.json` (prompt **Triage defects**), `skills/test-design/SKILL.md`,
 `samples/aidlc/Defects export.xlsx`.
