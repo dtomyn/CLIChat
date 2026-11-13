@@ -1,0 +1,375 @@
+1
+00:00:01,194 --> 00:00:06,553
+Everyone on the team now has VS Code, GitHub Copilot, and the Claude command line.
+
+2
+00:00:06,553 --> 00:00:07,534
+Powerful tools.
+
+3
+00:00:07,534 --> 00:00:10,474
+But not everyone wants to live in a terminal.
+
+4
+00:00:10,732 --> 00:00:11,436
+Meet Lumen.
+
+5
+00:00:11,436 --> 00:00:17,324
+The same AI agents and skills, behind a friendly chat window that runs on your own computer.
+
+6
+00:00:18,824 --> 00:00:20,367
+Lumen greets you by name.
+
+7
+00:00:20,367 --> 00:00:24,933
+Pick an agent, a specialist with its own skills, right in the message box.
+
+8
+00:00:24,933 --> 00:00:28,019
+Or start from one of the quick prompts underneath.
+
+9
+00:00:29,187 --> 00:00:33,328
+Along the left, the same rail as Microsoft 365 Copilot.
+
+10
+00:00:33,328 --> 00:00:41,987
+Chat, agents, prompts, and tasks, your notebook, a guided delivery lifecycle, insights, and samples to practise on.
+
+11
+00:00:42,267 --> 00:00:45,984
+Marcus is a business analyst on the Contoso CRM project.
+
+12
+00:00:45,984 --> 00:00:51,227
+He needs user stories by Friday, and he has never written a prompt in his life.
+
+13
+00:00:52,440 --> 00:00:57,940
+So he opens the agent picker, searches for requirements, and picks the Requirements Coach.
+
+14
+00:00:57,940 --> 00:01:00,568
+Its suggestions appear right under the box.
+
+15
+00:01:03,886 --> 00:01:08,387
+The answer streams in, like chatting with a colleague who has done this a hundred times.
+
+16
+00:01:12,773 --> 00:01:19,600
+User stories, Given, When, Then acceptance criteria, and the open questions to take back to the business.
+
+17
+00:01:22,702 --> 00:01:24,615
+It even suggests a next step.
+
+18
+00:01:24,615 --> 00:01:25,604
+One click away.
+
+19
+00:01:28,305 --> 00:01:33,355
+Every reply can be retried, branched into a new chat, rated, or exported.
+
+20
+00:01:33,355 --> 00:01:35,431
+Word, PowerPoint, or Markdown.
+
+21
+00:01:35,692 --> 00:01:39,059
+The business wants Word, so, Save as, Word document.
+
+22
+00:01:39,059 --> 00:01:43,074
+Real headings, lists, and tables, saved to his project folder.
+
+23
+00:01:46,404 --> 00:01:49,093
+Next, Marcus wants a helper for test scripts.
+
+24
+00:01:49,093 --> 00:01:53,755
+There are nearly forty built in agents to search, but he wants one of his own.
+
+25
+00:01:53,755 --> 00:01:55,129
+One sentence is enough.
+
+26
+00:02:02,118 --> 00:02:06,911
+Lumen drafts the name, the icon, the instructions, and example requests.
+
+27
+00:02:06,911 --> 00:02:09,307
+It even switches on the Excel skill.
+
+28
+00:02:16,205 --> 00:02:17,574
+No jargon, no setup.
+
+29
+00:02:17,574 --> 00:02:21,749
+Just a new teammate, with its own suggestions, ready to chat.
+
+30
+00:02:21,749 --> 00:02:27,362
+Each agent is saved as its own small file, easy to back up or pass to a colleague.
+
+31
+00:02:28,546 --> 00:02:30,839
+Now meet Priya, the project manager.
+
+32
+00:02:30,839 --> 00:02:37,975
+Her world is a Microsoft Project plan and a stack of Excel workbooks, and the steering committee is on Thursday.
+
+33
+00:02:43,628 --> 00:02:46,178
+To try it safely, she opens Samples.
+
+34
+00:02:46,178 --> 00:02:49,224
+Realistic, made up projects to practise on.
+
+35
+00:02:49,224 --> 00:02:52,482
+One click sets up the project management demo.
+
+36
+00:02:56,118 --> 00:03:06,486
+Here is the plan from Microsoft Project, forty two tasks with a baseline, plus a budget tracker, a RAID log, timesheets, and this week's progress update in Excel.
+
+37
+00:03:12,315 --> 00:03:13,815
+She asks for a health check.
+
+38
+00:03:13,815 --> 00:03:16,816
+Lumen has already picked the right plan from her folder.
+
+39
+00:03:21,139 --> 00:03:23,915
+The Schedule Analyst reads the actual plan.
+
+40
+00:03:23,915 --> 00:03:28,307
+Critical path, slippage against baseline, and who is over allocated.
+
+41
+00:03:30,601 --> 00:03:31,858
+Amber, trending red.
+
+42
+00:03:31,858 --> 00:03:38,771
+Go-live has slipped ten working days, there is no float left, and one integration developer is the bottleneck.
+
+43
+00:03:38,771 --> 00:03:42,164
+It even warns that the progress data is two weeks old.
+
+44
+00:03:43,337 --> 00:03:46,159
+Any table copies straight into Excel or Outlook.
+
+45
+00:03:46,159 --> 00:03:50,099
+And because she wants this check every week, she sets it to repeat.
+
+46
+00:03:54,769 --> 00:03:55,799
+Mondays at nine.
+
+47
+00:03:55,799 --> 00:04:01,915
+It waits under Tasks, and Lumen runs it while it is open, leaving the result as an unread chat.
+
+48
+00:04:10,077 --> 00:04:12,747
+Friday's progress arrived as a spreadsheet.
+
+49
+00:04:12,747 --> 00:04:16,285
+Instead of retyping it into Project, Priya hands it over.
+
+50
+00:04:17,926 --> 00:04:25,030
+Lumen reads the workbook, updates the plan, saves a new version without touching the original, and checks the schedule again.
+
+51
+00:04:29,669 --> 00:04:32,293
+Every change is listed, before and after.
+
+52
+00:04:32,293 --> 00:04:40,741
+Progress is up from forty seven to fifty three percent, and it warns that the E R P delay will push go-live back another three days.
+
+53
+00:04:43,644 --> 00:04:46,418
+And See changes shows exactly what moved.
+
+54
+00:04:46,418 --> 00:04:48,786
+Every task field, before and after.
+
+55
+00:04:51,811 --> 00:04:54,947
+When she wants a file, she lets Lumen edit, with one click.
+
+56
+00:05:01,324 --> 00:05:06,423
+And gets a colour coded Excel tracker, with a Gantt chart, ready for the steering committee.
+
+57
+00:05:07,604 --> 00:05:12,334
+Finally, meet Dana, the delivery lead on the Online Permit Renewal program.
+
+58
+00:05:12,334 --> 00:05:17,695
+Requirements, design, and stories all have to line up, and the auditors will ask how.
+
+59
+00:05:28,971 --> 00:05:32,262
+The lifecycle sample sets up her program documents.
+
+60
+00:05:32,262 --> 00:05:39,424
+A project definition and requirements in Word, a solution blueprint, a data model, and a traceability workbook.
+
+61
+00:05:45,223 --> 00:05:46,962
+First, a traceability check.
+
+62
+00:05:46,962 --> 00:05:52,861
+The Traceability Analyst reads every layer of the workbook, from business requirement to story.
+
+63
+00:05:58,787 --> 00:06:01,531
+Coverage for every layer, and a red status.
+
+64
+00:06:01,531 --> 00:06:04,913
+Two stories marked ready would build the wrong thing.
+
+65
+00:06:04,913 --> 00:06:09,635
+One builds a withdrawn requirement, and one still uses the old photo rule.
+
+66
+00:06:09,635 --> 00:06:17,228
+It also catches a link to a requirement that does not exist, a story that skips design, and conflicting sources on SMS.
+
+67
+00:06:17,228 --> 00:06:20,419
+Every finding has its cell reference and an owner.
+
+68
+00:06:26,198 --> 00:06:27,960
+Next, the guided lifecycle.
+
+69
+00:06:27,960 --> 00:06:37,228
+A workflow takes requirements through functional design, technical design, stories, and test cases, with an approval gate between every stage.
+
+70
+00:06:37,491 --> 00:06:39,884
+And the workflow is hers to shape.
+
+71
+00:06:39,884 --> 00:06:43,754
+She drags technical design alongside functional design.
+
+72
+00:06:43,754 --> 00:06:47,484
+Now both run side by side, and stories wait for both.
+
+73
+00:06:47,484 --> 00:06:49,736
+The diagram redraws as she goes.
+
+74
+00:06:54,087 --> 00:06:59,570
+She names the run, picks the requirements and the project definition, and starts the first stage.
+
+75
+00:07:08,634 --> 00:07:16,207
+The Requirements Refiner works in its own chat, with the source documents already pinned, and saves its output to the project folder.
+
+76
+00:07:26,298 --> 00:07:33,109
+Thirty eight requirements, each with acceptance criteria and a source, all marked draft until approved.
+
+77
+00:07:33,109 --> 00:07:40,912
+It spots the SMS conflict, follows the project definition, and lists the questions to take back to the business owner.
+
+78
+00:07:46,101 --> 00:07:49,353
+Before signing off, an advisory traceability check.
+
+79
+00:07:49,353 --> 00:07:52,032
+It reports gaps, and never changes a file.
+
+80
+00:08:07,846 --> 00:08:08,741
+Dana approves.
+
+81
+00:08:08,741 --> 00:08:15,513
+Her name and the time are stamped on the document, and both design stages are now ready to start together.
+
+82
+00:08:15,513 --> 00:08:20,177
+Send a stage back later, and everything downstream is flagged for review.
+
+83
+00:08:24,299 --> 00:08:30,760
+Every thumbs up and down lands in Insights, so the team can see which agents and prompts are earning their keep.
+
+84
+00:08:30,760 --> 00:08:32,491
+It all stays on this computer.
+
+85
+00:08:38,250 --> 00:08:39,719
+Not sure where to start?
+
+86
+00:08:39,719 --> 00:08:41,433
+Just ask Lumen about itself.
+
+87
+00:08:41,433 --> 00:08:45,717
+It knows every agent, prompt, workflow, and schedule on this computer.
+
+88
+00:08:54,306 --> 00:08:59,173
+Under the hood, Lumen drives the Claude command line, and it is pluggable.
+
+89
+00:08:59,173 --> 00:09:01,474
+GitHub Copilot is one setting away.
+
+90
+00:09:04,179 --> 00:09:12,419
+Connect Azure DevOps, and SharePoint and Microsoft 365, and agents can read work items, documents, and meetings.
+
+91
+00:09:12,419 --> 00:09:16,318
+Nothing changes in Azure DevOps until you approve it.
+
+92
+00:09:20,042 --> 00:09:29,194
+And every agent and prompt exports to Microsoft 365 Copilot, or straight into VS Code, for the day you are ready for more.
+
+93
+00:09:30,724 --> 00:09:31,104
+Lumen.
+
+94
+00:09:31,104 --> 00:09:35,097
+The power of AI agents, made friendly for everyone on the team.
