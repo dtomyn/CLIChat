@@ -45,7 +45,7 @@ function composerHTML({ home = false, conv = null } = {}) {
 
 // Lumen looks like Microsoft 365 Copilot on purpose, so say plainly which tool (and which AI service) this is.
 function boundaryNote(agent) {
-  // IRCC agents run in Microsoft Foundry whatever engine is chosen for other chats.
+  // Contoso agents run in Microsoft Foundry whatever engine is chosen for other chats.
   const p = agent?.foundry?.agent ? (S.providers.find((x) => x.id === 'foundry') || { name: 'Microsoft Foundry', vendor: 'Microsoft' }) : provider();
   return `<span class="boundary-note" title="Lumen sends your messages and files to ${esc(p?.name || 'the AI engine')} through ${esc(p?.vendor || 'its command-line tool')}. Microsoft 365 Copilot's data protections don't apply here.">${icon('shield')}<span>You're in <b>Lumen</b>, powered by ${esc(p?.name || 'your AI engine')}. This isn't Microsoft 365 Copilot.</span></span>`;
 }

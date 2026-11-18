@@ -1,4 +1,4 @@
-// IRCC agents hosted in Microsoft Foundry (intent 73), against the stand-in Foundry in e2e/start-server.js.
+// Contoso agents hosted in Microsoft Foundry (intent 73), against the stand-in Foundry in e2e/start-server.js.
 const { test, expect } = require('@playwright/test');
 const fs = require('fs');
 const path = require('path');
@@ -20,10 +20,10 @@ test.beforeAll(() => {
   fs.writeFileSync(path.join(PROJECT, 'Intake BRD.md'), '# 2.1 Submit\nThe applicant must be able to submit an application online.\n');
 });
 
-test('IRCC agents are listed with a Microsoft Foundry tag and are hidden from the engine picker', async ({ page, request }) => {
+test('Contoso agents are listed with a Microsoft Foundry tag and are hidden from the engine picker', async ({ page, request }) => {
   const agents = await (await request.get('/api/assistants')).json();
-  const ircc = agents.filter((a) => a.foundry?.agent);
-  expect(ircc.length).toBeGreaterThanOrEqual(20);
+  const contoso = agents.filter((a) => a.foundry?.agent);
+  expect(contoso.length).toBeGreaterThanOrEqual(20);
   const status = await (await request.get('/api/status')).json();
   expect(status.providers.find((p) => p.id === 'foundry')?.agentOnly).toBe(true);
   const res = await request.put('/api/settings', { data: { providerId: 'foundry' } });
@@ -38,7 +38,7 @@ test('IRCC agents are listed with a Microsoft Foundry tag and are hidden from th
 });
 
 test('a requirements refinement reply renders the agent result as tables', async ({ page }) => {
-  await openAgent(page, 'ircc-business-requirements-refinement');
+  await openAgent(page, 'contoso-business-requirements-refinement');
   await page.locator('#input').first().fill('Refine the intake BRD. Document key INTAKE.');
   await page.keyboard.press('Enter');
   const reply = page.locator('.msg.assistant').last();
@@ -51,15 +51,15 @@ test('a requirements refinement reply renders the agent result as tables', async
 });
 
 test('an agent pause shows an Approve card and approving resumes the agent', async ({ page }) => {
-  await openAgent(page, 'ircc-interface-documentation');
+  await openAgent(page, 'contoso-interface-documentation');
   await page.locator('#input').first().fill('Draft the ICD for the Name Search interface');
   await page.keyboard.press('Enter');
   const card = page.locator('.approval-card').last();
-  await expect(card).toContainText('Confirm integration pattern for IF-CMP-NS-001', { timeout: 30_000 });
+  await expect(card).toContainText('Confirm integration pattern for IF-CSP-NS-001', { timeout: 30_000 });
   await expect(card).toContainText('Microsoft Foundry');
   await expect(card.locator('[data-ap-apply]')).toHaveText(/Approve/);
   await page.screenshot({ path: path.join(SHOTS, 'foundry-approval-card.png'), fullPage: true });
   await card.locator('[data-ap-apply]').click();
-  await expect(page.locator('.msg.assistant').last()).toContainText('ICD draft for IF-CMP-NS-001', { timeout: 30_000 });
+  await expect(page.locator('.msg.assistant').last()).toContainText('ICD draft for IF-CSP-NS-001', { timeout: 30_000 });
   await expect(page.locator('.approval-card').first()).toContainText('Approved');
 });

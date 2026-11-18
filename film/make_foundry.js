@@ -1,9 +1,9 @@
-// Lumen × IRCC explainer: the 23 IRCC agents hosted in Microsoft Foundry, filmed from the real app.
+// Lumen × Foundry explainer: 23 SDLC agents (a proof of concept) hosted in Microsoft Foundry, filmed from the real app.
 //
 //   node film/make_foundry.js --record    Run the scenes against the REAL hosted agents (your az login) and save replies.
 //   node film/make_foundry.js --voice     Make only the narration (Kokoro, af_heart) and print each line's length.
-//   node film/make_foundry.js             Film (replaying the saved replies), mix and encode film/out/lumen-ircc-foundry.mp4
-//                                          and film/out/lumen-ircc-foundry.srt.
+//   node film/make_foundry.js             Film (replaying the saved replies), mix and encode film/out/lumen-foundry-agents.mp4
+//                                          and film/out/lumen-foundry-agents.srt.
 //   node film/make_foundry.js --stills    Film, then write a contact sheet instead of encoding.
 //
 // Node twin of make_video.py (same overlay, cards, cursor and sound design) so it runs with what Lumen already has:
@@ -21,7 +21,7 @@ const FILM = __dirname;
 const WORK = path.join(FILM, '.work-foundry');
 const OUT = path.join(FILM, 'out');
 const VO = path.join(FILM, 'vo-foundry');
-const NAME = 'lumen-ircc-foundry';
+const NAME = 'lumen-foundry-agents';
 const PORT = 4395;
 const VIEW = { width: 1600, height: 900 };
 const DSF = 1.2; // 1920x1080
@@ -35,19 +35,19 @@ const FILMING = !args.has('--record');
 
 // ------------------------------------------------------------------ narration: [spoken, caption]
 const LINES = {
-  intro1: ['I R C C has twenty three A I agents for its software delivery lifecycle. They run as LangGraph agents, hosted in Microsoft Foundry.',
-    'IRCC has 23 AI agents for its software delivery lifecycle. They run as LangGraph agents, hosted in Microsoft Foundry.'],
+  intro1: ['Here are twenty three A I agents for the software delivery lifecycle, built as a proof of concept. They run as LangGraph agents, hosted in Microsoft Foundry.',
+    'Here are 23 AI agents for the software delivery lifecycle, built as a proof of concept. They run as LangGraph agents, hosted in Microsoft Foundry.'],
   intro2: ['Now business users can work with all of them, from one friendly chat window. Lumen.', 'Now business users can work with all of them, from one friendly chat window. Lumen.'],
-  arch1: ['Here is how it fits together. Lumen runs on your own computer. When you pick an I R C C agent, Lumen sends your request and your attached files to that agent in Foundry.',
-    "Here's how it fits together. Lumen runs on your own computer. When you pick an IRCC agent, Lumen sends your request and your attached files to that agent in Foundry."],
+  arch1: ['Here is how it fits together. Lumen runs on your own computer. When you pick one of these agents, Lumen sends your request and your attached files to that agent in Foundry.',
+    "Here's how it fits together. Lumen runs on your own computer. When you pick one of these agents, Lumen sends your request and your attached files to that agent in Foundry."],
   arch2: ['It signs in with your own Azure account, stores no secrets, and nothing changes in any system until a person approves it.',
     'It signs in with your own Azure account, stores no secrets, and nothing changes in any system until a person approves it.'],
   setup1: ['Setup is one field. In Settings, paste your Foundry project address. Lumen checks it, and the agents are ready.',
     'Setup is one field. In Settings, paste your Foundry project address. Lumen checks it, and the agents are ready.'],
-  agents1: ['On the Agents page, every I R C C agent carries a Microsoft Foundry tag. Requirements, design, backlog, planning, integration, security and architecture.',
-    'On the Agents page, every IRCC agent carries a Microsoft Foundry tag. Requirements, design, backlog, planning, integration, security and architecture.'],
-  amira1: ['Meet Amira, a business analyst on C M P Release 2. She has a new business requirements document, and the functional design starts next week.',
-    'Meet Amira, a business analyst on CMP Release 2. She has a new business requirements document, and the functional design starts next week.'],
+  agents1: ['On the Agents page, every one of these agents carries a Microsoft Foundry tag. Requirements, design, backlog, planning, integration, security and architecture.',
+    'On the Agents page, every one of these agents carries a Microsoft Foundry tag. Requirements, design, backlog, planning, integration, security and architecture.'],
+  amira1: ['Meet Amira, a business analyst on Release 2 of a customer services platform. She has a new business requirements document, and the functional design starts next week.',
+    'Meet Amira, a business analyst on Release 2 of a customer services platform. She has a new business requirements document, and the functional design starts next week.'],
   amira2: ['She opens the Requirements Refinement agent. It tells her exactly what to attach.', 'She opens the Requirements Refinement agent. It tells her exactly what to attach.'],
   amira3: ['She attaches the B R D and asks for structured requirements.', 'She attaches the BRD and asks for structured requirements.'],
   amira4: ['The agent is working in Microsoft Foundry. It splits the document into sections, extracts every requirement with its exact source text, and checks the quality of each one.',
@@ -58,23 +58,23 @@ const LINES = {
     'Every requirement has a stable ID, a type, and a priority taken only from the BRD itself. Never guessed.'],
   amira7: ['She can keep refining in plain words. Merge these two requirements. The agent remembers the conversation, and retires the merged I D so it is never reused.',
     'She can keep refining in plain words. "Merge these two requirements." The agent remembers the conversation, and retires the merged ID so it is never reused.'],
-  theo1: ['Meet Theo, an integration architect. He needs an interface control document for the C M P to Name Search lookup.',
-    'Meet Theo, an integration architect. He needs an interface control document for the CMP to Name Search lookup.'],
+  theo1: ['Meet Theo, an integration architect. He needs an interface control document for the customer platform Name Search lookup.',
+    'Meet Theo, an integration architect. He needs an interface control document for the customer platform Name Search lookup.'],
   theo2: ['He attaches the partner contract, the requirements, the canonical model, and a short description of the interface.',
     'He attaches the partner contract, the requirements, the canonical model, and a short description of the interface.'],
   theo3: ['Before drafting, the agent pauses. It wants the architect to confirm the integration pattern. The decision appears as an approval card, right in the chat.',
     'Before drafting, the agent pauses. It wants the architect to confirm the integration pattern. The decision appears as an approval card, right in the chat.'],
   theo4: ['Theo approves. Lumen sends his decision back to the agent, and it picks up exactly where it stopped.',
     'Theo approves. Lumen sends his decision back to the agent, and it picks up exactly where it stopped.'],
-  theo5: ['A complete draft, checked section by section against the I R C C standards, with every gap called out for review.',
-    'A complete draft, checked section by section against the IRCC standards, with every gap called out for review.'],
+  theo5: ['A complete draft, checked section by section against the documentation standards, with every gap called out for review.',
+    'A complete draft, checked section by section against the documentation standards, with every gap called out for review.'],
   priya1: ['And meet Priya, the planner. The steering committee wants to know why the dates moved.', 'And meet Priya, the planner. The steering committee wants to know why the dates moved.'],
   priya2: ['She attaches the integrated plan, exported from Microsoft Project, and asks the Schedule Variance agent.', 'She attaches the integrated plan, exported from Microsoft Project, and asks the Schedule Variance agent.'],
   priya3: ['The numbers are computed in code. Baseline against current, slip in working days, the critical path. The A I only explains them, and every finding is banded red, amber or green.',
     'The numbers are computed in code: baseline against current, slip in working days, the critical path. The AI only explains them, and every finding is banded red, amber or green.'],
   close1: ['All twenty three agents are live in Foundry today, in practice mode. They read what you attach, and they never write to Azure DevOps, SharePoint or Teams without a person approving it.',
     'All 23 agents are live in Foundry today, in practice mode. They read what you attach, and they never write to Azure DevOps, SharePoint or Teams without a person approving it.'],
-  end: ['Lumen and Microsoft Foundry. I R C C agents, made friendly for everyone on the team.', 'Lumen and Microsoft Foundry. IRCC agents, made friendly for everyone on the team.'],
+  end: ['Lumen and Microsoft Foundry. Delivery agents, made friendly for everyone on the team.', 'Lumen and Microsoft Foundry. Delivery agents, made friendly for everyone on the team.'],
 };
 
 // ------------------------------------------------------------------ voice (Windows speech, cached)
@@ -147,7 +147,9 @@ class Director {
   }
   async hover(target, ms = 750) { const { x, y } = await this.center(target); await this.js(([a, b, m]) => window.Film.moveTo(a, b, m), [x, y, FILMING ? ms : 50]); await this.page.mouse.move(x, y); await this.wait(FILMING ? ms / 1000 : 0.05); }
   async click(target, ms = 750, after = 0.4) {
-    const { x, y } = await this.center(target);
+    let p = await this.center(target); // wait for smooth scrolls/layout to settle, or the click lands where the target used to be
+    for (let i = 0; i < 20; i++) { await sleep(150); const q = await this.center(target); if (q.x === p.x && q.y === p.y) break; p = q; }
+    const { x, y } = p;
     await this.js(([a, b, m]) => window.Film.moveTo(a, b, m), [x, y, FILMING ? ms : 50]);
     await this.wait(FILMING ? ms / 1000 : 0.05);
     await this.js(() => window.Film.press());
@@ -193,7 +195,7 @@ const third = (emoji, grad, name, role) => `<div class="av" style="background:${
 const AMIRA = ['🧭', 'linear-gradient(135deg,#12a594,#3fc5e8)'];
 const THEO = ['🔌', 'linear-gradient(135deg,#7c5cff,#c757d6)'];
 const PRIYA = ['📋', 'linear-gradient(135deg,#f59e0b,#f2643a)'];
-const PROJECT = path.join(WORK, 'IRCC CMP Release 2');
+const PROJECT = path.join(WORK, 'CSP Release 2');
 const input = (f) => path.join(PROJECT, f);
 
 const ARCH = `<div class="kicker rise">How it works</div><h1 class="rise" style="animation-delay:.15s;font-size:70px">Lumen <em>→</em> Microsoft Foundry</h1>
@@ -221,7 +223,7 @@ async function startChat(d, page, agentId) {
   await d.click('.rail-item[data-nav="assistants"]', 700, 0.6);
   await page.waitForSelector('#agentSearch');
   await d.click('#agentSearch', 500, 0.2);
-  await d.type(agentId === 'ircc-business-requirements-refinement' ? 'requirements refinement' : agentId === 'ircc-interface-documentation' ? 'interface documentation' : 'schedule variance');
+  await d.type(agentId === 'contoso-business-requirements-refinement' ? 'requirements refinement' : agentId === 'contoso-interface-documentation' ? 'interface documentation' : 'schedule variance');
   await d.wait(0.6);
   await d.click(`[data-chat-with="${agentId}"]`, 700, 0.8);
 }
@@ -239,7 +241,7 @@ async function runFilm(d) {
   const page = d.page;
   await d.js(() => window.Film.hideCursor(true));
   // Title
-  await d.card(`<div class="logo rise">${LOGO}</div><h1 class="rise" style="animation-delay:.2s"><em>IRCC agents</em> in Lumen</h1><p class="rise" style="animation-delay:.45s">23 LangGraph agents · hosted in Microsoft Foundry · one friendly chat</p>`, 1.2);
+  await d.card(`<div class="logo rise">${LOGO}</div><h1 class="rise" style="animation-delay:.2s"><em>SDLC agents</em> in Lumen</h1><p class="rise" style="animation-delay:.45s">A proof of concept · 23 LangGraph agents · hosted in Microsoft Foundry</p>`, 1.2);
   await d.say('intro1'); await d.waitVoice();
   await d.say('intro2'); await d.waitVoice(0.4);
   await d.card(ARCH, 0.4);
@@ -266,19 +268,19 @@ async function runFilm(d) {
   await page.waitForSelector('#agentSearch');
   await d.say('agents1');
   await d.click('#agentSearch', 500, 0.2);
-  await d.type('IRCC');
+  await d.type('Contoso');
   await d.wait(0.8);
   for (let i = 0; i < 4; i++) { const tag = page.locator('.a-card .status-tag:has-text("Microsoft Foundry")').nth(i); if (await tag.count()) await d.hover(tag, 520); }
   await d.waitVoice();
 
   // ---------------- Amira: Requirements Refinement
-  await d.card(persona(...AMIRA, 'Amira', 'Business Analyst · CMP Release 2', 'Structured requirements from the new BRD'));
+  await d.card(persona(...AMIRA, 'Amira', 'Business Analyst · CSP Release 2', 'Structured requirements from the new BRD'));
   await freshPersona(page, 'Amira');
   await d.say('amira1'); await d.waitVoice(0.4);
   await d.uncard();
   await d.third(third(...AMIRA, 'Amira', 'Business Analyst'));
   await d.say('amira2');
-  await startChat(d, page, 'ircc-business-requirements-refinement');
+  await startChat(d, page, 'contoso-business-requirements-refinement');
   await d.zoom('.chat-empty', 1.4, 900, 30);
   await d.waitVoice();
   await d.unzoom(700);
@@ -306,12 +308,12 @@ async function runFilm(d) {
   await d.third(null);
 
   // ---------------- Theo: Interface Documentation with an approval pause
-  await d.card(persona(...THEO, 'Theo', 'Integration Architect', 'An ICD for the CMP → Name Search lookup'));
+  await d.card(persona(...THEO, 'Theo', 'Integration Architect', 'An ICD for the CSP → Name Search lookup'));
   await freshPersona(page, 'Theo');
   await d.say('theo1'); await d.waitVoice(0.4);
   await d.uncard();
   await d.third(third(...THEO, 'Theo', 'Integration Architect'));
-  await startChat(d, page, 'ircc-interface-documentation');
+  await startChat(d, page, 'contoso-interface-documentation');
   await d.say('theo2');
   await d.attach([input('namesearch-openapi.yaml'), input('requirements-name-search.md'), input('canonical-person.schema.json'), input('interface-name-search.json')]);
   before = await send(d, 'Draft the interface control document for the Name Search lookup.');
@@ -341,9 +343,9 @@ async function runFilm(d) {
   await d.say('priya1'); await d.waitVoice(0.4);
   await d.uncard();
   await d.third(third(...PRIYA, 'Priya', 'Planner'));
-  await startChat(d, page, 'ircc-schedule-variance');
+  await startChat(d, page, 'contoso-schedule-variance');
   await d.say('priya2');
-  await d.attach([input('CMP R2 Integrated Plan.xml')]);
+  await d.attach([input('CSP R2 Integrated Plan.xml')]);
   before = await send(d, 'Explain the schedule variance against the baseline for the steering committee.');
   await d.waitVoice();
   await d.waitReply(before);
@@ -356,9 +358,9 @@ async function runFilm(d) {
 
   // Close
   await d.js(() => window.Film.hideCursor(true));
-  await d.card(`<div class="kicker rise">Live in Microsoft Foundry</div><h1 class="rise" style="animation-delay:.15s;font-size:64px">All <em>23</em> IRCC agents</h1><div class="pills rise" style="animation-delay:.4s;max-width:1300px;margin-left:auto;margin-right:auto">${AGENT_PILLS.map((p) => `<span style="font-size:17px;padding:8px 16px">${p}</span>`).join('')}</div>`, 0.4);
+  await d.card(`<div class="kicker rise">Live in Microsoft Foundry</div><h1 class="rise" style="animation-delay:.15s;font-size:64px">All <em>23</em> agents</h1><div class="pills rise" style="animation-delay:.4s;max-width:1300px;margin-left:auto;margin-right:auto">${AGENT_PILLS.map((p) => `<span style="font-size:17px;padding:8px 16px">${p}</span>`).join('')}</div>`, 0.4);
   await d.say('close1'); await d.waitVoice(0.6);
-  await d.card(`<div class="logo rise">${LOGO}</div><h1 class="rise" style="animation-delay:.2s"><em>Lumen</em> + Foundry</h1><p class="rise" style="animation-delay:.45s">IRCC agents, made friendly for everyone on the team</p>`, 0.3);
+  await d.card(`<div class="logo rise">${LOGO}</div><h1 class="rise" style="animation-delay:.2s"><em>Lumen</em> + Foundry</h1><p class="rise" style="animation-delay:.45s">Delivery agents, made friendly for everyone on the team</p>`, 0.3);
   await d.say('end'); await d.waitVoice(1.5);
 }
 

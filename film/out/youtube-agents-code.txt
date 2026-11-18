@@ -1,0 +1,24 @@
+Inside the SDLC agents: how the LangGraph code is built, and how Lumen talks to it
+
+A code walkthrough of a proof of concept: 23 software-delivery agents built on one shared LangGraph core, with shared contracts and connectors. It covers three representative agents, the tests, deployment to Microsoft Foundry hosted agents, and Lumen's Foundry engine. Every excerpt is real code with its real line numbers.
+
+Chapters
+0:00 Inside the SDLC agents
+0:15 The repository: shared core + 23 agents
+0:34 A request's journey: Lumen → Foundry → LangGraph
+0:53 One base state (MessagesState + reducers)
+1:20 The standard graph shape
+1:38 Typed model calls (generate_structured, content filter, schema fallback)
+2:01 Human approval: interrupt() and apply_proposals
+2:29 Requirements Refinement: Send fan-out and self-check
+3:10 Schedule Variance: deterministic first
+3:33 Backlog Q&A: read-only tool loop
+3:53 Shared contracts and connectors
+4:17 Tests
+4:27 Deployment to Foundry hosted agents
+4:49 Lumen's Foundry engine
+5:26 The rules in the code
+
+Notes
+- Narration: Kokoro text-to-speech (af_heart); captions in lumen-agents-code.srt / .vtt.
+- Graph diagrams are exported from LangGraph (get_graph()).

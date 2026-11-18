@@ -67,7 +67,7 @@ if (!REAL) registry.providers.fake = {
   async complete() { return 'Test chat'; },
 };
 
-// Stand-in Microsoft Foundry (IRCC agents): canned hosted-agent replies, no Azure. E2E_FOUNDRY=live uses the real
+// Stand-in Microsoft Foundry (Contoso agents): canned hosted-agent replies, no Azure. E2E_FOUNDRY=live uses the real
 // project in Settings (and your az login) instead.
 if (process.env.E2E_FOUNDRY !== 'live') {
   process.env.LUMEN_FOUNDRY_ENDPOINT = 'https://e2e-test.services.ai.azure.com/api/projects/e2e';
@@ -78,10 +78,10 @@ if (process.env.E2E_FOUNDRY !== 'live') {
     const body = JSON.parse(init.body);
     let data;
     if (Array.isArray(body.input) && body.input[0]?.type === 'mcp_approval_response') {
-      data = reply('caresp_e2e_3', fence({ status: 'ok', counts: { sections: 13 } }, body.input[0].approve ? 'ICD draft for IF-CMP-NS-001: 13 sections, completeness 100%.' : 'Stopped.'));
+      data = reply('caresp_e2e_3', fence({ status: 'ok', counts: { sections: 13 } }, body.input[0].approve ? 'ICD draft for IF-CSP-NS-001: 13 sections, completeness 100%.' : 'Stopped.'));
     } else if (/interface-documentation/.test(url)) {
       data = reply('caresp_e2e_2', '', [{ type: 'mcp_approval_request', id: 'mcpr_e2e', server_label: 'langgraph', name: '__hosted_agent_adapter_interrupt__',
-        arguments: JSON.stringify({ value: { type: 'ircc_approval_request', summary: 'Confirm integration pattern for IF-CMP-NS-001: Request-reply (P5 synchronous)', reviewer_group: 'Integration architects', proposals: [] } }) }]);
+        arguments: JSON.stringify({ value: { type: 'contoso_approval_request', summary: 'Confirm integration pattern for IF-CSP-NS-001: Request-reply (P5 synchronous)', reviewer_group: 'Integration architects', proposals: [] } }) }]);
     } else {
       const input = JSON.parse(body.input || body.message || '{}');
       data = reply('caresp_e2e_1', fence({

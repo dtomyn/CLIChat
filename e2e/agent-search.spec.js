@@ -24,7 +24,7 @@ test('Agents page search filters by name and skill, and Escape clears it', async
   expect(await cards.count()).toBeGreaterThan(1);
   const first = await page.locator('.a-card[data-agent-text]:visible').evaluateAll((els) =>
     els.sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top || a.getBoundingClientRect().left - b.getBoundingClientRect().left)[0].querySelector('h3').textContent);
-  expect(first).toMatch(/Traceability/); // Traceability Analyst or the IRCC Requirements Traceability agent
+  expect(first).toMatch(/Traceability/); // Traceability Analyst or the Contoso Requirements Traceability agent
 
   await search.fill('zzz no such agent');
   await expect(cards).toHaveCount(0);

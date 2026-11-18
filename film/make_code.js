@@ -1,12 +1,12 @@
-// "Inside the IRCC agents": a code explainer. How the LangGraph agents are structured and how they work, with a
+// "Inside the agents": a code explainer. How the LangGraph agents are structured and how they work, with a
 // representative sample (requirements refinement, schedule variance, backlog Q&A), and how Lumen talks to them.
 //
 //   node film/make_code.js            Build the slide deck from the real source files, film it, voice it (Kokoro), encode
-//                                      film/out/lumen-ircc-code.mp4 + .srt + thumbnail.
+//                                      film/out/lumen-agents-code.mp4 + .srt + thumbnail.
 //   node film/make_code.js --voice    Narration only, with each line's length.
 //   node film/make_code.js --stills   Film, then write a contact sheet instead of encoding.
 //
-// Env: IRCC_REPO (default C:/01-Clients-and-Engagements/IRCC-info/ircc-sdlc-agents), KOKORO_PYTHON, FFMPEG_PATH,
+// Env: AGENTS_REPO (default C:/01-Clients-and-Engagements/IRCC-info/ircc-sdlc-agents), KOKORO_PYTHON, FFMPEG_PATH,
 // GRAPHS_JSON (LangGraph get_graph() export; default film/code-graphs.json).
 const fs = require('fs');
 const path = require('path');
@@ -16,14 +16,14 @@ const { grab, buildDeck } = require('./code-deck');
 
 const FILM = __dirname;
 const ROOT = path.resolve(FILM, '..');
-const REPO = process.env.IRCC_REPO || 'C:/01-Clients-and-Engagements/IRCC-info/ircc-sdlc-agents';
+const REPO = process.env.AGENTS_REPO || 'C:/01-Clients-and-Engagements/IRCC-info/ircc-sdlc-agents';
 const WORK = path.join(FILM, '.work-code');
 const args = new Set(process.argv.slice(2));
 
 // ------------------------------------------------------------------ narration: [spoken, caption]
 const LINES = {
-  intro1: ['This is a tour of the code behind the I R C C agents. Twenty three LangGraph agents, one shared core, deployed as Microsoft Foundry hosted agents, and a small engine in Lumen that talks to them.',
-    'This is a tour of the code behind the IRCC agents: 23 LangGraph agents, one shared core, deployed as Microsoft Foundry hosted agents, and a small engine in Lumen that talks to them.'],
+  intro1: ['This is a tour of the code behind a proof of concept. Twenty three LangGraph agents, one shared core, deployed as Microsoft Foundry hosted agents, and a small engine in Lumen that talks to them.',
+    'This is a tour of the code behind a proof of concept: 23 LangGraph agents, one shared core, deployed as Microsoft Foundry hosted agents, and a small engine in Lumen that talks to them.'],
   repo1: ['Everything lives in one Python monorepo. Three shared libraries do the heavy lifting. The agent core, the contracts, and the connectors.',
     'Everything lives in one Python monorepo. Three shared libraries do the heavy lifting: the agent core, the contracts, and the connectors.'],
   repo2: ['Each agent is its own small package. The tools folder builds what Foundry deploys, and triggers, infrastructure and pipelines sit alongside.',
@@ -82,7 +82,7 @@ const LINES = {
     "Each agent file declares how files map into its request. And the renderer turns the agent's result into tables and safety checks, without rewording anything."],
   close1: ['One core, twenty three agents, and a few strict rules. Ground everything, compute what you can, let the model explain, and never change a system without a person.',
     'One core, 23 agents, and a few strict rules: ground everything, compute what you can, let the model explain, and never change a system without a person.'],
-  end: ['The I R C C agents. LangGraph inside, Microsoft Foundry underneath, and Lumen on top.', 'The IRCC agents. LangGraph inside, Microsoft Foundry underneath, and Lumen on top.'],
+  end: ['Delivery agents. LangGraph inside, Microsoft Foundry underneath, and Lumen on top.', 'Delivery agents. LangGraph inside, Microsoft Foundry underneath, and Lumen on top.'],
 };
 
 // ------------------------------------------------------------------ slides (from the real source)
@@ -90,17 +90,17 @@ const R = (p) => path.join(REPO, p);
 const Lm = (p) => path.join(ROOT, p);
 function code(id, kicker, title, file, start, opts, lang, repo, notes) {
   const g = grab(file, start, opts);
-  return { type: 'code', id, kicker, title, path: path.relative(repo === 'Lumen' ? ROOT : REPO, file).replace(/\\/g, '/'), repo: repo === 'Lumen' ? 'CLIChat (Lumen)' : 'ircc-sdlc-agents', lang, first: g.first, text: g.text, notes };
+  return { type: 'code', id, kicker, title, path: path.relative(repo === 'Lumen' ? ROOT : REPO, file).replace(/\\/g, '/'), repo: repo === 'Lumen' ? 'CLIChat (Lumen)' : 'contoso-sdlc-agents', lang, first: g.first, text: g.text, notes };
 }
 
 function slides() {
   const graphs = JSON.parse(fs.readFileSync(process.env.GRAPHS_JSON || path.join(FILM, 'code-graphs.json'), 'utf8'));
   return [
     { type: 'tree', id: 's-repo', kicker: 'The repository', title: 'One monorepo: <em>a shared core</em> and 23 small agents', rows: [
-      [0, 'ircc-sdlc-agents/', 'core', ''],
-      [1, 'libs/ircc_agent_core/', 'core', 'graph kit, state, LLM access, approval (HITL), apply + audit, guardrails, hosting'],
-      [1, 'libs/ircc_contracts/', 'contract', 'shared Pydantic models: Requirement, VarianceFinding, ControlMapping…'],
-      [1, 'libs/ircc_connectors/', 'conn', 'ADO, SharePoint, Excel, MS Project (CPM), knowledge, Teams… fixture + live'],
+      [0, 'contoso-sdlc-agents/', 'core', ''],
+      [1, 'libs/contoso_agent_core/', 'core', 'graph kit, state, LLM access, approval (HITL), apply + audit, guardrails, hosting'],
+      [1, 'libs/contoso_contracts/', 'contract', 'shared Pydantic models: Requirement, VarianceFinding, ControlMapping…'],
+      [1, 'libs/contoso_connectors/', 'conn', 'ADO, SharePoint, Excel, MS Project (CPM), knowledge, Teams… fixture + live'],
       [1, 'agents/', 'agent', '23 packages, one per plan'],
       [2, '01-business-requirements-refinement/', 'agent', 'graph.py · state.py · nodes.py · prompts/ · tests/ · evals/'],
       [2, '10-schedule-variance/', 'agent', ''],
@@ -116,7 +116,7 @@ function slides() {
       ['🕸️', 'LangGraph', 'build_graph() · nodes · checkpointer', ''],
       ['✅', 'Finalize', 'result JSON → reply message', ''],
     ], footer: 'State is checkpointed between turns (Foundry State Store), so follow-ups and approvals resume the same run.' },
-    code('s-state', 'ircc_agent_core', 'One base state for <em>every</em> agent', R('libs/ircc_agent_core/src/ircc_agent_core/state.py'), 'RESET = "__reset__"', { count: 40 }, 'python', 'IRCC', [
+    code('s-state', 'contoso_agent_core', 'One base state for <em>every</em> agent', R('libs/contoso_agent_core/src/contoso_agent_core/state.py'), 'RESET = "__reset__"', { count: 40 }, 'python', 'Agents', [
       '<b>MessagesState</b> underneath: what the Foundry hosting adapter accepts',
       'Shared fields: <code>sources</code>, <code>findings</code>, <code>proposals</code>, <code>approval</code>, <code>result</code>',
       '<b>Reducers</b>: findings accumulate; <code>errors</code> reset every turn']),
@@ -130,11 +130,11 @@ function slides() {
       ['✍️', 'apply', 'the only writer', 'hitl'],
       ['🏁', 'finalize', 'reply', ''],
     ] },
-    code('s-llm', 'ircc_agent_core · llm.py', 'Typed model calls, <em>with the platform\'s edges handled</em>', R('libs/ircc_agent_core/src/ircc_agent_core/llm.py'), 'def is_content_filter_error', { count: 44 }, 'python', 'IRCC', [
+    code('s-llm', 'contoso_agent_core · llm.py', 'Typed model calls, <em>with the platform\'s edges handled</em>', R('libs/contoso_agent_core/src/contoso_agent_core/llm.py'), 'def is_content_filter_error', { count: 44 }, 'python', 'Agents', [
       '<code>generate_structured(Schema, …)</code> returns validated <b>Pydantic</b> objects',
       'Content filter → <code>ContentFilteredError</code>: record it, keep going',
       'Schema rejected by Azure → retry with <b>function calling</b>']),
-    code('s-hitl', 'ircc_agent_core · hitl.py', 'A person approves <em>before anything changes</em>', R('libs/ircc_agent_core/src/ircc_agent_core/hitl.py'), 'def request_approval(', { count: 28 }, 'python', 'IRCC', [
+    code('s-hitl', 'contoso_agent_core · hitl.py', 'A person approves <em>before anything changes</em>', R('libs/contoso_agent_core/src/contoso_agent_core/hitl.py'), 'def request_approval(', { count: 28 }, 'python', 'Agents', [
       '<code>interrupt()</code> pauses the graph; the checkpointer keeps its state',
       'Foundry shows it as an <b>mcp_approval_request</b>',
       'Scheduled runs also post to the <b>Review Queue</b>',
@@ -142,44 +142,44 @@ function slides() {
     { type: 'graph', id: 's-g01', kicker: 'Agent 01 · Requirements Refinement', title: 'The real graph: <em>16 working nodes</em>', graph: graphs['01'],
       kinds: { det: ['intake', 'parse', 'retrieve_context', 'normalise', 'self_check', 'assemble', 'apply_edits', 'render', 'propose_publish', 'apply'], llm: ['extract_section', 'classify', 'analyse_quality', 'gap_analysis'], hitl: ['approve'], io: ['finalize'] },
       note: 'Exported from LangGraph with get_graph(). extract_section runs once per BRD section, in parallel.' },
-    code('s-brr-graph', 'agents/01 · graph.py', 'Fan-out with <em>Send</em>, and a self-check loop', R('agents/01-business-requirements-refinement/src/ircc_brr/graph.py'), 'g.add_edge(START, "intake")', { count: 24 }, 'python', 'IRCC', [
+    code('s-brr-graph', 'agents/01 · graph.py', 'Fan-out with <em>Send</em>, and a self-check loop', R('agents/01-business-requirements-refinement/src/contoso_brr/graph.py'), 'g.add_edge(START, "intake")', { count: 24 }, 'python', 'Agents', [
       'Conditional edge returns a list of <code>Send</code>: one extraction per section',
       '<code>self_check</code> verifies every quote word for word',
       'Loops back only for failed sections (max 2)']),
-    code('s-brr-nodes', 'agents/01 · nodes.py', 'Untrusted input, <em>blocked sections become findings</em>', R('agents/01-business-requirements-refinement/src/ircc_brr/nodes.py'), 'def fan_out(', { count: 36 }, 'python', 'IRCC', [
+    code('s-brr-nodes', 'agents/01 · nodes.py', 'Untrusted input, <em>blocked sections become findings</em>', R('agents/01-business-requirements-refinement/src/contoso_brr/nodes.py'), 'def fan_out(', { count: 36 }, 'python', 'Agents', [
       '<code>wrap_untrusted()</code>: section text is data, never instructions',
       'Content filter block → a <b>guardrail finding</b>, the run continues']),
     { type: 'graph', id: 's-g10', kicker: 'Agent 10 · Schedule Variance', title: '<em>Deterministic first</em>: compute, then explain', graph: graphs['10'],
       kinds: { det: ['intake', 'load_plans', 'match_tasks', 'compute_cpm', 'compute_variance', 'impact_propagation', 'numeric_self_check', 'assemble_report', 'render', 'propose_publish', 'apply'], llm: ['narrate', 'followup'], hitl: ['approve'], io: ['finalize'] },
       note: 'Critical path, slips and downstream impact are plain Python (networkx). The model only writes the narrative.' },
-    code('s-sv', 'agents/10 · nodes.py', 'A numeric self-check <em>guards the narrative</em>', R('agents/10-schedule-variance/src/ircc_sv/nodes.py'), 'def numeric_self_check', { count: 30 }, 'python', 'IRCC', [
+    code('s-sv', 'agents/10 · nodes.py', 'A numeric self-check <em>guards the narrative</em>', R('agents/10-schedule-variance/src/contoso_sv/nodes.py'), 'def numeric_self_check', { count: 30 }, 'python', 'Agents', [
       'Every number in the text must exist in the <b>computed findings</b>',
       'A cause without evidence must say <b>"not evidenced"</b>',
       'Fails twice → a fixed, safe sentence']),
-    code('s-abq', 'agents/21 · nodes.py', 'A tool-calling loop <em>with read-only tools</em>', R('agents/21-ado-backlog-qa-update/src/ircc_abq/nodes.py'), 'def backlog_agent', { count: 40 }, 'python', 'IRCC', [
+    code('s-abq', 'agents/21 · nodes.py', 'A tool-calling loop <em>with read-only tools</em>', R('agents/21-ado-backlog-qa-update/src/contoso_abq/nodes.py'), 'def backlog_agent', { count: 40 }, 'python', 'Agents', [
       '<code>bind_tools()</code> with read tools + <code>propose_change</code> only',
       'Unknown tools are refused',
       'Proposed changes → validation → <b>approval node</b>']),
-    code('s-contracts', 'ircc_contracts · sdlc.py', 'Shared contracts <em>connect the agents</em>', R('libs/ircc_contracts/src/ircc_contracts/sdlc.py'), 'class Requirement(BaseModel):', { count: 24 }, 'python', 'IRCC', [
+    code('s-contracts', 'contoso_contracts · sdlc.py', 'Shared contracts <em>connect the agents</em>', R('libs/contoso_contracts/src/contoso_contracts/sdlc.py'), 'class Requirement(BaseModel):', { count: 24 }, 'python', 'Agents', [
       'Defined once by agent 01, used by 02, 03, 04, 05',
       'Every artefact carries <code>schema_version</code>',
       'Every claim carries a <code>SourceRef</code>']),
-    code('s-conn', 'ircc_connectors · _common.py', 'One connector pattern: <em>fixture or live</em>', R('libs/ircc_connectors/src/ircc_connectors/_common.py'), 'class ClientSlot', { count: 28 }, 'python', 'IRCC', [
+    code('s-conn', 'contoso_connectors · _common.py', 'One connector pattern: <em>fixture or live</em>', R('libs/contoso_connectors/src/contoso_connectors/_common.py'), 'class ClientSlot', { count: 28 }, 'python', 'Agents', [
       'Injected client &gt; live client (Phase 2 + config) &gt; fixture client',
       'Writers are registered with <code>apply</code>, never bound to the model']),
-    code('s-test', 'tests', 'Real graphs, <em>scripted model</em>, no network', R('libs/ircc_agent_core/tests/test_core_graph.py'), 'def test_interrupt_approve_apply_orders_and_substitutes', { count: 18 }, 'python', 'IRCC', [
+    code('s-test', 'tests', 'Real graphs, <em>scripted model</em>, no network', R('libs/contoso_agent_core/tests/test_core_graph.py'), 'def test_interrupt_approve_apply_orders_and_substitutes', { count: 18 }, 'python', 'Agents', [
       '<code>ScriptedLLM</code> answers per schema',
       '<code>run</code> → <code>pending_interrupts</code> → <code>resume</code>',
       '~700 tests across core, connectors, 23 agents, triggers, evals']),
-    code('s-deploy', 'tools · build_deploy.py', 'Generated deployment to <em>Foundry hosted agents</em>', R('tools/build_deploy.py'), 'MAIN = ', { count: 40 }, 'python', 'IRCC', [
+    code('s-deploy', 'tools · build_deploy.py', 'Generated deployment to <em>Foundry hosted agents</em>', R('tools/build_deploy.py'), 'MAIN = ', { count: 40 }, 'python', 'Agents', [
       'One flat folder per agent: <code>main.py</code> + <code>requirements.txt</code> + vendored libs',
-      '<code>azure.yaml</code> generated from <code>[tool.ircc-agent]</code>',
+      '<code>azure.yaml</code> generated from <code>[tool.contoso-agent]</code>',
       '<code>azd deploy</code> → 23 hosted agents, each with its own identity']),
     code('s-lumen', 'Lumen · providers/foundry-agents.js', 'Lumen\'s Foundry engine: <em>one provider file</em>', Lm('providers/foundry-agents.js'), 'async run({', { count: 44 }, 'javascript', 'Lumen', [
       'Agent + attachments → request (<code>buildPayload</code>)',
       'Responses endpoint, Azure CLI sign-in, conversation = previous response id',
       'Approval request → <b>Approve card</b> → <code>mcp_approval_response</code>']),
-    code('s-lumen-json', 'Lumen · agents/ircc-*.json', 'Each agent declares <em>how files map in</em>', Lm('agents/ircc-business-requirements-refinement.json'), '"foundry"', { count: 18 }, 'json', 'Lumen', [
+    code('s-lumen-json', 'Lumen · agents/contoso-*.json', 'Each agent declares <em>how files map in</em>', Lm('agents/contoso-business-requirements-refinement.json'), '"foundry"', { count: 18 }, 'json', 'Lumen', [
       '<code>foundry.agent</code>: the hosted agent',
       '<code>inputs</code>: file-name rules → request fields',
       'The renderer turns result JSON into tables and safety checks']),
@@ -197,15 +197,15 @@ async function runFilm(d) {
   const focus = async (id, from, to, hold = 0.6) => { await deck('focus', id, from, to); await d.wait(0.9); const hl = `#${id} .ln.hl`; if (await d.page.locator(hl).count()) await d.hover(d.page.locator(hl).first(), 600); await d.wait(hold); };
 
   await d.js(() => window.Film.hideCursor(true));
-  await d.card(`<div class="logo rise">${LOGO}</div><h1 class="rise" style="animation-delay:.2s">Inside the <em>IRCC agents</em></h1><p class="rise" style="animation-delay:.45s">How the LangGraph code is built, and how Lumen talks to it</p>`, 1.0);
+  await d.card(`<div class="logo rise">${LOGO}</div><h1 class="rise" style="animation-delay:.2s">Inside the <em>SDLC agents</em></h1><p class="rise" style="animation-delay:.45s">How the LangGraph code is built, and how Lumen talks to it</p>`, 1.0);
   await d.say('intro1'); await d.waitVoice(0.4);
   await show('s-repo'); await d.uncard(900); await d.js(() => window.Film.hideCursor(false));
 
   // Repo
   await d.say('repo1');
-  await d.wait(2.2); await deck('tree', 's-repo', ['ircc_agent_core']); await d.wait(1.6);
-  await deck('tree', 's-repo', ['ircc_contracts']); await d.wait(1.4);
-  await deck('tree', 's-repo', ['ircc_connectors']); await d.waitVoice();
+  await d.wait(2.2); await deck('tree', 's-repo', ['contoso_agent_core']); await d.wait(1.6);
+  await deck('tree', 's-repo', ['contoso_contracts']); await d.wait(1.4);
+  await deck('tree', 's-repo', ['contoso_connectors']); await d.waitVoice();
   await d.say('repo2');
   await deck('tree', 's-repo', ['agents/', '01-business', '10-schedule', '21-ado']); await d.wait(3.0);
   await deck('tree', 's-repo', ['tools/', 'triggers/', 'azure.yaml']); await d.waitVoice();
@@ -359,13 +359,13 @@ async function runFilm(d) {
   await d.js(() => window.Film.hideCursor(true));
   await d.card('<div class="kicker rise">The rules in the code</div><h1 class="rise" style="animation-delay:.15s;font-size:62px">Ground · <em>Compute</em> · Explain · <em>Approve</em></h1><div class="pills rise" style="animation-delay:.4s"><span>🧱 one shared core</span><span>🕸️ 23 LangGraph agents</span><span>☁️ Foundry hosted agents</span><span>💬 Lumen on top</span></div>', 0.4);
   await d.say('close1'); await d.waitVoice(0.5);
-  await d.card(`<div class="logo rise">${LOGO}</div><h1 class="rise" style="animation-delay:.2s">The <em>IRCC agents</em></h1><p class="rise" style="animation-delay:.45s">LangGraph inside · Microsoft Foundry underneath · Lumen on top</p>`, 0.3);
+  await d.card(`<div class="logo rise">${LOGO}</div><h1 class="rise" style="animation-delay:.2s">The <em>SDLC agents</em></h1><p class="rise" style="animation-delay:.45s">LangGraph inside · Microsoft Foundry underneath · Lumen on top</p>`, 0.3);
   await d.say('end'); await d.waitVoice(1.5);
 }
 
 // ------------------------------------------------------------------ main
 async function main() {
-  const kit = createKit({ name: 'lumen-ircc-code', lines: LINES, vo: path.join(FILM, 'vo-code'), work: WORK, out: path.join(FILM, 'out') });
+  const kit = createKit({ name: 'lumen-agents-code', lines: LINES, vo: path.join(FILM, 'vo-code'), work: WORK, out: path.join(FILM, 'out') });
   const lengths = kit.makeVoice();
   if (args.has('--voice')) { let total = 0; for (const [k, v] of Object.entries(lengths)) { total += v; console.log(k.padEnd(11), `${v.toFixed(1)}s`); } console.log(`total narration ${total.toFixed(0)}s`); return; }
   const deckFile = buildDeck({ slides: slides(), hljsDir: path.join(ROOT, 'node_modules', '@highlightjs', 'cdn-assets'), out: path.join(WORK, 'deck.html') });

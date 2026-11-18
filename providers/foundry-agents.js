@@ -1,4 +1,4 @@
-// Microsoft Foundry engine: runs IRCC agents that are hosted in a Foundry project (LangGraph hosted agents).
+// Microsoft Foundry engine: runs Contoso agents that are hosted in a Foundry project (LangGraph hosted agents).
 // Unlike the CLI engines it is chosen automatically for agents whose file has a `foundry` section, and it is hidden from
 // the engine picker (agentOnly). Each turn calls the agent's Responses (or Invocations) endpoint; conversation memory is
 // the agent's previous response id, kept as this chat's session. Approval pauses become Approve cards
@@ -34,20 +34,20 @@ module.exports = {
   id: 'foundry',
   name: 'Microsoft Foundry',
   vendor: 'Microsoft',
-  description: 'Runs the IRCC agents hosted in your Microsoft Foundry project',
-  models: [{ id: 'default', label: 'Agent default', hint: 'Each IRCC agent uses the model set for it in Foundry' }],
+  description: 'Runs the Contoso agents hosted in your Microsoft Foundry project',
+  models: [{ id: 'default', label: 'Agent default', hint: 'Each Contoso agent uses the model set for it in Foundry' }],
   supportsResume: true,
   agentOnly: true,
 
   async detect() {
-    if (!endpoint()) return { available: false, message: 'Add your Microsoft Foundry project address in Settings to use the IRCC agents.' };
+    if (!endpoint()) return { available: false, message: 'Add your Microsoft Foundry project address in Settings to use the Contoso agents.' };
     if (!client.validEndpoint(endpoint())) return { available: false, message: 'The Microsoft Foundry project address in Settings doesn\'t look right.' };
     return auth.detect();
   },
 
   async run({ sessionId, signal, assistant, message, attachments = [], conversationId, approval }, emit) {
     const cfg = assistant?.foundry;
-    if (!cfg?.agent) { emit({ type: 'error', message: 'Pick one of the IRCC agents to use Microsoft Foundry.' }); return; }
+    if (!cfg?.agent) { emit({ type: 'error', message: 'Pick one of the Contoso agents to use Microsoft Foundry.' }); return; }
     const ep = endpoint();
     if (!client.validEndpoint(ep)) { emit({ type: 'error', message: 'Add your Microsoft Foundry project address in Settings first.' }); return; }
     const protocol = cfg.protocol === 'invocations' ? 'invocations' : 'responses';

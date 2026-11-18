@@ -38,7 +38,7 @@ const apVal = (v) => { const s = String(v ?? ''); return s ? `<div class="ap-val
 function approvalCard(id, m) {
   const d = approvalCache.get(id);
   if (!d) { setTimeout(() => loadApproval(id)); return `<div class="approval-card loading" data-approval="${esc(id)}"><span class="spinner"></span><span>Loading the proposed change…</span></div>`; }
-  const foundry = d.kind === 'foundry'; // an IRCC agent in Microsoft Foundry paused for a decision
+  const foundry = d.kind === 'foundry'; // a Contoso agent in Microsoft Foundry paused for a decision
   const [label, tone] = (foundry && FOUNDRY_STATUS[d.status]) || AP_STATUS[d.status] || [d.status, 'muted'];
   const pending = d.status === 'pending';
   const siblings = (m?.approvals || []).filter((x) => approvalCache.get(x)?.status === 'pending' && approvalCache.get(x)?.kind !== 'foundry');

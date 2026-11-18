@@ -1,0 +1,37 @@
+{
+  "id": "contoso-ado-to-plan-progress",
+  "order": 607,
+  "name": "ADO-to-Plan Progress (Contoso)",
+  "emoji": "📈",
+  "color": "green",
+  "tagline": "Rolls up Azure DevOps progress into plan tasks · runs in Microsoft Foundry",
+  "builtin": true,
+  "access": "read",
+  "skills": [],
+  "instructions": "Matches Azure DevOps work items to project plan tasks, rolls up their progress and proposes % complete updates with a reconciliation log. It never changes the master plan; updates come back as a separate file for the planner.",
+  "starters": [
+    "Reconcile the attached plan with Azure DevOps progress",
+    "Which plan tasks have no matching work items?",
+    "Explain the proposed % complete for each task"
+  ],
+  "attachHint": "Attach the plan export (MS Project XML or Excel); optionally an Azure DevOps work-item list (.json with 'ADO' in the name).",
+  "foundry": {
+    "agent": "contoso-ado-to-plan-progress",
+    "protocol": "invocations",
+    "messageField": "message",
+    "defaults": {},
+    "inputs": [
+      {
+        "match": "(ado|work.?items|backlog).*\\.json$",
+        "as": "json",
+        "field": "ado_items"
+      },
+      {
+        "match": "\\.(xml|xlsx|xlsm)$",
+        "as": "b64",
+        "field": "plan_b64",
+        "nameField": "filename"
+      }
+    ]
+  }
+}

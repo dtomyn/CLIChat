@@ -1,0 +1,32 @@
+{
+  "id": "contoso-business-requirements-refinement",
+  "order": 601,
+  "name": "Requirements Refinement (Contoso)",
+  "emoji": "📝",
+  "color": "blue",
+  "tagline": "Turns a BRD into structured, cited requirements · runs in Microsoft Foundry",
+  "builtin": true,
+  "access": "read",
+  "skills": [],
+  "instructions": "Reads a business requirements document and turns it into numbered functional and non-functional requirements, each quoting the BRD text it came from. It also lists gaps and unclear wording for the business analyst to resolve.",
+  "starters": [
+    "Refine the attached BRD into structured requirements",
+    "Flag unclear or untestable requirements in the attached BRD",
+    "List the non-functional gaps in the attached BRD"
+  ],
+  "attachHint": "Attach the BRD (.docx, .pdf, .md or .txt).",
+  "foundry": {
+    "agent": "contoso-business-requirements-refinement",
+    "protocol": "responses",
+    "messageField": "message",
+    "defaults": {},
+    "inputs": [
+      {
+        "match": "\\.(docx|pdf|md|txt)$",
+        "as": "b64",
+        "field": "document_b64",
+        "nameField": "filename"
+      }
+    ]
+  }
+}

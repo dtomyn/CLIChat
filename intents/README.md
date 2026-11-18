@@ -43,7 +43,7 @@ extracted from what the application *currently implements* (not from a wish list
 | 15 | Create or customize an agent | [15-build-an-agent.md](15-build-an-agent.md) |
 | 16 | Run a guided task | [16-run-a-prompt.md](16-run-a-prompt.md) |
 | 72 | Quick prompts and the Prompt Lab | [72-quick-prompts-and-prompt-lab.md](72-quick-prompts-and-prompt-lab.md) |
-| 73 | Use the IRCC agents hosted in Microsoft Foundry | [73-ircc-foundry-agents.md](73-ircc-foundry-agents.md) |
+| 73 | Use the Contoso agents hosted in Microsoft Foundry | [73-contoso-foundry-agents.md](73-contoso-foundry-agents.md) |
 | 17 | Save a chat as a prompt and build prompts | [17-save-and-build-prompts.md](17-save-and-build-prompts.md) |
 | 18 | Run prompts on a schedule | [18-schedule-prompts.md](18-schedule-prompts.md) |
 | 19 | See usage and feedback insights | [19-see-usage-insights.md](19-see-usage-insights.md) |

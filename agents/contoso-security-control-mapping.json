@@ -1,0 +1,49 @@
+{
+  "id": "contoso-security-control-mapping",
+  "order": 614,
+  "name": "Security Control Mapping (Contoso)",
+  "emoji": "🛡️",
+  "color": "rose",
+  "tagline": "Maps security controls to solution components · runs in Microsoft Foundry",
+  "builtin": true,
+  "access": "read",
+  "skills": [],
+  "instructions": "Drafts control-to-component mappings for the tailored security control list (NIST SP 800-53 and the NIST AI RMF), with the evidence each control needs and a gap register. Mappings are drafts for the security team to review.",
+  "starters": [
+    "Map the AC and IA controls in the attached SCTM to the attached architecture",
+    "Which controls have no evidence source?",
+    "List the controls with no implementing component"
+  ],
+  "attachHint": "Attach the tailored SCTM (.xlsx or .json) and the solution architecture (.docx, .pdf or .md); optionally a components list (.json with 'component' in the name).",
+  "foundry": {
+    "agent": "contoso-security-control-mapping",
+    "protocol": "responses",
+    "messageField": "message",
+    "defaults": {},
+    "inputs": [
+      {
+        "match": "component.*\\.json$",
+        "as": "json",
+        "field": "components"
+      },
+      {
+        "match": "(sctm|control).*\\.(xlsx|xlsm|json|jsonl)$",
+        "as": "object",
+        "field": "sctm",
+        "b64Key": "content_b64"
+      },
+      {
+        "match": "\\.(xlsx|xlsm|jsonl)$",
+        "as": "object",
+        "field": "sctm",
+        "b64Key": "content_b64"
+      },
+      {
+        "match": "\\.(docx|md|txt|pdf)$",
+        "as": "object",
+        "field": "architecture",
+        "b64Key": "content_b64"
+      }
+    ]
+  }
+}

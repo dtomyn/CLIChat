@@ -1,4 +1,4 @@
-// Microsoft Foundry engine for the IRCC agents: payload building, reply rendering, approval pauses and the provider turn.
+// Microsoft Foundry engine for the Contoso agents: payload building, reply rendering, approval pauses and the provider turn.
 // Uses a stand-in fetch and sign-in, so nothing reaches Azure.
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -36,7 +36,7 @@ const responseWith = (text, extra = []) => ({ id: `caresp_${Math.random().toStri
   output: [...(text ? [{ type: 'message', content: [{ type: 'output_text', text }] }] : []), ...extra] });
 const run = async (args) => { const events = []; await provider.run({ conversationId: 'conv1', ...args }, (e) => events.push(e)); return events; };
 
-const BRR = { name: 'Requirements Refinement (IRCC)', foundry: { agent: 'ircc-business-requirements-refinement', protocol: 'responses',
+const BRR = { name: 'Requirements Refinement (Contoso)', foundry: { agent: 'contoso-business-requirements-refinement', protocol: 'responses',
   inputs: [{ match: '\\.(docx|md|pdf|txt)$', as: 'b64', field: 'document_b64', nameField: 'filename' }] } };
 
 // ------------------------------------------------------------------ payloads
@@ -101,9 +101,9 @@ test('endpoint validation and agent URLs', () => {
   assert.equal(client.validEndpoint('https://acct.services.ai.azure.com/api/projects/proj'), true);
   assert.equal(client.validEndpoint('http://acct.services.ai.azure.com/api/projects/proj'), false);
   assert.equal(client.validEndpoint('https://evil.example.com/api/projects/proj'), false);
-  assert.equal(client.agentUrl('https://a.services.ai.azure.com/api/projects/p/', 'ircc-x', 'responses'),
-    'https://a.services.ai.azure.com/api/projects/p/agents/ircc-x/endpoint/protocols/openai/responses?api-version=v1');
-  assert.match(client.agentUrl('https://a.services.ai.azure.com/api/projects/p', 'ircc-y', 'invocations'), /protocols\/invocations\?api-version=v1$/);
+  assert.equal(client.agentUrl('https://a.services.ai.azure.com/api/projects/p/', 'contoso-x', 'responses'),
+    'https://a.services.ai.azure.com/api/projects/p/agents/contoso-x/endpoint/protocols/openai/responses?api-version=v1');
+  assert.match(client.agentUrl('https://a.services.ai.azure.com/api/projects/p', 'contoso-y', 'invocations'), /protocols\/invocations\?api-version=v1$/);
 });
 
 // ------------------------------------------------------------------ provider turns
@@ -112,7 +112,7 @@ test('a turn sends the payload, renders the reply and remembers the response for
   const calls = fakeFetch(() => ({ json: responseWith(finalize({ status: 'ok', counts: { functional: 1 } }, 'Extracted 1 requirement.')) }));
   const events = await run({ assistant: BRR, message: 'Refine it', attachments: [brd], sessionId: null });
   assert.equal(calls.length, 1);
-  assert.match(calls[0].url, /agents\/ircc-business-requirements-refinement\/endpoint\/protocols\/openai\/responses/);
+  assert.match(calls[0].url, /agents\/contoso-business-requirements-refinement\/endpoint\/protocols\/openai\/responses/);
   assert.equal(calls[0].auth, 'Bearer test-token');
   const sent = JSON.parse(calls[0].body.input);
   assert.equal(sent.filename, 'Intake_BRD.md');
@@ -129,7 +129,7 @@ test('a turn sends the payload, renders the reply and remembers the response for
 
 test('an approval pause becomes an Approve card, and the decision resumes the agent', async () => {
   const pause = { type: 'mcp_approval_request', id: 'mcpr_1', server_label: 'langgraph', name: '__hosted_agent_adapter_interrupt__',
-    arguments: JSON.stringify({ interrupt_id: 'i1', value: { type: 'ircc_approval_request', summary: 'Confirm integration pattern for IF-001', reviewer_group: 'arch',
+    arguments: JSON.stringify({ interrupt_id: 'i1', value: { type: 'contoso_approval_request', summary: 'Confirm integration pattern for IF-001', reviewer_group: 'arch',
       proposals: [{ id: 'p1', target_system: 'sharepoint.file', operation: 'upload', rationale: 'Publish ICD', payload: { library: 'ICDs' } }] } }) };
   fakeFetch(() => ({ json: { ...responseWith('', [pause]), id: 'caresp_paused' } }));
   const events = await run({ assistant: BRR, message: 'Draft the ICD', attachments: [] });
@@ -170,11 +170,11 @@ test('failures and misuse produce plain-language errors', async () => {
   assert.match(events.find((e) => e.type === 'error').message, /Foundry Agent Consumer/);
 
   events = await run({ assistant: { name: 'Lumen' }, message: 'x', attachments: [] });
-  assert.match(events.find((e) => e.type === 'error').message, /Pick one of the IRCC agents/);
+  assert.match(events.find((e) => e.type === 'error').message, /Pick one of the Contoso agents/);
 });
 
 test('invocations agents are called with message and keep their agent session', async () => {
-  const inv = { name: 'ADO to Plan', foundry: { agent: 'ircc-ado-to-plan-progress', protocol: 'invocations', inputs: [] } };
+  const inv = { name: 'ADO to Plan', foundry: { agent: 'contoso-ado-to-plan-progress', protocol: 'invocations', inputs: [] } };
   const calls = fakeFetch(() => ({ json: { response: finalize({ status: 'ok' }, 'Reconciled.') }, headers: { 'x-agent-session-id': 'sess-9' } }));
   const events = await run({ assistant: inv, message: 'Reconcile', attachments: [], sessionId: 'sess-1' });
   assert.match(calls[0].url, /protocols\/invocations\?api-version=v1&agent_session_id=sess-1$/);

@@ -1,5 +1,5 @@
 // Builds the slide deck for the code explainer (make_code.js): real excerpts (with their real line numbers) from the
-// IRCC agents repo and from Lumen, a repo tree, flow diagrams and the real LangGraph node graphs (from get_graph()).
+// agents repo and from Lumen, a repo tree, flow diagrams and the real LangGraph node graphs (from get_graph()).
 // The page exposes window.Deck: show(id), focus(id, fromText, toText), note(id, n), light(id, n), mark(id, names).
 const fs = require('fs');
 const path = require('path');
@@ -152,7 +152,7 @@ function buildDeck({ slides, hljsDir, out }) {
   const hljs = fs.readFileSync(path.join(hljsDir, 'highlight.min.js'), 'utf8');
   const theme = fs.readFileSync(path.join(hljsDir, 'styles', 'github-dark.min.css'), 'utf8');
   const body = slides.map((s) => ({ code: codeSlide, tree: treeSlide, flow: flowSlide, graph: graphSlide, image: imageSlide }[s.type])(s)).join('\n');
-  const html = `<!doctype html><html><head><meta charset="utf-8"><title>IRCC agents: the code</title><style>${theme}${CSS}</style></head><body>${body}<script>${hljs}</script><script>${JS}</script></body></html>`;
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>SDLC agents: the code</title><style>${theme}${CSS}</style></head><body>${body}<script>${hljs}</script><script>${JS}</script></body></html>`;
   fs.mkdirSync(path.dirname(out), { recursive: true });
   fs.writeFileSync(out, html, 'utf8');
   return out;
