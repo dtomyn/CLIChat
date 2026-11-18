@@ -1,0 +1,18 @@
+Lumen + Microsoft Foundry: the IRCC SDLC agents, in one friendly chat
+
+IRCC has 23 AI agents for its software delivery lifecycle, built with LangGraph and hosted in Microsoft Foundry. This video shows business users working with them from Lumen: setup in one field, an agent gallery, cited and structured answers from real hosted agents, and human approval before anything changes.
+
+Chapters
+0:00 IRCC agents in Lumen
+0:16 How it works: Lumen → Microsoft Foundry
+0:36 Setup: the Foundry project in Settings
+0:47 The 23 IRCC agents
+1:03 Amira · Requirements Refinement from a BRD (with safety checks)
+2:24 Theo · Interface Documentation with an approval pause
+3:28 Priya · Schedule Variance from the integrated plan
+4:11 All 23 agents live in Foundry
+
+Notes
+- Agent replies in this video are real responses from the hosted agents (test project, synthetic documents), replayed for pacing.
+- Agents run in practice mode: they read what you attach and never write to Azure DevOps, SharePoint or Teams without a person approving.
+- Narration: Kokoro text-to-speech (af_heart), as in the other Lumen explainers; captions are in lumen-ircc-foundry.srt.

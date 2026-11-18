@@ -1,0 +1,50 @@
+{
+  "id": "ircc-technical-design",
+  "order": 604,
+  "name": "Technical Design (IRCC)",
+  "emoji": "🛠️",
+  "color": "blue",
+  "tagline": "Drafts a technical design from an approved FDD · runs in Microsoft Foundry",
+  "builtin": true,
+  "access": "read",
+  "skills": [],
+  "instructions": "Drafts or checks a technical design document from an approved functional design. Each component traces back to the design, non-functional requirements get a stated treatment, and departures from engineering standards are listed.",
+  "starters": [
+    "Draft the TDD from the attached FDD",
+    "Check the attached TDD against its FDD and our standards",
+    "Which non-functional requirements have no treatment in the attached FDD?"
+  ],
+  "attachHint": "Attach the approved FDD (.json, .docx or .md); optionally the requirement set (.json with 'requirement' in the name) and an existing TDD ('TDD' in the name).",
+  "foundry": {
+    "agent": "ircc-technical-design",
+    "protocol": "responses",
+    "messageField": "message",
+    "defaults": {},
+    "inputs": [
+      {
+        "match": "template.*\\.(docx|md|txt)$",
+        "as": "b64",
+        "field": "tdd_template_b64",
+        "nameField": "tdd_template_filename"
+      },
+      {
+        "match": "tdd.*\\.(json|docx|md|txt)$",
+        "as": "b64",
+        "field": "existing_tdd_b64",
+        "nameField": "existing_tdd_filename"
+      },
+      {
+        "match": "(requirement|req).*\\.json$",
+        "as": "b64",
+        "field": "requirement_set_b64",
+        "nameField": "requirement_set_filename"
+      },
+      {
+        "match": "\\.(json|docx|md|txt)$",
+        "as": "b64",
+        "field": "fdd_b64",
+        "nameField": "fdd_filename"
+      }
+    ]
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "id": "ircc-security-documentation",
+  "order": 615,
+  "name": "Security Documentation (IRCC)",
+  "emoji": "🔐",
+  "color": "rose",
+  "tagline": "Drafts and checks security design document sections · runs in Microsoft Foundry",
+  "builtin": true,
+  "access": "read",
+  "skills": [],
+  "instructions": "Drafts or reviews security design document sections from the architecture, designs and control mappings, citing a source for every paragraph. It also checks control coverage and flags where configuration evidence contradicts the documents.",
+  "starters": [
+    "Draft the SDD from the attached architecture and TDD",
+    "Check the attached SDD against the architecture",
+    "Which controls aren't covered by the attached SDD?"
+  ],
+  "attachHint": "Attach the architecture and designs (.docx, .pdf or .md, with 'FDD' or 'TDD' in design file names); to review, attach the SDD with 'SDD' in its name; control mappings go in a .jsonl file.",
+  "foundry": {
+    "agent": "ircc-security-documentation",
+    "protocol": "responses",
+    "messageField": "message",
+    "defaults": {},
+    "inputs": [
+      {
+        "match": "\\.jsonl$",
+        "as": "object",
+        "field": "sctm",
+        "b64Key": "content_b64"
+      },
+      {
+        "match": "sdd.*\\.(docx|md|txt|pdf)$",
+        "as": "list",
+        "field": "sdd"
+      },
+      {
+        "match": "tdd.*\\.(docx|md|txt|pdf)$",
+        "as": "list",
+        "field": "tdd"
+      },
+      {
+        "match": "fdd.*\\.(docx|md|txt|pdf)$",
+        "as": "list",
+        "field": "fdd"
+      },
+      {
+        "match": "(requirement|brd).*\\.(docx|md|txt|pdf)$",
+        "as": "list",
+        "field": "requirements"
+      },
+      {
+        "match": "\\.(docx|md|txt|pdf)$",
+        "as": "list",
+        "field": "architecture"
+      }
+    ]
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "id": "ircc-story-writing",
+  "order": 605,
+  "name": "Story Writing (IRCC)",
+  "emoji": "📋",
+  "color": "amber",
+  "tagline": "Breaks approved designs into epics, features and stories · runs in Microsoft Foundry",
+  "builtin": true,
+  "access": "read",
+  "skills": [],
+  "instructions": "Breaks an approved requirement set and functional design into epics, features and user stories with testable acceptance criteria. Every story traces to its requirements, and the result comes back as a file you can import into Azure DevOps.",
+  "starters": [
+    "Write epics, features and stories from the attached requirement set and FDD",
+    "Use Given/When/Then acceptance criteria for every story",
+    "Which requirements didn't get a story?"
+  ],
+  "attachHint": "Attach the approved requirement set and/or FDD as .json files from the earlier agents (put 'FDD' or 'TDD' in those file names).",
+  "foundry": {
+    "agent": "ircc-story-writing",
+    "protocol": "responses",
+    "messageField": "message",
+    "defaults": {},
+    "inputs": [
+      {
+        "match": "tdd.*\\.json$",
+        "as": "json",
+        "field": "tdd"
+      },
+      {
+        "match": "fdd.*\\.json$",
+        "as": "json",
+        "field": "fdd"
+      },
+      {
+        "match": "\\.json$",
+        "as": "json",
+        "field": "requirement_set"
+      }
+    ]
+  }
+}

@@ -8,7 +8,7 @@ import { bindComposer, composerHTML } from './composer.js';
 import { assistantInner, renderChat } from './chat.js';
 
 // --- streaming
-async function sendMessage({ text, attachments = [], assistantId, access, retryNote, truncateFrom, recipeId }) {
+async function sendMessage({ text, attachments = [], assistantId, access, retryNote, truncateFrom, recipeId, foundryApproval }) {
   let conv = S.view === 'chat' ? S.current : null;
   const aId = conv ? conv.assistantId : (assistantId || S.draft.assistantId || 'lumen');
   const a = assistantById(aId);
@@ -45,7 +45,7 @@ async function sendMessage({ text, attachments = [], assistantId, access, retryN
   try {
     const res = await fetch('/api/chat', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: ac.signal,
-      body: JSON.stringify({ conversationId: conv.id, message: text, attachments: attachments.map((f) => f.path), pinned_files: conv.pinned_files || [], assistantId: aId, access: acc, workspace: conv.workspace, providerId: S.settings.providerId, model: S.settings.model, truncateFrom, recipeId }),
+      body: JSON.stringify({ conversationId: conv.id, message: text, attachments: attachments.map((f) => f.path), pinned_files: conv.pinned_files || [], assistantId: aId, access: acc, workspace: conv.workspace, providerId: S.settings.providerId, model: S.settings.model, truncateFrom, recipeId, foundryApproval }),
     });
     if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `Request failed (${res.status})`);
     const reader = res.body.getReader();

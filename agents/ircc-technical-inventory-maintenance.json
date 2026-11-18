@@ -1,0 +1,25 @@
+{
+  "id": "ircc-technical-inventory-maintenance",
+  "order": 622,
+  "name": "Technical Inventory (IRCC)",
+  "emoji": "🗄️",
+  "color": "violet",
+  "tagline": "Keeps the technical catalogues current · runs in Microsoft Foundry",
+  "builtin": true,
+  "access": "read",
+  "skills": [],
+  "instructions": "Keeps the technical catalogues (APIs, services, data stores and configuration) current by comparing approved repository changes with the catalogue. It proposes entry updates for each catalogue owner and answers questions about what is catalogued.",
+  "starters": [
+    "Which APIs use OAuth 2.0?",
+    "What changed in the case-status API catalogue entry?",
+    "List services with no owner in the catalogue"
+  ],
+  "attachHint": "",
+  "foundry": {
+    "agent": "ircc-technical-inventory-maintenance",
+    "protocol": "invocations",
+    "messageField": "question",
+    "defaults": {},
+    "inputs": []
+  }
+}

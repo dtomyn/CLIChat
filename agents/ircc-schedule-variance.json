@@ -1,0 +1,36 @@
+{
+  "id": "ircc-schedule-variance",
+  "order": 610,
+  "name": "Schedule Variance (IRCC)",
+  "emoji": "⏱️",
+  "color": "amber",
+  "tagline": "Compares the current plan with its baseline · runs in Microsoft Foundry",
+  "builtin": true,
+  "access": "read",
+  "skills": [],
+  "instructions": "Compares the current plan with its baseline and reports slipped tasks, critical path changes, float and milestone impact. Numbers are calculated from the plan, and the summary explains them in plain language with task references.",
+  "starters": [
+    "Show schedule variance for the attached plan",
+    "What moved on the critical path since the baseline?",
+    "Which milestones slipped more than 5 days?"
+  ],
+  "attachHint": "Attach the current plan export (MS Project XML or Excel); optionally a separate baseline plan with 'baseline' in the file name.",
+  "foundry": {
+    "agent": "ircc-schedule-variance",
+    "protocol": "responses",
+    "messageField": "message",
+    "defaults": {},
+    "inputs": [
+      {
+        "match": "baseline.*\\.(xml|xlsx|xlsm)$",
+        "as": "object",
+        "field": "baseline"
+      },
+      {
+        "match": "\\.(xml|xlsx|xlsm)$",
+        "as": "object",
+        "field": "current"
+      }
+    ]
+  }
+}

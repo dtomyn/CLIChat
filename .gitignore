@@ -13,6 +13,10 @@ __pycache__/
 # Scripts, recordings, thumbnail, subtitles and YouTube notes stay tracked.
 film/.work/
 film/vo/
+film/.work-foundry/
+film/vo-foundry/
+film/.work-code/
+film/vo-code/
 film/out/*.mp4
 film/out/*.wav
 

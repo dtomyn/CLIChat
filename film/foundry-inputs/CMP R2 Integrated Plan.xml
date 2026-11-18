@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Project xmlns="http://schemas.microsoft.com/project">
+  <SaveVersion>14</SaveVersion>
+  <Name>Sample CMP R2 Plan.xml</Name>
+  <Title>Sample CMP R2 Release Plan</Title>
+  <StartDate>2026-01-05T08:00:00</StartDate>
+  <FinishDate>2026-02-13T17:00:00</FinishDate>
+  <StatusDate>2026-01-19T17:00:00</StatusDate>
+  <MinutesPerDay>480</MinutesPerDay>
+  <MinutesPerWeek>2400</MinutesPerWeek>
+  <Tasks>
+    <Task><UID>0</UID><ID>0</ID><Name>Sample CMP R2 Release Plan</Name><OutlineLevel>0</OutlineLevel><Summary>1</Summary><Start>2026-01-05T08:00:00</Start><Finish>2026-02-13T17:00:00</Finish></Task>
+    <Task>
+      <UID>1</UID><ID>1</ID><Name>Phase 1 - Design</Name><WBS>1</WBS><OutlineLevel>1</OutlineLevel>
+      <Start>2026-01-05T08:00:00</Start><Finish>2026-01-23T17:00:00</Finish><Duration>PT120H0M0S</Duration><DurationFormat>7</DurationFormat>
+      <Milestone>0</Milestone><Summary>1</Summary><Critical>1</Critical><PercentComplete>70</PercentComplete>
+      <TotalSlack>0</TotalSlack>
+      <ActualStart>2026-01-05T08:00:00</ActualStart>
+      <Baseline><Number>0</Number><Start>2026-01-05T08:00:00</Start><Finish>2026-01-21T17:00:00</Finish><Duration>PT104H0M0S</Duration></Baseline>
+    </Task>
+    <Task>
+      <UID>2</UID><ID>2</ID><Name>Requirements</Name><WBS>1.1</WBS><OutlineLevel>2</OutlineLevel>
+      <Start>2026-01-05T08:00:00</Start><Finish>2026-01-09T17:00:00</Finish><Duration>PT40H0M0S</Duration><DurationFormat>7</DurationFormat>
+      <Milestone>0</Milestone><Summary>0</Summary><Critical>1</Critical><PercentComplete>100</PercentComplete>
+      <TotalSlack>0</TotalSlack>
+      <ActualStart>2026-01-05T08:00:00</ActualStart><ActualFinish>2026-01-09T17:00:00</ActualFinish>
+      <Baseline><Number>0</Number><Start>2026-01-05T08:00:00</Start><Finish>2026-01-09T17:00:00</Finish><Duration>PT40H0M0S</Duration></Baseline>
+    </Task>
+    <Task>
+      <UID>3</UID><ID>3</ID><Name>Architecture design</Name><WBS>1.2</WBS><OutlineLevel>2</OutlineLevel>
+      <Start>2026-01-12T08:00:00</Start><Finish>2026-01-23T17:00:00</Finish><Duration>PT80H0M0S</Duration><DurationFormat>7</DurationFormat>
+      <Milestone>0</Milestone><Summary>0</Summary><Critical>1</Critical><PercentComplete>60</PercentComplete>
+      <TotalSlack>0</TotalSlack>
+      <ActualStart>2026-01-12T08:00:00</ActualStart>
+      <PredecessorLink><PredecessorUID>2</PredecessorUID><Type>1</Type><CrossProject>0</CrossProject><LinkLag>0</LinkLag><LagFormat>7</LagFormat></PredecessorLink>
+      <Baseline><Number>0</Number><Start>2026-01-12T08:00:00</Start><Finish>2026-01-21T17:00:00</Finish><Duration>PT64H0M0S</Duration></Baseline>
+    </Task>
+    <Task>
+      <UID>4</UID><ID>4</ID><Name>Security review</Name><WBS>1.3</WBS><OutlineLevel>2</OutlineLevel>
+      <Start>2026-01-14T08:00:00</Start><Finish>2026-01-16T17:00:00</Finish><Duration>PT24H0M0S</Duration><DurationFormat>7</DurationFormat>
+      <Milestone>0</Milestone><Summary>0</Summary><Critical>0</Critical><PercentComplete>100</PercentComplete>
+      <TotalSlack>24000</TotalSlack>
+      <ActualStart>2026-01-14T08:00:00</ActualStart><ActualFinish>2026-01-16T17:00:00</ActualFinish>
+      <PredecessorLink><PredecessorUID>3</PredecessorUID><Type>3</Type><CrossProject>0</CrossProject><LinkLag>9600</LinkLag><LagFormat>7</LagFormat></PredecessorLink>
+      <Baseline><Number>0</Number><Start>2026-01-14T08:00:00</Start><Finish>2026-01-16T17:00:00</Finish><Duration>PT24H0M0S</Duration></Baseline>
+    </Task>
+    <Task>
+      <UID>5</UID><ID>5</ID><Name>Design approved</Name><WBS>1.4</WBS><OutlineLevel>2</OutlineLevel>
+      <Start>2026-01-23T08:00:00</Start><Finish>2026-01-23T08:00:00</Finish><Duration>PT0H0M0S</Duration><DurationFormat>7</DurationFormat>
+      <Milestone>1</Milestone><Summary>0</Summary><Critical>1</Critical><PercentComplete>0</PercentComplete>
+      <TotalSlack>0</TotalSlack>
+      <PredecessorLink><PredecessorUID>3</PredecessorUID><Type>1</Type><CrossProject>0</CrossProject><LinkLag>0</LinkLag><LagFormat>7</LagFormat></PredecessorLink>
+      <PredecessorLink><PredecessorUID>4</PredecessorUID><Type>1</Type><CrossProject>0</CrossProject><LinkLag>0</LinkLag><LagFormat>7</LagFormat></PredecessorLink>
+      <Baseline><Number>0</Number><Start>2026-01-21T08:00:00</Start><Finish>2026-01-21T08:00:00</Finish><Duration>PT0H0M0S</Duration></Baseline>
+    </Task>
+    <Task>
+      <UID>6</UID><ID>6</ID><Name>Phase 2 - Build</Name><WBS>2</WBS><OutlineLevel>1</OutlineLevel>
+      <Start>2026-01-26T08:00:00</Start><Finish>2026-02-13T17:00:00</Finish><Duration>PT120H0M0S</Duration><DurationFormat>7</DurationFormat>
+      <Milestone>0</Milestone><Summary>1</Summary><Critical>1</Critical><PercentComplete>0</PercentComplete>
+      <TotalSlack>0</TotalSlack>
+      <Baseline><Number>0</Number><Start>2026-01-22T08:00:00</Start><Finish>2026-02-11T17:00:00</Finish><Duration>PT120H0M0S</Duration></Baseline>
+    </Task>
+    <Task>
+      <UID>7</UID><ID>7</ID><Name>Build backend</Name><WBS>2.1</WBS><OutlineLevel>2</OutlineLevel>
+      <Start>2026-01-26T08:00:00</Start><Finish>2026-02-13T17:00:00</Finish><Duration>PT120H0M0S</Duration><DurationFormat>7</DurationFormat>
+      <Milestone>0</Milestone><Summary>0</Summary><Critical>1</Critical><PercentComplete>0</PercentComplete>
+      <TotalSlack>0</TotalSlack>
+      <PredecessorLink><PredecessorUID>5</PredecessorUID><Type>1</Type><CrossProject>0</CrossProject><LinkLag>0</LinkLag><LagFormat>7</LagFormat></PredecessorLink>
+      <Baseline><Number>0</Number><Start>2026-01-22T08:00:00</Start><Finish>2026-02-11T17:00:00</Finish><Duration>PT120H0M0S</Duration></Baseline>
+    </Task>
+    <Task>
+      <UID>8</UID><ID>8</ID><Name>Build UI</Name><WBS>2.2</WBS><OutlineLevel>2</OutlineLevel>
+      <Start>2026-01-29T08:00:00</Start><Finish>2026-02-05T17:00:00</Finish><Duration>PT48H0M0S</Duration><DurationFormat>7</DurationFormat>
+      <Milestone>0</Milestone><Summary>0</Summary><Critical>0</Critical><PercentComplete>0</PercentComplete>
+      <TotalSlack>4800</TotalSlack>
+      <PredecessorLink><PredecessorUID>5</PredecessorUID><Type>1</Type><CrossProject>0</CrossProject><LinkLag>14400</LinkLag><LagFormat>7</LagFormat></PredecessorLink>
+      <Baseline><Number>0</Number><Start>2026-01-27T08:00:00</Start><Finish>2026-02-03T17:00:00</Finish><Duration>PT48H0M0S</Duration></Baseline>
+    </Task>
+    <Task>
+      <UID>9</UID><ID>9</ID><Name>Integration test</Name><WBS>2.3</WBS><OutlineLevel>2</OutlineLevel>
+      <Start>2026-02-09T08:00:00</Start><Finish>2026-02-13T17:00:00</Finish><Duration>PT40H0M0S</Duration><DurationFormat>7</DurationFormat>
+      <Milestone>0</Milestone><Summary>0</Summary><Critical>1</Critical><PercentComplete>0</PercentComplete>
+      <TotalSlack>0</TotalSlack>
+      <PredecessorLink><PredecessorUID>7</PredecessorUID><Type>0</Type><CrossProject>0</CrossProject><LinkLag>0</LinkLag><LagFormat>7</LagFormat></PredecessorLink>
+      <PredecessorLink><PredecessorUID>8</PredecessorUID><Type>1</Type><CrossProject>0</CrossProject><LinkLag>0</LinkLag><LagFormat>7</LagFormat></PredecessorLink>
+      <Baseline><Number>0</Number><Start>2026-02-05T08:00:00</Start><Finish>2026-02-11T17:00:00</Finish><Duration>PT40H0M0S</Duration></Baseline>
+    </Task>
+    <Task>
+      <UID>10</UID><ID>10</ID><Name>Documentation</Name><WBS>2.4</WBS><OutlineLevel>2</OutlineLevel>
+      <Start>2026-02-02T08:00:00</Start><Finish>2026-02-05T17:00:00</Finish><Duration>PT32H0M0S</Duration><DurationFormat>7</DurationFormat>
+      <Milestone>0</Milestone><Summary>0</Summary><Critical>0</Critical><PercentComplete>0</PercentComplete>
+      <TotalSlack>28800</TotalSlack>
+      <PredecessorLink><PredecessorUID>7</PredecessorUID><Type>3</Type><CrossProject>0</CrossProject><LinkLag>24000</LinkLag><LagFormat>7</LagFormat></PredecessorLink>
+      <Baseline><Number>0</Number><Start>2026-01-29T08:00:00</Start><Finish>2026-02-03T17:00:00</Finish><Duration>PT32H0M0S</Duration></Baseline>
+    </Task>
+    <Task>
+      <UID>11</UID><ID>11</ID><Name>Go-live</Name><WBS>2.5</WBS><OutlineLevel>2</OutlineLevel>
+      <Start>2026-02-13T08:00:00</Start><Finish>2026-02-13T08:00:00</Finish><Duration>PT0H0M0S</Duration><DurationFormat>7</DurationFormat>
+      <Milestone>1</Milestone><Summary>0</Summary><Critical>1</Critical><PercentComplete>0</PercentComplete>
+      <TotalSlack>0</TotalSlack>
+      <PredecessorLink><PredecessorUID>9</PredecessorUID><Type>1</Type><CrossProject>0</CrossProject><LinkLag>0</LinkLag><LagFormat>7</LagFormat></PredecessorLink>
+      <PredecessorLink><PredecessorUID>10</PredecessorUID><Type>1</Type><CrossProject>0</CrossProject><LinkLag>0</LinkLag><LagFormat>7</LagFormat></PredecessorLink>
+      <Baseline><Number>0</Number><Start>2026-02-11T08:00:00</Start><Finish>2026-02-11T08:00:00</Finish><Duration>PT0H0M0S</Duration></Baseline>
+      <Baseline><Number>1</Number><Start>2026-02-20T08:00:00</Start><Finish>2026-02-20T08:00:00</Finish><Duration>PT0H0M0S</Duration></Baseline>
+    </Task>
+  </Tasks>
+  <Resources>
+    <Resource><UID>1</UID><ID>1</ID><Name>Architect</Name><Type>1</Type></Resource>
+    <Resource><UID>2</UID><ID>2</ID><Name>Business Analyst</Name><Type>1</Type></Resource>
+    <Resource><UID>3</UID><ID>3</ID><Name>Dev Team</Name><Type>1</Type></Resource>
+    <Resource><UID>4</UID><ID>4</ID><Name>QA Team</Name><Type>1</Type></Resource>
+    <Resource><UID>5</UID><ID>5</ID><Name>Security Lead</Name><Type>1</Type></Resource>
+  </Resources>
+  <Assignments>
+    <Assignment><UID>1</UID><TaskUID>2</TaskUID><ResourceUID>2</ResourceUID><Units>1</Units></Assignment>
+    <Assignment><UID>2</UID><TaskUID>3</TaskUID><ResourceUID>1</ResourceUID><Units>1</Units></Assignment>
+    <Assignment><UID>3</UID><TaskUID>4</TaskUID><ResourceUID>5</ResourceUID><Units>1</Units></Assignment>
+    <Assignment><UID>4</UID><TaskUID>7</TaskUID><ResourceUID>3</ResourceUID><Units>1</Units></Assignment>
+    <Assignment><UID>5</UID><TaskUID>8</TaskUID><ResourceUID>3</ResourceUID><Units>1</Units></Assignment>
+    <Assignment><UID>6</UID><TaskUID>9</TaskUID><ResourceUID>4</ResourceUID><Units>1</Units></Assignment>
+    <Assignment><UID>7</UID><TaskUID>10</TaskUID><ResourceUID>2</ResourceUID><Units>1</Units></Assignment>
+  </Assignments>
+</Project>

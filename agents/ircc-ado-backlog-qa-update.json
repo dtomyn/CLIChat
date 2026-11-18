@@ -1,0 +1,31 @@
+{
+  "id": "ircc-ado-backlog-qa-update",
+  "order": 621,
+  "name": "Backlog Q&A (IRCC)",
+  "emoji": "🧮",
+  "color": "blue",
+  "tagline": "Answers backlog questions and checks story readiness · runs in Microsoft Foundry",
+  "builtin": true,
+  "access": "read",
+  "skills": [],
+  "instructions": "Answers questions about the Azure DevOps backlog with citations, maps dependencies and checks stories against the Definition of Ready. Any change to work items is proposed for your approval first.",
+  "starters": [
+    "List active stories under Feature 4512 without acceptance criteria",
+    "Show the dependency chain for Epic 3001",
+    "Which stories in the next sprint aren't ready?"
+  ],
+  "attachHint": "Optionally attach an Azure DevOps backlog export (.json).",
+  "foundry": {
+    "agent": "ircc-ado-backlog-qa-update",
+    "protocol": "responses",
+    "messageField": "message",
+    "defaults": {},
+    "inputs": [
+      {
+        "match": "\\.json$",
+        "as": "json",
+        "field": "ado_snapshot"
+      }
+    ]
+  }
+}

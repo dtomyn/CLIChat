@@ -10,12 +10,18 @@ import { pickFolder } from './folder.js';
 import { adoReady, openAdoSettings, openWorkiqSettings } from './connections.js';
 
 function providerCards(selected) {
-  return S.providers.map((p) => `
+  return S.providers.filter((p) => !p.agentOnly).map((p) => `
     <button class="option-card ${p.id === selected ? 'active' : ''}" data-provider="${esc(p.id)}">
       <span class="oc-icon">${p.id.startsWith('claude') ? '🟣' : p.id.startsWith('copilot') ? '🐙' : '🔌'}</span>
       <span class="oc-text"><span class="oc-title">${esc(p.name)} ${p.available ? `<span class="status-tag ok"><i class="dot ok" style="box-shadow:none"></i>Installed</span>` : `<span class="status-tag bad">Not set up</span>`}</span>
       <span class="oc-desc">${esc(p.available ? `${p.vendor}${p.version ? ` · ${p.version}` : ''}` : p.message || p.description)}</span></span>
     </button>`).join('');
+}
+
+function foundryTag() {
+  const f = S.providers.find((p) => p.id === 'foundry');
+  if (!f) return '';
+  return f.available ? '<span class="status-tag ok"><i class="dot ok" style="box-shadow:none"></i>Ready</span>' : `<span class="status-tag bad" title="${esc(f.message || '')}">Not set up</span>`;
 }
 
 function openSettings(focus) {
@@ -32,6 +38,9 @@ function openSettings(focus) {
           <span class="oc-desc">${adoReady() ? esc(`${S.settings.ado.project}${S.settings.ado.team ? ` · ${S.settings.ado.team}` : ''} · ${S.settings.ado.orgUrl.replace(/^https:\/\//, '')}`) : 'Search and update work items and wiki pages. Every change waits for your approval.'}</span></span></button>
         <button type="button" class="option-card" id="sWorkiq"><span class="oc-icon">🟦</span><span class="oc-text"><span class="oc-title">SharePoint &amp; Microsoft 365 ${S.settings.workiq?.enabled ? `<span class="status-tag ok"><i class="dot ok" style="box-shadow:none"></i>On</span>` : '<span class="status-tag">Off</span>'}</span>
           <span class="oc-desc">Find and read documents on SharePoint, plus your email, meetings and Teams. Read only.</span></span></button></div></div>
+      <div class="field" id="foundryField"><label for="sFoundry">Microsoft Foundry project <span class="muted" style="font-weight:400">(for the IRCC agents)</span> ${foundryTag()}</label>
+        <input class="input" id="sFoundry" value="${esc(s.foundry?.endpoint || '')}" placeholder="https://<name>.services.ai.azure.com/api/projects/<project>" spellcheck="false">
+        <div class="help">The IRCC agents run in this Foundry project. Lumen signs in with your Azure account (run "az login" once on this computer).</div></div>
       <div class="field"><label>Default file access</label><div class="seg" id="sAccess">${Object.entries(ACCESS).map(([k, v]) => `<button data-v="${k}" class="${s.access === k ? 'active' : ''}">${v.emoji} ${esc(v.label)}</button>`).join('')}</div></div>
       <div class="field"><label>Default notebook (project folder)</label><div class="row" style="align-items:center"><input class="input" id="sFolder" value="${esc(s.workspace)}" readonly style="flex:1"><button class="btn soft" id="sFolderBtn" style="flex:0 0 auto">${icon('folder')}Change</button></div><div class="help">Your notebook: where Lumen reads and saves documents unless a chat uses a different folder. Keep it in OneDrive so Microsoft 365 Copilot can find the same files later.</div></div>
       <div class="field"><label>Appearance</label><div class="seg" id="sTheme">${[['system', 'Match system'], ['light', 'Light'], ['dark', 'Dark']].map(([k, l]) => `<button data-v="${k}" class="${(s.theme || 'system') === k ? 'active' : ''}">${l}</button>`).join('')}</div></div>
@@ -41,7 +50,7 @@ function openSettings(focus) {
       </details>`,
     leftAction: { label: 'Keyboard shortcuts', icon: 'keyboard', run: () => { openShortcuts(); return false; } },
     actions: [{ label: 'Close' }, { label: 'Save', primary: true, run: async (el) => {
-      await saveSettings({ userName: $('#sName', el).value.trim(), providerId: s.providerId, access: s.access, workspace: s.workspace, theme: s.theme, showCost: !!s.showCost, model: s.providerId !== S.settings.providerId ? 'default' : S.settings.model });
+      await saveSettings({ foundry: { endpoint: $('#sFoundry', el).value.trim() }, userName: $('#sName', el).value.trim(), providerId: s.providerId, access: s.access, workspace: s.workspace, theme: s.theme, showCost: !!s.showCost, model: s.providerId !== S.settings.providerId ? 'default' : S.settings.model });
       applyTheme(s.theme); rerenderCurrent(); toast('Settings saved');
     } }],
   });

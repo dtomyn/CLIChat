@@ -1,0 +1,37 @@
+{
+  "id": "ircc-architecture-review",
+  "order": 617,
+  "name": "Architecture Review (IRCC)",
+  "emoji": "🏛️",
+  "color": "blue",
+  "tagline": "Finds inconsistencies across design documents · runs in Microsoft Foundry",
+  "builtin": true,
+  "access": "read",
+  "skills": [],
+  "instructions": "Reviews the design documents you supply for contradictions between them, departures from standards and ADRs, and decisions still open. It returns a cited review report and a deviation log for the lead architect.",
+  "starters": [
+    "Review the attached FDD and TDD for inconsistencies",
+    "Do the attached designs follow our security standards?",
+    "List open decisions in the attached designs"
+  ],
+  "attachHint": "Attach the design documents to review (.md, .txt, .docx, .pdf or OpenAPI .yaml).",
+  "foundry": {
+    "agent": "ircc-architecture-review",
+    "protocol": "responses",
+    "messageField": "message",
+    "defaults": {},
+    "inputs": [
+      {
+        "match": "\\.(md|txt|ya?ml|json)$",
+        "as": "textlist",
+        "field": "artifacts"
+      },
+      {
+        "match": "\\.(docx|pdf|pptx)$",
+        "as": "list",
+        "field": "artifacts",
+        "b64Key": "text_b64"
+      }
+    ]
+  }
+}

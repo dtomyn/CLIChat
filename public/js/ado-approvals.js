@@ -7,6 +7,7 @@ import { openSettings } from './settings.js';
 // The card is drawn from the change set the server stored, never from the AI's own words. Only Apply writes to Azure DevOps.
 const approvalCache = new Map(); // change set id -> described change set
 const approvalLoading = new Set();
+const FOUNDRY_STATUS = { pending: ['Waiting for your decision', 'warn'], applied: ['Approved', 'ok'], discarded: ['Rejected', 'muted'], expired: ['Expired', 'muted'] };
 const AP_STATUS = {
   pending: ['Waiting for your approval', 'warn'], applied: ['Applied', 'ok'], partial: ['Partly applied', 'warn'], discarded: ['Discarded', 'muted'],
   expired: ['Expired', 'muted'], conflict: ['Changed in Azure DevOps first', 'bad'], failed: ["Couldn't apply", 'bad'],
@@ -37,9 +38,10 @@ const apVal = (v) => { const s = String(v ?? ''); return s ? `<div class="ap-val
 function approvalCard(id, m) {
   const d = approvalCache.get(id);
   if (!d) { setTimeout(() => loadApproval(id)); return `<div class="approval-card loading" data-approval="${esc(id)}"><span class="spinner"></span><span>Loading the proposed change…</span></div>`; }
-  const [label, tone] = AP_STATUS[d.status] || [d.status, 'muted'];
+  const foundry = d.kind === 'foundry'; // an IRCC agent in Microsoft Foundry paused for a decision
+  const [label, tone] = (foundry && FOUNDRY_STATUS[d.status]) || AP_STATUS[d.status] || [d.status, 'muted'];
   const pending = d.status === 'pending';
-  const siblings = (m?.approvals || []).filter((x) => approvalCache.get(x)?.status === 'pending');
+  const siblings = (m?.approvals || []).filter((x) => approvalCache.get(x)?.status === 'pending' && approvalCache.get(x)?.kind !== 'foundry');
   let last = '';
   const hasBefore = (d.rows || []).some((r) => r.before); // new items have no "Now" value: drop the column
   const rows = (d.rows || []).map((r) => { const same = r.target === last; last = r.target; return `<tr><td>${same ? '' : esc(r.target)}</td><td>${esc(r.field)}</td>${hasBefore ? `<td class="ap-now">${apVal(r.before)}</td>` : ''}<td>${apVal(r.after)}</td></tr>`; }).join('');
@@ -48,11 +50,12 @@ function approvalCard(id, m) {
   const result = d.result && !pending ? `<div class="ap-result ${tone}">${icon(tone === 'ok' ? 'check' : tone === 'bad' ? 'alert' : 'x')}<span>${esc(d.result.message || label)}</span></div>
     ${(d.result.links || []).length ? `<div class="ap-links">${d.result.links.map((l) => `<a href="${esc(/^https?:\/\//i.test(String(l.url)) ? l.url : '#')}" target="_blank" rel="noopener noreferrer">${icon('external')}${esc(l.label)}</a>`).join('')}</div>` : ''}` : '';
   return `<div class="approval-card ${esc(d.status)}" data-approval="${esc(id)}">
-    <div class="ap-head">${icon(d.kind === 'wiki' ? 'book' : 'board')}<div class="ap-title"><b>${esc(d.title)}</b><small>Azure DevOps${d.project ? ` · ${esc(d.project)}` : ''}</small></div><span class="status-tag ${tone}">${esc(label)}${when}</span></div>
+    <div class="ap-head">${icon(foundry ? 'spark' : d.kind === 'wiki' ? 'book' : 'board')}<div class="ap-title"><b>${esc(d.title)}</b><small>${foundry ? 'Microsoft Foundry' : 'Azure DevOps'}${d.project ? ` · ${esc(d.project)}` : ''}</small></div><span class="status-tag ${tone}">${esc(label)}${when}</span></div>
     ${d.reason ? `<div class="ap-reason"><b>Why:</b> ${esc(d.reason)}</div>` : ''}
     ${rows ? `<div class="ap-table-wrap"><table class="ap-table"><thead><tr><th>Item</th><th>Field</th>${hasBefore ? '<th>Now</th>' : ''}<th>Proposed</th></tr></thead><tbody>${rows}</tbody></table></div>` : ''}
     ${diff}
-    ${pending ? `<div class="ap-actions"><button class="btn primary sm" data-ap-apply="${esc(id)}">${icon('check')}Apply</button><button class="btn ghost sm" data-ap-discard="${esc(id)}">Discard</button>${siblings.length > 1 ? `<button class="btn soft sm" data-ap-apply-all>${icon('check')}Apply all ${siblings.length}</button>` : ''}<span class="ap-note">Nothing changes in Azure DevOps until you click Apply.</span></div>` : result}
+    ${pending && foundry ? `<div class="ap-actions"><button class="btn primary sm" data-ap-apply="${esc(id)}">${icon('check')}Approve</button><button class="btn ghost sm" data-ap-discard="${esc(id)}">Reject</button><span class="ap-note">The agent continues only after you approve.</span></div>`
+      : pending ? `<div class="ap-actions"><button class="btn primary sm" data-ap-apply="${esc(id)}">${icon('check')}Apply</button><button class="btn ghost sm" data-ap-discard="${esc(id)}">Discard</button>${siblings.length > 1 ? `<button class="btn soft sm" data-ap-apply-all>${icon('check')}Apply all ${siblings.length}</button>` : ''}<span class="ap-note">Nothing changes in Azure DevOps until you click Apply.</span></div>` : result}
   </div>`;
 }
 
@@ -61,11 +64,17 @@ async function decideApproval(btn, ids, discard = false) {
   if (!conv?.id) return;
   const card = btn.closest('.approval-card');
   $$('button', card).forEach((b) => { b.disabled = true; });
-  if (!discard) btn.innerHTML = `<span class="spinner" style="width:13px;height:13px"></span>Applying…`;
+  if (!discard) btn.innerHTML = `<span class="spinner" style="width:13px;height:13px"></span>${approvalCache.get(ids[0])?.kind === 'foundry' ? 'Approving…' : 'Applying…'}`;
   for (const id of ids) {
     try {
       const d = await api(`/api/chat/${conv.id}/approvals/${id}`, { method: discard ? 'DELETE' : 'POST' });
       approvalCache.set(id, d);
+      if (d.kind === 'foundry') { // send the decision to the agent as the next turn, so its reply shows in the chat
+        repaintApproval(id);
+        const { sendMessage } = await import('./streaming.js');
+        sendMessage({ text: discard ? `Rejected: ${d.title}` : `Approved: ${d.title}`, foundryApproval: { id, approve: !discard } });
+        continue;
+      }
       if (!discard) toast(d.status === 'applied' ? d.result.message : d.result?.message || 'Done', d.status === 'applied' ? 'check' : 'alert');
     } catch (e) {
       if (/name in Settings/i.test(e.message)) { toast(e.message, 'alert'); openSettings(); }

@@ -1,0 +1,36 @@
+{
+  "id": "ircc-delivery-scenario",
+  "order": 613,
+  "name": "Delivery Scenarios (IRCC)",
+  "emoji": "🔮",
+  "color": "green",
+  "tagline": "Models what-if changes on a copy of the plan · runs in Microsoft Foundry",
+  "builtin": true,
+  "access": "read",
+  "skills": [],
+  "instructions": "Models what-if changes, such as delays, dependency changes or reduced capacity, on a copy of the plan and shows the effect on milestones and the critical path. The master plan is never changed; you get a comparison and a change proposal for the planner.",
+  "starters": [
+    "Delay 'Siebel EAI build' by 10 working days in the attached plan: what happens to go-live?",
+    "Reduce integration capacity to 60% in March 2027",
+    "Compare scenarios A and B"
+  ],
+  "attachHint": "Attach the current plan export (MS Project XML or Excel); optionally a capacity workbook with 'capacity' in the file name.",
+  "foundry": {
+    "agent": "ircc-delivery-scenario",
+    "protocol": "responses",
+    "messageField": "message",
+    "defaults": {},
+    "inputs": [
+      {
+        "match": "capacity.*\\.(xlsx|xlsm)$",
+        "as": "object",
+        "field": "capacity"
+      },
+      {
+        "match": "\\.(xml|xlsx|xlsm)$",
+        "as": "object",
+        "field": "plan"
+      }
+    ]
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "id": "ircc-raid-capture",
+  "order": 609,
+  "name": "RAID Capture (IRCC)",
+  "emoji": "⚠️",
+  "color": "rose",
+  "tagline": "Pulls risks, issues and actions from huddle transcripts · runs in Microsoft Foundry",
+  "builtin": true,
+  "access": "read",
+  "skills": [],
+  "instructions": "Reads a huddle transcript and proposes risks, issues, actions, decisions, assumptions and dependencies, each quoting what was said. Items already in the RAID register are flagged as duplicates instead of being added again.",
+  "starters": [
+    "{\"meeting_date\": \"2026-11-17\", \"message\": \"Extract RAID items from the attached transcript\"}",
+    "Which of these items are already in the attached RAID register?",
+    "List the actions with an owner and due date"
+  ],
+  "attachHint": "Attach the huddle transcript (.vtt, .docx or .txt) and, optionally, the RAID register (.xlsx). The agent also needs the meeting date.",
+  "foundry": {
+    "agent": "ircc-raid-capture",
+    "protocol": "responses",
+    "messageField": "message",
+    "defaults": {},
+    "inputs": [
+      {
+        "match": "\\.(xlsx|xlsm)$",
+        "as": "b64",
+        "field": "raid_export_b64",
+        "nameField": "raid_export_filename"
+      },
+      {
+        "match": "\\.(vtt|docx|txt)$",
+        "as": "b64",
+        "field": "transcript_b64",
+        "nameField": "filename"
+      }
+    ]
+  }
+}

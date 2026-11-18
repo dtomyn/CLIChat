@@ -67,4 +67,36 @@ if (!REAL) registry.providers.fake = {
   async complete() { return 'Test chat'; },
 };
 
+// Stand-in Microsoft Foundry (IRCC agents): canned hosted-agent replies, no Azure. E2E_FOUNDRY=live uses the real
+// project in Settings (and your az login) instead.
+if (process.env.E2E_FOUNDRY !== 'live') {
+  process.env.LUMEN_FOUNDRY_ENDPOINT = 'https://e2e-test.services.ai.azure.com/api/projects/e2e';
+  require('../lib/foundry/auth')._setTokenSource(async () => ({ token: 'e2e', expiresAt: Date.now() + 3600_000 }));
+  const fence = (result, summary) => `${summary}\n\n\`\`\`json\n${JSON.stringify(result, null, 1)}\n\`\`\``;
+  const reply = (id, text, extra = []) => ({ id, status: 'completed', output: [...(text ? [{ type: 'message', content: [{ type: 'output_text', text }] }] : []), ...extra] });
+  require('../lib/foundry/client')._setFetch(async (url, init) => {
+    const body = JSON.parse(init.body);
+    let data;
+    if (Array.isArray(body.input) && body.input[0]?.type === 'mcp_approval_response') {
+      data = reply('caresp_e2e_3', fence({ status: 'ok', counts: { sections: 13 } }, body.input[0].approve ? 'ICD draft for IF-CMP-NS-001: 13 sections, completeness 100%.' : 'Stopped.'));
+    } else if (/interface-documentation/.test(url)) {
+      data = reply('caresp_e2e_2', '', [{ type: 'mcp_approval_request', id: 'mcpr_e2e', server_label: 'langgraph', name: '__hosted_agent_adapter_interrupt__',
+        arguments: JSON.stringify({ value: { type: 'ircc_approval_request', summary: 'Confirm integration pattern for IF-CMP-NS-001: Request-reply (P5 synchronous)', reviewer_group: 'Integration architects', proposals: [] } }) }]);
+    } else {
+      const input = JSON.parse(body.input || body.message || '{}');
+      data = reply('caresp_e2e_1', fence({
+        status: 'ok', counts: { functional: 2, non_functional: 1, gaps: 3 },
+        guardrail_findings: [{ title: 'Section 3.2 blocked by content filter' }],
+        requirement_set: { requirements: [
+          { id: 'INTAKE-FR-001', statement: 'The system shall allow an applicant to submit an application online.', type: 'functional', priority: 'must' },
+          { id: 'INTAKE-FR-002', statement: 'The system shall issue a confirmation number.', type: 'functional', priority: 'must' },
+          { id: 'INTAKE-NFR-001', statement: 'Public pages shall meet WCAG 2.1 AA.', type: 'non_functional', priority: 'unspecified' }] },
+        received: { message: input.message || null, filename: input.filename || null },
+      }, 'Extracted 2 functional and 1 non-functional requirements from INTAKE. AI-drafted — pending functional lead review.'));
+    }
+    await new Promise((s) => setTimeout(s, 200));
+    return { status: 200, text: async () => JSON.stringify(data), headers: { get: () => null } };
+  });
+}
+
 require('../server');

@@ -1,0 +1,44 @@
+{
+  "id": "ircc-functional-design",
+  "order": 602,
+  "name": "Functional Design (IRCC)",
+  "emoji": "🧩",
+  "color": "violet",
+  "tagline": "Drafts a functional design from approved requirements · runs in Microsoft Foundry",
+  "builtin": true,
+  "access": "read",
+  "skills": [],
+  "instructions": "Drafts a functional design document that follows the standard template, from an approved requirement set. Every design element traces to the requirements it covers, and a coverage matrix and gap log show what is still missing.",
+  "starters": [
+    "Draft the FDD from the attached requirement set",
+    "Which requirements in the attached set aren't covered yet?",
+    "Draft only the use cases from the attached requirement set"
+  ],
+  "attachHint": "Attach the approved requirement set (.json from Requirements Refinement, or .docx/.md); to work from an existing FDD, attach it too with 'FDD' in the file name.",
+  "foundry": {
+    "agent": "ircc-functional-design",
+    "protocol": "responses",
+    "messageField": "message",
+    "defaults": {},
+    "inputs": [
+      {
+        "match": "template.*\\.(docx|md|txt)$",
+        "as": "b64",
+        "field": "fdd_template_b64",
+        "nameField": "fdd_template_filename"
+      },
+      {
+        "match": "(fdd|functional).*\\.(json|docx|md|txt)$",
+        "as": "b64",
+        "field": "existing_fdd_b64",
+        "nameField": "existing_fdd_filename"
+      },
+      {
+        "match": "\\.(json|docx|md|txt)$",
+        "as": "b64",
+        "field": "requirement_set_b64",
+        "nameField": "requirement_set_filename"
+      }
+    ]
+  }
+}

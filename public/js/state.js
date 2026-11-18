@@ -10,7 +10,7 @@ const S = {
 };
 const isLive = (conv) => !!conv && [...S.live.values()].some((l) => l.conv === conv);
 const assistantById = (id) => S.assistants.find((a) => a.id === id) || S.assistants[0] || { id: 'lumen', name: 'Lumen', emoji: '✨', color: 'violet' };
-const provider = () => S.providers.find((p) => p.id === S.settings.providerId) || S.providers[0];
+const provider = () => S.providers.find((p) => p.id === S.settings.providerId && !p.agentOnly) || S.providers.find((p) => !p.agentOnly) || S.providers[0];
 const ACCESS = {
   chat: { emoji: '💬', label: 'Just chat', short: 'Chat only', desc: "Answers questions and can search the web. Won't look at your files." },
   read: { emoji: '👀', label: 'Read my files', short: 'Can read files', desc: 'Can open and read documents in your project folder.' },

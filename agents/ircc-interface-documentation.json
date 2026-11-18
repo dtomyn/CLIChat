@@ -1,0 +1,57 @@
+{
+  "id": "ircc-interface-documentation",
+  "order": 611,
+  "name": "Interface Documentation (IRCC)",
+  "emoji": "🔌",
+  "color": "violet",
+  "tagline": "Drafts interface control documents from contracts · runs in Microsoft Foundry",
+  "builtin": true,
+  "access": "read",
+  "skills": [],
+  "instructions": "Drafts interface control document sections from partner contracts, schemas and requirements, following the integration standards. A completeness check lists missing fields, rules and sections, and nothing is invented that the contracts don't say.",
+  "starters": [
+    "Draft the ICD from the attached OpenAPI contract",
+    "Check the attached ICD for completeness",
+    "Which requirements does the attached contract not cover?"
+  ],
+  "attachHint": "Attach the partner contract or schema (OpenAPI, JSON Schema, XSD, WSDL or data dictionary); optionally requirements ('requirement' in the name), the canonical model ('canonical' in the name) and an interface.json describing the interface.",
+  "foundry": {
+    "agent": "ircc-interface-documentation",
+    "protocol": "responses",
+    "messageField": "message",
+    "defaults": {
+      "interface": {
+        "id": "IF-DRAFT",
+        "name": "Draft interface"
+      }
+    },
+    "inputs": [
+      {
+        "match": "interface.*\\.json$",
+        "as": "json",
+        "field": "interface"
+      },
+      {
+        "match": "icd.*\\.(docx|md|txt)$",
+        "as": "object",
+        "field": "existing_icd",
+        "b64Key": "content_b64"
+      },
+      {
+        "match": "(canonical|cem).*\\.(json|ya?ml|xsd|xlsx|xlsm)$",
+        "as": "list",
+        "field": "canonical"
+      },
+      {
+        "match": "(requirement|brd).*\\.(docx|md|txt|pdf|xlsx|xlsm)$",
+        "as": "list",
+        "field": "requirements"
+      },
+      {
+        "match": "\\.(json|ya?ml|xsd|wsdl|xml|sql|ddl|xlsx|xlsm|csv)$",
+        "as": "list",
+        "field": "contracts"
+      }
+    ]
+  }
+}

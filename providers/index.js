@@ -27,7 +27,7 @@ async function status(force = false) {
   if (!force && cache && Date.now() - cacheAt < 60_000) return cache;
   const entries = await Promise.all(Object.values(providers).map(async (p) => {
     const d = await p.detect().catch((e) => ({ available: false, message: e.message }));
-    return { id: p.id, name: p.name, vendor: p.vendor, description: p.description, models: p.models, supportsResume: p.supportsResume, ...d };
+    return { id: p.id, name: p.name, vendor: p.vendor, description: p.description, models: p.models, supportsResume: p.supportsResume, agentOnly: !!p.agentOnly, ...d };
   }));
   cache = entries;
   cacheAt = Date.now();

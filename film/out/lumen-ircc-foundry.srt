@@ -1,0 +1,187 @@
+1
+00:00:01,173 --> 00:00:05,813
+IRCC has 23 AI agents for its software delivery lifecycle.
+
+2
+00:00:05,813 --> 00:00:10,453
+They run as LangGraph agents, hosted in Microsoft Foundry.
+
+3
+00:00:10,710 --> 00:00:15,337
+Now business users can work with all of them, from one friendly chat window.
+
+4
+00:00:15,337 --> 00:00:15,702
+Lumen.
+
+5
+00:00:16,511 --> 00:00:18,391
+Here's how it fits together.
+
+6
+00:00:18,391 --> 00:00:20,539
+Lumen runs on your own computer.
+
+7
+00:00:20,539 --> 00:00:27,455
+When you pick an IRCC agent, Lumen sends your request and your attached files to that agent in Foundry.
+
+8
+00:00:27,707 --> 00:00:35,109
+It signs in with your own Azure account, stores no secrets, and nothing changes in any system until a person approves it.
+
+9
+00:00:36,622 --> 00:00:37,875
+Setup is one field.
+
+10
+00:00:37,875 --> 00:00:41,041
+In Settings, paste your Foundry project address.
+
+11
+00:00:41,041 --> 00:00:43,811
+Lumen checks it, and the agents are ready.
+
+12
+00:00:47,630 --> 00:00:52,846
+On the Agents page, every IRCC agent carries a Microsoft Foundry tag.
+
+13
+00:00:52,846 --> 00:00:58,894
+Requirements, design, backlog, planning, integration, security and architecture.
+
+14
+00:01:03,448 --> 00:01:06,647
+Meet Amira, a business analyst on CMP Release 2.
+
+15
+00:01:06,647 --> 00:01:12,579
+She has a new business requirements document, and the functional design starts next week.
+
+16
+00:01:13,784 --> 00:01:16,577
+She opens the Requirements Refinement agent.
+
+17
+00:01:16,577 --> 00:01:18,862
+It tells her exactly what to attach.
+
+18
+00:01:22,763 --> 00:01:26,582
+She attaches the BRD and asks for structured requirements.
+
+19
+00:01:31,471 --> 00:01:34,101
+The agent is working in Microsoft Foundry.
+
+20
+00:01:34,101 --> 00:01:42,117
+It splits the document into sections, extracts every requirement with its exact source text, and checks the quality of each one.
+
+21
+00:01:44,400 --> 00:01:46,904
+A summary, and the numbers at a glance.
+
+22
+00:01:46,904 --> 00:01:48,509
+Notice the safety checks.
+
+23
+00:01:48,509 --> 00:01:52,426
+One section of this BRD hides an instruction aimed at the AI.
+
+24
+00:01:52,426 --> 00:01:55,636
+The agent flagged it, and the platform blocked it.
+
+25
+00:01:55,636 --> 00:01:57,947
+No requirement was invented from it.
+
+26
+00:02:00,928 --> 00:02:07,399
+Every requirement has a stable ID, a type, and a priority taken only from the BRD itself.
+
+27
+00:02:07,399 --> 00:02:08,416
+Never guessed.
+
+28
+00:02:09,375 --> 00:02:11,794
+She can keep refining in plain words.
+
+29
+00:02:11,794 --> 00:02:19,509
+"Merge these two requirements." The agent remembers the conversation, and retires the merged ID so it is never reused.
+
+30
+00:02:24,416 --> 00:02:26,790
+Meet Theo, an integration architect.
+
+31
+00:02:26,790 --> 00:02:31,605
+He needs an interface control document for the CMP to Name Search lookup.
+
+32
+00:02:40,128 --> 00:02:46,677
+He attaches the partner contract, the requirements, the canonical model, and a short description of the interface.
+
+33
+00:02:56,893 --> 00:02:59,035
+Before drafting, the agent pauses.
+
+34
+00:02:59,035 --> 00:03:02,690
+It wants the architect to confirm the integration pattern.
+
+35
+00:03:02,690 --> 00:03:06,471
+The decision appears as an approval card, right in the chat.
+
+36
+00:03:07,437 --> 00:03:08,311
+Theo approves.
+
+37
+00:03:08,311 --> 00:03:13,623
+Lumen sends his decision back to the agent, and it picks up exactly where it stopped.
+
+38
+00:03:16,358 --> 00:03:23,483
+A complete draft, checked section by section against the IRCC standards, with every gap called out for review.
+
+39
+00:03:28,600 --> 00:03:30,090
+And meet Priya, the planner.
+
+40
+00:03:30,090 --> 00:03:33,123
+The steering committee wants to know why the dates moved.
+
+41
+00:03:41,310 --> 00:03:48,030
+She attaches the integrated plan, exported from Microsoft Project, and asks the Schedule Variance agent.
+
+42
+00:03:58,274 --> 00:04:04,869
+The numbers are computed in code: baseline against current, slip in working days, the critical path.
+
+43
+00:04:04,869 --> 00:04:09,816
+The AI only explains them, and every finding is banded red, amber or green.
+
+44
+00:04:11,187 --> 00:04:14,971
+All 23 agents are live in Foundry today, in practice mode.
+
+45
+00:04:14,971 --> 00:04:22,473
+They read what you attach, and they never write to Azure DevOps, SharePoint or Teams without a person approving it.
+
+46
+00:04:23,378 --> 00:04:25,439
+Lumen and Microsoft Foundry.
+
+47
+00:04:25,439 --> 00:04:29,266
+IRCC agents, made friendly for everyone on the team.
