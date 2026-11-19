@@ -1,0 +1,189 @@
+WEBVTT
+
+1
+00:00:01.176 --> 00:00:07.269
+Here are 23 AI agents for the software delivery lifecycle, built as a proof of concept.
+
+2
+00:00:07.269 --> 00:00:11.331
+They run as LangGraph agents, hosted in Microsoft Foundry.
+
+3
+00:00:11.584 --> 00:00:16.211
+Now business users can work with all of them, from one friendly chat window.
+
+4
+00:00:16.211 --> 00:00:16.576
+Lumen.
+
+5
+00:00:17.388 --> 00:00:19.109
+Here's how it fits together.
+
+6
+00:00:19.109 --> 00:00:21.077
+Lumen runs on your own computer.
+
+7
+00:00:21.077 --> 00:00:27.777
+When you pick one of these agents, Lumen sends your request and your attached files to that agent in Foundry.
+
+8
+00:00:28.028 --> 00:00:35.431
+It signs in with your own Azure account, stores no secrets, and nothing changes in any system until a person approves it.
+
+9
+00:00:36.940 --> 00:00:38.193
+Setup is one field.
+
+10
+00:00:38.193 --> 00:00:41.359
+In Settings, paste your Foundry project address.
+
+11
+00:00:41.359 --> 00:00:44.129
+Lumen checks it, and the agents are ready.
+
+12
+00:00:48.109 --> 00:00:53.449
+On the Agents page, every one of these agents carries a Microsoft Foundry tag.
+
+13
+00:00:53.449 --> 00:00:58.925
+Requirements, design, backlog, planning, integration, security and architecture.
+
+14
+00:01:03.467 --> 00:01:08.272
+Meet Amira, a business analyst on Release 2 of a customer services platform.
+
+15
+00:01:08.272 --> 00:01:13.899
+She has a new business requirements document, and the functional design starts next week.
+
+16
+00:01:15.107 --> 00:01:17.899
+She opens the Requirements Refinement agent.
+
+17
+00:01:17.899 --> 00:01:20.184
+It tells her exactly what to attach.
+
+18
+00:01:24.421 --> 00:01:28.239
+She attaches the BRD and asks for structured requirements.
+
+19
+00:01:33.486 --> 00:01:36.116
+The agent is working in Microsoft Foundry.
+
+20
+00:01:36.116 --> 00:01:44.131
+It splits the document into sections, extracts every requirement with its exact source text, and checks the quality of each one.
+
+21
+00:01:46.395 --> 00:01:48.899
+A summary, and the numbers at a glance.
+
+22
+00:01:48.899 --> 00:01:50.504
+Notice the safety checks.
+
+23
+00:01:50.504 --> 00:01:54.420
+One section of this BRD hides an instruction aimed at the AI.
+
+24
+00:01:54.420 --> 00:01:57.630
+The agent flagged it, and the platform blocked it.
+
+25
+00:01:57.630 --> 00:01:59.941
+No requirement was invented from it.
+
+26
+00:02:02.918 --> 00:02:09.388
+Every requirement has a stable ID, a type, and a priority taken only from the BRD itself.
+
+27
+00:02:09.388 --> 00:02:10.406
+Never guessed.
+
+28
+00:02:11.376 --> 00:02:13.795
+She can keep refining in plain words.
+
+29
+00:02:13.795 --> 00:02:21.509
+"Merge these two requirements." The agent remembers the conversation, and retires the merged ID so it is never reused.
+
+30
+00:02:26.688 --> 00:02:28.915
+Meet Theo, an integration architect.
+
+31
+00:02:28.915 --> 00:02:34.112
+He needs an interface control document for the customer platform Name Search lookup.
+
+32
+00:02:43.135 --> 00:02:49.685
+He attaches the partner contract, the requirements, the canonical model, and a short description of the interface.
+
+33
+00:03:00.394 --> 00:03:02.537
+Before drafting, the agent pauses.
+
+34
+00:03:02.537 --> 00:03:06.192
+It wants the architect to confirm the integration pattern.
+
+35
+00:03:06.192 --> 00:03:09.973
+The decision appears as an approval card, right in the chat.
+
+36
+00:03:10.927 --> 00:03:11.802
+Theo approves.
+
+37
+00:03:11.802 --> 00:03:17.114
+Lumen sends his decision back to the agent, and it picks up exactly where it stopped.
+
+38
+00:03:20.017 --> 00:03:26.908
+A complete draft, checked section by section against the documentation standards, with every gap called out for review.
+
+39
+00:03:32.121 --> 00:03:33.611
+And meet Priya, the planner.
+
+40
+00:03:33.611 --> 00:03:36.643
+The steering committee wants to know why the dates moved.
+
+41
+00:03:45.296 --> 00:03:52.016
+She attaches the integrated plan, exported from Microsoft Project, and asks the Schedule Variance agent.
+
+42
+00:04:02.767 --> 00:04:09.362
+The numbers are computed in code: baseline against current, slip in working days, the critical path.
+
+43
+00:04:09.362 --> 00:04:14.308
+The AI only explains them, and every finding is banded red, amber or green.
+
+44
+00:04:15.676 --> 00:04:19.459
+All 23 agents are live in Foundry today, in practice mode.
+
+45
+00:04:19.459 --> 00:04:26.961
+They read what you attach, and they never write to Azure DevOps, SharePoint or Teams without a person approving it.
+
+46
+00:04:27.873 --> 00:04:29.672
+Lumen and Microsoft Foundry.
+
+47
+00:04:29.672 --> 00:04:33.270
+Delivery agents, made friendly for everyone on the team.

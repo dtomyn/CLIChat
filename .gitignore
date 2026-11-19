@@ -13,6 +13,10 @@ __pycache__/
 # Scripts, recordings, thumbnail, subtitles and YouTube notes stay tracked.
 film/.work/
 film/vo/
+film/.work-foundry/
+film/vo-foundry/
+film/.work-code/
+film/vo-code/
 film/out/*.mp4
 film/out/*.wav
 
@@ -45,3 +49,8 @@ desktop.ini
 e2e/results/
 e2e/screenshots/
 playwright-report/
+film/.work-e2e/
+film/.work-e2e2/
+film/vo-e2e/
+film/vo-e2e2/
+film/foundry.local.json

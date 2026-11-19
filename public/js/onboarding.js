@@ -45,7 +45,7 @@ function openOnboarding() {
     await saveSettings({ ...draft, onboarded: true });
     m.close(); celebrate(); rerenderCurrent();
   });
-  if (!S.providers.find((p) => p.id === draft.providerId)?.available) { const ready = S.providers.find((p) => p.available); if (ready) draft.providerId = ready.id; }
+  if (!S.providers.find((p) => p.id === draft.providerId)?.available) { const ready = S.providers.find((p) => p.available && !p.agentOnly); if (ready) draft.providerId = ready.id; }
   draw();
 }
 

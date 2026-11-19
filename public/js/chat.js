@@ -101,7 +101,7 @@ function forkedFromHTML(c) {
 }
 
 function emptyChatHTML(a) {
-  return `<div class="chat-empty" style="min-height:50vh"><span class="a-badge lg" data-color="${esc(a.color)}">${esc(a.emoji)}</span><h2>${esc(a.name)}</h2><p>${esc(a.tagline || '')}</p></div>`;
+  return `<div class="chat-empty" style="min-height:50vh"><span class="a-badge lg" data-color="${esc(a.color)}">${esc(a.emoji)}</span><h2>${esc(a.name)}</h2><p>${esc(a.tagline || '')}</p>${a.attachHint ? `<p class="muted">📎 ${esc(a.attachHint)}</p>` : ''}</div>`;
 }
 
 function msgHTML(m, c) {

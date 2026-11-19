@@ -1,0 +1,405 @@
+WEBVTT
+
+1
+00:00:00.283 --> 00:00:03.821
+A LangGraph agent runs on your laptop in an afternoon.
+
+2
+00:00:03.821 --> 00:00:08.603
+Getting it in front of a whole organization, safely, is the real project.
+
+3
+00:00:08.912 --> 00:00:14.462
+In this video, we follow one set of agents from a developer's laptop into Microsoft Foundry.
+
+4
+00:00:14.462 --> 00:00:24.294
+Along the way, we answer the six questions an enterprise architect will ask, and I'll show you where each answer lives in the Foundry portal, and how to get there.
+
+5
+00:00:26.202 --> 00:00:29.204
+LangGraph is where the agent's behaviour lives.
+
+6
+00:00:29.204 --> 00:00:32.844
+Each agent is a graph of small steps sharing typed state.
+
+7
+00:00:32.844 --> 00:00:36.101
+Some steps are plain Python, and some call a model.
+
+8
+00:00:37.073 --> 00:00:40.969
+One step pauses the whole graph for a person to approve a change.
+
+9
+00:00:40.969 --> 00:00:44.924
+The state is saved, and the run picks up exactly where it stopped.
+
+10
+00:00:45.906 --> 00:00:51.730
+Because the model can be scripted out, close to 700 tests run in seconds, with no network.
+
+11
+00:00:52.300 --> 00:00:54.420
+LangGraph isn't the only choice.
+
+12
+00:00:54.420 --> 00:01:03.030
+Microsoft Agent Framework is one alternative, the successor to Semantic Kernel and AutoGen, with graph-based workflows of its own.
+
+13
+00:01:03.030 --> 00:01:07.003
+I chose LangGraph for its explicit graphs and checkpointing.
+
+14
+00:01:07.003 --> 00:01:10.050
+The rest of this story is the same either way.
+
+15
+00:01:10.763 --> 00:01:13.383
+On a laptop, none of these has an answer.
+
+16
+00:01:13.383 --> 00:01:14.533
+Where does it run?
+
+17
+00:01:14.533 --> 00:01:15.172
+Who is it?
+
+18
+00:01:15.172 --> 00:01:16.194
+Who can call it?
+
+19
+00:01:16.194 --> 00:01:17.663
+Where do people use it?
+
+20
+00:01:17.663 --> 00:01:18.366
+Is it safe?
+
+21
+00:01:18.366 --> 00:01:20.091
+And can we see what it did?
+
+22
+00:01:20.091 --> 00:01:22.710
+An enterprise architect will ask all six.
+
+23
+00:01:23.327 --> 00:01:30.963
+Microsoft Foundry is Microsoft's platform for building and running AI apps and agents, and there's more than one way in.
+
+24
+00:01:30.963 --> 00:01:38.026
+The simplest is a model deployment: your own app calls the model, and all of the agent logic stays in your app.
+
+25
+00:01:38.276 --> 00:01:44.527
+A prompt agent is configured in the portal: instructions, a model and tools, with no code at all.
+
+26
+00:01:44.781 --> 00:01:51.565
+A workflow agent chains prompt agents together, with branches and approval steps, built visually or in YAML.
+
+27
+00:01:51.823 --> 00:01:58.783
+And a hosted agent is your own code, in a container that Foundry runs for you, whatever framework is inside.
+
+28
+00:01:58.783 --> 00:02:02.262
+A hosted agent does its orchestration in its own code.
+
+29
+00:02:02.262 --> 00:02:04.389
+Here, that's the LangGraph graph.
+
+30
+00:02:04.644 --> 00:02:09.068
+Guardrails apply to every model call, whichever way in you choose.
+
+31
+00:02:09.068 --> 00:02:13.157
+Agents also get tracing, monitoring and evaluations built in.
+
+32
+00:02:13.157 --> 00:02:19.457
+With a plain model deployment, your app opts in, through OpenTelemetry and the evaluation SDK.
+
+33
+00:02:19.457 --> 00:02:23.076
+These agents are code first, so they're hosted agents.
+
+34
+00:02:24.983 --> 00:02:32.619
+A build step turns each agent into a deployable folder: the graph, a small entry point, and its requirements.
+
+35
+00:02:32.619 --> 00:02:38.573
+Then one azd deploy publishes all 23, and Foundry builds each container in the cloud.
+
+36
+00:02:38.845 --> 00:02:41.733
+Here's the project in the Foundry portal.
+
+37
+00:02:41.733 --> 00:02:44.832
+The left navigation follows an agent's life.
+
+38
+00:02:44.832 --> 00:02:47.861
+Create holds agents, models and guardrails.
+
+39
+00:02:47.861 --> 00:02:50.255
+Observe has monitoring and traces.
+
+40
+00:02:50.255 --> 00:02:52.861
+And Improve has data and evaluations.
+
+41
+00:02:53.115 --> 00:02:55.005
+Under Create, select Agents.
+
+42
+00:02:55.005 --> 00:02:56.219
+All 23 are listed.
+
+43
+00:02:56.219 --> 00:03:01.819
+Each one is a hosted agent, it is running, and every deployment gets a new version.
+
+44
+00:03:03.764 --> 00:03:05.465
+Select an agent to open it.
+
+45
+00:03:05.465 --> 00:03:09.432
+It opens in the playground, where you can try it straight away.
+
+46
+00:03:09.432 --> 00:03:11.572
+The Details tab shows how it runs.
+
+47
+00:03:14.125 --> 00:03:18.813
+Under Identity & access, the agent has its own Entra agent identity.
+
+48
+00:03:18.813 --> 00:03:25.706
+That identity is granted access to the project's models, so no keys or secrets ever sit in the code.
+
+49
+00:03:25.706 --> 00:03:31.427
+That answers questions one and two: it runs in Foundry, and it is its own identity.
+
+50
+00:03:32.391 --> 00:03:36.923
+Under Endpoints, every agent exposes a standard Responses endpoint.
+
+51
+00:03:36.923 --> 00:03:41.996
+Only people with the right Azure role can call it, using their own sign-in.
+
+52
+00:03:41.996 --> 00:03:47.069
+So who can call it is decided by Azure role-based access, not by the agent.
+
+53
+00:03:48.035 --> 00:03:50.493
+So how do people actually reach it?
+
+54
+00:03:50.493 --> 00:03:56.109
+Under Channels, Foundry can publish an agent to Teams and Microsoft 365 Copilot.
+
+55
+00:03:56.109 --> 00:04:01.795
+That needs tenant permissions I don't have here, so I built the front end myself.
+
+56
+00:04:05.783 --> 00:04:07.586
+Lumen is a simple chat app.
+
+57
+00:04:07.586 --> 00:04:13.863
+It calls the agent's endpoint with the user's own Azure sign-in, and sends any attached files.
+
+58
+00:04:13.863 --> 00:04:19.671
+Here, a business analyst hands the requirements agent a business requirements document.
+
+59
+00:04:26.902 --> 00:04:31.766
+Back come structured requirements, with ambiguities and gaps flagged for review.
+
+60
+00:04:31.766 --> 00:04:37.542
+It also caught an instruction hidden in the document, and a section the content filter blocked.
+
+61
+00:04:37.542 --> 00:04:39.062
+More on that in a moment.
+
+62
+00:04:40.699 --> 00:04:42.730
+Some agents pause for a person.
+
+63
+00:04:42.730 --> 00:04:49.083
+The interface documentation agent drafts an interface control document from the specs it's given.
+
+64
+00:05:02.288 --> 00:05:05.659
+When it needs a decision, Lumen shows an approval card.
+
+65
+00:05:05.659 --> 00:05:10.011
+The architect approves, and the agent resumes exactly where it stopped.
+
+66
+00:05:14.148 --> 00:05:16.794
+On the code side, it's one provider file.
+
+67
+00:05:16.794 --> 00:05:22.601
+It builds the request, calls the Responses endpoint, and sends the approval decision back.
+
+68
+00:05:22.601 --> 00:05:24.666
+Any front end could do the same.
+
+69
+00:05:24.950 --> 00:05:25.634
+Is it safe?
+
+70
+00:05:25.634 --> 00:05:28.866
+Back in the portal, Guardrails is also under Create.
+
+71
+00:05:28.866 --> 00:05:35.702
+A guardrail is attached to the model deployment, so it checks every call to that model, from any agent or app.
+
+72
+00:05:35.955 --> 00:05:38.881
+Open the default guardrail to see its controls.
+
+73
+00:05:38.881 --> 00:05:44.979
+It blocks harmful content, detects jailbreaks, and checks documents for indirect prompt injection.
+
+74
+00:05:45.235 --> 00:05:46.930
+Guardrails are one layer.
+
+75
+00:05:46.930 --> 00:05:48.353
+The other is testing.
+
+76
+00:05:48.353 --> 00:05:51.945
+The AI Red Teaming Agent attacks each deployed agent.
+
+77
+00:05:51.945 --> 00:06:02.110
+At the time of recording, its reports open in the classic Foundry view, so switch New Foundry off, then select Evaluation, and the AI red teaming tab.
+
+78
+00:06:14.558 --> 00:06:18.710
+Each scan hides attacks inside the documents the agent reads.
+
+79
+00:06:18.710 --> 00:06:20.956
+Open the requirements agent scan.
+
+80
+00:06:20.956 --> 00:06:24.564
+It found one real failure, in the agent you just saw.
+
+81
+00:06:28.019 --> 00:06:35.593
+The fix is layered: the content filter, a prompt rule, and a deterministic scan that drops anything built from harmful text.
+
+82
+00:06:35.869 --> 00:06:41.587
+Back in the list, the re-scan after the fix found nothing, and the case is now part of the test suite.
+
+83
+00:06:43.891 --> 00:06:46.401
+Last question: can we see what it did?
+
+84
+00:06:46.401 --> 00:06:52.081
+Switch back to the new Foundry, open the agent from Agents, and select its Traces tab.
+
+85
+00:06:52.081 --> 00:06:54.921
+Every request is traced with OpenTelemetry.
+
+86
+00:07:17.298 --> 00:07:23.805
+Open a trace, and you see each LangGraph step, and every model call underneath, with its timing and tokens.
+
+87
+00:07:30.120 --> 00:07:36.314
+Under Observe, Monitor rolls it up across all the agents: runs, tokens, and what it actually costs.
+
+88
+00:07:36.314 --> 00:07:40.318
+You get all of this, whatever framework is inside the container.
+
+89
+00:07:54.951 --> 00:07:56.467
+So, the six questions.
+
+90
+00:07:56.467 --> 00:07:58.258
+It runs as a hosted agent.
+
+91
+00:07:58.258 --> 00:08:00.257
+It is its own Entra identity.
+
+92
+00:08:00.257 --> 00:08:02.668
+Azure roles decide who can call it.
+
+93
+00:08:02.668 --> 00:08:06.251
+People reach it through Lumen, or Teams and Copilot.
+
+94
+00:08:06.251 --> 00:08:09.007
+Guardrails and red teaming keep it safe.
+
+95
+00:08:09.007 --> 00:08:12.039
+And traces and the monitor show what it did.
+
+96
+00:08:12.758 --> 00:08:14.502
+So where does Foundry fit?
+
+97
+00:08:14.502 --> 00:08:17.520
+Your framework decides how the agent behaves.
+
+98
+00:08:17.520 --> 00:08:22.750
+Foundry decides how it runs: hosting, identity, access, safety and visibility.
+
+99
+00:08:22.750 --> 00:08:25.366
+And people reach it however suits them.
+
+100
+00:08:26.178 --> 00:08:28.013
+From laptop to enterprise.
+
+101
+00:08:28.013 --> 00:08:30.765
+LangGraph agents, on Microsoft Foundry.

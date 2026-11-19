@@ -1,0 +1,243 @@
+1
+00:00:01,006 --> 00:00:13,336
+This is a tour of the code behind a proof of concept: 23 LangGraph agents, one shared core, deployed as Microsoft Foundry hosted agents, and a small engine in Lumen that talks to them.
+
+2
+00:00:15,355 --> 00:00:18,022
+Everything lives in one Python monorepo.
+
+3
+00:00:18,022 --> 00:00:24,357
+Three shared libraries do the heavy lifting: the agent core, the contracts, and the connectors.
+
+4
+00:00:24,615 --> 00:00:27,001
+Each agent is its own small package.
+
+5
+00:00:27,001 --> 00:00:33,831
+The tools folder builds what Foundry deploys, and triggers, infrastructure and pipelines sit alongside.
+
+6
+00:00:34,803 --> 00:00:36,123
+Follow one request.
+
+7
+00:00:36,123 --> 00:00:39,877
+Lumen calls the agent's Responses endpoint in Foundry.
+
+8
+00:00:39,877 --> 00:00:45,021
+The hosting adapter from langchain-azure-ai turns it into a LangGraph run.
+
+9
+00:00:45,285 --> 00:00:52,133
+The graph does its work, node by node, saving its state as it goes, and its final message becomes the reply.
+
+10
+00:00:53,919 --> 00:00:56,735
+Every agent's state extends one base class.
+
+11
+00:00:56,735 --> 00:01:07,935
+It is a LangGraph MessagesState, which is what the hosting adapter expects, plus the fields every agent shares: sources, findings, proposals, the approval, and the result.
+
+12
+00:01:08,186 --> 00:01:10,563
+Reducers decide how updates merge.
+
+13
+00:01:10,563 --> 00:01:12,800
+Sources and findings accumulate.
+
+14
+00:01:12,800 --> 00:01:19,023
+Errors reset at the start of every turn, so one bad request never poisons a conversation.
+
+15
+00:01:20,002 --> 00:01:28,002
+Every agent follows the same shape: take in the request, ground it in sources, analyse, check its own work, and render the result.
+
+16
+00:01:28,255 --> 00:01:32,927
+Only then, if it wants to change anything, does it stop and ask a person.
+
+17
+00:01:32,927 --> 00:01:37,087
+Approval, apply and finalize are shared nodes from the graph kit.
+
+18
+00:01:38,679 --> 00:01:41,350
+Models are reached through two functions.
+
+19
+00:01:41,350 --> 00:01:48,321
+generate_structured asks for a Pydantic schema, so what comes back is validated, typed data, not free text.
+
+20
+00:01:48,580 --> 00:01:51,406
+The same layer handles the platform's edges.
+
+21
+00:01:51,406 --> 00:01:56,544
+A content filter block becomes a typed error the agent can record and move past.
+
+22
+00:01:56,544 --> 00:02:00,398
+If Azure rejects a schema, it retries with function calling.
+
+23
+00:02:01,362 --> 00:02:03,235
+Writing is deliberately hard.
+
+24
+00:02:03,235 --> 00:02:04,978
+Agents never call a writer.
+
+25
+00:02:04,978 --> 00:02:09,564
+They build proposals, and request_approval calls LangGraph's interrupt.
+
+26
+00:02:09,564 --> 00:02:13,116
+The graph pauses, and the checkpointer saves its state.
+
+27
+00:02:13,374 --> 00:02:17,378
+In Foundry, the pause surfaces as an MCP approval request.
+
+28
+00:02:17,378 --> 00:02:28,286
+When a person approves, the graph resumes, and apply_proposals is the only code that writes: dry run by default, in dependency order, idempotent, and audited.
+
+29
+00:02:29,971 --> 00:02:31,529
+Now three real agents.
+
+30
+00:02:31,529 --> 00:02:34,716
+Requirements refinement has 16 working nodes.
+
+31
+00:02:34,716 --> 00:02:40,381
+Green nodes are plain Python, purple ones call the model, and amber is a person.
+
+32
+00:02:41,339 --> 00:02:42,688
+Here is the wiring.
+
+33
+00:02:42,688 --> 00:02:51,280
+After retrieving context, a conditional edge fans out with LangGraph's Send: one extraction per BRD section, in parallel.
+
+34
+00:02:51,542 --> 00:03:00,118
+A self check then verifies every requirement's quote, word for word, against its section, and loops back only for the sections that failed.
+
+35
+00:03:01,086 --> 00:03:04,673
+Each section reaches the model wrapped as untrusted data.
+
+36
+00:03:04,673 --> 00:03:09,896
+And a section the content filter blocks becomes a safety finding, not a failed run.
+
+37
+00:03:10,868 --> 00:03:14,829
+Schedule variance shows the second rule: deterministic first.
+
+38
+00:03:14,829 --> 00:03:21,193
+Matching tasks, the critical path, the slips and the impact downstream are all computed in Python.
+
+39
+00:03:22,167 --> 00:03:24,406
+The model only writes the narrative.
+
+40
+00:03:24,406 --> 00:03:31,745
+Then a numeric self check rejects any number that is not in the computed findings, and any cause that has no evidence.
+
+41
+00:03:33,264 --> 00:03:37,345
+The backlog agent is a tool-calling loop inside a single node.
+
+42
+00:03:37,345 --> 00:03:43,994
+The model only sees read-only tools, plus propose_change, which records a change but cannot make one.
+
+43
+00:03:44,259 --> 00:03:52,515
+Anything it asks for that is not on the list is refused, and every proposed change still goes through validation and the approval node.
+
+44
+00:03:53,495 --> 00:03:56,996
+Agents hand work to each other through shared contracts.
+
+45
+00:03:56,996 --> 00:04:03,436
+The Requirement model is defined once, and flows from refinement into design, stories and traceability.
+
+46
+00:04:04,409 --> 00:04:13,881
+Connectors follow one pattern: a fixture client for tests and phase one, a live client for phase two, and an injected client always wins.
+
+47
+00:04:13,881 --> 00:04:16,163
+So every agent test runs offline.
+
+48
+00:04:17,139 --> 00:04:22,068
+Tests script the model, run the real graph, inspect the interrupt, and resume it.
+
+49
+00:04:22,068 --> 00:04:25,416
+Close to 700 tests, and none of them touch the network.
+
+50
+00:04:27,206 --> 00:04:28,823
+Deployment is generated.
+
+51
+00:04:28,823 --> 00:04:39,472
+A build step makes a flat folder per agent: main.py, pinned requirements, and a copy of the shared libraries, which is what Foundry's code deployment expects.
+
+52
+00:04:39,735 --> 00:04:48,204
+The azure.yaml is generated from each agent's metadata, and one azd deploy publishes all 23 hosted agents.
+
+53
+00:04:49,185 --> 00:04:53,031
+On the Lumen side, the Foundry engine is one provider file.
+
+54
+00:04:53,031 --> 00:05:02,091
+It reads the agent from the agent's JSON file, maps attachments into the request, and calls the Responses endpoint with your Azure sign-in.
+
+55
+00:05:02,343 --> 00:05:07,235
+When the reply holds an approval request, Lumen stores it and shows a card.
+
+56
+00:05:07,235 --> 00:05:13,692
+The decision goes back as an MCP approval response, and the conversation continues where it paused.
+
+57
+00:05:14,655 --> 00:05:18,162
+Each agent file declares how files map into its request.
+
+58
+00:05:18,162 --> 00:05:24,425
+And the renderer turns the agent's result into tables and safety checks, without rewording anything.
+
+59
+00:05:26,147 --> 00:05:36,067
+One core, 23 agents, and a few strict rules: ground everything, compute what you can, let the model explain, and never change a system without a person.
+
+60
+00:05:36,881 --> 00:05:38,052
+Delivery agents.
+
+61
+00:05:38,052 --> 00:05:42,811
+LangGraph inside, Microsoft Foundry underneath, and Lumen on top.

@@ -32,6 +32,7 @@ function renderAssistantsPage() {
               <button class="icon-btn" data-assistant-menu="${esc(a.id)}" title="More">${icon('dots')}</button></div>
             <div><h3>${esc(a.name)}</h3></div>
             <p class="tagline">${esc(a.tagline || '')}</p>
+            ${a.foundry?.agent ? '<span class="status-tag ok" title="Runs in your Microsoft Foundry project">Microsoft Foundry</span>' : ''}
             ${skillChips(a)}
             <div class="a-card-actions">
               <button class="btn primary sm" data-chat-with="${esc(a.id)}">${icon('spark')}Start chat</button>

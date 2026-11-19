@@ -1,0 +1,31 @@
+{
+  "id": "contoso-integrated-plan-qa",
+  "order": 606,
+  "name": "Plan Q&A (Contoso)",
+  "emoji": "🗓️",
+  "color": "green",
+  "tagline": "Answers questions about the integrated plan · runs in Microsoft Foundry",
+  "builtin": true,
+  "access": "read",
+  "skills": [],
+  "instructions": "Answers plain-language questions about the integrated project plan, such as milestones, dates, owners and slippage. Every date and figure is read directly from the plan and cited by task.",
+  "starters": [
+    "Which milestones are due next quarter? (attach the plan)",
+    "What is late in the attached plan?",
+    "Summarise the attached plan's key milestones"
+  ],
+  "attachHint": "Attach the plan export (MS Project XML or Excel).",
+  "foundry": {
+    "agent": "contoso-integrated-plan-qa",
+    "protocol": "responses",
+    "messageField": "message",
+    "defaults": {},
+    "inputs": [
+      {
+        "match": "\\.(xml|xlsx|xlsm)$",
+        "as": "object",
+        "field": "plan"
+      }
+    ]
+  }
+}

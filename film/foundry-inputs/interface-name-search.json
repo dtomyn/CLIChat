@@ -1,0 +1,6 @@
+{
+  "id": "IF-CSP-NS-001",
+  "name": "CSP to Name Search lookup",
+  "provider": "Name Search",
+  "consumer": "CSP"
+}

@@ -1,0 +1,5 @@
+{"title": "Person", "type": "object", "required": ["familyName", "birthDate", "uci"],
+ "properties": {"familyName": {"type": "string", "maxLength": 40, "description": "Family name"},
+                "givenName": {"type": "string", "maxLength": 40, "description": "Given name"},
+                "birthDate": {"type": "string", "format": "date", "description": "Date of birth"},
+                "uci": {"type": "string", "maxLength": 10, "description": "Unique client identifier"}}}

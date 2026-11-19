@@ -1,0 +1,171 @@
+1
+00:00:00,398 --> 00:00:09,446
+Twenty-three AI agents for everyday delivery work: requirements, interface documentation, schedule variance and status reporting.
+
+2
+00:00:09,446 --> 00:00:14,286
+Written in LangGraph, and running as Microsoft Foundry hosted agents.
+
+3
+00:00:14,544 --> 00:00:16,143
+Standing them up was quick.
+
+4
+00:00:16,143 --> 00:00:19,578
+Proving they behave took longer, and was more interesting.
+
+5
+00:00:19,578 --> 00:00:22,480
+This is the end-to-end view, starting in Foundry.
+
+6
+00:00:22,795 --> 00:00:27,074
+In the Foundry portal, all 23 agents are listed as hosted agents.
+
+7
+00:00:27,074 --> 00:00:32,011
+Foundry built each container from the Python code, and each one is running.
+
+8
+00:00:37,470 --> 00:00:49,022
+Open one, and you can see what the platform gives it: its own Entra agent identity, versioned deployments, and a Responses endpoint that only people with Azure access can call.
+
+9
+00:00:49,022 --> 00:00:50,334
+No secrets anywhere.
+
+10
+00:00:52,842 --> 00:00:55,481
+Inside, each agent is a LangGraph graph.
+
+11
+00:00:55,481 --> 00:01:02,080
+Green steps are plain Python, purple steps call the model, and amber is a person approving a change.
+
+12
+00:01:03,569 --> 00:01:10,972
+A build step turns every agent into a deployable folder, and one azd deploy publishes all 23 to Foundry.
+
+13
+00:01:11,553 --> 00:01:13,275
+People never see any of that.
+
+14
+00:01:13,275 --> 00:01:19,212
+They use Lumen, a simple chat app that calls the same Foundry endpoint with their own Azure sign-in.
+
+15
+00:01:26,784 --> 00:01:31,947
+A business analyst attaches a requirements document, and asks for structured requirements.
+
+16
+00:01:33,990 --> 00:01:41,948
+The agent splits the document into sections, extracts every requirement with its exact source text, and checks the quality of each one.
+
+17
+00:01:44,220 --> 00:01:45,807
+Notice the safety checks.
+
+18
+00:01:45,807 --> 00:01:48,918
+One section hides an instruction aimed at the AI.
+
+19
+00:01:48,918 --> 00:01:52,092
+The agent flagged it, and the platform blocked it.
+
+20
+00:01:54,094 --> 00:01:56,550
+That second layer is Foundry guardrails.
+
+21
+00:01:56,550 --> 00:02:03,673
+The model deployment blocks harmful content, detects jailbreaks, and checks documents for indirect prompt injection.
+
+22
+00:02:03,930 --> 00:02:07,138
+Injection detection is set to annotate, not block.
+
+23
+00:02:07,138 --> 00:02:12,528
+So the agent flags the hostile text itself, instead of rejecting the whole document.
+
+24
+00:02:14,840 --> 00:02:18,532
+Then the question every architect asks: how do you know it behaves?
+
+25
+00:02:18,532 --> 00:02:20,515
+Three practices made the difference.
+
+26
+00:02:21,130 --> 00:02:25,064
+First, evaluate the deployed agent, not just the code.
+
+27
+00:02:25,064 --> 00:02:32,712
+Running the test cases against the live endpoints found a defect that close to 700 unit tests had missed.
+
+28
+00:02:32,712 --> 00:02:35,189
+Gap recall went from 0.44 to 1.00.
+
+29
+00:02:35,529 --> 00:02:39,309
+Second, red-team the way the agent is actually attacked.
+
+30
+00:02:39,309 --> 00:02:47,476
+Foundry's AI Red Teaming Agent sent 80 attacks to each deployed agent, many of them hidden inside the documents it reads.
+
+31
+00:02:47,727 --> 00:02:49,579
+It found one genuine failure.
+
+32
+00:02:49,579 --> 00:02:56,154
+A planted harmful sentence became a requirement, because that is exactly what the agent is built to do.
+
+33
+00:02:58,645 --> 00:03:07,029
+The fix is layered: the content filter, a prompt rule, and a deterministic scan that flags the text and drops any requirement built from it.
+
+34
+00:03:07,316 --> 00:03:12,010
+The re-scan after the fix found nothing, and that case is now part of the test suite.
+
+35
+00:03:14,008 --> 00:03:15,586
+Third, trace every step.
+
+36
+00:03:15,586 --> 00:03:20,451
+Every run of every agent appears in Foundry, with its status and duration.
+
+37
+00:03:20,701 --> 00:03:26,555
+Open one, and you see the LangGraph steps, each model call, and the HTTP calls underneath.
+
+38
+00:03:26,555 --> 00:03:31,368
+When a test fails, you can see which step went wrong, instead of guessing.
+
+39
+00:03:32,252 --> 00:03:40,124
+And the monitor shows the whole project at a glance: agent runs, token usage, and what all of this testing has actually cost.
+
+40
+00:03:42,224 --> 00:03:48,880
+Still to do: evaluation on real documents, multi-turn attacks, and a proper cost model per agent.
+
+41
+00:03:49,686 --> 00:03:50,832
+LangGraph inside.
+
+42
+00:03:50,832 --> 00:03:52,787
+Microsoft Foundry underneath.
+
+43
+00:03:52,787 --> 00:03:54,742
+And evidence that it behaves.
