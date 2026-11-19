@@ -5,6 +5,7 @@
 //
 //   node film/make_e2e2.js --voice    Narration only (Kokoro), with each line's length.
 //   node film/make_e2e2.js            Film and encode film/out/lumen-laptop-to-enterprise.mp4 + .srt + .vtt + thumbnail.
+//   node film/make_e2e2.js --remix    Re-voice and re-encode from the last run's frames (narration changes of similar length).
 //   node film/make_e2e2.js --stills   Film, then write a contact sheet instead of encoding.
 //
 // Uses make_e2e.js's signed-in Edge profile (film/.work-e2e/edge-profile; sign in with `node film/make_e2e.js
@@ -31,7 +32,7 @@ const args = new Set(process.argv.slice(2));
 const LINES = {
   hook1: ["A LangGraph agent runs on your laptop in an afternoon. Getting it in front of a whole organization, safely, is the real project.",
     "A LangGraph agent runs on your laptop in an afternoon. Getting it in front of a whole organization, safely, is the real project."],
-  hook2: ["In this video, we follow one set of agents from a developer's laptop into Microsoft Foundry. Along the way, we answer the six questions an enterprise architect will ask, and I'll show you where each answer lives in the Foundry portal, and how to get there.",
+  hook2: ["In this video, we follow one set of agents from a developer's laptop into Microsoft Foundry. Along the way, we answer the six questions an enterprise architect will ask, and I'll show you where each answer livz in the Foundry portal, and how to get there.",
     "In this video, we follow one set of agents from a developer's laptop into Microsoft Foundry. Along the way, we answer the six questions an enterprise architect will ask, and I'll show you where each answer lives in the Foundry portal, and how to get there."],
   lg1: ["LangGraph is where the agent's behaviour livz. Each agent is a graph of small steps sharing typed state. Some steps are plain Python, and some call a model.",
     "LangGraph is where the agent's behaviour lives. Each agent is a graph of small steps sharing typed state. Some steps are plain Python, and some call a model."],
@@ -41,9 +42,9 @@ const LINES = {
     "Because the model can be scripted out, close to 700 tests run in seconds, with no network."],
   maf1: ["LangGraph is not the only choice. Microsoft Agent Framework is one alternative, the successor to Semantic Kernel and AutoGen, with graph based workflows of its own. I chose LangGraph for its explicit graphs and checkpointing. The rest of this story is the same either way.",
     "LangGraph isn't the only choice. Microsoft Agent Framework is one alternative, the successor to Semantic Kernel and AutoGen, with graph-based workflows of its own. I chose LangGraph for its explicit graphs and checkpointing. The rest of this story is the same either way."],
-  gap1: ["On a laptop, none of these has an answer. Where does it run? Who is it? Who can call it? Where do people use it? Is it safe? And can we see what it did? An enterprise architect will ask all six.",
+  gap1: ["On a laptop, none of these has an answer. Where does it run? Who is it? Who can call it? Where do people yooz it? Is it safe? And can we see what it did? An enterprise architect will ask all six.",
     "On a laptop, none of these has an answer. Where does it run? Who is it? Who can call it? Where do people use it? Is it safe? And can we see what it did? An enterprise architect will ask all six."],
-  ways1: ["Microsoft Foundry is Microsoft's platform for building and running ay-eye apps and agents, and there is more than one way in. The simplest is a model deployment. Your own app calls the model, and all of the agent logic stays in your app.",
+  ways1: ["Microsoft Foundry is Microsoft's platform for building and running AI apps and agents, and there is more than one way in. The simplest is a model deployment. Your own app calls the model, and all of the agent logic stays in your app.",
     "Microsoft Foundry is Microsoft's platform for building and running AI apps and agents, and there's more than one way in. The simplest is a model deployment: your own app calls the model, and all of the agent logic stays in your app."],
   ways2: ["A prompt agent is configured in the portal. Instructions, a model and tools, with no code at all.",
     "A prompt agent is configured in the portal: instructions, a model and tools, with no code at all."],
@@ -81,7 +82,7 @@ const LINES = {
     "Is it safe? Back in the portal, Guardrails is also under Create. A guardrail is attached to the model deployment, so it checks every call to that model, from any agent or app."],
   safe1b: ["Open the default guardrail to see its controls. It blocks harmful content, detects jailbreaks, and checks documents for indirect prompt injection.",
     "Open the default guardrail to see its controls. It blocks harmful content, detects jailbreaks, and checks documents for indirect prompt injection."],
-  safe2a: ["Guardrails are one layer. The other is testing. The ay-eye Red Teaming Agent attacks each deployed agent. At the time of recording, its reports open in the classic Foundry view, so switch New Foundry off, then select Evaluation, and the ay-eye red teaming tab.",
+  safe2a: ["Guardrails are one layer. The other is testing. The AI Red Teaming Agent attacks each deployed agent. At the time of recording, its reports open in the classic Foundry view, so switch New Foundry off, then select Evaluation, and the AI red teaming tab.",
     "Guardrails are one layer. The other is testing. The AI Red Teaming Agent attacks each deployed agent. At the time of recording, its reports open in the classic Foundry view, so switch New Foundry off, then select Evaluation, and the AI red teaming tab."],
   safe2: ["Each scan hides attacks inside the documents the agent reads. Open the requirements agent scan. It found one real failure, in the agent you just saw.",
     "Each scan hides attacks inside the documents the agent reads. Open the requirements agent scan. It found one real failure, in the agent you just saw."],
@@ -467,6 +468,12 @@ async function main() {
   const kit = createKit({ name: NAME, lines: LINES, vo: path.join(FILM, 'vo-e2e2'), work: WORK, out: path.join(FILM, 'out'), musicGain: 0.4 });
   const lengths = kit.makeVoice();
   if (args.has('--voice')) { let total = 0; for (const [k, v] of Object.entries(lengths)) { total += v; console.log(k.padEnd(8), `${v.toFixed(1)}s`); } console.log(`total narration ${total.toFixed(0)}s`); return; }
+  if (args.has('--remix')) { // re-voice without re-filming: the last run's frames and events, the current narration
+    const { events, frame_list } = JSON.parse(fs.readFileSync(path.join(WORK, 'events.json'), 'utf8'));
+    const res = kit.finish(frame_list, events, { thumbAt: 0.3 });
+    if (res?.srt) fs.writeFileSync(res.srt.replace(/\.srt$/, '.vtt'), `WEBVTT\n\n${fs.readFileSync(res.srt, 'utf8').replace(/(\d\d:\d\d:\d\d),(\d\d\d)/g, '$1.$2')}`, 'utf8');
+    return;
+  }
   const deckFile = buildDeck({ slides: slides(), hljsDir: path.join(ROOT, 'node_modules', '@highlightjs', 'cdn-assets'), out: path.join(WORK, 'deck.html') });
   const server = spawn(process.execPath, [path.join(FILM, 'foundry-server.js'), 'film'], { env: { ...process.env, PORT: String(PORT) }, stdio: ['ignore', 'inherit', 'inherit'] });
   let ctx;
