@@ -9,11 +9,11 @@ A LangGraph agent runs on your laptop in an afternoon.
 Getting it in front of a whole organization, safely, is the real project.
 
 3
-00:00:08.912 --> 00:00:14.462
+00:00:08.912 --> 00:00:14.423
 In this video, we follow one set of agents from a developer's laptop into Microsoft Foundry.
 
 4
-00:00:14.462 --> 00:00:24.294
+00:00:14.423 --> 00:00:24.187
 Along the way, we answer the six questions an enterprise architect will ask, and I'll show you where each answer lives in the Foundry portal, and how to get there.
 
 5
@@ -57,35 +57,35 @@ I chose LangGraph for its explicit graphs and checkpointing.
 The rest of this story is the same either way.
 
 15
-00:01:10.763 --> 00:01:13.383
+00:01:10.763 --> 00:01:13.402
 On a laptop, none of these has an answer.
 
 16
-00:01:13.383 --> 00:01:14.533
+00:01:13.402 --> 00:01:14.560
 Where does it run?
 
 17
-00:01:14.533 --> 00:01:15.172
+00:01:14.560 --> 00:01:15.203
 Who is it?
 
 18
-00:01:15.172 --> 00:01:16.194
+00:01:15.203 --> 00:01:16.233
 Who can call it?
 
 19
-00:01:16.194 --> 00:01:17.663
+00:01:16.233 --> 00:01:17.712
 Where do people use it?
 
 20
-00:01:17.663 --> 00:01:18.366
+00:01:17.712 --> 00:01:18.420
 Is it safe?
 
 21
-00:01:18.366 --> 00:01:20.091
+00:01:18.420 --> 00:01:20.157
 And can we see what it did?
 
 22
-00:01:20.091 --> 00:01:22.710
+00:01:20.157 --> 00:01:22.795
 An enterprise architect will ask all six.
 
 23
