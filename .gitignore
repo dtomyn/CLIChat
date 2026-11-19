@@ -49,3 +49,8 @@ desktop.ini
 e2e/results/
 e2e/screenshots/
 playwright-report/
+film/.work-e2e/
+film/.work-e2e2/
+film/vo-e2e/
+film/vo-e2e2/
+film/foundry.local.json

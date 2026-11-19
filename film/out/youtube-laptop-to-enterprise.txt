@@ -1,0 +1,32 @@
+From laptop to enterprise: LangGraph agents on Microsoft Foundry hosted agents
+
+A LangGraph agent runs on your laptop in an afternoon. Getting it in front of a whole organization, safely, is the real project. This video follows 23 LangGraph agents from a developer's laptop into Microsoft Foundry, and answers the six questions an enterprise architect will ask along the way: Where does it run? Who is it? Who can call it? Where do people use it? Is it safe? Can we see what it did? Each answer is shown where it lives in the Foundry portal, with the navigation to get there.
+
+Chapters
+0:00 From laptop to enterprise
+0:26 Built with LangGraph: graphs, human approval, scripted-model tests
+0:52 One framework among several: Microsoft Agent Framework
+1:10 The enterprise gap: six questions a laptop can't answer
+1:23 Ways into Microsoft Foundry: model deployment, prompt, workflow and hosted agents
+2:24 Deploying: one azd deploy, 23 hosted agents
+2:38 A tour of the Foundry portal's left navigation
+2:53 Agents → Details: hosted, running, versioned, its own Entra agent identity
+3:32 Who can call it: the Responses endpoint and Azure RBAC
+3:48 Where people use it: Teams and Microsoft 365 Copilot channels
+4:05 Lumen · a business analyst refines a requirements document
+4:40 Lumen · an architect approves, and the agent resumes
+5:14 The code: one provider file in Lumen
+5:24 Is it safe? Foundry guardrails
+5:45 AI red teaming: one real failure found
+6:28 The layered fix, and a clean re-scan
+6:43 Can we see what it did? Traces for every LangGraph step
+7:30 Monitor: runs, tokens and cost
+7:54 The six questions, answered
+8:12 Where Foundry fits
+
+Notes
+- Synthetic data, fictional organization (Contoso), a proof of concept.
+- Ways in: guardrails apply to every model deployment. Tracing, monitoring and evaluations are built in for Foundry agents; an app that calls a model deployment directly opts in through OpenTelemetry and the evaluation SDK. Workflow agents orchestrate prompt agents; hosted agents orchestrate in their own code.
+- At the time of recording, AI red teaming reports open in the classic Foundry view (New Foundry switched off).
+- Agent replies in Lumen are real responses from the hosted agents, replayed for pacing. Lumen calls each agent's Responses endpoint with the user's own Azure sign-in.
+- Narration: Kokoro text-to-speech (af_heart). Captions: lumen-laptop-to-enterprise.srt / .vtt.

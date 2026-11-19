@@ -8,7 +8,7 @@ const { execFileSync } = require('child_process');
 
 const RATE = 48000;
 
-function createKit({ name, lines, vo, work, out, view = { width: 1600, height: 900 }, dsf = 1.2, filming = true }) {
+function createKit({ name, lines, vo, work, out, view = { width: 1600, height: 900 }, dsf = 1.2, filming = true, musicGain = 0.9 }) {
   const FILM = __dirname;
   const engine = process.env.FILM_VOICE === 'windows' ? 'windows' : 'kokoro';
   const voiceSig = engine === 'kokoro' ? `kokoro:${process.env.KOKORO_VOICE || 'af_heart'}:${process.env.KOKORO_SPEED || '1.0'}` : 'Microsoft Mark';
@@ -158,7 +158,7 @@ $s.Dispose()`;
     for (let i = 0; i < n; i++) { acc += Math.abs(voice[i]); if (i >= k) acc -= Math.abs(voice[i - k]); env[i] = acc / k; }
     const pcm = Buffer.alloc(44 + n * 4);
     pcm.write('RIFF', 0); pcm.writeUInt32LE(36 + n * 4, 4); pcm.write('WAVEfmt ', 8); pcm.writeUInt32LE(16, 16); pcm.writeUInt16LE(1, 20); pcm.writeUInt16LE(2, 22); pcm.writeUInt32LE(RATE, 24); pcm.writeUInt32LE(RATE * 4, 28); pcm.writeUInt16LE(4, 32); pcm.writeUInt16LE(16, 34); pcm.write('data', 36); pcm.writeUInt32LE(n * 4, 40);
-    for (let i = 0; i < n; i++) { const duck = 1 - 0.55 * Math.min(1, Math.max(0, env[Math.min(i + (k >> 1), n - 1)] * 25)); const v = Math.max(-1, Math.min(1, voice[i] * 1.15 + fx[i] + (bed[i] || 0) * duck * 0.9)); const s = Math.round(v * 32767); pcm.writeInt16LE(s, 44 + i * 4); pcm.writeInt16LE(s, 46 + i * 4); }
+    for (let i = 0; i < n; i++) { const duck = 1 - 0.55 * Math.min(1, Math.max(0, env[Math.min(i + (k >> 1), n - 1)] * 25)); const v = Math.max(-1, Math.min(1, voice[i] * 1.15 + fx[i] + (bed[i] || 0) * duck * musicGain)); const s = Math.round(v * 32767); pcm.writeInt16LE(s, 44 + i * 4); pcm.writeInt16LE(s, 46 + i * 4); }
     fs.writeFileSync(file, pcm);
     return cues;
   }
@@ -191,6 +191,9 @@ $s.Dispose()`;
     console.log('trimmed dead air:', cuts.map(([, n]) => `${n.toFixed(1)}s`).join(', '));
     return [frames.map(([f, t]) => [f, shift(t)]), events.map((e) => ({ ...e, t: shift(e.t) }))];
   }
+  // A headed window can be larger than the emulated viewport; the screencast then carries blank margin right and
+  // below the page. Frames that are not 16:9 are cropped back to the page area (top-left, viewport size).
+  const CROP = `crop=w='if(eq(iw*9,ih*16),iw,min(iw,${view.width}))':h='if(eq(iw*9,ih*16),ih,min(ih,${view.height}))':x=0:y=0`;
   function finish(capFrames, rawEvents, { stills = false, thumbAt = 0.42 } = {}) {
     const ffmpeg = ffmpegPath();
     fs.mkdirSync(out, { recursive: true });
@@ -213,9 +216,9 @@ $s.Dispose()`;
     writeSrt(cues, srt);
     const mp4 = path.join(out, `${name}.mp4`);
     execFileSync(ffmpeg, ['-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', listing, '-i', wav,
-      '-vf', 'fps=30,scale=1920:1080:flags=lanczos,format=yuv420p', '-c:v', 'libx264', '-preset', 'fast', '-crf', '18',
+      '-vf', `fps=30,${CROP},scale=1920:1080:flags=lanczos,setsar=1,format=yuv420p`, '-c:v', 'libx264', '-preset', 'fast', '-crf', '18',
       '-af', 'loudnorm=I=-14:TP=-1.5:LRA=11', '-c:a', 'aac', '-b:a', '256k', '-ar', '48000', '-movflags', '+faststart', '-shortest', mp4], { stdio: 'inherit' });
-    execFileSync(ffmpeg, ['-y', '-loglevel', 'error', '-i', frames[Math.floor(frames.length * thumbAt)][0], '-vf', 'scale=1280:720', path.join(out, `${name}-thumbnail.jpg`)]);
+    execFileSync(ffmpeg, ['-y', '-loglevel', 'error', '-i', frames[Math.floor(frames.length * thumbAt)][0], '-vf', `${CROP},scale=1280:720`, path.join(out, `${name}-thumbnail.jpg`)]);
     console.log('wrote', mp4, '\nwrote', srt);
     return { mp4, srt, cues };
   }
