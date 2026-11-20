@@ -1,0 +1,50 @@
+A Long List of Agent Ideas, and One Evening to Find Out: 23 LangGraph Agents on Microsoft Foundry
+
+A client and I were deciding where a long list of AI agents would live, and landing on simple markdown agents in GitHub Copilot. But if they were ever built as code, LangGraph was the approved framework. So before that window closed, I spent an afternoon and an evening finding out what it would really take.
+
+This video shows how I built 23 LangGraph agents, deployed them as Microsoft Foundry hosted agents, what Foundry adds to make them enterprise-ready, and how an app consumes them.
+
+What's covered:
+- The approach: one shared core and one graph shape for every agent
+- The graph code: add_edge, add_conditional_edges, a Send fan-out (one extraction per section, in parallel) and a self-check loop
+- Typed model calls, human approval with interrupt(), and tests with the model scripted out
+- Deploying all 23 with one azd deploy
+- In the Foundry portal: Entra agent identity, an access-controlled Responses endpoint, guardrails, tracing, monitoring and cost
+- AI red teaming that found one real failure, the layered fix, and a clean re-scan
+- Lumen, a chat app I extended, calling the agents and handling approvals, plus the provider code behind it
+
+Chapters
+0:00 The story: a closing window
+0:18 One shared core
+0:32 One graph shape for every agent
+0:45 A real LangGraph graph
+0:54 Wiring: edges and conditional edges
+1:06 Fan-out with Send
+1:13 The self-check loop
+1:22 Typed model calls
+1:33 Human approval with interrupt()
+1:45 Tests with a scripted model
+1:51 First time: LangGraph on Foundry
+2:01 Generated deployment: one azd deploy
+2:11 23 hosted agents in Microsoft Foundry
+2:22 Entra agent identity
+2:41 An access-controlled Responses endpoint
+2:48 Guardrails
+3:00 Traces for every LangGraph step
+3:28 Monitor: runs, tokens, cost
+3:41 AI red teaming
+4:06 One real failure found
+4:20 The layered fix
+4:28 A clean re-scan
+4:43 Consumed by an app: Lumen
+5:05 Approve, and the agent resumes
+5:17 Lumen's provider code
+5:31 How it ended
+
+Notes
+- A proof of concept with synthetic data for a fictional organization (Contoso). No client data.
+- Agent replies in Lumen are real responses from the hosted agents, replayed for pacing.
+- At the time of recording, AI red teaming reports open in the classic Foundry view.
+- Narration: Kokoro text-to-speech. Captions: lumen-langgraph-on-foundry.srt / .vtt.
+
+#MicrosoftFoundry #LangGraph #AgenticAI #AIAgents #Azure
