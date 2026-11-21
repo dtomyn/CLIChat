@@ -1,0 +1,347 @@
+1
+00:00:05,293 --> 00:00:08,376
+Microsoft draws its agent platform like this.
+
+2
+00:00:08,376 --> 00:00:09,472
+Build in GitHub.
+
+3
+00:00:09,472 --> 00:00:11,390
+Run and optimise in Foundry.
+
+4
+00:00:11,390 --> 00:00:13,377
+Reach people where they work.
+
+5
+00:00:13,377 --> 00:00:16,734
+And feed what you learn back into the next build.
+
+6
+00:00:16,734 --> 00:00:20,845
+I built 23 real agents, to see what each box actually takes.
+
+7
+00:00:22,085 --> 00:00:24,670
+Here is that picture, with what I built.
+
+8
+00:00:24,670 --> 00:00:32,880
+On the left, the build: 23 LangGraph agents, their prompts, tools and test cases, in one GitHub repo, written with Claude Code.
+
+9
+00:00:33,142 --> 00:00:35,287
+In the middle, Foundry runs them.
+
+10
+00:00:35,287 --> 00:00:39,383
+Each one is a hosted agent, with its own identity and endpoint.
+
+11
+00:00:39,383 --> 00:00:44,129
+Foundry adds the models, guardrails, evaluation, red teaming and tracing.
+
+12
+00:00:44,389 --> 00:00:48,496
+On the right, people reach them through Lumen, a chat app I built.
+
+13
+00:00:48,496 --> 00:00:53,413
+Teams and Copilot are a publish step away, but need tenant rights I don't have.
+
+14
+00:00:53,670 --> 00:00:57,499
+Faded boxes are on Microsoft's slide, but not used here.
+
+15
+00:00:57,499 --> 00:01:00,098
+And the loop along the bottom is real.
+
+16
+00:01:00,098 --> 00:01:03,654
+Later, I'll follow one failure all the way round it.
+
+17
+00:01:03,917 --> 00:01:05,393
+Keep one split in mind.
+
+18
+00:01:05,393 --> 00:01:09,756
+The purple box is mine: the agent's behaviour, written in LangGraph.
+
+19
+00:01:09,756 --> 00:01:12,258
+Everything around it, Foundry provides.
+
+20
+00:01:13,528 --> 00:01:20,794
+Every agent follows the same graph shape: take in the request, ground it in sources, analyse, and check its own work.
+
+21
+00:01:20,794 --> 00:01:25,389
+Only then, if it wants to change something, does it stop and ask a person.
+
+22
+00:01:26,655 --> 00:01:30,030
+Here is a real one, exported straight from LangGraph.
+
+23
+00:01:30,030 --> 00:01:35,188
+Green steps are plain Python, purple steps call the model, and amber is a person.
+
+24
+00:01:36,157 --> 00:01:41,601
+In code, plain edges go to the next step, and conditional edges let a function decide.
+
+25
+00:01:41,601 --> 00:01:49,704
+fan_out sends one extraction per document section, in parallel, and the self-check loops back only for the sections that failed.
+
+26
+00:01:50,669 --> 00:01:54,885
+When an agent wants to change something, interrupt() pauses the graph.
+
+27
+00:01:54,885 --> 00:02:00,909
+The checkpoint saves its state, and the run resumes exactly where it stopped, once a person decides.
+
+28
+00:02:02,086 --> 00:02:04,351
+So how does that get into Foundry?
+
+29
+00:02:04,351 --> 00:02:10,612
+Foundry's code deploy wants one flat folder per agent, with a main.py and a requirements file.
+
+30
+00:02:10,612 --> 00:02:17,672
+My agents share libraries in one repo, so a build step flattens each agent, and copies the shared code in.
+
+31
+00:02:17,672 --> 00:02:20,070
+A second step writes the azure.yaml.
+
+32
+00:02:20,331 --> 00:02:22,678
+Then azd deploy uploads each folder.
+
+33
+00:02:22,678 --> 00:02:30,827
+Foundry builds it in the cloud, with no Dockerfile, and creates a new, immutable version, with its own identity and endpoint.
+
+34
+00:02:32,007 --> 00:02:35,482
+This is the real output from redeploying one agent.
+
+35
+00:02:35,482 --> 00:02:40,388
+Package, publish, a new version, and its endpoint, in under two minutes.
+
+36
+00:02:40,388 --> 00:02:43,250
+All 23 together took about six and a half.
+
+37
+00:02:44,214 --> 00:02:55,819
+Here is one of the 23 azure.yaml entries: a hosted agent, the Responses protocol, Python 3.13, built remotely, with one CPU and two gigabytes.
+
+38
+00:02:56,784 --> 00:02:58,834
+And this is the whole entry point.
+
+39
+00:02:58,834 --> 00:03:04,080
+It hands the graph to Foundry's LangGraph adapter, which serves the Responses protocol.
+
+40
+00:03:04,352 --> 00:03:09,008
+In Microsoft Foundry, under Agents, all 23 show up as hosted agents.
+
+41
+00:03:09,008 --> 00:03:13,184
+Each one is running, and every deployment gets a new version.
+
+42
+00:03:16,588 --> 00:03:18,974
+Now follow one request, end to end.
+
+43
+00:03:18,974 --> 00:03:19,588
+Six hops.
+
+44
+00:03:19,588 --> 00:03:21,224
+Two of them are my code.
+
+45
+00:03:21,224 --> 00:03:23,201
+The other four, I configured.
+
+46
+00:03:27,555 --> 00:03:29,124
+First, the user's view.
+
+47
+00:03:29,124 --> 00:03:38,537
+An integration architect opens the interface documentation agent in Lumen, attaches the specs, and asks for an interface control document.
+
+48
+00:03:38,537 --> 00:03:43,107
+Lumen calls the agent's endpoint with the user's own Azure sign-in.
+
+49
+00:03:50,164 --> 00:03:54,216
+When the agent pauses for a decision, Lumen shows an approval card.
+
+50
+00:03:54,216 --> 00:03:57,844
+Approve it, and the agent picks up exactly where it stopped.
+
+51
+00:04:02,271 --> 00:04:03,909
+That's what the user saw.
+
+52
+00:04:03,909 --> 00:04:07,381
+Underneath, the endpoint checked an Azure role first.
+
+53
+00:04:07,381 --> 00:04:11,901
+Foundry Agent Consumer is the least privileged role that can call it.
+
+54
+00:04:11,901 --> 00:04:16,159
+Then the agent ran in its own sandbox, as its own Entra identity.
+
+55
+00:04:16,434 --> 00:04:19,427
+Open the agent, and select its Details tab.
+
+56
+00:04:19,427 --> 00:04:27,015
+Under Identity & access, each agent has its own Entra agent identity, granted access to the project's models.
+
+57
+00:04:36,328 --> 00:04:40,314
+Under Endpoints, its Responses endpoint, and who can call it.
+
+58
+00:04:40,314 --> 00:04:42,732
+Users never need access to the model.
+
+59
+00:04:42,732 --> 00:04:44,627
+The agent calls it as itself.
+
+60
+00:04:46,329 --> 00:04:48,007
+In code, there are no keys.
+
+61
+00:04:48,007 --> 00:04:54,222
+The default Azure credential picks up the agent identity, and the project hands back a model client.
+
+62
+00:04:55,190 --> 00:04:59,755
+Every model call then passes through a guardrail, attached to the model deployment.
+
+63
+00:05:00,038 --> 00:05:02,652
+It blocks harmful content and jailbreaks.
+
+64
+00:05:02,652 --> 00:05:11,131
+Indirect prompt injection is set to annotate, so the agent can flag hostile text in a document, instead of rejecting the whole thing.
+
+65
+00:05:12,816 --> 00:05:21,435
+The approval works because, when the graph pauses, its state is saved in Foundry's state store, so the run can pick up exactly where it stopped.
+
+66
+00:05:21,693 --> 00:05:23,208
+And every hop is traced.
+
+67
+00:05:23,481 --> 00:05:25,261
+Each agent has a Traces tab.
+
+68
+00:05:25,261 --> 00:05:32,953
+Open a trace, and the span names are the graph's node names, with every model call underneath, and its timing and tokens.
+
+69
+00:05:56,030 --> 00:06:00,937
+Monitor rolls it up across all the agents: runs, tokens, and what it cost.
+
+70
+00:06:16,975 --> 00:06:24,265
+On the app side, it's one provider file: build the request, call the Responses endpoint, and send the approval back.
+
+71
+00:06:24,265 --> 00:06:26,276
+Any front end could do the same.
+
+72
+00:06:27,437 --> 00:06:28,311
+Now the loop.
+
+73
+00:06:28,311 --> 00:06:37,656
+I pointed Foundry's AI Red Teaming Agent at the deployed agents: 80 attacks each, half of them hidden inside the documents the agents read.
+
+74
+00:06:37,937 --> 00:06:41,585
+At the time of recording, its reports open in the classic view.
+
+75
+00:07:00,349 --> 00:07:02,035
+It found one real failure.
+
+76
+00:07:02,035 --> 00:07:10,141
+A planted harmful sentence became a requirement, because turning sentences into requirements is exactly what this agent does.
+
+77
+00:07:17,609 --> 00:07:25,182
+The fix is layered: the content filter, a prompt rule, and a deterministic scan that drops anything built from harmful text.
+
+78
+00:07:26,357 --> 00:07:32,565
+That case went into the test set, the agent was redeployed as version 3, and the re-scan found nothing.
+
+79
+00:07:39,965 --> 00:07:48,034
+The same loop, testing the deployed agents rather than the code, found a gap the unit tests had missed in another agent.
+
+80
+00:07:48,034 --> 00:07:50,589
+Its gap recall went from 0.44 to 1.00.
+
+81
+00:07:51,776 --> 00:07:53,209
+So, what does it take?
+
+82
+00:07:53,209 --> 00:07:59,330
+You write the graph, the prompts and the tests, a three-line main.py, and an azure.yaml entry.
+
+83
+00:07:59,330 --> 00:08:06,624
+Foundry gives you the build, hosting, identity, access control, guardrails, tracing, evaluation and red teaming.
+
+84
+00:08:07,783 --> 00:08:15,469
+You need a Foundry project, the Foundry Project Manager role to deploy, and azd with the Foundry agent extension.
+
+85
+00:08:15,469 --> 00:08:18,529
+Your framework decides how the agent behaves.
+
+86
+00:08:18,529 --> 00:08:20,434
+Foundry decides how it runs.
+
+87
+00:08:21,154 --> 00:08:24,759
+23 agents, every box on the slide, built for real.

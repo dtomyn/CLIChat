@@ -1,0 +1,213 @@
+WEBVTT
+
+1
+00:00:00.047 --> 00:00:07.940
+A client and I were deciding where a long list of agents would live, and we were landing on simple markdown agents in GitHub Copilot.
+
+2
+00:00:07.940 --> 00:00:12.332
+But if they were ever built as code, LangGraph was the approved framework.
+
+3
+00:00:12.332 --> 00:00:16.367
+So before that window closed, I found out what it would really take.
+
+4
+00:00:18.278 --> 00:00:22.065
+Twenty-three agents in one evening only works with a plan.
+
+5
+00:00:22.065 --> 00:00:28.400
+I built one shared core first: the graph kit, typed state, model calls, approvals and guardrails.
+
+6
+00:00:28.400 --> 00:00:31.142
+Each agent is then a small package on top.
+
+7
+00:00:32.106 --> 00:00:39.372
+Every agent follows the same graph shape: take in the request, ground it in sources, analyse, and check its own work.
+
+8
+00:00:39.372 --> 00:00:43.967
+Only then, if it wants to change something, does it stop and ask a person.
+
+9
+00:00:45.344 --> 00:00:48.719
+Here is a real one, exported straight from LangGraph.
+
+10
+00:00:48.719 --> 00:00:53.877
+Green steps are plain Python, purple steps call the model, and amber is a person.
+
+11
+00:00:54.851 --> 00:00:56.390
+And here is the wiring.
+
+12
+00:00:56.390 --> 00:00:59.001
+Plain edges always go to the next step.
+
+13
+00:00:59.001 --> 00:01:01.678
+Conditional edges let a function decide.
+
+14
+00:01:01.678 --> 00:01:05.091
+After retrieving context, one hands off to fan_out.
+
+15
+00:01:06.063 --> 00:01:12.655
+fan_out returns a list of Send objects: one extraction per document section, all running in parallel.
+
+16
+00:01:13.627 --> 00:01:21.712
+A self-check then verifies every quote against its source, and a second conditional edge loops back, only for the sections that failed.
+
+17
+00:01:22.682 --> 00:01:26.450
+Model calls return typed, validated objects, not free text.
+
+18
+00:01:26.450 --> 00:01:32.837
+And if the content filter blocks a section, the agent records a finding, instead of failing the run.
+
+19
+00:01:33.799 --> 00:01:38.016
+When an agent wants to change something, interrupt() pauses the graph.
+
+20
+00:01:38.016 --> 00:01:44.039
+The checkpoint saves its state, and the run resumes exactly where it stopped, once a person decides.
+
+21
+00:01:45.015 --> 00:01:51.116
+Because the model can be scripted out, close to 700 tests run in a couple of minutes, with no network.
+
+22
+00:01:51.683 --> 00:01:56.303
+I had deployed agents to Foundry before, with Microsoft Agent Framework.
+
+23
+00:01:56.303 --> 00:01:59.896
+This was my first time deploying LangGraph agents there.
+
+24
+00:02:01.734 --> 00:02:03.596
+Deployment is generated.
+
+25
+00:02:03.596 --> 00:02:11.355
+A build step makes one folder per agent, writes the azure.yaml, and one azd deploy publishes all 23.
+
+26
+00:02:11.653 --> 00:02:16.411
+In Microsoft Foundry, under Agents, all 23 show up as hosted agents.
+
+27
+00:02:16.411 --> 00:02:22.149
+Foundry built each container in the cloud, runs it, and versions every deployment.
+
+28
+00:02:22.502 --> 00:02:25.621
+This is where Foundry makes them enterprise-ready.
+
+29
+00:02:25.621 --> 00:02:28.241
+Open an agent, and select its Details tab.
+
+30
+00:02:32.236 --> 00:02:40.556
+Each agent gets its own Entra agent identity, granted access to the project's models, so there are no keys or secrets in the code.
+
+31
+00:02:41.516 --> 00:02:47.511
+Each one exposes a standard Responses endpoint, and only people with the right Azure role can call it.
+
+32
+00:02:48.482 --> 00:02:50.880
+Guardrails sit on the model deployment.
+
+33
+00:02:50.880 --> 00:02:56.845
+They block harmful content, detect jailbreaks, and check documents for indirect prompt injection.
+
+34
+00:03:00.644 --> 00:03:04.143
+Back under Agents, every agent also has a Traces tab.
+
+35
+00:03:18.282 --> 00:03:19.793
+Every request is traced.
+
+36
+00:03:19.793 --> 00:03:26.282
+Open one, and you see each LangGraph step, and every model call underneath, with its timing and tokens.
+
+37
+00:03:28.056 --> 00:03:33.090
+And Monitor rolls it all up across the agents: runs, tokens, and what it cost.
+
+38
+00:03:41.603 --> 00:03:49.515
+Then I pointed Foundry's AI Red Teaming Agent at the deployed agents, with attacks hidden inside the documents they read.
+
+39
+00:03:49.515 --> 00:03:53.635
+At the time of recording, its reports open in the classic view.
+
+40
+00:04:06.096 --> 00:04:07.790
+It found one real failure.
+
+41
+00:04:07.790 --> 00:04:10.917
+A planted harmful sentence became a requirement.
+
+42
+00:04:20.464 --> 00:04:28.037
+The fix is layered: the content filter, a prompt rule, and a deterministic scan that drops anything built from harmful text.
+
+43
+00:04:28.312 --> 00:04:32.109
+The re-scan found nothing, and that case is now part of the test suite.
+
+44
+00:04:43.035 --> 00:04:45.498
+Finally, how does an app consume them?
+
+45
+00:04:45.498 --> 00:04:48.674
+I extended Lumen, a chat app I had built earlier.
+
+46
+00:04:48.674 --> 00:04:54.768
+It calls the agent's endpoint with the user's own Azure sign-in, and sends the attached files.
+
+47
+00:05:05.629 --> 00:05:09.680
+When the agent pauses for a decision, Lumen shows an approval card.
+
+48
+00:05:09.680 --> 00:05:13.309
+Approve it, and the agent picks up exactly where it stopped.
+
+49
+00:05:17.459 --> 00:05:25.815
+On the code side, it is one provider file: build the request, call the Responses endpoint, and send the approval back.
+
+50
+00:05:25.815 --> 00:05:31.197
+Foundry can also publish agents straight to Teams and Microsoft 365 Copilot.
+
+51
+00:05:31.778 --> 00:05:35.506
+The client stayed with the simple approach, and that was fine.
+
+52
+00:05:35.506 --> 00:05:41.399
+For me, it was a great way to put LangGraph and Microsoft Foundry through their paces, end to end.
+
+53
+00:05:42.216 --> 00:05:45.800
+A long list of agent ideas, and one evening to find out.
