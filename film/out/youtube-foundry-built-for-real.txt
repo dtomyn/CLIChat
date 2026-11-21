@@ -1,0 +1,55 @@
+Microsoft's Agent Platform, Built for Real: 23 LangGraph Agents on Microsoft Foundry
+
+At Microsoft Ignite, Microsoft described its end-to-end agent platform in one picture: build in GitHub, run and optimize in Foundry, reach people where they work, and feed what you learn back into the next build. I built 23 real LangGraph agents to see what each box on that slide actually takes.
+
+This video redraws Microsoft's picture with the real deployment. It then walks through four architecture views, each followed by the live Foundry portal screen and the real code behind it: inside one agent, repo to running agent, one request end to end, and the improvement loop. It's meant for architects and developers who want to know what it takes to run code-first agents on Foundry, and which parts you write versus which parts the platform provides.
+
+What's covered:
+- Microsoft's end-to-end agent platform from Ignite, mapped to a real build (built with Claude Code, stored in GitHub)
+- Inside one agent: one graph shape for all 23, a real LangGraph graph, conditional edges, Send fan-out, a self-check loop and human approval with interrupt()
+- Repo to running agent: flattening a monorepo for Foundry's code deploy, a generated azure.yaml, the real azd deploy output, and a three-line main.py
+- One request in six hops: Lumen, the Responses endpoint and its Azure role check (Foundry Agent Consumer), the Entra agent identity, the guardrail on the model deployment, the state store that makes approvals resume, and tracing
+- The improvement loop: AI red teaming found one real failure, a layered fix, a new golden test case, redeploying as version 3 and a clean re-scan
+- What it takes: what you write, what Foundry gives you, and what you need to get started
+
+Chapters
+0:00 Microsoft's end-to-end agent platform (from Ignite)
+0:22 The platform, redrawn with what I built
+1:03 My code vs what Foundry provides
+1:13 Inside one agent: one graph shape
+1:26 A real LangGraph graph
+1:36 Edges, fan-out and the self-check loop
+1:50 Human approval with interrupt()
+2:02 Repo to running agent: what azd deploy does
+2:32 Real azd deploy output
+2:44 One azure.yaml entry
+2:56 The whole entry point: main.py
+3:04 23 hosted agents in the Foundry portal
+3:16 One request, six hops
+3:27 The user's view in Lumen
+3:50 Approve, and the agent resumes
+4:03 The endpoint's Azure role check
+4:16 Entra agent identity and the Responses endpoint
+4:46 No keys in the code
+4:55 Guardrails on the model deployment
+5:12 State saved at the approval pause
+5:23 Traces: span names = graph nodes
+5:56 Monitor: runs, tokens, cost
+6:16 Lumen's provider code
+6:27 The improvement loop: AI red teaming
+7:00 One real failure found
+7:17 The layered fix
+7:26 Redeployed as version 3, clean re-scan
+7:39 The same loop in another agent
+7:51 What it takes
+8:07 What you need to get started
+
+Notes
+- A proof of concept with synthetic data for a fictional organization (Contoso). No client data.
+- Agent replies in Lumen are real responses from the hosted agents, replayed for pacing.
+- The azd output is a real redeploy log, with account names masked and the service name shortened.
+- At the time of recording, AI red teaming reports open in the classic Foundry view.
+- Teams and Microsoft 365 Copilot publishing were not used; they need tenant permissions I don't have.
+- Narration: Kokoro text-to-speech. Captions: lumen-foundry-built-for-real.srt / .vtt.
+
+#MicrosoftFoundry #LangGraph #AgenticAI #AIAgents #Azure

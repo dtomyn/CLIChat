@@ -55,6 +55,21 @@ function imageSlide(s) {
     <div class="shot"><img src="data:image/png;base64,${b64}"></div></section>`;
 }
 
+// Architecture diagram: an SVG whose <g data-k="..."> groups can be lit (window.Deck.part) while others dim.
+function diagramSlide(s) {
+  return `<section class="slide diagram-slide" id="${s.id}"><div class="head"><div class="kicker">${esc(s.kicker)}</div><h2>${s.title}</h2></div>
+    <div class="dg"><svg viewBox="${s.viewBox}" preserveAspectRatio="xMidYMin meet"><defs>
+      <marker id="ah-${s.id}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="rgba(255,255,255,.55)"/></marker>
+    </defs>${s.svg.replace(/MARKER/g, `ah-${s.id}`)}</svg></div></section>`;
+}
+
+// Terminal: real command output, revealed line by line (window.Deck.term).
+function termSlide(s) {
+  return `<section class="slide term-slide" id="${s.id}"><div class="head"><div class="kicker">${esc(s.kicker)}</div><h2>${s.title}</h2></div>
+    <div class="term"><div class="tab"><i></i><i></i><i></i><b>${esc(s.label)}</b><span>${esc(s.note || '')}</span></div>
+    <div class="tlines">${s.lines.map(([cls, text]) => `<div class="tl ${cls || ''}">${esc(text) || '&nbsp;'}</div>`).join('')}</div></div></section>`;
+}
+
 const CSS = `
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; overflow: hidden; }
@@ -103,6 +118,24 @@ h2 em { font-style: normal; background: linear-gradient(90deg,#b8a6ff,#ffb08f); 
 .graph.marking .g { opacity: .3; } .graph.marking .g.mk { opacity: 1; transform: scale(1.05); box-shadow: 0 0 34px -4px rgba(255,255,255,.35); }
 .legend { display: flex; gap: 16px; margin-top: 30px; } .legend .g { padding: 9px 16px; font: 500 16px 'Segoe UI', sans-serif; }
 .gnote { margin-top: 26px; font-size: 22px; color: rgba(255,255,255,.78); max-width: 1300px; text-align: center; }
+.dg { display: flex; justify-content: center; } .dg svg { width: 1488px; height: 740px; overflow: visible; }
+.dg text { fill: #fff; font-family: 'Segoe UI', system-ui, sans-serif; white-space: pre; }
+.dg .t { font-size: 23px; font-weight: 600; } .dg .m { font: 400 16.5px 'Cascadia Code', Consolas, monospace; fill: rgba(255,255,255,.74); }
+.dg .s { font-size: 18px; fill: rgba(255,255,255,.66); } .dg .tag { font: 600 15px 'Segoe UI', sans-serif; letter-spacing: .14em; }
+.dg rect { stroke-width: 1.6; } .dg .bx { fill: rgba(255,255,255,.05); stroke: rgba(255,255,255,.22); }
+.dg .py { fill: rgba(18,165,148,.2); stroke: rgba(63,197,182,.85); } .dg .md { fill: rgba(124,92,255,.24); stroke: #a48bff; }
+.dg .hu { fill: rgba(245,158,11,.18); stroke: #f5b041; } .dg .pl { fill: rgba(56,132,255,.16); stroke: #6fa8ff; }
+.dg .wa { fill: rgba(255,99,99,.15); stroke: #ff8a80; } .dg .ac { fill: rgba(255,176,143,.16); stroke: #ffb08f; }
+.dg .ln2 { fill: none; stroke: rgba(255,255,255,.55); stroke-width: 2; } .dg .lp { fill: none; stroke: #ffb08f; stroke-width: 2.5; stroke-dasharray: 8 6; }
+.dg .faded { opacity: .42; } .dg .faded rect { stroke-dasharray: 7 5; }
+.dg .badge circle { fill: #ffb08f; } .dg .badge text { fill: #1a1030; font: 700 17px 'Segoe UI', sans-serif; }
+.dg g[data-k] { transition: opacity .6s ease, filter .6s ease; }
+.dg svg.dimming g[data-k]:not(.on) { opacity: .16; } .dg svg.dimming g[data-k].on { filter: drop-shadow(0 0 18px rgba(164,139,255,.55)); }
+.dg svg.dimming g[data-k].faded.on { opacity: .6; }
+.term { border-radius: 16px; background: #0d1117; border: 1px solid rgba(255,255,255,.12); box-shadow: 0 30px 80px -20px rgba(0,0,0,.8); overflow: hidden; height: 720px; display: flex; flex-direction: column; }
+.tlines { padding: 18px 26px; font: 400 18.5px/1.62 'Cascadia Code', Consolas, monospace; color: rgba(255,255,255,.82); white-space: pre; overflow: hidden; }
+.tl { opacity: 0; transition: opacity .25s; } .tl.show { opacity: 1; }
+.tl.cmd { color: #8be9a8; } .tl.ok { color: #8be9a8; font-weight: 600; } .tl.url { color: #79b8ff; } .tl.dim { color: rgba(255,255,255,.5); } .tl.hl { color: #ffd479; }
 .shot { display: flex; justify-content: center; } .shot img { max-height: 720px; max-width: 1480px; border-radius: 14px; box-shadow: 0 30px 80px -20px rgba(0,0,0,.85); border: 1px solid rgba(255,255,255,.14); }
 `;
 
@@ -143,6 +176,8 @@ const JS = `
     note(id, n) { $(id).querySelectorAll('.note').forEach((x, i) => x.classList.toggle('show', i < n)); },
     light(id, n) { $(id).querySelectorAll('.node').forEach((x, i) => x.classList.toggle('lit', n === 'all' || i === n)); },
     mark(id, names) { const g = $(id).querySelector('.graph'); g.classList.toggle('marking', !!names); g.querySelectorAll('.g').forEach((x) => x.classList.toggle('mk', !!names && names.includes(x.dataset.node))); },
+    part(id, keys) { const svg = $(id).querySelector('.dg svg'); const all = !keys || keys === 'all'; svg.classList.toggle('dimming', !all); svg.querySelectorAll('g[data-k]').forEach((g) => g.classList.toggle('on', !all && keys.includes(g.dataset.k))); },
+    term(id, n) { $(id).querySelectorAll('.tl').forEach((x, i) => x.classList.toggle('show', n === 'all' || i < n)); },
     tree(id, names) { const t = $(id).querySelector('.tree'); t.classList.toggle('focusing', !!names); t.querySelectorAll('.row').forEach((r) => r.classList.toggle('lit', !!names && names.some((n) => r.textContent.includes(n)))); },
   };
 })();
@@ -151,7 +186,7 @@ const JS = `
 function buildDeck({ slides, hljsDir, out }) {
   const hljs = fs.readFileSync(path.join(hljsDir, 'highlight.min.js'), 'utf8');
   const theme = fs.readFileSync(path.join(hljsDir, 'styles', 'github-dark.min.css'), 'utf8');
-  const body = slides.map((s) => ({ code: codeSlide, tree: treeSlide, flow: flowSlide, graph: graphSlide, image: imageSlide }[s.type])(s)).join('\n');
+  const body = slides.map((s) => ({ code: codeSlide, tree: treeSlide, flow: flowSlide, graph: graphSlide, image: imageSlide, diagram: diagramSlide, term: termSlide }[s.type])(s)).join('\n');
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>SDLC agents: the code</title><style>${theme}${CSS}</style></head><body>${body}<script>${hljs}</script><script>${JS}</script></body></html>`;
   fs.mkdirSync(path.dirname(out), { recursive: true });
   fs.writeFileSync(out, html, 'utf8');
