@@ -1,0 +1,898 @@
+// "From 23 agents to 9": the follow-on to "built for real". Why 23 hosted agents were too many, how use cases became
+// skills mounted on 9 hosted agents grouped by trust boundary, how a host routes, how the cut-over was proven
+// (old vs new on the same cases, red team through the hosts, then retire), Foundry skills for the wording the business
+// owns, and continuous improvement in two halves: my pre-release gate plus Foundry's hourly trace evaluation, which
+// now scores live traffic with custom rubric evaluators (the same standards the agents load) and code-based ones.
+//
+//   node film/make_e2e5.js --voice       Narration only (Kokoro), with each line's length.
+//   node film/make_e2e5.js --deck        Build the slide deck only (film/.work-e2e5/deck.html) to check the diagrams.
+//   node film/make_e2e5.js --storyboard  Write the storyboard page (IRCC-info/videos/lumen-23-to-9-storyboard.html).
+//   node film/make_e2e5.js               Film and encode film/out/lumen-23-to-9.mp4 + .srt + .vtt + thumbnail.
+//   node film/make_e2e5.js --remix       Re-voice and re-encode from the last run's frames.
+//   node film/make_e2e5.js --stills      Film, then write a contact sheet instead of encoding.
+//
+// Uses make_e2e.js's signed-in Edge profile and portal masking; the portal is navigated on camera. No Lumen scenes.
+// Real data only: router replies captured from the deployed host (.work-e2e5/routing.json), the old-vs-new comparison
+// and the retirement log from the 2026-11-21 cut-over (IRCC-info/foundry-test-deploy/contoso, ircc-sdlc-agents/out).
+const fs = require('fs');
+const path = require('path');
+const { createKit } = require('./filmkit');
+const { grab, buildDeck } = require('./code-deck');
+const E = require('./make_e2e');
+
+const FILM = __dirname;
+const ROOT = path.resolve(FILM, '..');
+const REPO = E.REPO;
+const INFO = path.resolve(REPO, '..');
+const DEPLOY = path.join(INFO, 'foundry-test-deploy', 'contoso');
+const WORK = path.join(FILM, '.work-e2e5');
+const NAME = 'lumen-23-to-9';
+const HOST = 'contoso-design-author';
+// Foundry evaluators shown in the portal (published by ircc-sdlc-agents/evals/rubric_evaluators.py, 2026-11-22).
+const CUSTOM_EVALS = ['Contoso requirements quality', 'Contoso decision-support writing', 'Contoso source fidelity', 'Contoso verbatim excerpts', 'Contoso unsupported identifiers'];
+const HOURLY_EVAL = 'continuous-contoso-design-author-v6'; // the hourly rule's eval: built-ins + 2 rubrics + 2 code evaluators
+const CODE_READY = 'Foundry code-based evaluator'; // first line on the verbatim-excerpts evaluator's Code tab
+const args = new Set(process.argv.slice(2));
+
+// ------------------------------------------------------------------ narration: [spoken, caption]
+const L = (spoken, caption = spoken) => [spoken, caption];
+const LINES = {
+  t1: L('Last time, I built twenty three agents on Microsoft Foundry. Each one hosted, with its own identity, endpoint, evaluations and red teaming.',
+    'Last time, I built 23 agents on Microsoft Foundry. Each one hosted, with its own identity, endpoint, evaluations and red teaming.'),
+  t2: L('Then I asked the question I should have asked first. Did each of these really need to be an agent?'),
+  b1: L('Every use case on the list became its own agent. Twenty three deployments, twenty three identities, twenty three things to secure, test and watch.',
+    'Every use case on the list became its own agent. 23 deployments, 23 identities, 23 things to secure, test and watch.'),
+  b2: L('The list itself had a hint. Fourteen of the twenty three were marked as skills, or skill first. I built them all as agents anyway.',
+    'The list itself had a hint. 14 of the 23 were marked as skills, or skill-first. I built them all as agents anyway.'),
+  b3: L('Then the code. Six agents run the same document pipeline. Draft by section, check citations, render, and ask to publish. Only the template and the checks differ.',
+    'Then the code. Six agents run the same document pipeline: draft by section, check citations, render, and ask to publish. Only the template and the checks differ.'),
+  b4: L('Seven agents each built their own question and answer mode. Five are really batch jobs, on a timer or a webhook. And one, schema mapping, is a tool that another agent already calls.',
+    'Seven agents each built their own Q&A mode. Five are really batch jobs, on a timer or a webhook. And one, schema mapping, is a tool that another agent already calls.'),
+  s1: L('So I split two ideas. An agent is a who. In Foundry, that is a running service with its own Entra identity, its own permissions, one endpoint and protocol, one place its paused state is kept, and its own deployments and versions.',
+    "So I split two ideas. An agent is a who. In Foundry, that's a running service with its own Entra identity, its own permissions, one endpoint and protocol, one place its paused state is kept, and its own deployments and versions."),
+  s1b: L('None of that says what the agent does. It says who is acting, and what it is allowed to touch.'),
+  s2: L('A skill is a what. Take requirements refinement. Its graph parses the document, extracts requirements section by section, checks them, renders the result, and asks for approval. It has its own prompts, checks, reviewers and tests. But no identity. When it calls the model, it does so as the host it runs on.',
+    'A skill is a what. Take requirements refinement. Its graph parses the document, extracts requirements section by section, checks them, renders the result, and asks for approval. It has its own prompts, checks, reviewers and tests. But no identity. When it calls the model, it does so as the host it runs on.'),
+  s3: L('If you have built web apps, you know this shape. One app has one address, one managed identity and one configuration, and many routes. The host is the app. Each skill is a route, and the router picks it.',
+    "If you've built web apps, you know this shape. One app has one address, one managed identity and one configuration, and many routes. The host is the app. Each skill is a route, and the router picks it."),
+  s3b: L('Before, those five design skills were five agents, with five identities that all needed exactly the same access. More to manage, and no extra protection.'),
+  s4: L('Group the skills by trust boundary, and twenty three agents become nine. Six that people chat with, and three that run jobs.',
+    'Group the skills by trust boundary, and 23 agents become 9: six that people chat with, and three that run jobs.'),
+  s5: L('Security and architecture keep their own encrypted state store. And nothing that writes to the backlog shares an identity with security work.'),
+  s6: L('Some skills sit on two hosts. The status report runs in chat when you ask for it, and on a timer every Thursday. Same code, different front door.'),
+  s7: L('So the rule of thumb is simple. New behaviour, new skill. New boundary, new agent.'),
+  p1: L('A word on the word agent. In Claude Code or GitHub Copilot, an agent is usually a persona: instructions, tools and a model, acting with your identity. In Foundry, an agent is a deployed service with its own identity, permissions and endpoint. That is the sense I mean here.',
+    'A word on the word "agent". In Claude Code or GitHub Copilot, an agent is usually a persona: instructions, tools and a model, acting with your identity. In Foundry, an agent is a deployed service with its own identity, permissions and endpoint. That\'s the sense I mean here.'),
+  p2: L('The two overlap more than you would think. A Claude Code subagent uses skills for the actual work, in the same skill dot M D format Foundry uses. And my nine agents look a lot like personas: a design author, a backlog assistant, a security analyst.',
+    "The two overlap more than you'd think. A Claude Code subagent uses skills for the actual work, in the same SKILL.md format Foundry uses. And my 9 agents look a lot like personas: a design author, a backlog assistant, a security analyst."),
+  p3: L('The difference is that in Foundry, the who is also a real security principal. So how many agents you have is a security and operations decision, not just a prompt design one.',
+    'The difference is that in Foundry, the "who" is also a real security principal. So how many agents you have is a security and operations decision, not just a prompt-design one.'),
+  f1: L('Now, about the word skill. Foundry has skills too. A Foundry skill is a skill dot M D file. A short header and Markdown instructions, stored in the project, with immutable versions you can roll back.',
+    'Now, about the word "skill". Foundry has skills too. A Foundry skill is a SKILL.md file: a short header and Markdown instructions, stored in the project, with immutable versions you can roll back.'),
+  f2: L('Mine are Python packages: a graph, its prompts, checks and tests. A Foundry skill changes what the model is told. Mine decides the steps the agent takes. A Foundry skill is closer to a reusable prompt. Mine is closer to a small program.',
+    'Mine are Python packages: a graph, its prompts, checks and tests. A Foundry skill changes what the model is told. Mine decides the steps the agent takes. A Foundry skill is closer to a reusable prompt. Mine is closer to a small program.'),
+  f3: L('So where do they meet? In the wording the business owns. My prompts hold three kinds of text.'),
+  f4: L('Standards the business owns. How Contoso writes requirements, user stories, and plain English. Those moved into three Foundry skills, each with an owner.',
+    'Standards the business owns: how Contoso writes requirements, user stories, and plain English. Those moved into three Foundry skills, each with an owner.'),
+  f5: L('Rules the code checks stayed in code. The source excerpt must be verbatim, untrusted text is only data, claims are cited, and nothing harmful becomes a requirement. In a Foundry skill, anyone with project access could weaken them without a review.',
+    'Rules the code checks stayed in code: the source excerpt must be verbatim, untrusted text is only data, claims are cited, and nothing harmful becomes a requirement. In a Foundry skill, anyone with project access could weaken them without a review.'),
+  f6: L('In a prompt, it is one line. The standard comes first, the checked rules come after it, and the wrapper tells the model those rules win.',
+    "In a prompt, it's one line. The standard comes first, the checked rules come after it, and the wrapper tells the model those rules win."),
+  f7: L('In Foundry, under Tools, Skills. The three standards, at version one. Open one, and there is the text a functional lead can own.',
+    "In Foundry, under Tools, Skills: the three standards, at version 1. Open one, and there's the text a functional lead can own."),
+  f8: L('Agent Framework agents let the model decide when to load a skill. My graph already knows which step needs which standard, so it loads it directly, through the same Skills API.'),
+  f9: L('Production pins the version, so behaviour only changes on a deploy. Downloaded text is checked, there is a bundled copy if Foundry is unreachable, and every load is audited with its version.',
+    "Production pins the version, so behaviour only changes on a deploy. Downloaded text is checked, there's a bundled copy if Foundry is unreachable, and every load is audited with its version."),
+  f10: L('Then it went live. Three skills published, nine hosts redeployed. And in the traces, each prompt carries its standard at version one, straight from Foundry, with no fallbacks.',
+    'Then it went live. Three skills published, 9 hosts redeployed. And in the traces, each prompt carries its standard at version 1, straight from Foundry, with no fallbacks.'),
+  h1: L('Inside a host, the graph is tiny. One router, one node per skill, and a node that asks when it is not sure.',
+    "Inside a host, the graph is tiny: one router, one node per skill, and a node that asks when it isn't sure."),
+  h2: L('The router tries the cheap things first. A skill name in the request, then an old agent name, so existing callers keep working, then a use case number. Only plain chat goes to a small model.',
+    'The router tries the cheap things first: a skill name in the request, then an old agent name, so existing callers keep working, then a use case number. Only plain chat goes to a small model.'),
+  h3: L('And if the model is not confident, the host asks you, instead of guessing.', "And if the model isn't confident, the host asks you, instead of guessing."),
+  h4: L('Each skill\'s original graph is mounted unchanged, as a stateful subgraph. Its state survives between turns, and when it pauses for an approval, the whole host pauses with it.',
+    "Each skill's original graph is mounted unchanged, as a stateful subgraph. Its state survives between turns, and when it pauses for an approval, the whole host pauses with it."),
+  h5: L('Here is that router, live in Foundry. A plain request with a document goes to requirements refinement. A vague one gets the list of skills back.'),
+  h6: L('Turning a use case into a skill is about ten lines. A name, its use case number, the agent it used to be, and its graph.',
+    'Turning a use case into a skill is about ten lines: a name, its use case number, the agent it used to be, and its graph.'),
+  x1: L('One thing changes when skills share an agent. Anything that used to be keyed by the agent must now be keyed by the agent and the skill: session ids, run ids, settings and traces. Otherwise two skills on one host mix their work together.',
+    'One thing changes when skills share an agent. Anything that used to be keyed by the agent must now be keyed by the agent and the skill: session ids, run ids, settings and traces. Otherwise two skills on one host mix their work together.'),
+  x2: L('In return, calls between skills on the same agent stop going over the network. The status report now calls schedule variance in process, with no extra endpoint or role.'),
+  c1: L('Then the cut over. The nine hosts went up next to the old twenty three, in nine minutes.', 'Then the cut-over. The 9 hosts went up next to the old 23, in nine minutes.'),
+  c2: L('In Foundry, nine hosted agents, and each description lists its skills.', 'In Foundry, 9 hosted agents, and each description lists its skills.'),
+  c3: L('Before deleting anything, the same test case went to each old agent and to its new host. Twenty two of twenty two scored the same, or better. The one error came from a content filter, and the old agent failed it too.',
+    'Before deleting anything, the same test case went to each old agent and to its new host. 22 of 22 scored the same, or better. The one error came from a content filter, and the old agent failed it too.'),
+  c4: L('Then the red team again, now through the hosts, so the router was under attack as well. Two hundred and forty attacks. None succeeded.',
+    'Then the red team again, now through the hosts, so the router was under attack as well. 240 attacks. None succeeded.'),
+  c5: L('Only then were the old agents deleted. Their role assignments went with them, along with twenty three orphaned ones from an earlier build. Forty seven assignments, down to ten.',
+    'Only then were the old agents deleted. Their role assignments went with them, along with 23 orphaned ones from an earlier build. 47 assignments, down to 10.'),
+  i1: L('Last time, I said Foundry had built in continuous improvement that I had not tried. Now I have. The loop has two halves.',
+    "Last time, I said Foundry had built-in continuous improvement that I hadn't tried. Now I have. The loop has two halves."),
+  i2: L('Before release, my gate. Test cases with exact checks, and red teaming with attacks hidden inside documents. Those found the real bugs.'),
+  i3: L('After release, Foundry watches. Every hour, it samples recent traces and scores them with judge models. The built in evaluators cover task adherence, intent resolution, and safety.',
+    'After release, Foundry watches. Every hour, it samples recent traces and scores them with judge models. The built-in evaluators cover task adherence, intent resolution and safety.'),
+  i4: L('On the agent\'s Evaluation tab, those are the recurring runs.', "On the agent's Evaluation tab, those are the recurring runs."),
+  i5: L('And the scores land on the Monitor tab, next to runs, tokens and cost.'),
+  r1: L('But the built in judges know generic quality, not Contoso\'s. So the standard the agent is told to follow, the Foundry skill, is now also the standard it is scored against, as a rubric evaluator. And the rules my code checks became code based evaluators.',
+    "But the built-in judges know generic quality, not Contoso's. So the standard the agent is told to follow, the Foundry skill, is now also the standard it's scored against, as a rubric evaluator. And the rules my code checks became code-based evaluators."),
+  r2: L('In Foundry, under Evaluations, the Evaluator catalog. Microsoft\'s built in evaluators, and five of mine, marked custom.',
+    "In Foundry, under Evaluations, the Evaluator catalog: Microsoft's built-in evaluators, and five of mine, marked custom."),
+  r3: L('Open requirements quality. It is a rubric. Eight dimensions, each with a weight, that a judge model scores from one to five. Keep the scope of the source. One requirement per need. Flag vague terms, with a question for the business owner.',
+    "Open requirements quality. It's a rubric: eight dimensions, each with a weight, that a judge model scores from 1 to 5. Keep the scope of the source. One requirement per need. Flag vague terms, with a question for the business owner."),
+  r4: L('Two of mine are code based, in preview. No judge model, just Python. They are the exact checks from my release gate. Excerpts must be quoted word for word, and an interface document cannot invent an endpoint or a status code.',
+    "Two of mine are code-based, in preview. No judge model, just Python. They're the exact checks from my release gate: excerpts must be quoted word for word, and an interface document can't invent an endpoint or a status code."),
+  r5: L('The hourly rule runs them next to the built in evaluators. Each rubric comes back with a pass or fail and a score. And for every dimension, a score and a written reason, which the built in evaluators don\'t give you.',
+    "The hourly rule runs them next to the built-in evaluators. Each rubric comes back with a pass or fail and a score. And for every dimension, a score and a written reason, which the built-in evaluators don't give you."),
+  i8: L('Every result is attached to its trace, too. Open one, and there is the host, the router and the skill\'s steps, with the evaluation results beside them.',
+    "Every result is attached to its trace, too. Open one, and there's the host, the router and the skill's steps, with the evaluation results beside them."),
+  i9: L('And that closes the loop. A low score points at a real trace. That trace becomes a new golden case, and the fix goes back through my gate before it is redeployed.',
+    "And that closes the loop. A low score points at a real trace. That trace becomes a new golden case, and the fix goes back through my gate before it's redeployed."),
+  k1: L('So, what would I do differently? Decide the deployment shape separately from the use case list. Group by trust boundary, not by feature.',
+    'So, what would I do differently? Decide the deployment shape separately from the use case list. Group by trust boundary, not by feature.'),
+  k2: L('Keep every use case traceable, as a skill with its own tests. Put the wording the business owns in Foundry skills, and score live traffic against that same wording. Keep the rules your code checks in code. And add Foundry\'s monitoring to your own release gate. Don\'t replace it.',
+    "Keep every use case traceable, as a skill with its own tests. Put the wording the business owns in Foundry skills, and score live traffic against that same wording. Keep the rules your code checks in code. And add Foundry's monitoring to your own release gate. Don't replace it."),
+  end: L('Twenty three use cases. Nine agents. One loop.', '23 use cases. 9 agents. One loop.'),
+};
+
+// ------------------------------------------------------------------ diagram helpers (SVG for code-deck diagram slides)
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+function B(k, cls, x, y, w, h, title, lines = [], { faded = false, lh = 26, ty = 36 } = {}) {
+  return `<g data-k="${k}"${faded ? ' class="faded"' : ''}><rect class="${cls}" x="${x}" y="${y}" width="${w}" height="${h}" rx="14"/>`
+    + `<text class="t" x="${x + 20}" y="${y + ty}">${esc(title)}</text>`
+    + lines.map((l, i) => `<text class="m" x="${x + 20}" y="${y + ty + 30 + i * lh}">${esc(l)}</text>`).join('') + '</g>';
+}
+const A = (k, d, label, lx, ly) => `<g data-k="${k}"><path class="ln2" d="${d}" marker-end="url(#MARKER)"/>${label ? `<text class="s" x="${lx}" y="${ly}">${esc(label)}</text>` : ''}</g>`;
+const T = (x, y, cls, text, anchor = 'start') => `<text class="${cls}" x="${x}" y="${y}" text-anchor="${anchor}">${esc(text)}</text>`;
+const G = (k, inner) => `<g data-k="${k}">${inner}</g>`;
+
+// View 1 · the 23 agents, coloured by what the code review found
+const UC = [
+  ['00', 'Knowledge layer', 'qa'], ['01', 'Requirements', 'doc'], ['02', 'Functional design', 'doc'], ['03', 'Traceability', 'qa'],
+  ['04', 'Technical design', 'doc'], ['05', 'Story writing', 'rest'], ['06', 'Plan Q&A', 'qa'], ['07', 'ADO → plan progress', 'job'],
+  ['08', 'Status report', 'rest'], ['09', 'RAID capture', 'rest'], ['10', 'Schedule variance', 'job'], ['11', 'Interface docs', 'doc'],
+  ['12', 'Schema mapping', 'tool'], ['13', 'Delivery scenario', 'rest'], ['14', 'Control mapping', 'rest'], ['15', 'Security docs', 'doc'],
+  ['16', 'CAE evidence', 'job'], ['17', 'Architecture review', 'rest'], ['18', 'ADRs', 'doc'], ['19', 'Gate pack', 'rest'],
+  ['20', 'Publishing freshness', 'job'], ['21', 'Backlog Q&A', 'qa'], ['22', 'Tech inventory', 'job'],
+];
+const QA = new Set(['00', '03', '06', '07', '20', '21', '22']);
+const SKILLISH = new Set(['01', '02', '04', '11', '12', '15', '18', '05', '06', '09', '10', '13', '14', '19']);
+const CLS = { doc: 'md', qa: 'py', job: 'pl', tool: 'wa', rest: 'bx' };
+function dBefore() {
+  const out = [];
+  out.push(G('cat', `<rect x="20" y="8" width="1460" height="54" rx="27" fill="rgba(255,176,143,.10)" stroke="#ffb08f" stroke-width="1.4"/>${T(750, 43, 's', 'The client\'s catalogue: 9 marked "AI agent" · 7 "AI skill" · 7 "skill-first"  →  14 of 23 were skills on paper', 'middle')}`));
+  UC.forEach(([n, name, k], i) => {
+    const col = i % 6; const row = Math.floor(i / 6); const x = 20 + col * 245; const y = 84 + row * 132;
+    out.push(B(k, CLS[k], x, y, 230, 116, `${n}`, [name], { ty: 40 }));
+    if (QA.has(n)) out.push(G('qa', `<rect x="${x + 150}" y="${y + 14}" width="64" height="28" rx="14" fill="rgba(63,197,182,.28)" stroke="rgba(63,197,182,.9)"/>${T(x + 182, y + 34, 's', 'Q&A', 'middle')}`));
+    if (SKILLISH.has(n)) out.push(G('cat', `<circle cx="${x + 64}" cy="${y + 31}" r="7" fill="#ffb08f"/>`));
+  });
+  out.push(`<g data-k="doc"><rect x="20" y="618" width="300" height="40" rx="10" class="md"/>${T(36, 645, 's', 'document pipeline ×6')}</g>`);
+  out.push(`<g data-k="qa"><rect x="336" y="618" width="300" height="40" rx="10" class="py"/>${T(352, 645, 's', 'own Q&A mode ×7')}</g>`);
+  out.push(`<g data-k="job"><rect x="652" y="618" width="300" height="40" rx="10" class="pl"/>${T(668, 645, 's', 'really a batch job ×5')}</g>`);
+  out.push(`<g data-k="tool"><rect x="968" y="618" width="300" height="40" rx="10" class="wa"/>${T(984, 645, 's', 'really a tool ×1')}</g>`);
+  out.push(`<g data-k="cat">${T(1290, 645, 's', '● skill on paper')}</g>`);
+  return out.join('');
+}
+
+const D_SPLIT = [
+  B('who', 'ac', 20, 20, 640, 400, 'Agent = a WHO', ['Entra identity: calls the model, ADO, SharePoint', 'RBAC: what it may touch, who may call it', 'endpoint + protocol: one URL, chat or jobs', 'state store: where paused runs wait', 'deployment + versions: one container'], { lh: 44 }),
+  A('mount', 'M662 220 H836', 'a host mounts skills', 670, 204),
+  B('what', 'md', 840, 20, 640, 400, 'Skill = a WHAT · e.g. brd (01)', ['graph: parse → extract → check', '  → render → ask for approval', 'prompts · checks · reviewer group', 'golden tests + evals', 'no identity of its own:', '  runs as the host it is on'], { lh: 44 }),
+  B('none', 'bx', 20, 450, 1460, 70, 'An agent\'s settings never say what it does: only who is acting, and what it may touch', [], { ty: 44 }),
+].join('');
+
+const chips = (k, x, y, names, cls) => names.map((n, i) => `<g data-k="${k}"><rect class="${cls}" x="${x + i * 128}" y="${y}" width="118" height="40" rx="10"/>${T(x + i * 128 + 59, y + 27, 's', n, 'middle')}</g>`).join('');
+const D_PERSONA = [
+  B('persona', 'md', 20, 20, 700, 300, 'Persona · Claude Code, GitHub Copilot', ['instructions + tools + model', 'acts with YOUR identity', 'defined in a markdown file', 'uses skills (SKILL.md) for the work'], { lh: 42 }),
+  B('platform', 'ac', 780, 20, 700, 300, 'Deployed agent · Microsoft Foundry', ['a running service', 'its OWN Entra identity + RBAC', 'endpoint · state store · versions', 'mounts skills for the work'], { lh: 42 }),
+  B('match', 'py', 20, 350, 1460, 90, 'The 9 look like personas', ['design author · backlog assistant · delivery planner · security analyst · architect · knowledge (+3 job runners)']),
+  B('diff', 'wa', 20, 460, 1460, 70, 'In Foundry the "who" is a security principal: the count is a security and operations decision', [], { ty: 44 }),
+].join('');
+
+const D_ANALOGY = [
+  B('app', 'bx', 20, 20, 620, 250, 'One web app', ['one address · one managed identity', 'one configuration', '', 'many routes:']),
+  chips('app', 40, 200, ['/orders', '/invoices', '/reports'], 'bx'),
+  A('same', 'M642 145 H776', 'same shape', 662, 128),
+  B('host', 'ac', 780, 20, 700, 250, 'One hosted agent: design-author', ['one endpoint · one Entra identity', 'one state store', '', 'many skills:']),
+  chips('host', 800, 200, ['brd', 'fdd', 'tdd', 'icd', 'schema_map'], 'md'),
+  G('flow', `<rect x="20" y="300" width="1460" height="120" rx="14" class="py"/>${T(44, 340, 't', 'One request')}`
+    + T(44, 378, 'm', '{"skill": "brd", ...} → route → run_brd (the old agent\'s graph, unchanged) → reply')
+    + T(44, 406, 'm', 'the model is called as contoso-design-author: the host\'s identity, not the skill\'s')),
+  B('before', 'wa', 20, 450, 1460, 70, 'Before: 5 agents · 5 identities · identical access. More to manage, no extra protection.', [], { ty: 44 }),
+].join('');
+
+const D_FVS = [
+  B('fs', 'pl', 20, 20, 700, 430, 'Foundry skill', ['a SKILL.md: header + Markdown', 'stored in the Foundry project', 'immutable versions, rollback', 'changes what the MODEL is TOLD', 'agent framework: the model', '  decides when to load it', '', '≈ a reusable prompt'], { lh: 40 }),
+  B('mine', 'md', 780, 20, 700, 430, 'My skill', ['a Python package', 'LangGraph graph + prompts', 'checks + golden tests', 'decides the STEPS it TAKES', 'mostly plain Python; the model', '  only at specific steps', '', '≈ a small program'], { lh: 40 }),
+  G('meet', `<rect x="20" y="470" width="1460" height="60" rx="30" fill="rgba(255,176,143,.12)" stroke="#ffb08f"/>${T(750, 508, 's', 'They meet in the wording the business owns', 'middle')}`),
+].join('');
+
+const D_MOVE = [
+  B('std', 'py', 20, 20, 470, 330, 'Standards the business owns', ['how Contoso writes:', '  requirements', '  user stories', '  plain English', '', '→ Foundry skills'], { lh: 38 }),
+  B('rules', 'wa', 515, 20, 470, 330, 'Rules the code checks', ['excerpt must be verbatim', 'untrusted text is data', 'every claim is cited', 'nothing harmful', '', '→ stay in code'], { lh: 38 }),
+  B('mech', 'bx', 1010, 20, 470, 330, 'Mechanics', ['output field names', '$variables', 'flag lists', '', '', '→ stay in code'], { lh: 38 }),
+  B('skills', 'py', 20, 380, 470, 130, 'contoso-requirements-standard', ['functional leads · used by 01']),
+  B('skills', 'py', 515, 380, 470, 130, 'contoso-user-story-standard', ['product owners · used by 05']),
+  B('skills', 'py', 1010, 380, 470, 130, 'contoso-writing-style', ['PMO + architects · 08, 10–15']),
+].join('');
+
+const D_LOAD = [
+  B('af', 'pl', 20, 20, 700, 300, 'Agent Framework agent', ['skill names + descriptions', '  go in the system prompt', 'the MODEL calls load_skill(name)', '  when it decides it is relevant', '', '"progressive disclosure"'], { lh: 38 }),
+  B('mine', 'md', 780, 20, 700, 300, 'My LangGraph host', ['the GRAPH knows the step:', '  extract_section needs', '  contoso-requirements-standard', 'loads it directly, pinned v1', '', 'same Skills API'], { lh: 38 }),
+  B('gov', 'ac', 20, 350, 1460, 140, 'Governance', ['pinned versions · checked text (name, size, injection) · bundled fallback · every load audited with its version', 'a wording change → new prompt_version → evals compare before and after']),
+].join('');
+
+const HOSTS = [
+  // key, cls, title, skills lines, tags
+  ['chat', 'ac', 'contoso-knowledge', ['knowledge 00', 'freshness 20', 'inventory 22'], 'cosmos'],
+  ['chat', 'ac', 'contoso-design-author', ['brd 01 · fdd 02', 'tdd 04 · icd 11', 'schema_map 12'], ''],
+  ['chat', 'ac', 'contoso-backlog', ['stories 05', 'backlog 21', 'traceability 03'], ''],
+  ['chat', 'ac', 'contoso-delivery-planning', ['plan_qa 06', 'progress 07', 'variance 10', 'scenario 13', 'status_report 08', 'raid 09'], ''],
+  ['chat', 'ac', 'contoso-security', ['sctm 14', 'sdd 15'], 'cosmos'],
+  ['chat', 'ac', 'contoso-architecture', ['arch_review 17', 'adr 18', 'gate_pack 19'], 'cosmos'],
+  ['jobs', 'pl', 'contoso-knowledge-jobs', ['knowledge 00 · freshness 20', 'inventory 22'], 'cosmos'],
+  ['jobs', 'pl', 'contoso-planning-jobs', ['progress 07 · status_report 08', 'variance 10'], ''],
+  ['jobs', 'pl', 'contoso-evidence-job', ['evidence 16'], 'cosmos'],
+];
+function dAfter() {
+  const out = [T(20, 30, 'tag', 'CHAT · RESPONSES PROTOCOL'), T(20, 420, 'tag', 'JOBS · INVOCATIONS · TIMERS + WEBHOOKS')];
+  HOSTS.forEach(([k, cls, title, lines, tag], i) => {
+    const chat = k === 'chat'; const j = chat ? i : i - 6;
+    const w = chat ? 236 : 480; const x = 20 + j * (chat ? 245 : 493); const y = chat ? 46 : 436; const h = chat ? 250 : 200;
+    out.push(B(k, cls, x, y, w, h, title.replace('contoso-', ''), lines, { lh: 26 }));
+    if (tag) out.push(G('cosmos', `<rect x="${x + 16}" y="${y + h - 46}" width="166" height="30" rx="15" fill="rgba(245,158,11,.22)" stroke="#f5b041"/>${T(x + 99, y + h - 25, 's', '🔒 Cosmos · CMK', 'middle')}`));
+  });
+  out.push(G('twice', `<rect x="20" y="318" width="1460" height="56" rx="28" fill="rgba(124,92,255,.14)" stroke="#a48bff"/>${T(750, 353, 's', 'On two hosts (same code, different front door): knowledge · freshness · inventory · progress · variance · status_report', 'middle')}`));
+  out.push(G('count', `${T(1480, 30, 'tag', '23 AGENTS → 9 HOSTS · 23 SKILLS', 'end')}`));
+  return out.join('');
+}
+
+const D_HOSTGRAPH = (() => {
+  const runs = ['run_brd', 'run_fdd', 'run_tdd', 'run_icd', 'run_schema_map'];
+  const out = [G('route', '<circle cx="60" cy="270" r="34" fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.4)"/>' + T(60, 276, 's', 'START', 'middle')), A('route', 'M96 270 H176')];
+  out.push(B('route', 'md', 180, 210, 240, 120, 'route', ['conditional edge']));
+  runs.forEach((r, i) => { const y = 30 + i * 84; out.push(A('runs', `M422 270 C470 270 470 ${y + 32} 516 ${y + 32}`), B('runs', 'py', 520, y, 380, 66, r, [], { ty: 42 }), A('runs', `M902 ${y + 32} C960 ${y + 32} 960 270 1046 270`)); });
+  out.push(A('ask', 'M422 290 C470 290 470 482 516 482'), B('ask', 'hu', 520, 450, 380, 66, 'clarify', [], { ty: 42 }), A('ask', 'M902 482 C960 482 960 290 1046 290'));
+  out.push(G('end', '<circle cx="1084" cy="280" r="34" fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.4)"/>' + T(1084, 286, 's', 'END', 'middle')));
+  out.push(B('note', 'bx', 1160, 150, 320, 260, 'get_graph()', ['7 nodes · 13 edges', '1 conditional fan-out', 'each run_* node is a', 'whole use-case graph', '(16 nodes for brd)']));
+  return out.join('');
+})();
+
+const D_HOST = [
+  B('req', 'bx', 20, 150, 250, 210, 'Request', ['JSON or chat', 'trigger · API · person']),
+  A('req', 'M272 255 H316'),
+  B('route', 'md', 320, 40, 430, 430, 'route', ['1  "skill": "brd"', '2  old agent name', '    (old callers still work)', '3  "use_case": "01"', '4  plain chat → small model', '', 'not confident → ask'], { lh: 40 }),
+  A('run', 'M752 180 H806'),
+  B('run', 'py', 810, 40, 380, 330, 'run_<skill>', ['run_brd', 'run_fdd', 'run_tdd', 'run_icd', 'run_schema_map', 'original graph, unchanged', 'stateful subgraph'], { lh: 36 }),
+  A('ask', 'M752 420 H806'),
+  B('ask', 'hu', 810, 390, 380, 90, 'clarify', ['"which skill?" + the list']),
+  B('hitl', 'hu', 1215, 40, 285, 230, 'Approval', ['interrupt() in a skill', 'pauses the host', 'resumes on the', 'decision']),
+  B('scope', 'bx', 1215, 290, 285, 190, 'Per skill', ['phase', 'audit · approvals', 'carry the skill']),
+].join('');
+
+const D_SHARE = [
+  B('key', 'wa', 20, 20, 710, 300, 'Key by agent + skill, not agent', ['session ids · run ids', 'settings (e.g. may this skill write?)', 'audit records · traces', '', 'otherwise two skills on one host', '  mix their work together'], { lh: 36 }),
+  B('calls', 'pl', 770, 20, 710, 300, 'In return: calls become in-process', ['status report → schedule variance', 'gate pack → architecture review', '', 'no network hop', 'no extra endpoint or role'], { lh: 36 }),
+].join('');
+
+const D_CUTOVER = [
+  B('dep', 'pl', 20, 60, 340, 250, '1 · Deploy beside', ['9 hosts next to the 23', 'azd deploy: 9 minutes', 'Foundry User per host']),
+  A('cmp', 'M362 185 H396'),
+  B('cmp', 'py', 400, 60, 340, 250, '2 · Same case, old vs new', ['golden case → old agent', '  and → its new host', '22 / 22 same or better']),
+  A('rt', 'M742 185 H776'),
+  B('rt', 'wa', 780, 60, 340, 250, '3 · Red team the hosts', ['240 attacks, skill named', 'direct + inside documents', '0 succeeded']),
+  A('ret', 'M1122 185 H1156'),
+  B('ret', 'ac', 1160, 60, 320, 250, '4 · Retire', ['23 agents deleted', 'role assignments', '  47 → 10']),
+  G('roll', T(750, 370, 's', 'Rollback until step 4: the old agents kept running, and their deploy config is kept', 'middle')),
+].join('');
+
+const D_LOOP2 = [
+  T(20, 30, 'tag', 'BEFORE RELEASE · MY GATE'), T(780, 30, 'tag', 'AFTER RELEASE · FOUNDRY'),
+  '<path d="M760 14 V330" stroke="rgba(255,255,255,.3)" stroke-dasharray="6 6" fill="none"/>',
+  B('pre', 'py', 20, 46, 710, 136, 'Golden cases, exact checks', ['excerpts · precision/recall · computed numbers · thresholds + baseline']),
+  B('pre', 'py', 20, 194, 710, 136, 'Red team, local', ['direct + attacks hidden inside documents · through the host']),
+  B('post', 'pl', 780, 46, 700, 88, 'Hourly trace evaluation', ['built-in judges: task adherence · intent resolution · safety']),
+  B('custom', 'md', 780, 144, 700, 88, 'Custom evaluators', ['2 rubrics = the Foundry skill standards · 2 code checks from my gate']),
+  B('post', 'pl', 780, 242, 700, 88, 'Monitor · Traces', ['scores beside runs, tokens, cost · results on every trace']),
+  `<g data-k="loop"><path class="lp" d="M1482 188 H1494 V372 H6 V188 H16" marker-end="url(#MARKER)"/>${T(750, 400, 's', 'a low score → a new golden case → through the gate → redeploy', 'middle')}</g>`,
+].join('');
+
+// Same standard, told and scored: the Foundry skill feeds the prompt, the rubric restates it for the judge.
+const D_RUBRIC = [
+  B('std', 'py', 20, 70, 540, 260, 'contoso-requirements-standard', ['Foundry skill · SKILL.md · v1', 'owned by functional leads', '', 'contoso-writing-style', '  the same, for narrative output'], { lh: 34 }),
+  A('told', 'M562 160 C620 160 630 90 696 90', 'told', 600, 112),
+  B('told', 'md', 700, 20, 780, 140, 'Told: the agent\'s prompt', ['{{foundry_skill:…}} in extract_requirements.md', 'the model writes to the standard']),
+  A('scored', 'M562 240 C620 240 630 260 696 260', 'scored', 596, 236),
+  B('scored', 'pl', 700, 190, 780, 140, 'Scored: rubric evaluators (judge model)', ['contoso-requirements-quality · 8 weighted dimensions, 1–5', 'contoso-decision-support-writing · 7 dimensions', ], { lh: 28 }),
+  B('code', 'wa', 20, 370, 1460, 120, 'Rules the code checks → code-based evaluators (preview)', ['verbatim excerpts · no invented endpoints or status codes: the same checks as my gate, now on live traces, no judge']),
+].join('');
+
+const D_TAKES2 = [
+  B('a1', 'md', 20, 30, 700, 170, 'Deployment shape ≠ use-case list', ['decide it separately, on purpose']),
+  B('a2', 'ac', 780, 30, 700, 170, 'Group by trust boundary', ['identity · permissions · state · protocol']),
+  B('a3', 'py', 20, 230, 700, 170, 'Keep use cases traceable', ['one skill per use case, its own tests', 'business wording → Foundry skills + rubrics', 'checked rules → code'], { lh: 30 }),
+  B('a4', 'pl', 780, 230, 700, 170, 'Add, don\'t replace', ['your release gate + Foundry\'s monitoring', 'your own standards as its evaluators'], { lh: 30 }),
+].join('');
+
+// ------------------------------------------------------------------ real data for terminal slides
+function routingLines() {
+  const r = JSON.parse(fs.readFileSync(path.join(WORK, 'routing.json'), 'utf8'));
+  const skills = (r.vague.result.skills || []).map((s) => `${s.skill} (${s.use_case})`).join(' · ');
+  return [
+    ['cmd', `POST …/agents/${HOST}/endpoint/protocols/openai/responses`], ['dim', '  (no "skill" in the request: the router decides)'], ['dim', ''],
+    ['', '> "Turn this business requirements document into structured requirements."'], ['dim', '  + document_text: booking.md'],
+    ['hl', `< skill: ${r.plain.result.skill}   status: ${r.plain.result.status}   (${r.plain.seconds}s)`],
+    ['', `< ${r.plain.summary.slice(0, 92)}`], ['', `  ${r.plain.summary.slice(92, 190)}`], ['dim', ''],
+    ['', `> "${r.vague.request.message}"`],
+    ['hl', `< status: ${r.vague.result.status}`], ['', `< ${r.vague.summary}`], ['url', `  skills: ${skills}`],
+  ];
+}
+// From the cut-over comparison (evals/compare_live.py, 2026-11-21): host run vs old agent run on the same golden case.
+const CMP = [
+  ['00', 'knowledge', 'ok 0.33', 'ok 0.33'], ['01', 'brd', 'ok 1.00', 'ok 1.00'], ['02', 'fdd', 'ok 1.00', 'ok 0.67'], ['03', 'traceability', 'error 0.20', 'error 0.20'],
+  ['04', 'tdd', 'ok 0.50', 'ok 0.50'], ['05', 'stories', 'ok 1.00', 'ok 1.00'], ['06', 'plan_qa', 'ok 1.00', 'ok 1.00'], ['07', 'progress', 'ok 1.00', 'ok 1.00'],
+  ['08', 'status_report', 'ok 0.67', 'ok 0.67'], ['09', 'raid', 'ok 0.55', 'ok 0.55'], ['10', 'variance', 'ok 1.00', 'ok 1.00'], ['11', 'icd', 'ok 1.00 *', 'ok 1.00 *'],
+  ['12', 'schema_map', 'ok', 'ok'], ['13', 'scenario', 'ok 1.00', 'ok 1.00'], ['14', 'sctm', 'ok', 'ok'], ['15', 'sdd', 'ok', 'ok'],
+  ['16', 'evidence', 'same refusal', 'same refusal'], ['17', 'arch_review', 'ok', 'ok'], ['18', 'adr', 'ok', 'no status'], ['19', 'gate_pack', 'ok', 'ok'],
+  ['20', 'freshness', 'ok 0.25', 'ok 0.25'], ['21', 'backlog', 'ok 1.00', 'ok 1.00'], ['22', 'inventory', 'ok', 'ok'],
+];
+function compareLines() {
+  const cell = ([n, s, a, b]) => `${n} ${s.padEnd(13)} ${a.padEnd(12)} ${b.padEnd(12)}`;
+  const out = [['cmd', '$ python evals/compare_live.py      # same golden case → new host and old agent'], ['dim', ''],
+    ['dim', `UC skill          host         old agent    │ UC skill          host         old agent`]];
+  for (let i = 0; i < 12; i++) { const r = CMP[i]; const s = CMP[i + 12]; out.push(['', `${cell(r)}│ ${s ? cell(s) : ''}`]); }
+  out.push(['dim', ''], ['dim', '* paused for approval, approved, resumed'], ['dim', 'fdd: one run hit a content-filter 500; the old agent fails that case the same way'],
+    ['ok', '22/22 comparable skills: same or better · evidence (16): identical refusal']);
+  return out;
+}
+function deleteLines() {
+  let rows = [];
+  try { rows = fs.readFileSync(path.join(DEPLOY, 'delete-old-agents.log'), 'utf8').split(/\r?\n/).filter(Boolean); } catch { /* keep empty */ }
+  const names = rows.map((l) => (l.match(/Agent "([^"]+)" deleted/) || [])[1]).filter(Boolean);
+  const out = [['cmd', '$ azd ai agent delete <old agent> --force   # after its Foundry User role is removed'], ['dim', '']];
+  names.slice(0, 13).forEach((n) => out.push(['', `Agent "${n}" deleted.`]));
+  out.push(['dim', `… ${Math.max(0, names.length - 13)} more`], ['dim', ''], ['hl', 'Foundry User assignments on the project: 47 → 10'], ['ok', `${names.length} old agents deleted · 9 hosts remain`]);
+  return out;
+}
+
+// Real output from publishing and verifying the Foundry skills (2026-11-22), kept in .work-e2e5/foundry-skills.json.
+function proofLines() {
+  const r = JSON.parse(fs.readFileSync(path.join(WORK, 'foundry-skills.json'), 'utf8'));
+  return [
+    ['cmd', '$ python tools/publish_foundry_skills.py --endpoint <project> --apply'], ...r.publish.map((l) => ['', l]), ['dim', ''],
+    ['cmd', '$ azd ai skill list'], ...r.list.map((l) => ['', l]), ['dim', ''],
+    ['cmd', '# App Insights: <contoso_standard name=… version=…> in the prompts the hosts sent'],
+    ...r.traces.map(([host, name, v, n]) => ['hl', `${host.padEnd(26)} ${name.padEnd(30)} v${v}   ${n} spans`]),
+    ['ok', 'no bundled, no fallback warnings: every standard came from Foundry'],
+  ];
+}
+
+// ------------------------------------------------------------------ slides
+const R = (p) => path.join(REPO, p);
+function code(id, kicker, title, file, start, opts, lang, notes, shown) {
+  const g = grab(file, start, opts);
+  const text = g.text.replace(/darektomyn-\d+/g, 'foundry-project');
+  return { type: 'code', id, kicker, title, path: shown || path.relative(REPO, file).replace(/\\/g, '/'), repo: 'contoso-sdlc-agents', lang, first: g.first, text, notes };
+}
+const dg = (id, kicker, title, viewBox, svg) => ({ type: 'diagram', id, kicker, title, viewBox, svg });
+const SK = 'libs/contoso_agent_core/src/contoso_agent_core/skills.py';
+function slides() {
+  return [
+    { type: 'image', id: 's-before', kicker: 'Last time · built for real', title: '23 hosted agents, <em>one per use case</em>', file: path.join(FILM, 'foundry-inputs', 'agents-23-before.png') },
+    dg('d-before', 'What the code said', 'Twenty-three agents, <em>four patterns</em>', '0 0 1500 670', dBefore()),
+    dg('d-split', 'Agents and skills', 'An agent is a <em>who</em>. A skill is a <em>what</em>.', '0 0 1500 540', D_SPLIT),
+    dg('d-analogy', 'Agents and skills', 'Like one web app <em>with many routes</em>', '0 0 1500 540', D_ANALOGY),
+    dg('d-after', 'Agents and skills', '23 agents → <em>9 hosts</em>, grouped by trust boundary', '0 0 1500 650', dAfter()),
+    dg('d-persona', 'Agents and skills', 'Two meanings of <em>agent</em>', '0 0 1500 550', D_PERSONA),
+    dg('d-hostgraph', 'agents/design-author · get_graph()', 'A whole host: <em>route, then one skill</em>', '0 0 1500 540', D_HOSTGRAPH),
+    dg('d-host', 'Inside a host', 'Cheap routing first, <em>ask when unsure</em>', '0 0 1500 500', D_HOST),
+    code('s-route', 'contoso_agent_core · skills.py', 'The router: <em>explicit before clever</em>', R(SK), '    def route(self, state', { count: 22 }, 'python', [
+      '<code>resolve()</code>: skill → old agent name → use case', 'Structured follow-up: stays with the last skill', 'Plain chat: <code>SkillChoice</code> from a small model; low confidence → <b>clarify</b>']),
+    code('s-runner', 'contoso_agent_core · skills.py', 'Mount the skill\'s graph <em>unchanged</em>', R(SK), '        async def run_async(', { count: 24 }, 'python', [
+      '<code>skill_scope()</code>: the skill\'s own phase while it runs', '<code>spec.build_graph(True)</code>: a stateful subgraph', '<code>register_local_agent</code>: old agent-to-agent calls stay in-process']),
+    { type: 'term', id: 's-routing', kicker: 'Live · deployed host', title: 'The router, <em>in Foundry</em>', label: `responses · ${HOST}`, note: 'real replies, captured 2026-11-21', lines: routingLines() },
+    code('s-skill', 'skills/01 · skill.py', 'A use case becomes a skill: <em>~10 lines</em>', R('skills/01-business-requirements-refinement/src/contoso_brr/skill.py'), 'from contoso_agent_core.skills import SkillSpec', { count: 14 }, 'python', [
+      '<code>legacy_agent</code>: the hosted agent it used to be', '<code>build_graph</code>: the same graph, tests and evals as before']),
+    dg('d-share', 'Inside a host', 'What changes when <em>skills share an agent</em>', '0 0 1500 340', D_SHARE),
+    dg('d-cutover', 'Cutting over', 'Prove it, <em>then</em> retire', '0 0 1500 400', D_CUTOVER),
+    { type: 'term', id: 's-compare', kicker: 'Cut-over check · live', title: 'Old agent vs new host, <em>same case</em>', label: 'PowerShell · ircc-sdlc-agents', note: 'status and mean score per run', lines: compareLines() },
+    { type: 'term', id: 's-delete', kicker: 'Retirement · 2026-11-21', title: 'Only then: <em>delete the 23</em>', label: 'PowerShell · foundry-test-deploy/contoso', note: 'delete-old-agents.log', lines: deleteLines() },
+    dg('d-fvs', 'Foundry skills', 'Same word, <em>different thing</em>', '0 0 1500 550', D_FVS),
+    dg('d-move', 'Foundry skills', 'What moved, and <em>what stayed in code</em>', '0 0 1500 530', D_MOVE),
+    code('s-extract', 'skills/01 · prompts/extract_requirements.md', 'One line <em>pulls in the standard</em>', R('skills/01-business-requirements-refinement/src/contoso_brr/prompts/extract_requirements.md'), 'You are a senior business analyst', { count: 20 }, 'markdown', [
+      '<code>{{foundry_skill:…}}</code>: the business-owned standard', 'Then the rules the code checks: verbatim, untrusted data, harmful text', 'The wrapper says those rules win on conflict']),
+    code('s-skillmd', 'foundry_skills/contoso-requirements-standard/SKILL.md', 'The standard: <em>owned by functional leads</em>', R('libs/contoso_agent_core/src/contoso_agent_core/foundry_skills/contoso-requirements-standard/SKILL.md'), '---', { count: 24 }, 'markdown', [
+      'Front matter: <code>name</code> + <code>description</code> (unquoted)', 'Plain Markdown a functional lead can edit', 'Published as a Foundry skill, v1']),
+    dg('d-load', 'Foundry skills', "The model doesn't choose. <em>The graph does.</em>", '0 0 1500 510', D_LOAD),
+    code('s-fsk', 'contoso_agent_core · foundry_skills', 'Pinned, checked, <em>with a fallback</em>', R('libs/contoso_agent_core/src/contoso_agent_core/foundry_skills/__init__.py'), 'def get_skill(name: str)', { count: 30 }, 'python', [
+      'Pin: <code>CONTOSO_FOUNDRY_SKILL_VERSION_&lt;NAME&gt;</code>', 'Download fails or text fails checks → bundled copy, audited', 'Every load audited with its version']),
+    { type: 'term', id: 's-fproof', kicker: 'Live · 2026-11-22', title: 'Published, deployed, <em>proven in the traces</em>', label: 'PowerShell · ircc-sdlc-agents', note: 'publish tool · azd ai skill list · App Insights', lines: proofLines() },
+    dg('d-loop2', 'Continuous improvement', 'Same loop, <em>two halves</em>', '0 0 1500 420', D_LOOP2),
+    dg('d-rubric', 'Continuous improvement', 'Told and scored <em>by the same standard</em>', '0 0 1500 500', D_RUBRIC),
+    dg('d-takes2', 'What I\'d do differently', 'Your framework decides behaviour. <em>The deployment shape is a choice.</em>', '0 0 1500 420', D_TAKES2),
+  ];
+}
+
+// ------------------------------------------------------------------ cards
+const LOGO = E.LOGO;
+const TITLE = `<div class="logo rise">${LOGO}</div><h1 class="rise" style="animation-delay:.2s;font-size:66px">From <em>23 agents</em> to 9</h1><p class="rise" style="animation-delay:.45s">Agents, skills, Foundry skills, and the loop that keeps them honest · LangGraph on Microsoft Foundry</p>`;
+const END = `<div class="logo rise">${LOGO}</div><h1 class="rise" style="animation-delay:.2s;font-size:60px">23 use cases.<br><em>9 agents.</em> One loop.</h1><p class="rise" style="animation-delay:.45s">Synthetic data · fictional organization · a proof of concept</p>`;
+const chap = (t) => `<span>${t}</span>`;
+
+// ------------------------------------------------------------------ storyboard (same lines and diagrams as the film)
+const SCENES = [
+  ['Cold open', 'Title card, then the 23-agent portal list from the last video (image).', ['t1', 't2'], 's-before'],
+  ['What the code said', 'Diagram: 23 use cases, catalogue strip lights first, then each pattern group.', ['b1', 'b2', 'b3', 'b4'], 'd-before'],
+  ['Agents and skills', 'Diagram: agent = who (what each Foundry setting means), then "settings never say what it does", then skill = what with brd as the example.', ['s1', 's1b', 's2'], 'd-split'],
+  ['Agents and skills', 'Diagram: one web app with many routes ↔ one hosted agent with many skills; one real request flow; "before: 5 agents, 5 identities".', ['s3', 's3b'], 'd-analogy'],
+  ['Agents and skills', 'Diagram: the 9 hosts, chat row then jobs row, Cosmos tags, skills on two hosts. Then the rule of thumb.', ['s4', 's5', 's6', 's7'], 'd-after'],
+  ['Agents and skills', 'Diagram: two meanings of "agent": persona (Claude Code, GitHub Copilot; acts with your identity) vs deployed Foundry agent (its own identity); the 9 look like personas; in Foundry the count is a security decision.', ['p1', 'p2', 'p3'], 'd-persona'],
+  ['Inside a host', 'Graph slide (real get_graph() of contoso-design-author), then the routing diagram.', ['h1', 'h2', 'h3'], 'd-host'],
+  ['Inside a host', 'Code: skills.py route() and the stateful-subgraph runner.', ['h4'], 's-runner'],
+  ['Inside a host', 'Terminal: real replies from the deployed host (plain request → brd; vague → the list of skills).', ['h5'], 's-routing'],
+  ['Inside a host', 'Code: skills/01 skill.py (SkillSpec).', ['h6'], 's-skill'],
+  ['Shared agents', 'Diagram: what changes when skills share an agent: key by agent + skill; in return, calls between skills become in-process.', ['x1', 'x2'], 'd-share'],
+  ['Cutting over', 'Diagram: deploy beside → compare → red team → retire. Portal: Agents list with 9 hosted agents.', ['c1', 'c2'], 'd-cutover'],
+  ['Cutting over', 'Terminal: old vs new comparison (22/22).', ['c3'], 's-compare'],
+  ['Cutting over', 'Diagram: red team step lit (240 attacks, 0 succeeded).', ['c4'], 'd-cutover'],
+  ['Cutting over', 'Terminal: retirement log (azd ai agent delete), 47 → 10 role assignments.', ['c5'], 's-delete'],
+  ['Foundry skills', 'Diagram: Foundry skill vs my skill, side by side.', ['f1', 'f2'], 'd-fvs'],
+  ['Foundry skills', 'Diagram: three kinds of prompt text; standards → 3 Foundry skills with owners; checked rules and mechanics stay in code.', ['f3', 'f4', 'f5'], 'd-move'],
+  ['Foundry skills', 'Code: extract_requirements.md, the marker line, then the checked rules after it.', ['f6'], 's-extract'],
+  ['Foundry skills', 'Portal: Tools → Skills (preview): the three standards at v1; open contoso-requirements-standard. Then its SKILL.md.', ['f7'], 's-skillmd'],
+  ['Foundry skills', 'Diagram: Agent Framework load_skill (model decides) vs our graph (step decides); governance row.', ['f8'], 'd-load'],
+  ['Foundry skills', 'Code: foundry_skills get_skill(): pin, cache, fallback, audit.', ['f9'], 's-fsk'],
+  ['Foundry skills', 'Terminal: publish output, azd ai skill list, App Insights proof (each host sends its standard at v1).', ['f10'], 's-fproof'],
+  ['Continuous improvement', 'Diagram: two halves (my gate | Foundry built-ins). Portal: Agents → contoso-design-author → Evaluation tab (recurring runs), then Monitor tab (evaluation scores card).', ['i1', 'i2', 'i3', 'i4', 'i5'], 'd-loop2'],
+  ['Continuous improvement', 'Diagram: one standard, told and scored. The Foundry skill feeds the prompt; the rubric evaluators restate it for the judge; the checked rules become code-based evaluators.', ['r1'], 'd-rubric'],
+  ['Continuous improvement', 'Portal: Evaluations → Evaluator catalog. The five Contoso evaluators (Custom · Rubric / Code · Preview) above the Microsoft built-ins.', ['r2'], null],
+  ['Continuous improvement', 'Portal: open Contoso requirements quality. Rubric-based, score range 1–5, Dimensions (8) with weight bars: source_scope_kept 10, atomic_requirements 8, quality_flags_with_questions 8.', ['r3'], null],
+  ['Continuous improvement', 'Portal: back to the catalog, open Contoso verbatim excerpts (Code-based), then its Code tab: the Python grade() function.', ['r4'], null],
+  ['Continuous improvement', 'Portal: Evaluations → the hourly continuous-contoso-design-author run: columns for the built-ins, requirements_quality and decision_support_writing (Rubric), verbatim_excerpts and unsupported_identifiers. Open View details on a rubric: per-dimension score and reason.', ['r5'], null],
+  ['Continuous improvement', 'Portal: agent Traces tab → open a scored trace: invoke_agent contoso-design-author, the router and skill steps, then its Evaluations tab.', ['i8'], null],
+  ['Continuous improvement', 'Diagram: the loop lit (a low score → a new golden case → through the gate → redeploy).', ['i9'], 'd-loop2'],
+  ['What I\'d do differently', 'Diagram: four takeaways (business wording → Foundry skills + rubrics, checked rules → code; your standards as Foundry\'s evaluators). End card.', ['k1', 'k2', 'end'], 'd-takes2'],
+];
+function writeStoryboard(lengths) {
+  const all = Object.fromEntries(slides().map((s) => [s.id, s]));
+  const css = fs.readFileSync(path.join(FILM, 'code-deck.js'), 'utf8').match(/\.dg \.t \{[\s\S]*?\.dg svg\.dimming g\[data-k\]\.faded\.on \{[^}]*\}/)?.[0] || '';
+  const dgcss = `.dg { display:flex; justify-content:center; } .dg svg { width: 100%; height: auto; } .dg text { fill:#fff; font-family:'Segoe UI',sans-serif; white-space:pre; } .dg .t { font: 600 24px 'Segoe UI'; } .dg .m { font: 400 19px 'Segoe UI'; fill: rgba(255,255,255,.82); } ${css}`;
+  let t = 0; let total = 0;
+  for (const k of Object.keys(LINES)) total += lengths[k] || 0;
+  const rows = SCENES.map(([chapter, visual, keys, slide], i) => {
+    const s = slide ? all[slide] : null;
+    const dur = keys.reduce((a, k) => a + (lengths[k] || 0), 0);
+    const start = t; t += dur;
+    const pic = s && s.type === 'diagram' ? `<div class="dg"><svg viewBox="${s.viewBox}"><defs><marker id="ah-${i}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="rgba(255,255,255,.55)"/></marker></defs>${s.svg.replace(/MARKER/g, `ah-${i}`)}</svg></div>`
+      : s && s.type === 'term' ? `<pre class="term">${s.lines.map(([, l]) => esc(l)).join('\n')}</pre>`
+        : s && s.type === 'code' ? `<pre class="code">${esc(s.text.split('\n').slice(0, 16).join('\n'))}</pre><div class="path">${esc(s.path)}</div>` : '';
+    return `<section class="scene"><div class="meta"><span class="no">${i + 1}</span><span class="ch">${esc(chapter)}</span><span class="tm">${Math.floor(start / 60)}:${String(Math.round(start % 60)).padStart(2, '0')} · ${dur.toFixed(0)}s</span></div>
+      <div class="grid"><div class="vis"><p class="what">${esc(visual)}</p>${pic}</div>
+      <div class="vo">${keys.map((k) => `<p><b>${k}</b> ${esc(LINES[k][1])}</p>`).join('')}</div></div></section>`;
+  }).join('\n');
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>From 23 agents to 9: storyboard</title>
+<style>
+:root { --bg:#0e0b1d; --card:#17132c; --ink:#ece9f7; --mut:rgba(236,233,247,.66); --acc:#ffb08f; --vio:#b8a6ff; }
+body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 'Segoe UI',system-ui,sans-serif; }
+main { max-width:1280px; margin:0 auto; padding:40px 24px 80px; }
+h1 { font:500 40px/1.15 Georgia,serif; margin:0 0 6px; } h1 em { font-style:normal; color:var(--acc); }
+.sub { color:var(--mut); margin:0 0 26px; } .facts { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:30px; }
+.facts span { background:var(--card); border:1px solid rgba(255,255,255,.12); border-radius:999px; padding:6px 14px; font-size:14px; }
+.scene { background:var(--card); border:1px solid rgba(255,255,255,.1); border-radius:16px; padding:18px 20px; margin:0 0 18px; }
+.meta { display:flex; gap:12px; align-items:center; margin-bottom:10px; } .no { background:var(--acc); color:#1a1030; font-weight:700; border-radius:50%; width:28px; height:28px; display:grid; place-items:center; }
+.ch { font-weight:600; letter-spacing:.06em; text-transform:uppercase; font-size:13px; color:var(--acc); } .tm { margin-left:auto; color:var(--mut); font-size:13px; }
+.grid { display:grid; grid-template-columns: 1.35fr 1fr; gap:22px; } @media (max-width:900px){ .grid { grid-template-columns:1fr; } }
+.what { margin:0 0 10px; color:var(--mut); font-size:14px; } .vo p { margin:0 0 10px; } .vo b { color:var(--vio); font:600 12px Consolas,monospace; margin-right:6px; }
+pre { background:#0d1117; border:1px solid rgba(255,255,255,.1); border-radius:10px; padding:12px; overflow:auto; font:12.5px/1.5 Consolas,monospace; color:#d6d3e6; max-height:340px; }
+.path { color:var(--mut); font-size:12px; margin-top:4px; } .dg { background:#120e26; border-radius:10px; padding:10px; }
+${dgcss}
+</style></head><body><main>
+<h1>From <em>23 agents</em> to 9</h1>
+<p class="sub">Storyboard · follow-on to "Microsoft's agent platform, built for real" · narration ${Math.floor(total / 60)} min ${Math.round(total % 60)} s · internal technical audience · generated by film/make_e2e5.js --storyboard</p>
+<div class="facts"><span>23 use cases → 23 skills</span><span>23 hosted agents → 9 (6 chat · 3 jobs)</span><span>old vs new: 22/22 same or better</span><span>red team through hosts: 0/240</span><span>role assignments 47 → 10</span><span>3 standards → Foundry skills, live at v1</span><span>2 rubric + 2 code-based evaluators, hourly on live traces</span></div>
+${rows}
+</main></body></html>`;
+  const out = path.join(INFO, 'videos', `${NAME}-storyboard.html`);
+  fs.writeFileSync(out, html, 'utf8');
+  return out;
+}
+
+// ------------------------------------------------------------------ the film
+async function runFilm(d, cap, pages) {
+  const { deck, portal } = pages;
+  let label = null;
+  const applyLabel = async (page) => { await page.evaluate((h) => window.Film && window.Film.badge(h), label).catch(() => {}); };
+  const use = async (page) => { d.page = page; await applyLabel(page); await cap.show(page); };
+  const setLabel = async (html) => { label = html; await applyLabel(d.page); };
+  const dk = (fn, ...a) => d.js(([f, x]) => window.Deck[f](...x), [fn, a]);
+  const show = async (id) => { await dk('show', id); d.log('whoosh', { soft: true }); await d.wait(0.7); };
+  const notes = async (id, n, gap) => { for (let i = 1; i <= n; i++) { await dk('note', id, i); await d.wait(gap); } };
+  const focus = async (id, from, to, hold = 0.6) => { await dk('focus', id, from, to); await d.wait(0.9); await d.wait(hold); };
+  const part = async (id, keys, hold = 0) => { await dk('part', id, keys); d.log('whoosh', { soft: true }); await d.wait(hold); };
+  const onDeck = async (id) => { d.page = deck; await show(id); await use(deck); };
+  const term = async (id, n) => { for (let i = 1; i <= n; i++) { await dk('term', id, i); d.log('key'); await d.wait(Math.min(0.5, Math.max(0.1, (d.voiceLeft() - 1.5) / (n - i + 1)))); } };
+  const cardOn = async (html, hold = 0) => {
+    d.page = deck;
+    await deck.evaluate(([h, ms]) => { window.Film.card(h, { fadeMs: ms }); const c = document.getElementById('film-card'); void c.offsetWidth; c.classList.add('show'); }, [html, 600]);
+    d.log('whoosh'); await applyLabel(deck); await d.wait(hold);
+  };
+
+  // portal moves
+  const ready = async (text, ms = 2000) => { await portal.getByText(text, { exact: false }).first().waitFor({ state: 'visible', timeout: 90000 }); await E.settle(portal, ms); await E.closeDialogs(portal); await applyLabel(portal); };
+  const tab = async (name, readyText) => {
+    const t = portal.getByRole('tab', { name, exact: true }).first();
+    for (let k = 0; k < 4; k++) {
+      await d.click(t, k ? 500 : 700, 0.4);
+      try { await portal.getByText(readyText, { exact: false }).first().waitFor({ state: 'visible', timeout: 10000 }); break; } catch { console.log('tab retry', name, k + 1); await E.settle(portal, 1500); }
+    }
+    await ready(readyText, 1500);
+  };
+  const openHost = async () => {
+    await d.click(portal.getByRole('link', { name: HOST }).first(), 800, 0.6);
+    await portal.getByRole('tab', { name: 'Details', exact: true }).first().waitFor({ state: 'visible', timeout: 90000 });
+    await E.settle(portal, 2500); await applyLabel(portal);
+  };
+  const hoverAll = async (texts, ms = 650, exact = false) => { for (const t of texts) { const l = portal.getByText(t, { exact }).first(); if (await l.count().catch(() => 0)) await d.hover(l, ms); } };
+  // Left-nav move on camera; falls back to a direct load if the nav item isn't there.
+  const nav = async (label, url, readyText) => {
+    const link = portal.locator(`a[aria-label="${label}"]:visible`).first();
+    if (await link.count().catch(() => 0)) await d.click(link, 750, 0.4);
+    else await E.gotoPortal(portal, E.nextgen(url), readyText);
+    await ready(readyText, 1500);
+  };
+  // On an evaluation run's results: open "View details" in the requirements_quality column of the first scored row.
+  const openRubricDetails = async () => {
+    try {
+      const heads = portal.getByText('requirements_quality', { exact: true });
+      let head = null; let hy = -1;
+      for (let i = 0; i < await heads.count(); i++) { const b = await heads.nth(i).boundingBox(); if (b && b.y > hy) { hy = b.y; head = heads.nth(i); } }
+      if (!head) { console.log('no requirements_quality column'); return; }
+      await head.scrollIntoViewIfNeeded(); await E.settle(portal, 600);
+      const hb = await head.boundingBox();
+      // The first row that has links (the overall-metrics table also uses role=row).
+      const links = portal.locator('[role=row]').filter({ has: portal.getByText('View details', { exact: true }) }).first().getByText('View details', { exact: true });
+      let best = null; let bd = 1e9;
+      for (let i = 0; i < await links.count(); i++) { const b = await links.nth(i).boundingBox(); if (b && b.x >= hb.x - 4 && b.x - hb.x < bd) { bd = b.x - hb.x; best = links.nth(i); } }
+      if (!best) { console.log('no rubric details link'); return; }
+      await d.click(best, 800, 0.6);
+      const dlg = portal.locator('[role=dialog]').last();
+      await dlg.getByText('Weight: 10', { exact: true }).first().waitFor({ state: 'visible', timeout: 30000 }).catch(() => console.log('no dimension reasons'));
+      await E.settle(portal, 1200); await applyLabel(portal);
+      const each = Math.max(800, (d.voiceLeft() - 1.5) * 250);
+      for (const l of [dlg.getByText(/^(Pass|Fail)$/).first(), dlg.getByText('Weight: 10', { exact: true }).first(), dlg.getByText('Weight: 8', { exact: true }).first(), dlg.getByText('Reason', { exact: true }).first()]) if (await l.count().catch(() => 0)) await d.hover(l, each).catch(() => {});
+    } catch (e) { console.log('rubric details', e.message); }
+  };
+
+  // ---------------- 1. Cold open
+  await cardOn(TITLE, 1.4);
+  await d.js(() => window.Film.hideCursor(true));
+  await show('s-before'); await d.uncard(800);
+  await setLabel(chap('Twenty-three agents'));
+  await d.say('t1'); await d.waitVoice();
+  await d.say('t2'); await d.waitVoice(0.4);
+
+  // ---------------- 2. What the code said
+  await setLabel(chap('What the code said'));
+  await show('d-before'); await part('d-before', 'all', 0.2);
+  await d.say('b1'); await d.waitVoice();
+  await part('d-before', ['cat']); await d.say('b2'); await d.waitVoice();
+  await part('d-before', ['doc']); await d.say('b3'); await d.waitVoice();
+  await part('d-before', ['qa']); await d.say('b4');
+  await d.wait(Math.max(1.6, d.voiceLeft() * 0.4)); await part('d-before', ['job']);
+  await d.wait(Math.max(1.4, d.voiceLeft() - 3.4)); await part('d-before', ['tool']);
+  await d.waitVoice(); await part('d-before', 'all', 0.3);
+
+  // ---------------- 3. Agents and skills
+  await setLabel(chap('Agents and skills'));
+  await show('d-split'); await part('d-split', ['who'], 0.2);
+  await d.say('s1'); await d.waitVoice();
+  await part('d-split', ['who', 'none']); await d.say('s1b'); await d.waitVoice();
+  await part('d-split', ['what', 'mount']); await d.say('s2'); await d.waitVoice(); await part('d-split', 'all', 0.2);
+  await show('d-analogy'); await part('d-analogy', ['app'], 0.2);
+  await d.say('s3');
+  await d.wait(Math.max(1.5, d.voiceLeft() - 5.0)); await part('d-analogy', ['app', 'same', 'host']);
+  await d.wait(Math.max(1.2, d.voiceLeft() - 2.2)); await part('d-analogy', ['host', 'flow']);
+  await d.waitVoice();
+  await part('d-analogy', ['before']); await d.say('s3b'); await d.waitVoice(); await part('d-analogy', 'all', 0.2);
+  await show('d-after'); await part('d-after', ['count'], 0.2);
+  await d.say('s4');
+  await d.wait(Math.max(1.5, d.voiceLeft() - 4.2)); await part('d-after', ['chat', 'count']);
+  await d.wait(Math.max(1.2, d.voiceLeft() - 2.0)); await part('d-after', ['jobs', 'count']);
+  await d.waitVoice();
+  await part('d-after', ['cosmos']); await d.say('s5'); await d.waitVoice();
+  await part('d-after', ['twice']); await d.say('s6'); await d.waitVoice(); await part('d-after', 'all', 0.3);
+  await d.say('s7'); await d.waitVoice(0.4);
+  await show('d-persona'); await part('d-persona', ['persona'], 0.2);
+  await d.say('p1');
+  await d.wait(Math.max(1.5, d.voiceLeft() - 6.0)); await part('d-persona', ['persona', 'platform']);
+  await d.waitVoice();
+  await part('d-persona', ['persona', 'match']); await d.say('p2'); await d.waitVoice();
+  await part('d-persona', ['platform', 'diff']); await d.say('p3'); await d.waitVoice(); await part('d-persona', 'all', 0.3);
+
+  // ---------------- 4. Inside a host
+  await setLabel(chap('Inside a host'));
+  await show('d-hostgraph'); await part('d-hostgraph', 'all', 0.2);
+  await d.say('h1');
+  await d.wait(Math.max(1.2, d.voiceLeft() * 0.25)); await part('d-hostgraph', ['route']);
+  await d.wait(Math.max(1.2, d.voiceLeft() * 0.45)); await part('d-hostgraph', ['runs', 'note']);
+  await d.wait(Math.max(0.8, d.voiceLeft() - 1.6)); await part('d-hostgraph', ['ask']);
+  await d.waitVoice(); await part('d-hostgraph', 'all', 0.2);
+  await show('d-host'); await part('d-host', ['req', 'route'], 0.2);
+  await d.say('h2'); await d.waitVoice();
+  await part('d-host', ['route', 'ask']); await d.say('h3'); await d.waitVoice();
+  await show('s-route'); await d.js(() => window.Film.hideCursor(false));
+  await focus('s-route', 'chosen = self.resolve(payload)', 'chosen = self.resolve(payload)', 0.2); await notes('s-route', 1, 0.2);
+  await focus('s-route', 'if chosen is None and previous', 'chosen, how = previous', 0.2); await notes('s-route', 2, 0.2);
+  await focus('s-route', 'choice = self.classify(', 'chosen = choice.skill', 0.4); await notes('s-route', 3, 0.4);
+  await dk('focus', 's-route', null);
+  await onDeck('d-host'); await part('d-host', ['run', 'hitl'], 0.2);
+  await d.say('h4');
+  await d.wait(Math.max(1.5, d.voiceLeft() * 0.5));
+  await show('s-runner');
+  await focus('s-runner', 'with skill_scope(host, spec):', 'out = await subgraph.ainvoke', 0.2); await notes('s-runner', 1, 0.2);
+  await d.wait(Math.max(0.6, d.voiceLeft() - 3.0));
+  await focus('s-runner', 'self._runner(spec, spec.build_graph(True))', 'register_local_agent(spec.legacy_agent', 0.2); await notes('s-runner', 3, 0.2);
+  await d.waitVoice(); await dk('focus', 's-runner', null);
+  await show('s-routing'); await dk('term', 's-routing', 0);
+  await d.say('h5');
+  const nR = routingLines().length; await term('s-routing', nR);
+  await d.waitVoice(0.6);
+  await show('s-skill');
+  await d.say('h6');
+  await focus('s-skill', 'SKILL = SkillSpec(', 'phase=', 0.3); await notes('s-skill', 2, 0.6);
+  await d.waitVoice(); await dk('focus', 's-skill', null);
+
+  // ---------------- 5. What changes when skills share an agent
+  await setLabel(chap('Skills sharing an agent'));
+  await d.js(() => window.Film.hideCursor(true));
+  await show('d-share'); await part('d-share', ['key'], 0.2);
+  await d.say('x1'); await d.waitVoice();
+  await part('d-share', ['calls']); await d.say('x2'); await d.waitVoice(); await part('d-share', 'all', 0.3);
+
+  // ---------------- 6. Cutting over
+  await setLabel(chap('Cutting over'));
+  await show('d-cutover'); await part('d-cutover', ['dep'], 0.2);
+  await d.say('c1'); await d.waitVoice();
+  await use(portal);
+  await d.say('c2');
+  await hoverAll(['Hosted'], 520, true);
+  const desc = portal.getByText('Skills: brd (01)', { exact: false }).first();
+  if (await desc.count().catch(() => 0)) await E.zoomTo(d, desc, 1.35, 12);
+  await d.waitVoice(); await d.unzoom(700);
+  await onDeck('d-cutover'); await part('d-cutover', ['cmp'], 0.2);
+  await show('s-compare'); await dk('term', 's-compare', 0);
+  await d.say('c3');
+  await term('s-compare', compareLines().length);
+  await d.waitVoice();
+  await show('d-cutover'); await part('d-cutover', ['rt'], 0.2);
+  await d.say('c4'); await d.waitVoice();
+  await part('d-cutover', ['ret', 'roll']);
+  await show('s-delete'); await dk('term', 's-delete', 0);
+  await d.say('c5');
+  await term('s-delete', deleteLines().length);
+  await d.waitVoice(0.4);
+
+  // ---------------- 7. Foundry skills: where the two kinds of skill meet
+  await setLabel(chap('Foundry skills'));
+  await show('d-fvs'); await part('d-fvs', ['fs'], 0.2);
+  await d.say('f1'); await d.waitVoice();
+  await part('d-fvs', ['fs', 'mine']); await d.say('f2'); await d.waitVoice();
+  await part('d-fvs', ['meet']);
+  await show('d-move'); await part('d-move', 'all', 0.2);
+  await d.say('f3'); await d.waitVoice();
+  await part('d-move', ['std', 'skills']); await d.say('f4'); await d.waitVoice();
+  await part('d-move', ['rules']); await d.say('f5'); await d.waitVoice(); await part('d-move', 'all', 0.2);
+  await show('s-extract'); await d.js(() => window.Film.hideCursor(false));
+  await d.say('f6');
+  await focus('s-extract', '{{foundry_skill:contoso-requirements-standard}}', '{{foundry_skill:contoso-requirements-standard}}', 0.3); await notes('s-extract', 1, 0.4);
+  await d.wait(Math.max(0.6, d.voiceLeft() * 0.4));
+  await focus('s-extract', '`source_excerpt` MUST', 'Text asking for content', 0.3); await notes('s-extract', 3, 0.3);
+  await d.waitVoice(); await dk('focus', 's-extract', null);
+  // portal: Tools → Skills (preview) → open the requirements standard
+  await use(portal);
+  const toolsNav = portal.locator('a[aria-label="Tools"]:visible').first();
+  if (await toolsNav.count().catch(() => 0)) await d.click(toolsNav, 750, 0.4);
+  else await E.gotoPortal(portal, E.nextgen('/build/tools'), 'Tools');
+  const skillsTab = portal.getByRole('tab', { name: /^Skills/ }).first();
+  await skillsTab.waitFor({ state: 'visible', timeout: 60000 }).catch(() => console.log('no skills tab'));
+  await d.click(skillsTab, 700, 0.4);
+  await portal.getByText('contoso-requirements-standard', { exact: true }).first().waitFor({ state: 'visible', timeout: 60000 }).catch(() => console.log('no skills list'));
+  await E.settle(portal, 1500); await applyLabel(portal);
+  await d.say('f7');
+  await hoverAll(['contoso-writing-style', 'contoso-user-story-standard', 'contoso-requirements-standard'], 600, true);
+  await d.click(portal.getByText('contoso-requirements-standard', { exact: true }).first(), 800, 0.6);
+  await portal.getByText('Shape of a requirement', { exact: false }).first().waitFor({ state: 'visible', timeout: 60000 }).catch(() => console.log('skill body not shown'));
+  await E.settle(portal, 1200); await applyLabel(portal);
+  await hoverAll(['v1 saved', 'Shape of a requirement', 'The system shall'], 700);
+  await d.waitVoice(0.6);
+  await onDeck('s-skillmd');
+  await focus('s-skillmd', '## Shape of a requirement', 'Background, narrative', 0.4); await notes('s-skillmd', 3, 0.6);
+  await d.wait(1.2); await dk('focus', 's-skillmd', null);
+  await d.js(() => window.Film.hideCursor(true));
+  await show('d-load'); await part('d-load', ['af'], 0.2);
+  await d.say('f8');
+  await d.wait(Math.max(1.5, d.voiceLeft() * 0.5)); await part('d-load', ['mine']);
+  await d.waitVoice();
+  await part('d-load', ['gov']);
+  await show('s-fsk'); await d.js(() => window.Film.hideCursor(false));
+  await d.say('f9');
+  await focus('s-fsk', 'key = f"{mode}:{name}', 'return hit[1]', 0.3); await notes('s-fsk', 1, 0.4);
+  await d.wait(Math.max(0.6, d.voiceLeft() * 0.4));
+  await focus('s-fsk', 'except Exception as e:', '_audit("foundry_skill_fallback"', 0.3); await notes('s-fsk', 3, 0.3);
+  await d.waitVoice(); await dk('focus', 's-fsk', null);
+  await d.js(() => window.Film.hideCursor(true));
+  await show('s-fproof'); await dk('term', 's-fproof', 0);
+  await d.say('f10');
+  await term('s-fproof', proofLines().length);
+  await d.waitVoice(0.6);
+
+  // ---------------- 8. Continuous improvement: my gate, Foundry's hourly evaluation, and my own evaluators in it
+  await setLabel(chap('Continuous improvement'));
+  await d.js(() => window.Film.hideCursor(true));
+  await show('d-loop2'); await part('d-loop2', 'all', 0.2);
+  await d.say('i1'); await d.waitVoice();
+  await part('d-loop2', ['pre']); await d.say('i2'); await d.waitVoice();
+  await part('d-loop2', ['post']); await d.say('i3'); await d.waitVoice();
+  // portal: Agents → the host → Evaluation tab → Monitor tab
+  await use(portal);
+  await d.say('i4');
+  await nav('Agents', '/build/agents', HOST);
+  await openHost();
+  await tab('Evaluation', 'Automatic Evaluation');
+  await hoverAll(['continuous-contoso', 'Recurring', 'Completed'], 650);
+  await d.waitVoice();
+  // The Monitor tab fills its Evaluations card a few seconds after the page: wait for the scores, then speak.
+  await tab('Monitor', 'Operational metrics');
+  const details = portal.getByText('View details', { exact: true }).first();
+  await details.waitFor({ state: 'visible', timeout: 90000 }).catch(() => console.log('no eval scores'));
+  await E.settle(portal, 1200);
+  await d.say('i5');
+  // The card's box, from its "Evaluations" heading (not the left-nav item of the same name) down to "View details".
+  // Metric names on the card vary by run, so neither is used as an anchor.
+  try {
+    const db = await details.boundingBox();
+    const heads = portal.getByText('Evaluations', { exact: true });
+    let hb = null;
+    for (let i = 0; i < await heads.count(); i++) { const b = await heads.nth(i).boundingBox(); if (b && b.x > 300 && b.y < db.y && (!hb || b.y > hb.y)) hb = b; }
+    if (hb) await E.zoomTo(d, { x: hb.x - 18, y: hb.y - 18, width: 520, height: db.y + db.height - hb.y + 36 }, 1.6, 6);
+    else console.log('eval zoom: no heading');
+  } catch (e) { console.log('eval zoom', e.message); }
+  await d.hover(details, 700).catch(() => {});
+  await d.waitVoice(); await d.unzoom(700);
+  // deck: one standard, told and scored
+  await onDeck('d-loop2'); await part('d-loop2', ['custom'], 0.8);
+  await show('d-rubric'); await part('d-rubric', ['std'], 0.2);
+  await d.say('r1');
+  await d.wait(Math.max(1.5, d.voiceLeft() * 0.2)); await part('d-rubric', ['std', 'told']);
+  await d.wait(Math.max(1.5, d.voiceLeft() * 0.35)); await part('d-rubric', ['std', 'scored']);
+  await d.wait(Math.max(1.0, d.voiceLeft() - 4.5)); await part('d-rubric', ['code']);
+  await d.waitVoice(); await part('d-rubric', 'all', 0.3);
+  // portal: Evaluations → Evaluator catalog
+  await use(portal);
+  await nav('Evaluations', '/build/evaluations', 'Evaluator catalog');
+  await tab('Evaluator catalog', 'Contoso requirements quality');
+  await d.say('r2');
+  await hoverAll(CUSTOM_EVALS, 520, true);
+  await hoverAll(['Task-Adherence-Evaluator-(Preview)'], 700, true);
+  await d.waitVoice();
+  // the rubric: weighted dimensions
+  await d.click(portal.getByText('Contoso requirements quality', { exact: true }).first(), 800, 0.6);
+  await ready('Dimensions (8)', 1500);
+  await d.say('r3');
+  await hoverAll(['Rubric-based'], 650, true);
+  try {
+    const hb = await portal.getByText('Dimensions (8)', { exact: true }).first().boundingBox();
+    if (hb) await E.zoomTo(d, { x: hb.x - 16, y: hb.y - 16, width: 1060, height: 560 }, 1.45, 6);
+  } catch (e) { console.log('dims zoom', e.message); }
+  await hoverAll(['source_scope_kept', 'atomic_requirements', 'quality_flags_with_questions'], Math.max(900, (d.voiceLeft() - 2) * 330), true);
+  await d.waitVoice(); await d.unzoom(700);
+  // the code-based evaluator and its Python
+  await portal.goBack().catch(() => {});
+  await ready('Contoso verbatim excerpts', 1200);
+  await d.say('r4');
+  await d.click(portal.getByText('Contoso verbatim excerpts', { exact: true }).first(), 800, 0.6);
+  await ready('Code-based', 1200);
+  await hoverAll(['Code-based'], 600, true);
+  await tab('Code', CODE_READY);
+  await portal.mouse.wheel(0, 420); await E.settle(portal, 700);
+  await hoverAll(['Production twin of the', 'standard library only', 'def _squash'], Math.max(800, (d.voiceLeft() - 1) * 330));
+  await d.waitVoice(0.4);
+  // the hourly run: built-ins, rubrics and code evaluators side by side, then one rubric's per-dimension reasons
+  await nav('Evaluations', '/build/evaluations', HOURLY_EVAL);
+  await tab('Evaluations', HOURLY_EVAL);
+  await d.click(portal.getByText(HOURLY_EVAL, { exact: true }).first(), 800, 0.6);
+  await ready('Evaluation runs', 1000);
+  await portal.locator('[role=row] a').first().waitFor({ state: 'visible', timeout: 60000 }).catch(() => console.log('no run rows'));
+  await E.settle(portal, 1200);
+  await d.click(portal.locator('[role=row] a').first(), 800, 0.6);
+  await ready('requirements_quality', 1000);
+  await portal.getByText('View details', { exact: true }).first().waitFor({ state: 'visible', timeout: 60000 }).catch(() => console.log('no result rows'));
+  await E.settle(portal, 1500);
+  await d.say('r5');
+  await hoverAll(['requirements_quality', 'decision_support_writing', 'verbatim_excerpts', 'unsupported_identifiers'], 600, true);
+  await openRubricDetails();
+  await d.waitVoice(0.6);
+  await portal.keyboard.press('Escape').catch(() => {});
+  // Open a trace that the hourly evaluation has scored, then speak.
+  await nav('Agents', '/build/agents', HOST);
+  await openHost();
+  await tab('Traces', 'Trace view');
+  const scored = portal.locator('[role=row]').filter({ hasText: 'requirements_quality' }).first();
+  await scored.waitFor({ state: 'visible', timeout: 90000 }).catch(() => console.log('no scored trace row'));
+  await E.settle(portal, 1000);
+  const row = (await scored.count().catch(() => 0)) ? scored : portal.locator('[role=row]').nth(1);
+  await d.click(row.locator('button').first(), 800, 0.8);
+  await portal.getByText('Trajectories', { exact: true }).first().waitFor({ timeout: 60000 }).catch(() => {});
+  await portal.getByText(`invoke_agent ${HOST}`, { exact: false }).first().waitFor({ timeout: 60000 }).catch(() => {});
+  await E.settle(portal, 1500); await applyLabel(portal);
+  await d.say('i8');
+  await hoverAll([`invoke_agent ${HOST}`, '_after_route', 'chat gpt-5-mini'], 800);
+  const evTab = portal.locator('[role=dialog]').getByRole('tab', { name: /^Evaluations/ }).first();
+  if (await evTab.count().catch(() => 0)) { await d.click(evTab, 700, 0.8); await E.settle(portal, 1200); await hoverAll(['requirements_quality', 'verbatim_excerpts'], 700); }
+  await d.waitVoice(0.8);
+  await portal.keyboard.press('Escape').catch(() => {});
+  await onDeck('d-loop2'); await part('d-loop2', ['loop'], 0.2);
+  await d.say('i9'); await d.waitVoice(); await part('d-loop2', 'all', 0.3);
+
+  // ---------------- 9. What I'd do differently
+  await setLabel(chap('What I\'d do differently'));
+  await show('d-takes2'); await part('d-takes2', ['a1', 'a2'], 0.2);
+  await d.say('k1');
+  await d.wait(Math.max(1.5, d.voiceLeft() * 0.5)); await part('d-takes2', ['a2']);
+  await d.waitVoice();
+  await part('d-takes2', ['a3']); await d.say('k2');
+  await d.wait(Math.max(1.5, d.voiceLeft() * 0.45)); await part('d-takes2', ['a4']);
+  await d.waitVoice(); await part('d-takes2', 'all', 0.6);
+  await setLabel(null);
+  await cardOn(END, 0.3);
+  await d.say('end'); await d.waitVoice(1.6);
+}
+
+// ------------------------------------------------------------------ main
+async function main() {
+  fs.mkdirSync(WORK, { recursive: true });
+  const deckFile = () => buildDeck({ slides: slides(), hljsDir: path.join(ROOT, 'node_modules', '@highlightjs', 'cdn-assets'), out: path.join(WORK, 'deck.html') });
+  if (args.has('--deck')) { console.log('wrote', deckFile()); return; }
+  const kit = createKit({ name: NAME, lines: LINES, vo: path.join(FILM, 'vo-e2e5'), work: WORK, out: path.join(FILM, 'out'), musicGain: 0.4 });
+  const lengths = kit.makeVoice();
+  if (args.has('--voice')) { let total = 0; for (const [k, v] of Object.entries(lengths)) { total += v; console.log(k.padEnd(6), `${v.toFixed(1)}s`); } console.log(`total narration ${total.toFixed(0)}s`); return; }
+  if (args.has('--storyboard')) { console.log('wrote', writeStoryboard(lengths)); return; }
+  if (args.has('--remix')) {
+    let { events, frame_list } = JSON.parse(fs.readFileSync(path.join(WORK, 'events.json'), 'utf8'));
+    const t0 = events.find((e) => e.kind === 'voice' && e.id === 't1').t - 1.5;
+    events = events.filter((e) => e.t >= t0); frame_list = frame_list.filter(([, t]) => t >= t0);
+    const res = kit.finish(frame_list, events, { thumbAt: 0.33 });
+    if (res?.srt) fs.writeFileSync(res.srt.replace(/\.srt$/, '.vtt'), `WEBVTT\n\n${fs.readFileSync(res.srt, 'utf8').replace(/(\d\d:\d\d:\d\d),(\d\d\d)/g, '$1.$2')}`, 'utf8');
+    return;
+  }
+  const deckPath = deckFile();
+  let ctx;
+  try {
+    ctx = await E.edge(false);
+    await ctx.addInitScript({ path: path.join(FILM, 'overlay.js') });
+    await ctx.addInitScript({ content: E.MASK_JS });
+    const deck = await ctx.newPage();
+    const portal = await ctx.newPage(); portal.setDefaultNavigationTimeout(120000);
+    const errors = [];
+    deck.on('pageerror', (e) => errors.push(String(e)));
+    await deck.goto(`file:///${deckPath.replace(/\\/g, '/')}`);
+    await deck.waitForFunction(() => !!window.Deck && !!window.Film);
+    console.log('loading portal');
+    await E.gotoPortal(portal, E.nextgen('/build/agents'), HOST);
+    console.log('portal ready');
+    const cap = new E.MultiCapture();
+    for (const p of [deck, portal]) await cap.add(p);
+    await cap.show(deck);
+    const d = new kit.Director(deck, lengths);
+    const t0 = Date.now();
+    try { await runFilm(d, cap, { deck, portal }); } catch (e) { await d.page.screenshot({ path: path.join(WORK, 'failed.png') }).catch(() => {}); throw e; }
+    await cap.stop();
+    console.log('page errors', errors, 'took', Math.round((Date.now() - t0) / 1000), 's');
+    const res = kit.finish(cap.frames, d.events, { stills: args.has('--stills'), thumbAt: 0.33 });
+    if (res?.srt) fs.writeFileSync(res.srt.replace(/\.srt$/, '.vtt'), `WEBVTT\n\n${fs.readFileSync(res.srt, 'utf8').replace(/(\d\d:\d\d:\d\d),(\d\d\d)/g, '$1.$2')}`, 'utf8');
+  } finally {
+    if (ctx) await ctx.close().catch(() => {});
+  }
+}
+
+main().catch((e) => { console.error(e); process.exitCode = 1; });
