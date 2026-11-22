@@ -70,6 +70,13 @@ function termSlide(s) {
     <div class="tlines">${s.lines.map(([cls, text]) => `<div class="tl ${cls || ''}">${esc(text) || '&nbsp;'}</div>`).join('')}</div></div></section>`;
 }
 
+// Free-form animated slide: its own HTML, CSS and a script that sets window.FX[id] = (step, arg) => { ... }.
+// The film drives it with window.Deck.fx(id, step, arg). Used where a diagram can't carry the moment.
+function fxSlide(s) {
+  return `<section class="slide fx-slide" id="${s.id}"><div class="head"><div class="kicker">${esc(s.kicker)}</div><h2>${s.title}</h2></div>
+    <div class="fx">${s.html}</div>${s.css ? `<style>${s.css}</style>` : ''}${s.js ? `<script>${s.js}</script>` : ''}</section>`;
+}
+
 const CSS = `
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; overflow: hidden; }
@@ -179,15 +186,17 @@ const JS = `
     part(id, keys) { const svg = $(id).querySelector('.dg svg'); const all = !keys || keys === 'all'; svg.classList.toggle('dimming', !all); svg.querySelectorAll('g[data-k]').forEach((g) => g.classList.toggle('on', !all && keys.includes(g.dataset.k))); },
     term(id, n) { $(id).querySelectorAll('.tl').forEach((x, i) => x.classList.toggle('show', n === 'all' || i < n)); },
     tree(id, names) { const t = $(id).querySelector('.tree'); t.classList.toggle('focusing', !!names); t.querySelectorAll('.row').forEach((r) => r.classList.toggle('lit', !!names && names.some((n) => r.textContent.includes(n)))); },
+    fx(id, step, arg) { const f = (window.FX || {})[id]; if (f) f(step, arg); },
   };
 })();
 `;
 
-function buildDeck({ slides, hljsDir, out }) {
+// `css` / `js`: an optional theme layered on top (only films that pass one change; the others build as before).
+function buildDeck({ slides, hljsDir, out, css = '', js = '' }) {
   const hljs = fs.readFileSync(path.join(hljsDir, 'highlight.min.js'), 'utf8');
   const theme = fs.readFileSync(path.join(hljsDir, 'styles', 'github-dark.min.css'), 'utf8');
-  const body = slides.map((s) => ({ code: codeSlide, tree: treeSlide, flow: flowSlide, graph: graphSlide, image: imageSlide, diagram: diagramSlide, term: termSlide }[s.type])(s)).join('\n');
-  const html = `<!doctype html><html><head><meta charset="utf-8"><title>SDLC agents: the code</title><style>${theme}${CSS}</style></head><body>${body}<script>${hljs}</script><script>${JS}</script></body></html>`;
+  const body = slides.map((s) => ({ code: codeSlide, tree: treeSlide, flow: flowSlide, graph: graphSlide, image: imageSlide, diagram: diagramSlide, term: termSlide, fx: fxSlide }[s.type])(s)).join('\n');
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>SDLC agents: the code</title><style>${theme}${CSS}${css}</style></head><body><script>window.FX = {};</script>${body}<script>${hljs}</script><script>${JS}</script>${js ? `<script>${js}</script>` : ''}</body></html>`;
   fs.mkdirSync(path.dirname(out), { recursive: true });
   fs.writeFileSync(out, html, 'utf8');
   return out;

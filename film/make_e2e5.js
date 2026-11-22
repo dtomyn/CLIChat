@@ -3,6 +3,8 @@
 // (old vs new on the same cases, red team through the hosts, then retire), Foundry skills for the wording the business
 // owns, and continuous improvement in two halves: my pre-release gate plus Foundry's hourly trace evaluation, which
 // now scores live traffic with custom rubric evaluators (the same standards the agents load) and code-based ones.
+// Then an aside: Microsoft-Decision-1.1, live in its Foundry playground, and the two pilots that tested it against
+// the agents' own model (ircc-sdlc-agents/evals/decision_pilot): faster and cheaper, not more accurate. Always test.
 //
 //   node film/make_e2e5.js --voice       Narration only (Kokoro), with each line's length.
 //   node film/make_e2e5.js --deck        Build the slide deck only (film/.work-e2e5/deck.html) to check the diagrams.
@@ -18,6 +20,7 @@ const fs = require('fs');
 const path = require('path');
 const { createKit } = require('./filmkit');
 const { grab, buildDeck } = require('./code-deck');
+const FXK = require('./e2e5-fx');
 const E = require('./make_e2e');
 
 const FILM = __dirname;
@@ -127,6 +130,29 @@ const LINES = {
     "Every result is attached to its trace, too. Open one, and there's the host, the router and the skill's steps, with the evaluation results beside them."),
   i9: L('And that closes the loop. A low score points at a real trace. That trace becomes a new golden case, and the fix goes back through my gate before it is redeployed.',
     "And that closes the loop. A low score points at a real trace. That trace becomes a new golden case, and the fix goes back through my gate before it's redeployed."),
+  // Aside: the decision model, tested (evals/decision_pilot, 2026-11-22)
+  d1: L('Before the takeaways, a quick aside. Decision models are the hot topic right now. Microsoft\'s Decision one point one just went generally available in Foundry. It does one job. It picks from the options you allow, and tells you how sure it is. And the claims are bold: much faster and much cheaper than a general model, for routing, classifying and checking.',
+    "Before the takeaways, a quick aside. Decision models are the hot topic right now. Microsoft's Decision-1.1 just went generally available in Foundry. It does one job: it picks from the options you allow, and tells you how sure it is. And the claims are bold: much faster and much cheaper than a general model, for routing, classifying and checking."),
+  d2: L('It\'s already deployed in my project, next to the agents\' model. And it has its own playground. You give it the evidence, and the decisions you want made. It gives you back probabilities. No text at all.',
+    "It's already deployed in my project, next to the agents' model. And it has its own playground. You give it the evidence, and the decisions you want made. It gives you back probabilities. No text at all."),
+  d3: L('Here\'s a real case from my link judge. The requirement: email the applicant when the status changes. The candidate: an email template branding refresh. Same word, different behaviour. Does it implement the requirement?',
+    "Here's a real case from my link judge. The requirement: email the applicant when the status changes. The candidate: an email template branding refresh. Same word, different behaviour. Does it implement the requirement?"),
+  d4: L('A low probability. Correctly, a no. Now swap in the story that really does email the applicant, and run it again.'),
+  d4b: L('Close to certain. A couple of output tokens, back in seconds. No essay, no reasoning. Just a number you can act on.'),
+  d5: L('So where exactly did I try it? Inside two real agent flows. In the backlog agent, the requirements traceability skill has one step that asks a model: does this work item implement this requirement? In the evidence job, the CAE evidence skill has one step that sorts each artifact into direct, supporting, or not evidence. I swapped only that step\'s model. Everything around it stayed the same: the inputs, the code checks after it, and the human approval.',
+    "So where exactly did I try it? Inside two real agent flows. In the backlog agent, the requirements traceability skill has one step that asks a model: does this work item implement this requirement? In the evidence job, the CAE evidence skill has one step that sorts each artifact into direct, supporting, or not evidence. I swapped only that step's model. Everything around it stayed the same: the inputs, the code checks after it, and the human approval."),
+  d5b: L('And there\'s a third contender. G P T six Luna is in my project too, and I\'d heard it\'s cheaper and faster than G P T five mini. So, three models: today\'s, Luna, and Decision one point one.',
+    "And there's a third contender. gpt-6-luna is in my project too, and I'd heard it's cheaper and faster than gpt-5-mini. So, three models: today's, Luna, and Decision-1.1."),
+  d5c: L('The first surprise came before a single result. Luna refused my agents\' settings. Every agent asks for temperature zero, so the same input gives the same answer. Luna only accepts one. Swap it in blind, and every call fails. To test it at all, I ran it at one, three times.',
+    "The first surprise came before a single result. Luna refused my agents' settings. Every agent asks for temperature 0, so the same input gives the same answer. Luna only accepts 1. Swap it in blind, and every call fails. To test it at all, I ran it at 1, three times."),
+  d6: L('Then the race, in real time. The median per requirement. Decision one point one is done in about two seconds. Luna in under seven. G P T five mini takes twelve. And the output tokens: under a hundred, against nine thousand, against almost twenty thousand.',
+    'Then the race, in real time: the median per requirement. Decision-1.1 is done in about 2 seconds. Luna in under 7. gpt-5-mini takes 12. And the output tokens: under a hundred, against 9,000, against almost 20,000.'),
+  d7: L('Now accuracy. On links, Luna was the best, ninety six to ninety eight percent, with no traps. Decision one point one tied G P T five mini at ninety four, but missed three partial matches. On security evidence, G P T five mini won at ninety three. Luna got ninety to ninety two. And Decision one point one twice called something direct evidence when it wasn\'t.',
+    "Now accuracy. On links, Luna was the best, 96 to 98%, with no traps. Decision-1.1 tied gpt-5-mini at 94%, but missed three partial matches. On security evidence, gpt-5-mini won at 93%. Luna got 90 to 92%. And Decision-1.1 twice called something direct evidence when it wasn't."),
+  d8: L('Two twists. Decision one point one flagged six of its seven mistakes as unsure. Both chat models were confident even when they were wrong. And combining them, Decision one point one first, and only its unsure answers to Luna, averaged ninety three percent. A tie with today\'s model, with one chat call instead of three.',
+    "Two twists. Decision-1.1 flagged 6 of its 7 mistakes as unsure. Both chat models were confident even when they were wrong. And combining them, Decision-1.1 first, and only its unsure answers to Luna, averaged 93%. A tie with today's model, with one chat call instead of three."),
+  d9: L('So what changed in production? Nothing, yet. A cheaper model that rejects my settings. A faster one that isn\'t more accurate on its own. And a combination that only ties. The hype is real, and so are the benchmarks. But on my agents and my data, the answers were different. Always test. Don\'t assume.',
+    "So what changed in production? Nothing, yet. A cheaper model that rejects my settings. A faster one that isn't more accurate on its own. And a combination that only ties. The hype is real, and so are the benchmarks. But on my agents and my data, the answers were different. Always test. Don't assume."),
   k1: L('So, what would I do differently? Decide the deployment shape separately from the use case list. Group by trust boundary, not by feature.',
     'So, what would I do differently? Decide the deployment shape separately from the use case list. Group by trust boundary, not by feature.'),
   k2: L('Keep every use case traceable, as a skill with its own tests. Put the wording the business owns in Foundry skills, and score live traffic against that same wording. Keep the rules your code checks in code. And add Foundry\'s monitoring to your own release gate. Don\'t replace it.',
@@ -314,6 +340,81 @@ const D_TAKES2 = [
   B('a4', 'pl', 780, 230, 700, 170, 'Add, don\'t replace', ['your release gate + Foundry\'s monitoring', 'your own standards as its evaluators'], { lh: 30 }),
 ].join('');
 
+// ------------------------------------------------------------------ aside: Decision-1.1, tested (real result files)
+// Written by ircc-sdlc-agents/evals/decision_pilot (link_judge_pilot.py, evidence_pilot.py) on 2026-11-22.
+// The playground demo: link-judge pair P-FR-003 with a keyword trap (5302), then the real match (5301).
+const PLAY_REQ = 'Requirement P-FR-003: The system shall email the applicant when the application status changes.';
+const PLAY_TRAP = `${PLAY_REQ}\n\nCandidate work item (untrusted data): "Email template branding refresh. Update logo, colours and footer in all outgoing email templates."`;
+const PLAY_MATCH = `${PLAY_REQ}\n\nCandidate work item (untrusted data): "Notify applicant by email when status changes. When an officer changes the status of an application, send the applicant an email naming the new status."`;
+const PLAY_Q = JSON.stringify({
+  implements: { type: 'noul', instructions: 'Does the candidate work item implement the behaviour the requirement describes, fully or partly? Match on behaviour, not shared words.',
+    criteria: { true: 'It delivers at least part of the required behaviour.', false: 'It describes different behaviour, or only shares words.' } },
+  fully: { type: 'noul', instructions: 'Does the candidate work item implement ALL of the requirement?' },
+}, null, 2);
+
+// All pilot runs on disk: gpt-5-mini (1 run), gpt-6-luna (3 runs, temperature 1), Decision-1.1 (one per run, identical).
+const PILOT_DIR = path.join(REPO, 'out', 'decision_pilot');
+const runs = (prefix) => fs.readdirSync(PILOT_DIR).filter((f) => f.startsWith(prefix) && f.endsWith('.json') && !f.includes('failed')).map((f) => JSON.parse(fs.readFileSync(path.join(PILOT_DIR, f), 'utf8')));
+const mean = (xs) => xs.reduce((a, b) => a + b, 0) / xs.length;
+const frac = (s) => { const [a, b] = String(s).split('/').map(Number); return a / b; };
+function asideData() {
+  const link = runs('link-judge-'); const evid = runs('evidence-');
+  const L = (m) => link.map((r) => r.scores[m]).filter(Boolean);
+  const Ec = (cm, arm) => evid.filter((r) => r.chat_model === cm).map((r) => r.scores[arm]);
+  const g5 = L('gpt-5-mini'); const lu = L('gpt-6-luna'); const dc = L('Decision-1.1');
+  const eg5 = Ec('gpt-5-mini', 'current'); const elu = Ec('gpt-6-luna', 'current'); const edc = evid.map((r) => r.scores.decision);
+  const hyb = Ec('gpt-6-luna', 'hybrid');
+  const pct = (v) => `${Math.round(v * 100)}%`;
+  const pctRange = (xs) => { const lo = Math.round(Math.min(...xs) * 100); const hi = Math.round(Math.max(...xs) * 100); return lo === hi ? `${lo}%` : `${lo}–${hi}%`; };
+  const acc = (xs, k) => xs.map((x) => x[k]);
+  const p50 = (xs) => mean(acc(xs, 'latency_s p50'));
+  const tok = (xs) => Math.round(mean(acc(xs, 'output_tokens')));
+  const errs = (xs) => xs.reduce((a, x) => { const [f, t] = x['errors flagged (< 0.8)'].split('/').map(Number); return [a[0] + f, a[1] + t]; }, [0, 0]);
+  const [lf, lt] = errs(elu); const [gf, gt] = errs(eg5); const [df, dt] = errs(edc.slice(0, 1));
+  const failed = JSON.parse(fs.readFileSync(path.join(PILOT_DIR, fs.readdirSync(PILOT_DIR).find((f) => f.includes('luna-temp0-failed'))), 'utf8'));
+  const seen = new Set(); const errors = [];
+  for (const r of failed.rows) {
+    if (r.model === 'gpt-6-luna' && r.error && !seen.has(r.req_id)) {
+      seen.add(r.req_id);
+      errors.push(`  gpt-6-luna   ${r.req_id.padEnd(10)} ${r.call_secs.toFixed(1)}s  ERR ${r.error.replace(/^OpenAIInvalidRequestError: Error code: 400 - /, 'HTTP 400 · ').replace(/Unsupported value: /, '').replace(/^(.*?is supported\.).*$/, '$1').slice(0, 104)}`);
+    }
+  }
+  const partials = (xs) => xs.map((x) => Math.round(frac(x['partials found']) * 12));
+  return {
+    linkPairs: g5[0].pairs, evidPairs: eg5[0].pairs,
+    raceNote: `gpt-5-mini 1 run · gpt-6-luna ${lu.length} runs · Decision-1.1 ${dc.length} runs (identical answers)`,
+    race: [{ k: 'dc', secs: p50(dc), tokens: tok(dc) }, { k: 'lu', secs: p50(lu), tokens: tok(lu) }, { k: 'g5', secs: p50(g5), tokens: tok(g5) }],
+    link: [
+      ['accuracy', { g5: pct(g5[0]['accuracy (yes/no)']), lu: pctRange(acc(lu, 'accuracy (yes/no)')), dc: pct(dc[0]['accuracy (yes/no)']) },
+        { g5: g5[0]['accuracy (yes/no)'], lu: mean(acc(lu, 'accuracy (yes/no)')), dc: dc[0]['accuracy (yes/no)'] }, 'hi'],
+      ['partial matches found', { g5: g5[0]['partials found'], lu: `${Math.min(...partials(lu))}–${Math.max(...partials(lu))}/12`, dc: dc[0]['partials found'] },
+        { g5: frac(g5[0]['partials found']), lu: mean(lu.map((x) => frac(x['partials found']))), dc: frac(dc[0]['partials found']) }, 'hi'],
+      ['keyword traps linked', { g5: g5[0]['keyword traps wrongly linked'], lu: lu[0]['keyword traps wrongly linked'], dc: dc[0]['keyword traps wrongly linked'] },
+        { g5: frac(g5[0]['keyword traps wrongly linked']), lu: mean(lu.map((x) => frac(x['keyword traps wrongly linked']))), dc: frac(dc[0]['keyword traps wrongly linked']) }, 'lo'],
+    ],
+    evid: [
+      ['accuracy', { g5: pct(eg5[0]['accuracy (3-class)']), lu: pctRange(acc(elu, 'accuracy (3-class)')), dc: pct(edc[0]['accuracy (3-class)']) },
+        { g5: eg5[0]['accuracy (3-class)'], lu: mean(acc(elu, 'accuracy (3-class)')), dc: edc[0]['accuracy (3-class)'] }, 'hi'],
+      ['wrongly rated "direct"', { g5: String(eg5[0]['over-claims to direct']), lu: String(Math.max(...acc(elu, 'over-claims to direct'))), dc: String(edc[0]['over-claims to direct']) },
+        { g5: eg5[0]['over-claims to direct'], lu: Math.max(...acc(elu, 'over-claims to direct')), dc: edc[0]['over-claims to direct'] }, 'lo'],
+    ],
+    flag: [['own errors flagged as unsure', { g5: `${gf}/${gt}`, lu: `${lf}/${lt}`, dc: `${df}/${dt}` }, { g5: gf / gt, lu: lf / lt, dc: df / dt }, 'hi', 'confidence below 0.8']],
+    combo: {
+      title: 'Combined: Decision-1.1 first, only its unsure answers to gpt-6-luna',
+      sub: `evidence classifier · ${hyb.length} runs: ${hyb.map((h) => pct(h['accuracy (3-class)'])).join(', ')} · ties today's model with 1 chat call instead of 3`,
+      value: `${pct(mean(acc(hyb, 'accuracy (3-class)')))} avg`,
+    },
+    foot: `Synthetic, hand-labelled cases · gpt-6-luna: ${lu.length} runs at temperature 1, ranges shown, 👑 on its mean · real result files in out/decision_pilot`,
+    errors: errors.slice(0, 8),
+    errSummary: `${failed.scores['gpt-6-luna'].failed_calls} of ${failed.scores['gpt-6-luna'].failed_calls} calls failed · HTTP 400 · 0 answers`,
+    verdicts: [
+      ['g5', ['today\'s model: stays', `best alone on evidence: ${pct(eg5[0]['accuracy (3-class)'])}`, 'slowest, most tokens', 'confident even when wrong']],
+      ['lu', [`best on links: ${pctRange(acc(lu, 'accuracy (yes/no)'))}, no traps`, `~${(p50(g5) / p50(lu)).toFixed(1)}× faster than gpt-5-mini`, 'rejects temperature 0', 'its confidence isn\'t a probability']],
+      ['dc', [`~${Math.round(p50(g5) / p50(dc))}× faster, ~${Math.round(tok(g5) / tok(dc))}× fewer tokens`, 'identical answers run to run', `knows when it's unsure: ${df} of ${dt} errors`, 'not more accurate on its own']],
+    ],
+  };
+}
+
 // ------------------------------------------------------------------ real data for terminal slides
 function routingLines() {
   const r = JSON.parse(fs.readFileSync(path.join(WORK, 'routing.json'), 'utf8'));
@@ -376,6 +477,8 @@ function code(id, kicker, title, file, start, opts, lang, notes, shown) {
 }
 const dg = (id, kicker, title, viewBox, svg) => ({ type: 'diagram', id, kicker, title, viewBox, svg });
 const SK = 'libs/contoso_agent_core/src/contoso_agent_core/skills.py';
+// Microsoft Learn diagrams (CC BY 4.0, credited on the slide), downloaded to film/foundry-inputs/learn.
+const learnImg = (f) => fs.readFileSync(path.join(FILM, 'foundry-inputs', 'learn', f)).toString('base64');
 function slides() {
   return [
     { type: 'image', id: 's-before', kicker: 'Last time · built for real', title: '23 hosted agents, <em>one per use case</em>', file: path.join(FILM, 'foundry-inputs', 'agents-23-before.png') },
@@ -386,29 +489,20 @@ function slides() {
     dg('d-persona', 'Agents and skills', 'Two meanings of <em>agent</em>', '0 0 1500 550', D_PERSONA),
     dg('d-hostgraph', 'agents/design-author · get_graph()', 'A whole host: <em>route, then one skill</em>', '0 0 1500 540', D_HOSTGRAPH),
     dg('d-host', 'Inside a host', 'Cheap routing first, <em>ask when unsure</em>', '0 0 1500 500', D_HOST),
-    code('s-route', 'contoso_agent_core · skills.py', 'The router: <em>explicit before clever</em>', R(SK), '    def route(self, state', { count: 22 }, 'python', [
-      '<code>resolve()</code>: skill → old agent name → use case', 'Structured follow-up: stays with the last skill', 'Plain chat: <code>SkillChoice</code> from a small model; low confidence → <b>clarify</b>']),
-    code('s-runner', 'contoso_agent_core · skills.py', 'Mount the skill\'s graph <em>unchanged</em>', R(SK), '        async def run_async(', { count: 24 }, 'python', [
-      '<code>skill_scope()</code>: the skill\'s own phase while it runs', '<code>spec.build_graph(True)</code>: a stateful subgraph', '<code>register_local_agent</code>: old agent-to-agent calls stay in-process']),
     { type: 'term', id: 's-routing', kicker: 'Live · deployed host', title: 'The router, <em>in Foundry</em>', label: `responses · ${HOST}`, note: 'real replies, captured 2026-11-21', lines: routingLines() },
-    code('s-skill', 'skills/01 · skill.py', 'A use case becomes a skill: <em>~10 lines</em>', R('skills/01-business-requirements-refinement/src/contoso_brr/skill.py'), 'from contoso_agent_core.skills import SkillSpec', { count: 14 }, 'python', [
-      '<code>legacy_agent</code>: the hosted agent it used to be', '<code>build_graph</code>: the same graph, tests and evals as before']),
     dg('d-share', 'Inside a host', 'What changes when <em>skills share an agent</em>', '0 0 1500 340', D_SHARE),
     dg('d-cutover', 'Cutting over', 'Prove it, <em>then</em> retire', '0 0 1500 400', D_CUTOVER),
     { type: 'term', id: 's-compare', kicker: 'Cut-over check · live', title: 'Old agent vs new host, <em>same case</em>', label: 'PowerShell · ircc-sdlc-agents', note: 'status and mean score per run', lines: compareLines() },
     { type: 'term', id: 's-delete', kicker: 'Retirement · 2026-11-21', title: 'Only then: <em>delete the 23</em>', label: 'PowerShell · foundry-test-deploy/contoso', note: 'delete-old-agents.log', lines: deleteLines() },
     dg('d-fvs', 'Foundry skills', 'Same word, <em>different thing</em>', '0 0 1500 550', D_FVS),
     dg('d-move', 'Foundry skills', 'What moved, and <em>what stayed in code</em>', '0 0 1500 530', D_MOVE),
-    code('s-extract', 'skills/01 · prompts/extract_requirements.md', 'One line <em>pulls in the standard</em>', R('skills/01-business-requirements-refinement/src/contoso_brr/prompts/extract_requirements.md'), 'You are a senior business analyst', { count: 20 }, 'markdown', [
-      '<code>{{foundry_skill:…}}</code>: the business-owned standard', 'Then the rules the code checks: verbatim, untrusted data, harmful text', 'The wrapper says those rules win on conflict']),
-    code('s-skillmd', 'foundry_skills/contoso-requirements-standard/SKILL.md', 'The standard: <em>owned by functional leads</em>', R('libs/contoso_agent_core/src/contoso_agent_core/foundry_skills/contoso-requirements-standard/SKILL.md'), '---', { count: 24 }, 'markdown', [
-      'Front matter: <code>name</code> + <code>description</code> (unquoted)', 'Plain Markdown a functional lead can edit', 'Published as a Foundry skill, v1']),
     dg('d-load', 'Foundry skills', "The model doesn't choose. <em>The graph does.</em>", '0 0 1500 510', D_LOAD),
-    code('s-fsk', 'contoso_agent_core · foundry_skills', 'Pinned, checked, <em>with a fallback</em>', R('libs/contoso_agent_core/src/contoso_agent_core/foundry_skills/__init__.py'), 'def get_skill(name: str)', { count: 30 }, 'python', [
-      'Pin: <code>CONTOSO_FOUNDRY_SKILL_VERSION_&lt;NAME&gt;</code>', 'Download fails or text fails checks → bundled copy, audited', 'Every load audited with its version']),
     { type: 'term', id: 's-fproof', kicker: 'Live · 2026-11-22', title: 'Published, deployed, <em>proven in the traces</em>', label: 'PowerShell · ircc-sdlc-agents', note: 'publish tool · azd ai skill list · App Insights', lines: proofLines() },
     dg('d-loop2', 'Continuous improvement', 'Same loop, <em>two halves</em>', '0 0 1500 420', D_LOOP2),
     dg('d-rubric', 'Continuous improvement', 'Told and scored <em>by the same standard</em>', '0 0 1500 500', D_RUBRIC),
+    ...FXK.asideSlides(asideData()),
+    ...FXK.learnSlides({ hostImg: learnImg('hosted-agent-architecture.png'), lifeImg: learnImg('lifecycle.png') }),
+    ...FXK.extraSlides(),
     dg('d-takes2', 'What I\'d do differently', 'Your framework decides behaviour. <em>The deployment shape is a choice.</em>', '0 0 1500 420', D_TAKES2),
   ];
 }
@@ -423,14 +517,14 @@ const chap = (t) => `<span>${t}</span>`;
 const SCENES = [
   ['Cold open', 'Title card, then the 23-agent portal list from the last video (image).', ['t1', 't2'], 's-before'],
   ['What the code said', 'Diagram: 23 use cases, catalogue strip lights first, then each pattern group.', ['b1', 'b2', 'b3', 'b4'], 'd-before'],
-  ['Agents and skills', 'Diagram: agent = who (what each Foundry setting means), then "settings never say what it does", then skill = what with brd as the example.', ['s1', 's1b', 's2'], 'd-split'],
+  ['Agents and skills', 'Microsoft Learn diagram (Hosted agents in Foundry Agent Service), callouts light its own identity, endpoint, state and versions; then the agent/skill diagram: settings never say what it does; skill = what, brd as the example.', ['s1', 's1b', 's2'], 'd-split'],
   ['Agents and skills', 'Diagram: one web app with many routes ↔ one hosted agent with many skills; one real request flow; "before: 5 agents, 5 identities".', ['s3', 's3b'], 'd-analogy'],
   ['Agents and skills', 'Diagram: the 9 hosts, chat row then jobs row, Cosmos tags, skills on two hosts. Then the rule of thumb.', ['s4', 's5', 's6', 's7'], 'd-after'],
   ['Agents and skills', 'Diagram: two meanings of "agent": persona (Claude Code, GitHub Copilot; acts with your identity) vs deployed Foundry agent (its own identity); the 9 look like personas; in Foundry the count is a security decision.', ['p1', 'p2', 'p3'], 'd-persona'],
   ['Inside a host', 'Graph slide (real get_graph() of contoso-design-author), then the routing diagram.', ['h1', 'h2', 'h3'], 'd-host'],
-  ['Inside a host', 'Code: skills.py route() and the stateful-subgraph runner.', ['h4'], 's-runner'],
+  ['Inside a host', 'Diagram: the routing flow with run and approval lit (each skill graph runs unchanged as a stateful subgraph).', ['h4'], 'd-host'],
   ['Inside a host', 'Terminal: real replies from the deployed host (plain request → brd; vague → the list of skills).', ['h5'], 's-routing'],
-  ['Inside a host', 'Code: skills/01 skill.py (SkillSpec).', ['h6'], 's-skill'],
+  ['Inside a host', 'Animated: the old hosted agent (crossed out) → a skill (name, use case, was agent, graph) → mounted on contoso-design-author beside its four sibling skills.', ['h6'], null],
   ['Shared agents', 'Diagram: what changes when skills share an agent: key by agent + skill; in return, calls between skills become in-process.', ['x1', 'x2'], 'd-share'],
   ['Cutting over', 'Diagram: deploy beside → compare → red team → retire. Portal: Agents list with 9 hosted agents.', ['c1', 'c2'], 'd-cutover'],
   ['Cutting over', 'Terminal: old vs new comparison (22/22).', ['c3'], 's-compare'],
@@ -438,12 +532,12 @@ const SCENES = [
   ['Cutting over', 'Terminal: retirement log (azd ai agent delete), 47 → 10 role assignments.', ['c5'], 's-delete'],
   ['Foundry skills', 'Diagram: Foundry skill vs my skill, side by side.', ['f1', 'f2'], 'd-fvs'],
   ['Foundry skills', 'Diagram: three kinds of prompt text; standards → 3 Foundry skills with owners; checked rules and mechanics stay in code.', ['f3', 'f4', 'f5'], 'd-move'],
-  ['Foundry skills', 'Code: extract_requirements.md, the marker line, then the checked rules after it.', ['f6'], 's-extract'],
-  ['Foundry skills', 'Portal: Tools → Skills (preview): the three standards at v1; open contoso-requirements-standard. Then its SKILL.md.', ['f7'], 's-skillmd'],
+  ['Foundry skills', 'Animated: one prompt, two owners. The Foundry skill (portal, pinned version) fills slot 1, the checked rules from code fill slot 2, "checked rules win", into the model.', ['f6'], null],
+  ['Foundry skills', 'Portal: Tools → Skills (preview): the three standards at v1; open contoso-requirements-standard and read its body in the portal.', ['f7'], null],
   ['Foundry skills', 'Diagram: Agent Framework load_skill (model decides) vs our graph (step decides); governance row.', ['f8'], 'd-load'],
-  ['Foundry skills', 'Code: foundry_skills get_skill(): pin, cache, fallback, audit.', ['f9'], 's-fsk'],
+  ['Foundry skills', 'Diagram: the governance row lit: pinned version, checked text, bundled fallback, every load audited.', ['f9'], 'd-load'],
   ['Foundry skills', 'Terminal: publish output, azd ai skill list, App Insights proof (each host sends its standard at v1).', ['f10'], 's-fproof'],
-  ['Continuous improvement', 'Diagram: two halves (my gate | Foundry built-ins). Portal: Agents → contoso-design-author → Evaluation tab (recurring runs), then Monitor tab (evaluation scores card).', ['i1', 'i2', 'i3', 'i4', 'i5'], 'd-loop2'],
+  ['Continuous improvement', 'Microsoft Learn diagram (Enterprise GenAIOps lifecycle): pre-production and continuous evaluation lit. Then diagram: two halves (my gate | Foundry built-ins). Portal: Agents → contoso-design-author → Evaluation tab (recurring runs), then Monitor tab (evaluation scores card).', ['i1', 'i2', 'i3', 'i4', 'i5'], 'd-loop2'],
   ['Continuous improvement', 'Diagram: one standard, told and scored. The Foundry skill feeds the prompt; the rubric evaluators restate it for the judge; the checked rules become code-based evaluators.', ['r1'], 'd-rubric'],
   ['Continuous improvement', 'Portal: Evaluations → Evaluator catalog. The five Contoso evaluators (Custom · Rubric / Code · Preview) above the Microsoft built-ins.', ['r2'], null],
   ['Continuous improvement', 'Portal: open Contoso requirements quality. Rubric-based, score range 1–5, Dimensions (8) with weight bars: source_scope_kept 10, atomic_requirements 8, quality_flags_with_questions 8.', ['r3'], null],
@@ -451,6 +545,14 @@ const SCENES = [
   ['Continuous improvement', 'Portal: Evaluations → the hourly continuous-contoso-design-author run: columns for the built-ins, requirements_quality and decision_support_writing (Rubric), verbatim_excerpts and unsupported_identifiers. Open View details on a rubric: per-dimension score and reason.', ['r5'], null],
   ['Continuous improvement', 'Portal: agent Traces tab → open a scored trace: invoke_agent contoso-design-author, the router and skill steps, then its Evaluations tab.', ['i8'], null],
   ['Continuous improvement', 'Diagram: the loop lit (a low score → a new golden case → through the gate → redeploy).', ['i9'], 'd-loop2'],
+  ['Aside · the hype check', 'Animated: glowing orb, "Decision models" headline; Microsoft\'s three claims fly in (quoted, attributed); a stamp lands: "Does it help my agents?"', ['d1'], null],
+  ['Aside · the hype check', 'Portal: Models → Deployments (Decision-1.1 beside the GPT deployments) → Decision-1.1 Playground.', ['d2'], null],
+  ['Aside · the hype check', 'Portal, live: State = requirement P-FR-003 + "Email template branding refresh"; Decisions JSON = implements / fully; Run → low probability. Swap in "Notify applicant by email when status changes"; Run → close to certain. Zoom on the response panel.', ['d3', 'd4', 'd4b'], null],
+  ['Aside · where it was tried', 'Animated flow chart: two real agent flows. contoso-backlog → requirements traceability (load_requirements → deterministic_links → suggest_links → verify_candidates → detect_exceptions → approve) and contoso-evidence-job → CAE evidence (discover → prefilter → classify_candidates → build_index_and_gaps → self_check → approve). The swapped step pulses; its model slot cycles gpt-5-mini / gpt-6-luna / Decision-1.1; a pulse travels each flow.', ['d5', 'd5b'], null],
+  ['Aside · first surprise', 'Animated terminal: the real first gpt-6-luna run, every call HTTP 400 (temperature 0 not supported), the window shakes; then the agents\' temperature setting.', ['d5c'], null],
+  ['Aside · the race', 'Animated race in real time: three lanes fill at each model\'s median seconds per requirement (Decision-1.1 ≈2 s, gpt-6-luna ≈7 s, gpt-5-mini ≈12 s) with a running clock and finish flags; then output-token counters count up.', ['d6'], null],
+  ['Aside · the results', 'Animated scoreboard: three models × link judge and evidence rows flip in, crowns on the winners; then "errors flagged as unsure"; then the combined result banner (Decision-1.1 → gpt-6-luna, 93% avg, ties today).', ['d7', 'd8'], null],
+  ['Aside · the verdict', 'Animated: one verdict card per model; "Always test. Don\'t assume." blurs in with sparkles.', ['d9'], null],
   ['What I\'d do differently', 'Diagram: four takeaways (business wording → Foundry skills + rubrics, checked rules → code; your standards as Foundry\'s evaluators). End card.', ['k1', 'k2', 'end'], 'd-takes2'],
 ];
 function writeStoryboard(lengths) {
@@ -489,7 +591,7 @@ ${dgcss}
 </style></head><body><main>
 <h1>From <em>23 agents</em> to 9</h1>
 <p class="sub">Storyboard · follow-on to "Microsoft's agent platform, built for real" · narration ${Math.floor(total / 60)} min ${Math.round(total % 60)} s · internal technical audience · generated by film/make_e2e5.js --storyboard</p>
-<div class="facts"><span>23 use cases → 23 skills</span><span>23 hosted agents → 9 (6 chat · 3 jobs)</span><span>old vs new: 22/22 same or better</span><span>red team through hosts: 0/240</span><span>role assignments 47 → 10</span><span>3 standards → Foundry skills, live at v1</span><span>2 rubric + 2 code-based evaluators, hourly on live traces</span></div>
+<div class="facts"><span>23 use cases → 23 skills</span><span>23 hosted agents → 9 (6 chat · 3 jobs)</span><span>old vs new: 22/22 same or better</span><span>red team through hosts: 0/240</span><span>role assignments 47 → 10</span><span>3 standards → Foundry skills, live at v1</span><span>2 rubric + 2 code-based evaluators, hourly on live traces</span><span>aside: Decision-1.1 and gpt-6-luna vs gpt-5-mini on 2 agent steps · nothing shipped</span></div>
 ${rows}
 </main></body></html>`;
   const out = path.join(INFO, 'videos', `${NAME}-storyboard.html`);
@@ -584,9 +686,14 @@ async function runFilm(d, cap, pages) {
 
   // ---------------- 3. Agents and skills
   await setLabel(chap('Agents and skills'));
-  await show('d-split'); await part('d-split', ['who'], 0.2);
-  await d.say('s1'); await d.waitVoice();
-  await part('d-split', ['who', 'none']); await d.say('s1b'); await d.waitVoice();
+  await show('x-learn-host'); await dk('fx', 'x-learn-host', null);
+  await d.say('s1');
+  await d.wait(Math.max(1.2, d.voiceLeft() * 0.3)); await dk('fx', 'x-learn-host', ['identity']); d.log('whoosh', { soft: true });
+  await d.wait(Math.max(1.0, d.voiceLeft() * 0.3)); await dk('fx', 'x-learn-host', ['identity', 'endpoint']);
+  await d.wait(Math.max(1.0, d.voiceLeft() * 0.4)); await dk('fx', 'x-learn-host', ['identity', 'endpoint', 'state']);
+  await d.wait(Math.max(0.8, d.voiceLeft() - 2.2)); await dk('fx', 'x-learn-host', ['identity', 'endpoint', 'state', 'versions']);
+  await d.waitVoice(0.6);
+  await show('d-split'); await part('d-split', ['who', 'none'], 0.2); await d.say('s1b'); await d.waitVoice();
   await part('d-split', ['what', 'mount']); await d.say('s2'); await d.waitVoice(); await part('d-split', 'all', 0.2);
   await show('d-analogy'); await part('d-analogy', ['app'], 0.2);
   await d.say('s3');
@@ -620,27 +727,18 @@ async function runFilm(d, cap, pages) {
   await show('d-host'); await part('d-host', ['req', 'route'], 0.2);
   await d.say('h2'); await d.waitVoice();
   await part('d-host', ['route', 'ask']); await d.say('h3'); await d.waitVoice();
-  await show('s-route'); await d.js(() => window.Film.hideCursor(false));
-  await focus('s-route', 'chosen = self.resolve(payload)', 'chosen = self.resolve(payload)', 0.2); await notes('s-route', 1, 0.2);
-  await focus('s-route', 'if chosen is None and previous', 'chosen, how = previous', 0.2); await notes('s-route', 2, 0.2);
-  await focus('s-route', 'choice = self.classify(', 'chosen = choice.skill', 0.4); await notes('s-route', 3, 0.4);
-  await dk('focus', 's-route', null);
-  await onDeck('d-host'); await part('d-host', ['run', 'hitl'], 0.2);
+  await part('d-host', ['run', 'hitl'], 0.2);
   await d.say('h4');
-  await d.wait(Math.max(1.5, d.voiceLeft() * 0.5));
-  await show('s-runner');
-  await focus('s-runner', 'with skill_scope(host, spec):', 'out = await subgraph.ainvoke', 0.2); await notes('s-runner', 1, 0.2);
-  await d.wait(Math.max(0.6, d.voiceLeft() - 3.0));
-  await focus('s-runner', 'self._runner(spec, spec.build_graph(True))', 'register_local_agent(spec.legacy_agent', 0.2); await notes('s-runner', 3, 0.2);
-  await d.waitVoice(); await dk('focus', 's-runner', null);
+  await d.waitVoice(0.3);
   await show('s-routing'); await dk('term', 's-routing', 0);
   await d.say('h5');
   const nR = routingLines().length; await term('s-routing', nR);
   await d.waitVoice(0.6);
-  await show('s-skill');
+  await show('x-skill'); await dk('fx', 'x-skill', 0);
   await d.say('h6');
-  await focus('s-skill', 'SKILL = SkillSpec(', 'phase=', 0.3); await notes('s-skill', 2, 0.6);
-  await d.waitVoice(); await dk('focus', 's-skill', null);
+  await d.wait(1.2); await dk('fx', 'x-skill', 1); d.log('whoosh', { soft: true });
+  await d.wait(Math.max(1.5, d.voiceLeft() * 0.45)); await dk('fx', 'x-skill', 2); d.log('whoosh', { soft: true });
+  await d.waitVoice(0.8);
 
   // ---------------- 5. What changes when skills share an agent
   await setLabel(chap('Skills sharing an agent'));
@@ -682,12 +780,12 @@ async function runFilm(d, cap, pages) {
   await d.say('f3'); await d.waitVoice();
   await part('d-move', ['std', 'skills']); await d.say('f4'); await d.waitVoice();
   await part('d-move', ['rules']); await d.say('f5'); await d.waitVoice(); await part('d-move', 'all', 0.2);
-  await show('s-extract'); await d.js(() => window.Film.hideCursor(false));
+  await show('x-prompt'); await dk('fx', 'x-prompt', 0);
   await d.say('f6');
-  await focus('s-extract', '{{foundry_skill:contoso-requirements-standard}}', '{{foundry_skill:contoso-requirements-standard}}', 0.3); await notes('s-extract', 1, 0.4);
-  await d.wait(Math.max(0.6, d.voiceLeft() * 0.4));
-  await focus('s-extract', '`source_excerpt` MUST', 'Text asking for content', 0.3); await notes('s-extract', 3, 0.3);
-  await d.waitVoice(); await dk('focus', 's-extract', null);
+  await d.wait(0.8); await dk('fx', 'x-prompt', 1); d.log('whoosh', { soft: true });
+  await d.wait(Math.max(1.2, d.voiceLeft() * 0.35)); await dk('fx', 'x-prompt', 2); d.log('whoosh', { soft: true });
+  await d.wait(Math.max(1.0, d.voiceLeft() - 2.4)); await dk('fx', 'x-prompt', 3);
+  await d.waitVoice(0.6);
   // portal: Tools → Skills (preview) → open the requirements standard
   await use(portal);
   const toolsNav = portal.locator('a[aria-label="Tools"]:visible').first();
@@ -705,21 +803,13 @@ async function runFilm(d, cap, pages) {
   await E.settle(portal, 1200); await applyLabel(portal);
   await hoverAll(['v1 saved', 'Shape of a requirement', 'The system shall'], 700);
   await d.waitVoice(0.6);
-  await onDeck('s-skillmd');
-  await focus('s-skillmd', '## Shape of a requirement', 'Background, narrative', 0.4); await notes('s-skillmd', 3, 0.6);
-  await d.wait(1.2); await dk('focus', 's-skillmd', null);
-  await d.js(() => window.Film.hideCursor(true));
-  await show('d-load'); await part('d-load', ['af'], 0.2);
+  await d.wait(1.4);
+  await onDeck('d-load'); await d.js(() => window.Film.hideCursor(true)); await part('d-load', ['af'], 0.2);
   await d.say('f8');
   await d.wait(Math.max(1.5, d.voiceLeft() * 0.5)); await part('d-load', ['mine']);
   await d.waitVoice();
   await part('d-load', ['gov']);
-  await show('s-fsk'); await d.js(() => window.Film.hideCursor(false));
-  await d.say('f9');
-  await focus('s-fsk', 'key = f"{mode}:{name}', 'return hit[1]', 0.3); await notes('s-fsk', 1, 0.4);
-  await d.wait(Math.max(0.6, d.voiceLeft() * 0.4));
-  await focus('s-fsk', 'except Exception as e:', '_audit("foundry_skill_fallback"', 0.3); await notes('s-fsk', 3, 0.3);
-  await d.waitVoice(); await dk('focus', 's-fsk', null);
+  await d.say('f9'); await d.waitVoice(0.4);
   await d.js(() => window.Film.hideCursor(true));
   await show('s-fproof'); await dk('term', 's-fproof', 0);
   await d.say('f10');
@@ -729,8 +819,12 @@ async function runFilm(d, cap, pages) {
   // ---------------- 8. Continuous improvement: my gate, Foundry's hourly evaluation, and my own evaluators in it
   await setLabel(chap('Continuous improvement'));
   await d.js(() => window.Film.hideCursor(true));
+  await show('x-learn-life'); await dk('fx', 'x-learn-life', null);
+  await d.say('i1');
+  await d.wait(Math.max(1.5, d.voiceLeft() * 0.45)); await dk('fx', 'x-learn-life', ['pre']); d.log('whoosh', { soft: true });
+  await d.wait(Math.max(1.0, d.voiceLeft() - 2.6)); await dk('fx', 'x-learn-life', ['pre', 'post']);
+  await d.waitVoice(0.6);
   await show('d-loop2'); await part('d-loop2', 'all', 0.2);
-  await d.say('i1'); await d.waitVoice();
   await part('d-loop2', ['pre']); await d.say('i2'); await d.waitVoice();
   await part('d-loop2', ['post']); await d.say('i3'); await d.waitVoice();
   // portal: Agents → the host → Evaluation tab → Monitor tab
@@ -804,7 +898,11 @@ async function runFilm(d, cap, pages) {
   await ready('Evaluation runs', 1000);
   await portal.locator('[role=row] a').first().waitFor({ state: 'visible', timeout: 60000 }).catch(() => console.log('no run rows'));
   await E.settle(portal, 1200);
-  await d.click(portal.locator('[role=row] a').first(), 800, 0.6);
+  // The newest hourly run is "Skipped" when the agent had no traffic that hour: open the newest run that has results.
+  const done = portal.locator('[role=row]').filter({ has: portal.locator('a') }).filter({ hasText: /Completed|Succeeded/ }).first();
+  const runRow = (await done.count().catch(() => 0)) ? done : portal.locator('[role=row]').filter({ has: portal.locator('a') }).filter({ hasNotText: 'Skipped' }).first();
+  console.log('run row:', ((await runRow.textContent().catch(() => '')) || '').replace(/\s+/g, ' ').slice(0, 120));
+  await d.click(runRow.locator('a').first(), 800, 0.6);
   await ready('requirements_quality', 1000);
   await portal.getByText('View details', { exact: true }).first().waitFor({ state: 'visible', timeout: 60000 }).catch(() => console.log('no result rows'));
   await E.settle(portal, 1500);
@@ -834,6 +932,106 @@ async function runFilm(d, cap, pages) {
   await onDeck('d-loop2'); await part('d-loop2', ['loop'], 0.2);
   await d.say('i9'); await d.waitVoice(); await part('d-loop2', 'all', 0.3);
 
+  // ---------------- Aside: the decision model, tested
+  await setLabel(chap('Aside · the hype check'));
+  const fx = async (id, step) => { await dk('fx', id, step); };
+  await show('x-hype'); await fx('x-hype', 0);
+  await d.say('d1');
+  await d.wait(Math.max(1.5, d.voiceLeft() * 0.42)); await fx('x-hype', 1); d.log('whoosh', { soft: true });
+  await d.wait(Math.max(1.5, d.voiceLeft() - 3.2)); await fx('x-hype', 2); d.log('whoosh');
+  await d.waitVoice(0.6);
+  try {
+    // Models → Deployments, then the Decision-1.1 playground, live.
+    await use(portal);
+    await nav('Models', '/build/models/deployments', 'Microsoft-Decision-1.1');
+    await d.say('d2');
+    await hoverAll(['Microsoft-Decision-1.1', 'gpt-5.1'], 800, true);
+    await d.click(portal.getByText('Decision-1.1', { exact: true }).first(), 800, 0.6);
+    await ready('Provide content to evaluate', 1500);
+    await hoverAll(['State', 'Decisions', 'Guided'], 700, true);
+    await d.waitVoice(0.3);
+    const state = portal.locator('[contenteditable=true]').first();
+    const setState = async (text) => {
+      await d.click(state, 650, 0.3);
+      await portal.keyboard.press('Control+A'); await portal.keyboard.press('Delete');
+      await portal.keyboard.insertText(text); await E.settle(portal, 500);
+    };
+    // The response panel text from "Input tokens" on; a new result is in when it changes and names the decision.
+    const snap = () => portal.evaluate(() => { const t = document.body.innerText; const i = t.lastIndexOf('Input tokens'); return i < 0 ? '' : t.slice(i, i + 700); });
+    const runAndWait = async () => {
+      const before = await snap();
+      await d.click(portal.getByRole('button', { name: 'Run' }).first(), 700, 0.2);
+      const t0 = Date.now();
+      for (;;) {
+        const now = await snap().catch(() => '');
+        if (now && now !== before && now.includes('implements')) break;
+        if (Date.now() - t0 > 60000) { console.log('no playground result'); break; }
+        await portal.waitForTimeout(250);
+      }
+      console.log('playground result', ((Date.now() - t0) / 1000).toFixed(1), 's:', (await snap()).replace(/\s+/g, ' ').slice(0, 160));
+      await E.settle(portal, 900);
+    };
+    await d.say('d3');
+    await setState(PLAY_TRAP);
+    await d.click(portal.getByText('JSON', { exact: true }).first(), 650, 0.4);
+    const editor = portal.locator('[contenteditable=true]').nth(1);
+    await d.click(editor, 600, 0.2);
+    await portal.keyboard.press('Control+A'); await portal.keyboard.press('Delete');
+    await portal.keyboard.insertText(PLAY_Q); await E.settle(portal, 600);
+    await d.wait(Math.max(0.3, d.voiceLeft() - 2.2));
+    await runAndWait();
+    await d.waitVoice(0.2);
+    const tokens = portal.getByText('Input tokens', { exact: false }).first();
+    try { const b = await tokens.boundingBox(); if (b) await E.zoomTo(d, { x: b.x - 16, y: b.y - 16, width: 800, height: 420 }, 1.5, 6); } catch (e) { console.log('result zoom', e.message); }
+    await d.say('d4');
+    await hoverAll(['implements'], 900, true);
+    await d.wait(Math.max(0.5, d.voiceLeft() * 0.45));
+    await d.unzoom(600);
+    await setState(PLAY_MATCH);
+    await d.waitVoice(0.1);
+    await runAndWait();
+    try { const b = await tokens.boundingBox(); if (b) await E.zoomTo(d, { x: b.x - 16, y: b.y - 16, width: 800, height: 420 }, 1.5, 6); } catch (e) { console.log('result zoom', e.message); }
+    await d.say('d4b');
+    await hoverAll(['implements', 'Output tokens'], 900, true);
+    await d.waitVoice(0.6); await d.unzoom(700);
+  } catch (e) {
+    console.log('aside portal failed, staying on the deck:', e.message);
+    await onDeck('x-hype'); await d.waitVoice(0.3);
+  }
+  // where it was tried: the two agent flows, the swapped step, the three models
+  await onDeck('x-where'); await fx('x-where', 0);
+  await d.say('d5');
+  await d.wait(1.0); await fx('x-where', 1); d.log('whoosh', { soft: true });
+  await d.wait(Math.max(1.5, d.voiceLeft() * 0.5)); await fx('x-where', 2); d.log('whoosh', { soft: true });
+  await d.wait(Math.max(1.5, d.voiceLeft() - 6)); await fx('x-where', 3);
+  await d.waitVoice(0.3);
+  await d.say('d5b'); await d.waitVoice(0.4);
+  // the first surprise: luna rejects temperature 0
+  await show('x-gotcha'); await fx('x-gotcha', 0); d.log('key');
+  await d.say('d5c');
+  await d.wait(Math.max(2, d.voiceLeft() * 0.5)); await fx('x-gotcha', 1);
+  await d.waitVoice(0.5);
+  // the race, real time
+  await show('x-race'); await d.wait(0.4);
+  await d.say('d6'); await d.wait(1.4); await fx('x-race', 1);
+  await d.wait(12.6); await fx('x-race', 2); d.log('whoosh', { soft: true });
+  await d.waitVoice(0.8);
+  // the scoreboard
+  await show('x-score'); await fx('x-score', 0);
+  await d.say('d7');
+  await d.wait(0.8); await fx('x-score', 1); d.log('whoosh', { soft: true });
+  await d.wait(Math.max(2, d.voiceLeft() * 0.48)); await fx('x-score', 2); d.log('whoosh', { soft: true });
+  await d.waitVoice(0.2);
+  await fx('x-score', 3); await d.say('d8');
+  await d.wait(Math.max(2, d.voiceLeft() * 0.5)); await fx('x-score', 4); d.log('whoosh');
+  await d.waitVoice(0.6);
+  // the verdict
+  await show('x-verdict'); await fx('x-verdict', 0);
+  await d.say('d9');
+  await d.wait(0.8); await fx('x-verdict', 1);
+  await d.wait(Math.max(1.5, d.voiceLeft() - 3.6)); await fx('x-verdict', 2); d.log('whoosh');
+  await d.waitVoice(1.8);
+
   // ---------------- 9. What I'd do differently
   await setLabel(chap('What I\'d do differently'));
   await show('d-takes2'); await part('d-takes2', ['a1', 'a2'], 0.2);
@@ -851,7 +1049,7 @@ async function runFilm(d, cap, pages) {
 // ------------------------------------------------------------------ main
 async function main() {
   fs.mkdirSync(WORK, { recursive: true });
-  const deckFile = () => buildDeck({ slides: slides(), hljsDir: path.join(ROOT, 'node_modules', '@highlightjs', 'cdn-assets'), out: path.join(WORK, 'deck.html') });
+  const deckFile = () => buildDeck({ slides: slides(), hljsDir: path.join(ROOT, 'node_modules', '@highlightjs', 'cdn-assets'), out: path.join(WORK, 'deck.html'), css: FXK.THEME_CSS, js: FXK.THEME_JS });
   if (args.has('--deck')) { console.log('wrote', deckFile()); return; }
   const kit = createKit({ name: NAME, lines: LINES, vo: path.join(FILM, 'vo-e2e5'), work: WORK, out: path.join(FILM, 'out'), musicGain: 0.4 });
   const lengths = kit.makeVoice();
