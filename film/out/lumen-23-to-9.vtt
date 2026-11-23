@@ -1,829 +1,1029 @@
 WEBVTT
 
 1
-00:00:02.991 --> 00:00:06.649
+00:00:04.426 --> 00:00:08.085
 Last time, I built 23 agents on Microsoft Foundry.
 
 2
-00:00:06.649 --> 00:00:12.356
+00:00:08.085 --> 00:00:13.792
 Each one hosted, with its own identity, endpoint, evaluations and red teaming.
 
 3
-00:00:12.619 --> 00:00:15.375
+00:00:14.048 --> 00:00:16.805
 Then I asked the question I should have asked first.
 
 4
-00:00:15.375 --> 00:00:17.760
+00:00:16.805 --> 00:00:19.190
 Did each of these really need to be an agent?
 
 5
-00:00:19.075 --> 00:00:22.770
+00:00:20.510 --> 00:00:24.206
 Every use case on the list became its own agent.
 
 6
-00:00:22.770 --> 00:00:27.928
+00:00:24.206 --> 00:00:29.364
 23 deployments, 23 identities, 23 things to secure, test and watch.
 
 7
-00:00:28.195 --> 00:00:30.098
+00:00:29.619 --> 00:00:31.522
 The list itself had a hint.
 
 8
-00:00:30.098 --> 00:00:33.692
+00:00:31.522 --> 00:00:35.117
 14 of the 23 were marked as skills, or skill-first.
 
 9
-00:00:33.692 --> 00:00:36.088
+00:00:35.117 --> 00:00:37.513
 I built them all as agents anyway.
 
 10
-00:00:36.343 --> 00:00:37.271
+00:00:37.800 --> 00:00:38.728
 Then the code.
 
 11
-00:00:37.271 --> 00:00:44.231
+00:00:38.728 --> 00:00:45.688
 Six agents run the same document pipeline: draft by section, check citations, render, and ask to publish.
 
 12
-00:00:44.231 --> 00:00:46.882
+00:00:45.688 --> 00:00:48.339
 Only the template and the checks differ.
 
 13
-00:00:47.141 --> 00:00:50.298
+00:00:48.598 --> 00:00:51.756
 Seven agents each built their own Q&A mode.
 
 14
-00:00:50.298 --> 00:00:54.116
+00:00:51.756 --> 00:00:55.574
 Five are really batch jobs, on a timer or a webhook.
 
 15
-00:00:54.116 --> 00:00:59.109
+00:00:55.574 --> 00:01:00.566
 And one, schema mapping, is a tool that another agent already calls.
 
 16
-00:01:00.403 --> 00:01:01.818
+00:01:01.874 --> 00:01:03.244
 So I split two ideas.
 
 17
-00:01:01.818 --> 00:01:03.032
-An agent is a who.
+00:01:03.244 --> 00:01:06.569
+This is my rule of thumb, not a Foundry definition.
 
 18
-00:01:03.032 --> 00:01:15.635
-In Foundry, that's a running service with its own Entra identity, its own permissions, one endpoint and protocol, one place its paused state is kept, and its own deployments and versions.
+00:01:06.569 --> 00:01:08.395
+The hosted agent is the who.
 
 19
-00:01:17.151 --> 00:01:19.269
-None of that says what the agent does.
+00:01:08.395 --> 00:01:23.652
+In Foundry, that's a running service with its own Entra identity and permissions, a stable endpoint with the protocols set for that deployment, a defined boundary for its sessions and paused work, and its own deployments and versions.
 
 20
-00:01:19.269 --> 00:01:22.335
-It says who is acting, and what it is allowed to touch.
+00:01:23.652 --> 00:01:28.542
+And by agent, I mean that deployed service, not a persona in a coding tool.
 
 21
-00:01:22.609 --> 00:01:23.765
-A skill is a what.
+00:01:28.542 --> 00:01:33.954
+That matters, because the hosted agent is also a security and operational boundary.
 
 22
-00:01:23.765 --> 00:01:25.627
-Take requirements refinement.
+00:01:35.483 --> 00:01:38.416
+None of those settings say which business job it does.
 
 23
-00:01:25.627 --> 00:01:33.846
-Its graph parses the document, extracts requirements section by section, checks them, renders the result, and asks for approval.
+00:01:38.416 --> 00:01:41.457
+They say who is acting, and what it is allowed to touch.
 
 24
-00:01:33.846 --> 00:01:37.185
-It has its own prompts, checks, reviewers and tests.
+00:01:41.713 --> 00:01:45.089
+A skill is the what: a traceable business capability.
 
 25
-00:01:37.185 --> 00:01:38.213
-But no identity.
+00:01:45.089 --> 00:01:46.935
+Take requirements refinement.
 
 26
-00:01:38.213 --> 00:01:42.001
-When it calls the model, it does so as the host it runs on.
+00:01:46.935 --> 00:01:55.087
+Its graph parses the document, extracts requirements section by section, checks them, renders the result, and asks for approval.
 
 27
-00:01:43.391 --> 00:01:46.201
-If you've built web apps, you know this shape.
+00:01:55.087 --> 00:01:58.398
+It has its own prompts, checks, reviewers and tests.
 
 28
-00:01:46.201 --> 00:01:51.394
-One app has one address, one managed identity and one configuration, and many routes.
+00:01:58.398 --> 00:01:59.417
+But no identity.
 
 29
-00:01:51.394 --> 00:01:52.616
-The host is the app.
+00:01:59.417 --> 00:02:03.175
+When it calls the model, it does so as the host it runs on.
 
 30
-00:01:52.616 --> 00:01:55.487
-Each skill is a route, and the router picks it.
+00:02:04.586 --> 00:02:07.397
+If you've built web apps, you know this shape.
 
 31
-00:01:55.741 --> 00:02:03.145
-Before, those five design skills were five agents, with five identities that all needed exactly the same access.
+00:02:07.397 --> 00:02:12.589
+One app has one address, one managed identity and one configuration, and many routes.
 
 32
-00:02:03.145 --> 00:02:05.789
-More to manage, and no extra protection.
+00:02:12.589 --> 00:02:13.811
+The host is the app.
 
 33
-00:02:07.186 --> 00:02:14.887
-Group the skills by trust boundary, and 23 agents become 9: six that people chat with, and three that run jobs.
+00:02:13.811 --> 00:02:16.682
+Each skill is a route, and the router picks it.
 
 34
-00:02:15.154 --> 00:02:19.004
-Security and architecture keep their own encrypted state store.
+00:02:16.935 --> 00:02:21.392
+Before, those five design skills were five agents, with five identities.
 
 35
-00:02:19.004 --> 00:02:23.709
-And nothing that writes to the backlog shares an identity with security work.
+00:02:21.392 --> 00:02:26.034
+But every one had the same permissions, the same data and the same callers.
 
 36
-00:02:23.966 --> 00:02:25.839
-Some skills sit on two hosts.
+00:02:26.034 --> 00:02:32.594
+Separate identities bought no real isolation here, just five identities and their role assignments to run.
 
 37
-00:02:25.839 --> 00:02:31.136
-The status report runs in chat when you ask for it, and on a timer every Thursday.
+00:02:32.594 --> 00:02:36.989
+If one had needed different access, it would have stayed its own agent.
 
 38
-00:02:31.136 --> 00:02:33.203
-Same code, different front door.
+00:02:38.376 --> 00:02:47.208
+Group the skills by trust and operational boundary, and 23 agents become 9: six that people chat with, and three that run jobs.
 
 39
-00:02:33.781 --> 00:02:35.666
-So the rule of thumb is simple.
+00:02:48.395 --> 00:02:51.290
+There are really two security boundaries here.
 
 40
-00:02:35.666 --> 00:02:37.186
-New behaviour, new skill.
+00:02:51.290 --> 00:02:54.499
+Endpoint authorization decides who may call a host.
 
 41
-00:02:37.186 --> 00:02:38.645
-New boundary, new agent.
+00:02:54.499 --> 00:02:58.463
+The host's Entra identity decides what it can reach downstream.
 
 42
-00:02:39.965 --> 00:02:41.806
-A word on the word "agent".
+00:02:58.463 --> 00:03:03.371
+Skills can share a host only when both still make sense for every one of them.
 
 43
-00:02:41.806 --> 00:02:50.259
-In Claude Code or GitHub Copilot, an agent is usually a persona: instructions, tools and a model, acting with your identity.
+00:03:04.588 --> 00:03:09.545
+In my design, security and architecture keep their own encrypted workflow state.
 
 44
-00:02:50.259 --> 00:02:56.463
-In Foundry, an agent is a deployed service with its own identity, permissions and endpoint.
+00:03:09.545 --> 00:03:14.316
+And nothing that writes to the backlog shares an identity with security work.
 
 45
-00:02:56.463 --> 00:02:58.440
-That's the sense I mean here.
+00:03:14.575 --> 00:03:16.449
+Some skills sit on two hosts.
 
 46
-00:02:58.700 --> 00:03:01.395
-The two overlap more than you'd think.
+00:03:16.449 --> 00:03:21.746
+The status report runs in chat when you ask for it, and on a timer every Thursday.
 
 47
-00:03:01.395 --> 00:03:08.276
-A Claude Code subagent uses skills for the actual work, in the same SKILL.md format Foundry uses.
+00:03:21.746 --> 00:03:23.813
+Same code, different front door.
 
 48
-00:03:08.276 --> 00:03:15.297
-And my 9 agents look a lot like personas: a design author, a backlog assistant, a security analyst.
+00:03:24.402 --> 00:03:28.458
+So the rule of thumb: new behaviour usually means a new skill.
 
 49
-00:03:15.556 --> 00:03:20.333
-The difference is that in Foundry, the "who" is also a real security principal.
+00:03:28.458 --> 00:03:35.325
+A different identity, caller, data, state, protocol, scaling or compliance boundary may mean a new agent.
 
 50
-00:03:20.333 --> 00:03:26.137
-So how many agents you have is a security and operations decision, not just a prompt-design one.
+00:03:36.664 --> 00:03:38.244
+The diagram was cleaner.
 
 51
-00:03:27.633 --> 00:03:34.225
-Inside a host, the graph is tiny: one router, one node per skill, and a node that asks when it isn't sure.
+00:03:38.244 --> 00:03:42.060
+But consolidation also means a bigger shared blast radius.
 
 52
-00:03:35.629 --> 00:03:44.952
-The router tries the cheap things first: a skill name in the request, then an old agent name, so existing callers keep working, then a use case number.
+00:03:42.060 --> 00:03:46.008
+Fewer deployments didn't make it safe, so I had to prove it.
 
 53
-00:03:44.952 --> 00:03:47.298
-Only plain chat goes to a small model.
+00:03:47.429 --> 00:03:54.021
+Inside a host, the graph is tiny: one router, one node per skill, and a node that asks when it isn't sure.
 
 54
-00:03:47.550 --> 00:03:51.795
-And if the model isn't confident, the host asks you, instead of guessing.
+00:03:55.425 --> 00:04:04.749
+The router tries the cheap things first: a skill name in the request, then an old agent name, so existing callers keep working, then a use case number.
 
 55
-00:03:52.258 --> 00:03:56.822
-Each skill's original graph is mounted unchanged, as a stateful subgraph.
+00:04:04.749 --> 00:04:07.095
+Only plain chat goes to a small model.
 
 56
-00:03:56.822 --> 00:04:03.074
-Its state survives between turns, and when it pauses for an approval, the whole host pauses with it.
+00:04:07.349 --> 00:04:11.595
+And if the model isn't confident, the host asks you, instead of guessing.
 
 57
-00:04:04.092 --> 00:04:06.488
-Here is that router, live in Foundry.
+00:04:12.051 --> 00:04:16.784
+Each skill's original graph is mounted unchanged, as a stateful subgraph.
 
 58
-00:04:06.488 --> 00:04:10.632
-A plain request with a document goes to requirements refinement.
+00:04:16.784 --> 00:04:18.924
+Its state survives between turns.
 
 59
-00:04:10.632 --> 00:04:13.287
-A vague one gets the list of skills back.
+00:04:18.924 --> 00:04:24.694
+When it reaches an approval, that conversation's run is saved and waits for the decision.
 
 60
-00:04:14.593 --> 00:04:22.209
-Turning a use case into a skill is about ten lines: a name, its use case number, the agent it used to be, and its graph.
+00:04:24.694 --> 00:04:27.027
+Other sessions on the host carry on.
 
 61
-00:04:23.935 --> 00:04:26.905
-One thing changes when skills share an agent.
+00:04:28.073 --> 00:04:30.469
+Here is that router, live in Foundry.
 
 62
-00:04:26.905 --> 00:04:35.618
-Anything that used to be keyed by the agent must now be keyed by the agent and the skill: session ids, run ids, settings and traces.
+00:04:30.469 --> 00:04:34.613
+A plain request with a document goes to requirements refinement.
 
 63
-00:04:35.618 --> 00:04:39.380
-Otherwise two skills on one host mix their work together.
+00:04:34.613 --> 00:04:37.268
+A vague one gets the list of skills back.
 
 64
-00:04:39.647 --> 00:04:44.898
-In return, calls between skills on the same agent stop going over the network.
+00:04:38.594 --> 00:04:47.013
+Registering an existing graph as a skill is about ten lines: a name, its use case number, the agent it used to be, and its graph.
 
 65
-00:04:44.898 --> 00:04:50.890
-The status report now calls schedule variance in process, with no extra endpoint or role.
+00:04:47.013 --> 00:04:50.733
+The real work was proving it could safely share the host.
 
 66
-00:04:52.362 --> 00:04:53.602
-Then the cut-over.
+00:04:52.475 --> 00:04:55.215
+One thing changes when skills share an agent.
 
 67
-00:04:53.602 --> 00:04:57.461
-The 9 hosts went up next to the old 23, in nine minutes.
+00:04:55.215 --> 00:04:58.686
+The deployment boundary no longer keeps their work apart.
 
 68
-00:04:57.738 --> 00:05:02.090
-In Foundry, 9 hosted agents, and each description lists its skills.
+00:04:58.686 --> 00:05:05.444
+So state, settings and traces carry every dimension that matters: the conversation, its run, and now the skill.
 
 69
-00:05:04.705 --> 00:05:10.678
-Before deleting anything, the same test case went to each old agent and to its new host.
+00:05:05.444 --> 00:05:12.872
+The running skill also sets its own phase, so a read-only skill still can't write, even on a host where another skill can.
 
 70
-00:05:10.678 --> 00:05:13.122
-22 of 22 scored the same, or better.
+00:05:12.872 --> 00:05:17.073
+Otherwise two skills, or two users, could mix their work on one host.
 
 71
-00:05:13.122 --> 00:05:18.145
-The one error came from a content filter, and the old agent failed it too.
+00:05:17.327 --> 00:05:21.440
+In return, my host calls sibling skills directly, in process.
 
 72
-00:05:19.319 --> 00:05:25.148
-Then the red team again, now through the hosts, so the router was under attack as well.
+00:05:21.440 --> 00:05:29.530
+The status report now calls schedule variance without the network hop, endpoint or extra role the old deployment needed.
 
 73
-00:05:25.148 --> 00:05:25.952
-240 attacks.
+00:05:31.017 --> 00:05:32.258
+Then the cut-over.
 
 74
-00:05:25.952 --> 00:05:26.956
-None succeeded.
+00:05:32.258 --> 00:05:36.116
+The 9 hosts went up next to the old 23, in nine minutes.
 
 75
-00:05:27.919 --> 00:05:30.493
-Only then were the old agents deleted.
+00:05:36.389 --> 00:05:40.741
+In Foundry, 9 hosted agents, and each description lists its skills.
 
 76
-00:05:30.493 --> 00:05:36.522
-Their role assignments went with them, along with 23 orphaned ones from an earlier build.
+00:05:43.349 --> 00:05:49.323
+Before deleting anything, the same test case went to each old agent and to its new host.
 
 77
-00:05:36.522 --> 00:05:38.351
-47 assignments, down to 10.
+00:05:49.323 --> 00:05:51.766
+22 of 22 scored the same, or better.
 
 78
-00:05:39.684 --> 00:05:41.525
-Now, about the word "skill".
+00:05:51.766 --> 00:05:56.789
+The one error came from a content filter, and the old agent failed it too.
 
 79
-00:05:41.525 --> 00:05:43.038
-Foundry has skills too.
+00:05:57.975 --> 00:06:03.922
+Then the red team again, now through the hosts, so the router was under attack as well.
 
 80
-00:05:43.038 --> 00:05:52.441
-A Foundry skill is a SKILL.md file: a short header and Markdown instructions, stored in the project, with immutable versions you can roll back.
+00:06:03.922 --> 00:06:04.742
+240 attacks.
 
 81
-00:05:52.700 --> 00:05:57.302
-Mine are Python packages: a graph, its prompts, checks and tests.
+00:06:04.742 --> 00:06:05.768
+None succeeded.
 
 82
-00:05:57.302 --> 00:06:00.630
-A Foundry skill changes what the model is told.
+00:06:05.768 --> 00:06:08.023
+Behaviour and security both held.
 
 83
-00:06:00.630 --> 00:06:03.392
-Mine decides the steps the agent takes.
+00:06:08.988 --> 00:06:11.563
+Only then were the old agents deleted.
 
 84
-00:06:03.392 --> 00:06:06.719
-A Foundry skill is closer to a reusable prompt.
+00:06:11.563 --> 00:06:17.591
+Their role assignments went with them, along with 23 orphaned ones from an earlier build.
 
 85
-00:06:06.719 --> 00:06:09.127
-Mine is closer to a small program.
+00:06:17.591 --> 00:06:19.420
+47 assignments, down to 10.
 
 86
-00:06:10.310 --> 00:06:11.522
-So where do they meet?
+00:06:20.740 --> 00:06:23.307
+At this point the runtime was consolidated.
 
 87
-00:06:11.522 --> 00:06:13.340
-In the wording the business owns.
+00:06:23.307 --> 00:06:25.755
+But I found a second duplication problem.
 
 88
-00:06:13.340 --> 00:06:15.323
-My prompts hold three kinds of text.
+00:06:25.755 --> 00:06:30.709
+The business standards were still copied into prompts across several Python skills.
 
 89
-00:06:15.576 --> 00:06:21.447
-Standards the business owns: how Contoso writes requirements, user stories, and plain English.
+00:06:30.709 --> 00:06:34.768
+Those standards have their own owners and their own release cadence.
 
 90
-00:06:21.447 --> 00:06:25.069
-Those moved into three Foundry skills, each with an owner.
+00:06:34.768 --> 00:06:37.216
+They needed a governed home of their own.
 
 91
-00:06:25.326 --> 00:06:35.865
-Rules the code checks stayed in code: the source excerpt must be verbatim, untrusted text is only data, claims are cited, and nothing harmful becomes a requirement.
+00:06:37.216 --> 00:06:39.364
+That's where Foundry skills came in.
 
 92
-00:06:35.865 --> 00:06:41.134
-In a Foundry skill, anyone with project access could weaken them without a review.
+00:06:40.584 --> 00:06:45.278
+A Foundry skill is a versioned bundle built around a SKILL.md manifest.
 
 93
-00:06:42.301 --> 00:06:43.861
-In a prompt, it's one line.
+00:06:45.278 --> 00:06:49.973
+It can hold instructions, scripts, reference files and other resources.
 
 94
-00:06:43.861 --> 00:06:50.045
-The standard comes first, the checked rules come after it, and the wrapper tells the model those rules win.
+00:06:49.973 --> 00:06:54.600
+It's stored in the project, with immutable versions you can roll back.
 
 95
-00:06:58.251 --> 00:07:02.470
-In Foundry, under Tools, Skills: the three standards, at version 1.
+00:06:54.854 --> 00:06:59.260
+Mine are Python packages: a graph, its prompts, checks and tests.
 
 96
-00:07:02.470 --> 00:07:06.059
-Open one, and there's the text a functional lead can own.
+00:06:59.260 --> 00:07:04.344
+Here, I use Foundry skills for the reusable instructions the business owns.
 
 97
-00:07:17.512 --> 00:07:21.496
-Agent Framework agents let the model decide when to load a skill.
+00:07:04.344 --> 00:07:07.462
+My Python skills are the executable workflows.
 
 98
-00:07:21.496 --> 00:07:28.178
-My graph already knows which step needs which standard, so it loads it directly, through the same Skills API.
+00:07:09.024 --> 00:07:10.657
+So there are three layers.
 
 99
-00:07:28.432 --> 00:07:32.857
-Production pins the version, so behaviour only changes on a deploy.
+00:07:10.657 --> 00:07:13.419
+The hosted agent is the deployment boundary.
 
 100
-00:07:32.857 --> 00:07:40.848
-Downloaded text is checked, there's a bundled copy if Foundry is unreachable, and every load is audited with its version.
+00:07:13.419 --> 00:07:16.182
+The Python skill is the executable workflow.
 
 101
-00:07:41.952 --> 00:07:43.085
-Then it went live.
+00:07:16.182 --> 00:07:19.823
+The Foundry skill carries the business-owned instructions.
 
 102
-00:07:43.085 --> 00:07:45.794
-Three skills published, 9 hosts redeployed.
+00:07:19.823 --> 00:07:23.339
+Keeping them apart lets each one change at its own pace.
 
 103
-00:07:45.794 --> 00:07:52.533
-And in the traces, each prompt carries its standard at version 1, straight from Foundry, with no fallbacks.
+00:07:23.596 --> 00:07:33.175
+Foundry skills follow the open Agent Skills convention, built around SKILL.md, so the same package can work in compatible coding agents too.
 
 104
-00:07:53.866 --> 00:07:59.069
-Last time, I said Foundry had built-in continuous improvement that I hadn't tried.
+00:07:33.175 --> 00:07:36.665
+A coding subagent and a skill are different things.
 
 105
-00:07:59.069 --> 00:07:59.767
-Now I have.
+00:07:36.665 --> 00:07:38.786
+The portable part is the skill.
 
 106
-00:07:59.767 --> 00:08:01.290
-The loop has two halves.
+00:07:40.303 --> 00:07:41.638
+So which wording moved?
 
 107
-00:08:02.823 --> 00:08:04.359
-Before release, my gate.
+00:07:41.638 --> 00:07:43.378
+The wording the business owns.
 
 108
-00:08:04.359 --> 00:08:09.671
-Test cases with exact checks, and red teaming with attacks hidden inside documents.
+00:07:43.378 --> 00:07:45.466
+My prompts hold three kinds of text.
 
 109
-00:08:09.671 --> 00:08:11.335
-Those found the real bugs.
+00:07:45.722 --> 00:07:51.593
+Standards the business owns: how Contoso writes requirements, user stories, and plain English.
 
 110
-00:08:11.588 --> 00:08:13.736
-After release, Foundry watches.
+00:07:51.593 --> 00:07:55.216
+Those moved into three Foundry skills, each with an owner.
 
 111
-00:08:13.736 --> 00:08:18.657
-Every hour, it samples recent traces and scores them with judge models.
+00:07:55.496 --> 00:08:06.037
+Rules the code checks stayed in code: the source excerpt must be verbatim, untrusted text is only data, claims are cited, and nothing harmful becomes a requirement.
 
 112
-00:08:18.657 --> 00:08:23.854
-The built-in evaluators cover task adherence, intent resolution and safety.
+00:08:06.037 --> 00:08:10.279
+I didn't want hard safety rules governed only as instruction text.
 
 113
-00:08:24.130 --> 00:08:27.692
-On the agent's Evaluation tab, those are the recurring runs.
+00:08:10.279 --> 00:08:15.742
+Whoever can publish or promote a skill version could change them outside code review.
 
 114
-00:08:50.072 --> 00:08:54.488
-And the scores land on the Monitor tab, next to runs, tokens and cost.
+00:08:16.930 --> 00:08:18.560
+In a prompt, it's one line.
 
 115
-00:08:57.935 --> 00:09:01.851
-But the built-in judges know generic quality, not Contoso's.
+00:08:18.560 --> 00:08:26.045
+The standard comes first, then the checked rules, and the wrapper tells the model to follow those rules if the two conflict.
 
 116
-00:09:01.851 --> 00:09:10.468
-So the standard the agent is told to follow, the Foundry skill, is now also the standard it's scored against, as a rubric evaluator.
+00:08:26.045 --> 00:08:28.097
+But I don't rely on that ordering.
 
 117
-00:09:10.468 --> 00:09:14.255
-And the rules my code checks became code-based evaluators.
+00:08:28.097 --> 00:08:30.029
+The code checks the rules again.
 
 118
-00:09:24.322 --> 00:09:32.492
-In Foundry, under Evaluations, the Evaluator catalog: Microsoft's built-in evaluators, and five of mine, marked custom.
+00:08:37.875 --> 00:08:42.094
+In Foundry, under Tools, Skills: the three standards, at version 1.
 
 119
-00:09:35.631 --> 00:09:37.314
-Open requirements quality.
+00:08:42.094 --> 00:08:45.683
+Open one, and there's the text a functional lead can own.
 
 120
-00:09:37.314 --> 00:09:43.206
-It's a rubric: eight dimensions, each with a weight, that a judge model scores from 1 to 5.
+00:08:57.274 --> 00:09:01.259
+Agent Framework agents let the model decide when to load a skill.
 
 121
-00:09:43.206 --> 00:09:45.084
-Keep the scope of the source.
+00:09:01.259 --> 00:09:07.941
+My graph already knows which step needs which standard, so it loads it directly, through the same Skills API.
 
 122
-00:09:45.084 --> 00:09:46.703
-One requirement per need.
+00:09:08.198 --> 00:09:12.623
+Production pins the version, so behaviour only changes on a deploy.
 
 123
-00:09:46.703 --> 00:09:50.394
-Flag vague terms, with a question for the business owner.
+00:09:12.623 --> 00:09:20.614
+Downloaded text is checked, there's a bundled copy if Foundry is unreachable, and every load is audited with its version.
 
 124
-00:09:53.129 --> 00:09:55.647
-Two of mine are code-based, in preview.
+00:09:21.725 --> 00:09:22.859
+Then it went live.
 
 125
-00:09:55.647 --> 00:09:57.455
-No judge model, just Python.
+00:09:22.859 --> 00:09:25.567
+Three skills published, 9 hosts redeployed.
 
 126
-00:09:57.455 --> 00:10:07.401
-They're the exact checks from my release gate: excerpts must be quoted word for word, and an interface document can't invent an endpoint or a status code.
+00:09:25.567 --> 00:09:32.307
+And in the traces, each prompt carries its standard at version 1, straight from Foundry, with no fallbacks.
 
 127
-00:10:25.776 --> 00:10:29.378
-The hourly rule runs them next to the built-in evaluators.
+00:09:33.631 --> 00:09:38.834
+Last time, I said Foundry had built-in continuous improvement that I hadn't tried.
 
 128
-00:10:29.378 --> 00:10:32.793
-Each rubric comes back with a pass or fail and a score.
+00:09:38.834 --> 00:09:39.532
+Now I have.
 
 129
-00:10:32.793 --> 00:10:39.003
-And for every dimension, a score and a written reason, which the built-in evaluators don't give you.
+00:09:39.532 --> 00:09:41.055
+The loop has two halves.
 
 130
-00:11:06.501 --> 00:11:09.192
-Every result is attached to its trace, too.
+00:09:42.612 --> 00:09:44.148
+Before release, my gate.
 
 131
-00:11:09.192 --> 00:11:15.824
-Open one, and there's the host, the router and the skill's steps, with the evaluation results beside them.
+00:09:44.148 --> 00:09:49.460
+Test cases with exact checks, and red teaming with attacks hidden inside documents.
 
 132
-00:11:20.262 --> 00:11:21.845
-And that closes the loop.
+00:09:49.460 --> 00:09:51.124
+Those found the real bugs.
 
 133
-00:11:21.845 --> 00:11:24.062
-A low score points at a real trace.
+00:09:51.389 --> 00:09:58.063
+After release, I set Foundry to sample recent traces every hour and score them with judge models.
 
 134
-00:11:24.062 --> 00:11:30.331
-That trace becomes a new golden case, and the fix goes back through my gate before it's redeployed.
+00:09:58.063 --> 00:10:01.915
+It can also evaluate continuously as responses complete.
 
 135
-00:11:31.612 --> 00:11:33.889
-Before the takeaways, a quick aside.
+00:10:01.915 --> 00:10:03.360
+Hourly was my choice.
 
 136
-00:11:33.889 --> 00:11:36.672
-Decision models are the hot topic right now.
+00:10:03.360 --> 00:10:08.520
+The built-in evaluators cover task adherence, intent resolution and safety.
 
 137
-00:11:36.672 --> 00:11:40.847
-Microsoft's Decision-1.1 just went generally available in Foundry.
+00:10:08.804 --> 00:10:12.367
+On the agent's Evaluation tab, those are the recurring runs.
 
 138
-00:11:40.847 --> 00:11:46.097
-It does one job: it picks from the options you allow, and tells you how sure it is.
+00:10:31.072 --> 00:10:35.488
+And the scores land on the Monitor tab, next to runs, tokens and cost.
 
 139
-00:11:46.097 --> 00:11:53.308
-And the claims are bold: much faster and much cheaper than a general model, for routing, classifying and checking.
+00:10:38.991 --> 00:10:42.952
+But the built-in judges know generic quality, not Contoso's.
 
 140
-00:11:58.808 --> 00:12:02.582
-It's already deployed in my project, next to the agents' model.
+00:10:42.952 --> 00:10:46.121
+So the same business standard now does two jobs.
 
 141
-00:12:02.582 --> 00:12:04.379
-And it has its own playground.
+00:10:46.121 --> 00:10:48.762
+It tells the skill what good looks like.
 
 142
-00:12:04.379 --> 00:12:07.854
-You give it the evidence, and the decisions you want made.
+00:10:48.762 --> 00:10:52.855
+And it's the rubric the evaluator scores live traffic against.
 
 143
-00:12:07.854 --> 00:12:09.771
-It gives you back probabilities.
+00:10:52.855 --> 00:10:56.421
+The rules my code checks became code-based evaluators.
 
 144
-00:12:09.771 --> 00:12:10.669
-No text at all.
+00:11:05.134 --> 00:11:13.305
+In Foundry, under Evaluations, the Evaluator catalog: Microsoft's built-in evaluators, and five of mine, marked custom.
 
 145
-00:12:10.982 --> 00:12:13.441
-Here's a real case from my link judge.
+00:11:17.334 --> 00:11:19.018
+Open requirements quality.
 
 146
-00:12:13.441 --> 00:12:17.387
-The requirement: email the applicant when the status changes.
+00:11:19.018 --> 00:11:24.910
+It's a rubric: eight dimensions, each with a weight, that a judge model scores from 1 to 5.
 
 147
-00:12:17.387 --> 00:12:20.622
-The candidate: an email template branding refresh.
+00:11:24.910 --> 00:11:26.788
+Keep the scope of the source.
 
 148
-00:12:20.622 --> 00:12:22.628
-Same word, different behaviour.
+00:11:26.788 --> 00:11:28.406
+One requirement per need.
 
 149
-00:12:22.628 --> 00:12:24.827
-Does it implement the requirement?
+00:11:28.406 --> 00:11:32.097
+Flag vague terms, with a question for the business owner.
 
 150
-00:12:27.510 --> 00:12:28.728
-A low probability.
+00:11:33.394 --> 00:11:37.003
+That score is still a model's judgment, not ground truth.
 
 151
-00:12:28.728 --> 00:12:29.810
-Correctly, a no.
+00:11:37.003 --> 00:11:43.271
+I check the rubric against labelled examples, and anything I can verify exactly stays a code check.
 
 152
-00:12:29.810 --> 00:12:35.019
-Now swap in the story that really does email the applicant, and run it again.
+00:11:45.260 --> 00:11:47.778
+Two of mine are code-based, in preview.
 
 153
-00:12:39.724 --> 00:12:40.854
-Close to certain.
+00:11:47.778 --> 00:11:49.587
+No judge model, just Python.
 
 154
-00:12:40.854 --> 00:12:43.713
-A couple of output tokens, back in seconds.
+00:11:49.587 --> 00:11:59.532
+They're the exact checks from my release gate: excerpts must be quoted word for word, and an interface document can't invent an endpoint or a status code.
 
 155
-00:12:43.713 --> 00:12:45.242
-No essay, no reasoning.
+00:12:17.245 --> 00:12:20.952
+The hourly rule runs them next to the built-in evaluators.
 
 156
-00:12:45.242 --> 00:12:47.169
-Just a number you can act on.
+00:12:20.952 --> 00:12:24.467
+Each rubric comes back with a pass or fail and a score.
 
 157
-00:12:49.221 --> 00:12:50.968
-So where exactly did I try it?
+00:12:24.467 --> 00:12:27.918
+And for every dimension, a score and a written reason.
 
 158
-00:12:50.968 --> 00:12:52.598
-Inside two real agent flows.
+00:12:27.918 --> 00:12:32.072
+That's more detail than the built-in evaluators I was using here.
 
 159
-00:12:52.598 --> 00:13:00.573
-In the backlog agent, the requirements traceability skill has one step that asks a model: does this work item implement this requirement?
+00:12:57.852 --> 00:13:00.542
+Every result is attached to its trace, too.
 
 160
-00:13:00.573 --> 00:13:07.734
-In the evidence job, the CAE evidence skill has one step that sorts each artifact into direct, supporting, or not evidence.
+00:13:00.542 --> 00:13:07.174
+Open one, and there's the host, the router and the skill's steps, with the evaluation results beside them.
 
 161
-00:13:07.734 --> 00:13:09.655
-I swapped only that step's model.
+00:13:11.749 --> 00:13:13.377
+And that closes the loop.
 
 162
-00:13:09.655 --> 00:13:15.418
-Everything around it stayed the same: the inputs, the code checks after it, and the human approval.
+00:13:13.377 --> 00:13:15.658
+A low score points at a real trace.
 
 163
-00:13:15.718 --> 00:13:18.083
-And there's a third contender.
+00:13:15.658 --> 00:13:16.440
+I review it.
 
 164
-00:13:18.083 --> 00:13:24.940
-gpt-6-luna is in my project too, and I'd heard it's cheaper and faster than gpt-5-mini.
+00:13:16.440 --> 00:13:26.213
+If it's a real failure or an important edge case, it becomes a new labelled golden case, and the fix goes back through my gate before it's redeployed.
 
 165
-00:13:24.940 --> 00:13:28.881
-So, three models: today's, Luna, and Decision-1.1.
+00:13:27.496 --> 00:13:30.099
+Before the takeaways, one related aside.
 
 166
-00:13:29.987 --> 00:13:33.291
-The first surprise came before a single result.
+00:13:30.099 --> 00:13:33.810
+Breaking the agents into skills showed me something else.
 
 167
-00:13:33.291 --> 00:13:35.611
-Luna refused my agents' settings.
+00:13:33.810 --> 00:13:37.390
+Not every step inside a skill needs a generative model.
 
 168
-00:13:35.611 --> 00:13:40.953
-Every agent asks for temperature 0, so the same input gives the same answer.
+00:13:37.390 --> 00:13:39.603
+Some only need a bounded decision.
 
 169
-00:13:40.953 --> 00:13:42.359
-Luna only accepts 1.
+00:13:39.603 --> 00:13:47.285
+Decision models are getting a lot of attention, and Microsoft's Decision-1.1 just went generally available in Foundry.
 
 170
-00:13:42.359 --> 00:13:45.100
-Swap it in blind, and every call fails.
+00:13:47.285 --> 00:13:55.096
+It makes bounded decisions instead of writing text: yes or no, which allowed option, or where something sits on a scale.
 
 171
-00:13:45.100 --> 00:13:48.334
-To test it at all, I ran it at 1, three times.
+00:13:55.096 --> 00:13:59.262
+And it returns probabilities I can use as an uncertainty signal.
 
 172
-00:13:49.976 --> 00:13:54.646
-Then the race, in real time: the median per requirement.
+00:13:59.262 --> 00:14:06.423
+The claims are bold: much faster and much cheaper than a general model, for routing, classifying and checking.
 
 173
-00:13:54.646 --> 00:13:57.982
-Decision-1.1 is done in about 2 seconds.
+00:14:11.861 --> 00:14:15.678
+It's already deployed in my project, next to the agents' model.
 
 174
-00:13:57.982 --> 00:13:59.316
-Luna in under 7.
+00:14:15.678 --> 00:14:17.496
+And it has its own playground.
 
 175
-00:13:59.316 --> 00:14:00.984
-gpt-5-mini takes 12.
+00:14:17.496 --> 00:14:21.010
+You give it the evidence, and the decisions you want made.
 
 176
-00:14:00.984 --> 00:14:07.405
-And the output tokens: under a hundred, against 9,000, against almost 20,000.
+00:14:21.010 --> 00:14:23.616
+It gives you back structured probabilities.
 
 177
-00:14:08.920 --> 00:14:10.010
-Now accuracy.
+00:14:23.616 --> 00:14:26.282
+No generated answer, and no written reasons.
 
 178
-00:14:10.010 --> 00:14:14.537
-On links, Luna was the best, 96 to 98%, with no traps.
+00:14:26.595 --> 00:14:29.053
+Here's a real case from my link judge.
 
 179
-00:14:14.537 --> 00:14:20.406
-Decision-1.1 tied gpt-5-mini at 94%, but missed three partial matches.
+00:14:29.053 --> 00:14:33.000
+The requirement: email the applicant when the status changes.
 
 180
-00:14:20.406 --> 00:14:24.095
-On security evidence, gpt-5-mini won at 93%.
+00:14:33.000 --> 00:14:36.235
+The candidate: an email template branding refresh.
 
 181
-00:14:24.095 --> 00:14:25.688
-Luna got 90 to 92%.
+00:14:36.235 --> 00:14:38.240
+Same word, different behaviour.
 
 182
-00:14:25.688 --> 00:14:31.640
-And Decision-1.1 twice called something direct evidence when it wasn't.
+00:14:38.240 --> 00:14:40.440
+Does it implement the requirement?
 
 183
-00:14:31.898 --> 00:14:32.712
-Two twists.
+00:14:43.107 --> 00:14:44.324
+A low probability.
 
 184
-00:14:32.712 --> 00:14:36.484
-Decision-1.1 flagged 6 of its 7 mistakes as unsure.
+00:14:44.324 --> 00:14:45.407
+Correctly, a no.
 
 185
-00:14:36.484 --> 00:14:40.773
-Both chat models were confident even when they were wrong.
+00:14:45.407 --> 00:14:50.616
+Now swap in the story that really does email the applicant, and run it again.
 
 186
-00:14:40.773 --> 00:14:47.430
-And combining them, Decision-1.1 first, and only its unsure answers to Luna, averaged 93%.
+00:14:55.323 --> 00:14:56.453
+Close to certain.
 
 187
-00:14:47.430 --> 00:14:52.015
-A tie with today's model, with one chat call instead of three.
+00:14:56.453 --> 00:14:59.311
+A couple of output tokens, back in seconds.
 
 188
-00:14:53.328 --> 00:14:55.299
-So what changed in production?
+00:14:59.311 --> 00:15:00.840
+No essay, no reasoning.
 
 189
-00:14:55.299 --> 00:14:56.152
-Nothing, yet.
+00:15:00.840 --> 00:15:02.768
+Just a number you can act on.
 
 190
-00:14:56.152 --> 00:14:58.845
-A cheaper model that rejects my settings.
+00:15:04.818 --> 00:15:06.564
+So where exactly did I try it?
 
 191
-00:14:58.845 --> 00:15:02.064
-A faster one that isn't more accurate on its own.
+00:15:06.564 --> 00:15:08.194
+Inside two real agent flows.
 
 192
-00:15:02.064 --> 00:15:04.231
-And a combination that only ties.
+00:15:08.194 --> 00:15:16.170
+In the backlog agent, the requirements traceability skill has one step that asks a model: does this work item implement this requirement?
 
 193
-00:15:04.231 --> 00:15:07.121
-The hype is real, and so are the benchmarks.
+00:15:16.170 --> 00:15:23.330
+In the evidence job, the CAE evidence skill has one step that sorts each artifact into direct, supporting, or not evidence.
 
 194
-00:15:07.121 --> 00:15:10.865
-But on my agents and my data, the answers were different.
+00:15:23.330 --> 00:15:25.252
+I swapped only that step's model.
 
 195
-00:15:10.865 --> 00:15:11.653
-Always test.
+00:15:25.252 --> 00:15:31.015
+Everything around it stayed the same: the inputs, the code checks after it, and the human approval.
 
 196
-00:15:11.653 --> 00:15:12.507
-Don't assume.
+00:15:31.317 --> 00:15:33.554
+And there's a third contender.
 
 197
-00:15:15.255 --> 00:15:17.140
-So, what would I do differently?
+00:15:33.554 --> 00:15:40.042
+gpt-6-luna is in my project too, and I'd heard it's cheaper and faster than gpt-5-mini.
 
 198
-00:15:17.140 --> 00:15:20.792
-Decide the deployment shape separately from the use case list.
+00:15:40.042 --> 00:15:43.846
+Luna is a general chat model, not a decision model.
 
 199
-00:15:20.792 --> 00:15:23.148
-Group by trust boundary, not by feature.
+00:15:43.846 --> 00:15:49.215
+So, three models on the same two steps: today's, Luna, and Decision-1.1.
 
 200
-00:15:23.404 --> 00:15:27.118
-Keep every use case traceable, as a skill with its own tests.
+00:15:50.353 --> 00:15:53.708
+The first surprise came before a single result.
 
 201
-00:15:27.118 --> 00:15:33.328
-Put the wording the business owns in Foundry skills, and score live traffic against that same wording.
+00:15:53.708 --> 00:15:56.063
+Luna refused my agents' settings.
 
 202
-00:15:33.328 --> 00:15:35.764
-Keep the rules your code checks in code.
+00:15:56.063 --> 00:16:01.631
+Every agent asks for temperature 0, to keep answers as consistent as possible.
 
 203
-00:15:35.764 --> 00:15:39.052
-And add Foundry's monitoring to your own release gate.
+00:16:01.631 --> 00:16:03.059
+Luna only accepts 1.
 
 204
-00:15:39.052 --> 00:15:40.087
-Don't replace it.
+00:16:03.059 --> 00:16:05.842
+Swap it in blind, and every call fails.
 
 205
-00:15:41.280 --> 00:15:42.631
-23 use cases.
+00:16:05.842 --> 00:16:09.126
+To test it fairly, I ran it at 1, three times.
 
 206
-00:15:42.631 --> 00:15:43.566
-9 agents.
+00:16:10.759 --> 00:16:15.409
+Then the race, in real time: the median per requirement.
 
 207
-00:15:43.566 --> 00:15:44.501
-One loop.
+00:16:15.409 --> 00:16:18.730
+Decision-1.1 is done in about 2 seconds.
+
+208
+00:16:18.730 --> 00:16:20.059
+Luna in under 7.
+
+209
+00:16:20.059 --> 00:16:21.720
+gpt-5-mini takes 12.
+
+210
+00:16:21.720 --> 00:16:29.276
+And the output volume: under a hundred output tokens, against 9,000, against almost 20,000.
+
+211
+00:16:30.794 --> 00:16:31.918
+A word on scale.
+
+212
+00:16:31.918 --> 00:16:43.724
+This tests my workload, not models in general: 48 link pairs and 60 evidence pairs, all synthetic, labelled with my AI coding assistant, not by a subject-matter expert.
+
+213
+00:16:43.724 --> 00:16:47.097
+Accuracy is the share that matched those labels.
+
+214
+00:16:47.097 --> 00:16:49.908
+Luna's ranges are across its three runs.
+
+215
+00:16:50.212 --> 00:16:51.302
+Now accuracy.
+
+216
+00:16:51.302 --> 00:16:55.829
+On links, Luna was the best, 96 to 98%, with no traps.
+
+217
+00:16:55.829 --> 00:17:01.697
+Decision-1.1 tied gpt-5-mini at 94%, but missed three partial matches.
+
+218
+00:17:01.697 --> 00:17:05.386
+On security evidence, gpt-5-mini won at 93%.
+
+219
+00:17:05.386 --> 00:17:06.979
+Luna got 90 to 92%.
+
+220
+00:17:06.979 --> 00:17:12.932
+And Decision-1.1 twice called something direct evidence when it wasn't.
+
+221
+00:17:13.183 --> 00:17:13.948
+Two twists.
+
+222
+00:17:13.948 --> 00:17:20.905
+On evidence, six of Decision-1.1's seven mistakes fell below the 0.8 threshold I set before the run.
+
+223
+00:17:20.905 --> 00:17:24.941
+Both chat models were confident even when they were wrong.
+
+224
+00:17:24.941 --> 00:17:32.037
+And combining them, Decision-1.1 first, and only its unsure answers to Luna, averaged 93% on evidence.
+
+225
+00:17:32.037 --> 00:17:36.351
+A tie with today's model, with one chat call instead of three.
+
+226
+00:17:37.666 --> 00:17:39.636
+So what changed in production?
+
+227
+00:17:39.636 --> 00:17:40.490
+Nothing, yet.
+
+228
+00:17:40.490 --> 00:17:43.183
+A cheaper model that rejects my settings.
+
+229
+00:17:43.183 --> 00:17:46.401
+A faster one that isn't more accurate on its own.
+
+230
+00:17:46.401 --> 00:17:48.569
+And a combination that only ties.
+
+231
+00:17:48.569 --> 00:17:51.459
+The hype is real, and so are the benchmarks.
+
+232
+00:17:51.459 --> 00:17:55.202
+But on my agents and my data, the answers were different.
+
+233
+00:17:55.202 --> 00:17:55.990
+Always test.
+
+234
+00:17:55.990 --> 00:17:56.844
+Don't assume.
+
+235
+00:17:58.373 --> 00:18:00.158
+That's the end of the aside.
+
+236
+00:18:00.158 --> 00:18:02.899
+One test won't change my production models.
+
+237
+00:18:02.899 --> 00:18:09.402
+But it taught the same lesson that took me from 23 agents to 9: use the right abstraction for the job.
+
+238
+00:18:11.862 --> 00:18:13.613
+So, back to the main story.
+
+239
+00:18:13.613 --> 00:18:16.079
+What did I learn from rebuilding this?
+
+240
+00:18:16.079 --> 00:18:19.323
+The biggest lesson wasn't that 23 agents became 9.
+
+241
+00:18:19.323 --> 00:18:24.124
+It's that the use case list shouldn't dictate the deployment architecture.
+
+242
+00:18:24.124 --> 00:18:26.655
+I still have 23 traceable capabilities.
+
+243
+00:18:26.655 --> 00:18:33.856
+But the deployment boundaries now follow identity, callers, permissions, state, protocol and how each one runs.
+
+244
+00:18:34.110 --> 00:18:37.824
+Keep every use case traceable, as a skill with its own tests.
+
+245
+00:18:37.824 --> 00:18:44.034
+Put the wording the business owns in Foundry skills, and score live traffic against that same wording.
+
+246
+00:18:44.034 --> 00:18:46.469
+Keep the rules your code checks in code.
+
+247
+00:18:46.469 --> 00:18:49.757
+And add Foundry's monitoring to your own release gate.
+
+248
+00:18:49.757 --> 00:18:50.792
+Don't replace it.
+
+249
+00:18:52.571 --> 00:18:55.233
+A use case isn't necessarily an agent.
+
+250
+00:18:55.233 --> 00:18:58.246
+A behaviour isn't necessarily a deployment.
+
+251
+00:18:58.246 --> 00:19:01.469
+A business instruction isn't necessarily code.
+
+252
+00:19:01.469 --> 00:19:05.043
+And a decision isn't necessarily a generative task.
+
+253
+00:19:05.043 --> 00:19:07.845
+Use the right abstraction at each layer.
+
+254
+00:19:08.782 --> 00:19:10.114
+23 use cases.
+
+255
+00:19:10.114 --> 00:19:11.139
+23 skills.
+
+256
+00:19:11.139 --> 00:19:11.959
+9 hosts.
+
+257
+00:19:11.959 --> 00:19:14.008
+One evaluation loop.
