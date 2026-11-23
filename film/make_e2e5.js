@@ -51,36 +51,45 @@ const LINES = {
     'Then the code. Six agents run the same document pipeline: draft by section, check citations, render, and ask to publish. Only the template and the checks differ.'),
   b4: L('Seven agents each built their own question and answer mode. Five are really batch jobs, on a timer or a webhook. And one, schema mapping, is a tool that another agent already calls.',
     'Seven agents each built their own Q&A mode. Five are really batch jobs, on a timer or a webhook. And one, schema mapping, is a tool that another agent already calls.'),
-  s1: L('So I split two ideas. An agent is a who. In Foundry, that is a running service with its own Entra identity, its own permissions, one endpoint and protocol, one place its paused state is kept, and its own deployments and versions.',
-    "So I split two ideas. An agent is a who. In Foundry, that's a running service with its own Entra identity, its own permissions, one endpoint and protocol, one place its paused state is kept, and its own deployments and versions."),
-  s1b: L('None of that says what the agent does. It says who is acting, and what it is allowed to touch.'),
-  s2: L('A skill is a what. Take requirements refinement. Its graph parses the document, extracts requirements section by section, checks them, renders the result, and asks for approval. It has its own prompts, checks, reviewers and tests. But no identity. When it calls the model, it does so as the host it runs on.',
-    'A skill is a what. Take requirements refinement. Its graph parses the document, extracts requirements section by section, checks them, renders the result, and asks for approval. It has its own prompts, checks, reviewers and tests. But no identity. When it calls the model, it does so as the host it runs on.'),
+  s1: L("So I split two ideas. This is my rule of thumb, not a Foundry definition. The hosted agent is the who. In Foundry, that is a running service with its own Entra identity and permissions, a stable endpoint with the protocols set for that deployment, a defined boundary for its sessions and paused work, and its own deployments and versions. And by agent, I mean that deployed service, not a persona in a coding tool. That matters, because the hosted agent is also a security and operational boundary.",
+    "So I split two ideas. This is my rule of thumb, not a Foundry definition. The hosted agent is the who. In Foundry, that's a running service with its own Entra identity and permissions, a stable endpoint with the protocols set for that deployment, a defined boundary for its sessions and paused work, and its own deployments and versions. And by agent, I mean that deployed service, not a persona in a coding tool. That matters, because the hosted agent is also a security and operational boundary."),
+  s1b: L("None of those settings say which business job it does. They say who is acting, and what it is allowed to touch.",
+    "None of those settings say which business job it does. They say who is acting, and what it is allowed to touch."),
+  s2: L("A skill is the what: a traceable business capability. Take requirements refinement. Its graph parses the document, extracts requirements section by section, checks them, renders the result, and asks for approval. It has its own prompts, checks, reviewers and tests. But no identity. When it calls the model, it does so as the host it runs on.",
+    "A skill is the what: a traceable business capability. Take requirements refinement. Its graph parses the document, extracts requirements section by section, checks them, renders the result, and asks for approval. It has its own prompts, checks, reviewers and tests. But no identity. When it calls the model, it does so as the host it runs on."),
   s3: L('If you have built web apps, you know this shape. One app has one address, one managed identity and one configuration, and many routes. The host is the app. Each skill is a route, and the router picks it.',
     "If you've built web apps, you know this shape. One app has one address, one managed identity and one configuration, and many routes. The host is the app. Each skill is a route, and the router picks it."),
-  s3b: L('Before, those five design skills were five agents, with five identities that all needed exactly the same access. More to manage, and no extra protection.'),
-  s4: L('Group the skills by trust boundary, and twenty three agents become nine. Six that people chat with, and three that run jobs.',
-    'Group the skills by trust boundary, and 23 agents become 9: six that people chat with, and three that run jobs.'),
-  s5: L('Security and architecture keep their own encrypted state store. And nothing that writes to the backlog shares an identity with security work.'),
+  s3b: L("Before, those five design skills were five agents, with five identities. But every one had the same permissions, the same data and the same callers. Separate identities bought no real isolation here, just five identities and their role assignments to run. If one had needed different access, it would have stayed its own agent.",
+    "Before, those five design skills were five agents, with five identities. But every one had the same permissions, the same data and the same callers. Separate identities bought no real isolation here, just five identities and their role assignments to run. If one had needed different access, it would have stayed its own agent."),
+  s4: L("Group the skills by trust and operational boundary, and twenty three agents become nine. Six that people chat with, and three that run jobs.",
+    "Group the skills by trust and operational boundary, and 23 agents become 9: six that people chat with, and three that run jobs."),
+  s4b: L("There are really two security boundaries here. Endpoint authorization decides who may call a host. The host's Entra identity decides what it can reach downstream. Skills can share a host only when both still make sense for every one of them.",
+    "There are really two security boundaries here. Endpoint authorization decides who may call a host. The host's Entra identity decides what it can reach downstream. Skills can share a host only when both still make sense for every one of them."),
+  s5: L("In my design, security and architecture keep their own encrypted workflow state. And nothing that writes to the backlog shares an identity with security work.",
+    "In my design, security and architecture keep their own encrypted workflow state. And nothing that writes to the backlog shares an identity with security work."),
   s6: L('Some skills sit on two hosts. The status report runs in chat when you ask for it, and on a timer every Thursday. Same code, different front door.'),
-  s7: L('So the rule of thumb is simple. New behaviour, new skill. New boundary, new agent.'),
-  p1: L('A word on the word agent. In Claude Code or GitHub Copilot, an agent is usually a persona: instructions, tools and a model, acting with your identity. In Foundry, an agent is a deployed service with its own identity, permissions and endpoint. That is the sense I mean here.',
-    'A word on the word "agent". In Claude Code or GitHub Copilot, an agent is usually a persona: instructions, tools and a model, acting with your identity. In Foundry, an agent is a deployed service with its own identity, permissions and endpoint. That\'s the sense I mean here.'),
-  p2: L('The two overlap more than you would think. A Claude Code subagent uses skills for the actual work, in the same skill dot M D format Foundry uses. And my nine agents look a lot like personas: a design author, a backlog assistant, a security analyst.',
-    "The two overlap more than you'd think. A Claude Code subagent uses skills for the actual work, in the same SKILL.md format Foundry uses. And my 9 agents look a lot like personas: a design author, a backlog assistant, a security analyst."),
-  p3: L('The difference is that in Foundry, the who is also a real security principal. So how many agents you have is a security and operations decision, not just a prompt design one.',
-    'The difference is that in Foundry, the "who" is also a real security principal. So how many agents you have is a security and operations decision, not just a prompt-design one.'),
-  f1: L('Now, about the word skill. Foundry has skills too. A Foundry skill is a skill dot M D file. A short header and Markdown instructions, stored in the project, with immutable versions you can roll back.',
-    'Now, about the word "skill". Foundry has skills too. A Foundry skill is a SKILL.md file: a short header and Markdown instructions, stored in the project, with immutable versions you can roll back.'),
-  f2: L('Mine are Python packages: a graph, its prompts, checks and tests. A Foundry skill changes what the model is told. Mine decides the steps the agent takes. A Foundry skill is closer to a reusable prompt. Mine is closer to a small program.',
-    'Mine are Python packages: a graph, its prompts, checks and tests. A Foundry skill changes what the model is told. Mine decides the steps the agent takes. A Foundry skill is closer to a reusable prompt. Mine is closer to a small program.'),
-  f3: L('So where do they meet? In the wording the business owns. My prompts hold three kinds of text.'),
+  s7: L("So the rule of thumb. New behaviour usually means a new skill. A different identity, caller, data, state, protocol, scaling or compliance boundary may mean a new agent.",
+    "So the rule of thumb: new behaviour usually means a new skill. A different identity, caller, data, state, protocol, scaling or compliance boundary may mean a new agent."),
+  s8: L("The diagram was cleaner. But consolidation also means a bigger shared blast radius. Fewer deployments did not make it safe, so I had to prove it.",
+    "The diagram was cleaner. But consolidation also means a bigger shared blast radius. Fewer deployments didn't make it safe, so I had to prove it."),
+  f1: L("At this point the runtime was consolidated. But I found a second duplication problem. The business standards were still copied into prompts across several Python skills. Those standards have their own owners and their own release cadence. They needed a governed home of their own. That is where Foundry skills came in.",
+    "At this point the runtime was consolidated. But I found a second duplication problem. The business standards were still copied into prompts across several Python skills. Those standards have their own owners and their own release cadence. They needed a governed home of their own. That's where Foundry skills came in."),
+  f1b: L("A Foundry skill is a versioned bundle built around a skill dot M D manifest. It can hold instructions, scripts, reference files and other resources. It is stored in the project, with immutable versions you can roll back.",
+    "A Foundry skill is a versioned bundle built around a SKILL.md manifest. It can hold instructions, scripts, reference files and other resources. It's stored in the project, with immutable versions you can roll back."),
+  f2: L("Mine are Python packages: a graph, its prompts, checks and tests. Here, I use Foundry skills for the reusable instructions the business owns. My Python skills are the executable workflows.",
+    "Mine are Python packages: a graph, its prompts, checks and tests. Here, I use Foundry skills for the reusable instructions the business owns. My Python skills are the executable workflows."),
+  f2b: L("So there are three layers. The hosted agent is the deployment boundary. The Python skill is the executable workflow. The Foundry skill carries the business owned instructions. Keeping them apart lets each one change at its own pace.",
+    "So there are three layers. The hosted agent is the deployment boundary. The Python skill is the executable workflow. The Foundry skill carries the business-owned instructions. Keeping them apart lets each one change at its own pace."),
+  f2c: L("Foundry skills follow the open Agent Skills convention, built around skill dot M D, so the same package can work in compatible coding agents too. A coding subagent and a skill are different things. The portable part is the skill.",
+    "Foundry skills follow the open Agent Skills convention, built around SKILL.md, so the same package can work in compatible coding agents too. A coding subagent and a skill are different things. The portable part is the skill."),
+  f3: L("So which wording moved? The wording the business owns. My prompts hold three kinds of text.",
+    "So which wording moved? The wording the business owns. My prompts hold three kinds of text."),
   f4: L('Standards the business owns. How Contoso writes requirements, user stories, and plain English. Those moved into three Foundry skills, each with an owner.',
     'Standards the business owns: how Contoso writes requirements, user stories, and plain English. Those moved into three Foundry skills, each with an owner.'),
-  f5: L('Rules the code checks stayed in code. The source excerpt must be verbatim, untrusted text is only data, claims are cited, and nothing harmful becomes a requirement. In a Foundry skill, anyone with project access could weaken them without a review.',
-    'Rules the code checks stayed in code: the source excerpt must be verbatim, untrusted text is only data, claims are cited, and nothing harmful becomes a requirement. In a Foundry skill, anyone with project access could weaken them without a review.'),
-  f6: L('In a prompt, it is one line. The standard comes first, the checked rules come after it, and the wrapper tells the model those rules win.',
-    "In a prompt, it's one line. The standard comes first, the checked rules come after it, and the wrapper tells the model those rules win."),
+  f5: L("Rules the code checks stayed in code. The source excerpt must be verbatim, untrusted text is only data, claims are cited, and nothing harmful becomes a requirement. I did not want hard safety rules governed only as instruction text. Whoever can publish or promote a skill version could change them outside code review.",
+    "Rules the code checks stayed in code: the source excerpt must be verbatim, untrusted text is only data, claims are cited, and nothing harmful becomes a requirement. I didn't want hard safety rules governed only as instruction text. Whoever can publish or promote a skill version could change them outside code review."),
+  f6: L("In a prompt, it is one line. The standard comes first, then the checked rules, and the wrapper tells the model to follow those rules if the two conflict. But I do not rely on that ordering. The code checks the rules again.",
+    "In a prompt, it's one line. The standard comes first, then the checked rules, and the wrapper tells the model to follow those rules if the two conflict. But I don't rely on that ordering. The code checks the rules again."),
   f7: L('In Foundry, under Tools, Skills. The three standards, at version one. Open one, and there is the text a functional lead can own.',
     "In Foundry, under Tools, Skills: the three standards, at version 1. Open one, and there's the text a functional lead can own."),
   f8: L('Agent Framework agents let the model decide when to load a skill. My graph already knows which step needs which standard, so it loads it directly, through the same Skills API.'),
@@ -93,71 +102,81 @@ const LINES = {
   h2: L('The router tries the cheap things first. A skill name in the request, then an old agent name, so existing callers keep working, then a use case number. Only plain chat goes to a small model.',
     'The router tries the cheap things first: a skill name in the request, then an old agent name, so existing callers keep working, then a use case number. Only plain chat goes to a small model.'),
   h3: L('And if the model is not confident, the host asks you, instead of guessing.', "And if the model isn't confident, the host asks you, instead of guessing."),
-  h4: L('Each skill\'s original graph is mounted unchanged, as a stateful subgraph. Its state survives between turns, and when it pauses for an approval, the whole host pauses with it.',
-    "Each skill's original graph is mounted unchanged, as a stateful subgraph. Its state survives between turns, and when it pauses for an approval, the whole host pauses with it."),
+  h4: L("Each skill's original graph is mounted unchanged, as a stateful subgraph. Its state survives between turns. When it reaches an approval, that conversation's run is saved and waits for the decision. Other sessions on the host carry on.",
+    "Each skill's original graph is mounted unchanged, as a stateful subgraph. Its state survives between turns. When it reaches an approval, that conversation's run is saved and waits for the decision. Other sessions on the host carry on."),
   h5: L('Here is that router, live in Foundry. A plain request with a document goes to requirements refinement. A vague one gets the list of skills back.'),
-  h6: L('Turning a use case into a skill is about ten lines. A name, its use case number, the agent it used to be, and its graph.',
-    'Turning a use case into a skill is about ten lines: a name, its use case number, the agent it used to be, and its graph.'),
-  x1: L('One thing changes when skills share an agent. Anything that used to be keyed by the agent must now be keyed by the agent and the skill: session ids, run ids, settings and traces. Otherwise two skills on one host mix their work together.',
-    'One thing changes when skills share an agent. Anything that used to be keyed by the agent must now be keyed by the agent and the skill: session ids, run ids, settings and traces. Otherwise two skills on one host mix their work together.'),
-  x2: L('In return, calls between skills on the same agent stop going over the network. The status report now calls schedule variance in process, with no extra endpoint or role.'),
+  h6: L("Registering an existing graph as a skill is about ten lines. A name, its use case number, the agent it used to be, and its graph. The real work was proving it could safely share the host.",
+    "Registering an existing graph as a skill is about ten lines: a name, its use case number, the agent it used to be, and its graph. The real work was proving it could safely share the host."),
+  x1: L("One thing changes when skills share an agent. The deployment boundary no longer keeps their work apart. So state, settings and traces carry every dimension that matters: the conversation, its run, and now the skill. The running skill also sets its own phase, so a read only skill still cannot write, even on a host where another skill can. Otherwise two skills, or two users, could mix their work on one host.",
+    "One thing changes when skills share an agent. The deployment boundary no longer keeps their work apart. So state, settings and traces carry every dimension that matters: the conversation, its run, and now the skill. The running skill also sets its own phase, so a read-only skill still can't write, even on a host where another skill can. Otherwise two skills, or two users, could mix their work on one host."),
+  x2: L("In return, my host calls sibling skills directly, in process. The status report now calls schedule variance without the network hop, endpoint or extra role the old deployment needed.",
+    "In return, my host calls sibling skills directly, in process. The status report now calls schedule variance without the network hop, endpoint or extra role the old deployment needed."),
   c1: L('Then the cut over. The nine hosts went up next to the old twenty three, in nine minutes.', 'Then the cut-over. The 9 hosts went up next to the old 23, in nine minutes.'),
   c2: L('In Foundry, nine hosted agents, and each description lists its skills.', 'In Foundry, 9 hosted agents, and each description lists its skills.'),
   c3: L('Before deleting anything, the same test case went to each old agent and to its new host. Twenty two of twenty two scored the same, or better. The one error came from a content filter, and the old agent failed it too.',
     'Before deleting anything, the same test case went to each old agent and to its new host. 22 of 22 scored the same, or better. The one error came from a content filter, and the old agent failed it too.'),
-  c4: L('Then the red team again, now through the hosts, so the router was under attack as well. Two hundred and forty attacks. None succeeded.',
-    'Then the red team again, now through the hosts, so the router was under attack as well. 240 attacks. None succeeded.'),
+  c4: L("Then the red team again, now through the hosts, so the router was under attack as well. Two hundred and forty attacks. None succeeded. Behaviour and security both held.",
+    "Then the red team again, now through the hosts, so the router was under attack as well. 240 attacks. None succeeded. Behaviour and security both held."),
   c5: L('Only then were the old agents deleted. Their role assignments went with them, along with twenty three orphaned ones from an earlier build. Forty seven assignments, down to ten.',
     'Only then were the old agents deleted. Their role assignments went with them, along with 23 orphaned ones from an earlier build. 47 assignments, down to 10.'),
   i1: L('Last time, I said Foundry had built in continuous improvement that I had not tried. Now I have. The loop has two halves.',
     "Last time, I said Foundry had built-in continuous improvement that I hadn't tried. Now I have. The loop has two halves."),
   i2: L('Before release, my gate. Test cases with exact checks, and red teaming with attacks hidden inside documents. Those found the real bugs.'),
-  i3: L('After release, Foundry watches. Every hour, it samples recent traces and scores them with judge models. The built in evaluators cover task adherence, intent resolution, and safety.',
-    'After release, Foundry watches. Every hour, it samples recent traces and scores them with judge models. The built-in evaluators cover task adherence, intent resolution and safety.'),
+  i3: L("After release, I set Foundry to sample recent traces every hour and score them with judge models. It can also evaluate continuously as responses complete. Hourly was my choice. The built in evaluators cover task adherence, intent resolution, and safety.",
+    "After release, I set Foundry to sample recent traces every hour and score them with judge models. It can also evaluate continuously as responses complete. Hourly was my choice. The built-in evaluators cover task adherence, intent resolution and safety."),
   i4: L('On the agent\'s Evaluation tab, those are the recurring runs.', "On the agent's Evaluation tab, those are the recurring runs."),
   i5: L('And the scores land on the Monitor tab, next to runs, tokens and cost.'),
-  r1: L('But the built in judges know generic quality, not Contoso\'s. So the standard the agent is told to follow, the Foundry skill, is now also the standard it is scored against, as a rubric evaluator. And the rules my code checks became code based evaluators.',
-    "But the built-in judges know generic quality, not Contoso's. So the standard the agent is told to follow, the Foundry skill, is now also the standard it's scored against, as a rubric evaluator. And the rules my code checks became code-based evaluators."),
+  r1: L("But the built in judges know generic quality, not Contoso's. So the same business standard now does two jobs. It tells the skill what good looks like. And it is the rubric the evaluator scores live traffic against. The rules my code checks became code based evaluators.",
+    "But the built-in judges know generic quality, not Contoso's. So the same business standard now does two jobs. It tells the skill what good looks like. And it's the rubric the evaluator scores live traffic against. The rules my code checks became code-based evaluators."),
   r2: L('In Foundry, under Evaluations, the Evaluator catalog. Microsoft\'s built in evaluators, and five of mine, marked custom.',
     "In Foundry, under Evaluations, the Evaluator catalog: Microsoft's built-in evaluators, and five of mine, marked custom."),
   r3: L('Open requirements quality. It is a rubric. Eight dimensions, each with a weight, that a judge model scores from one to five. Keep the scope of the source. One requirement per need. Flag vague terms, with a question for the business owner.',
     "Open requirements quality. It's a rubric: eight dimensions, each with a weight, that a judge model scores from 1 to 5. Keep the scope of the source. One requirement per need. Flag vague terms, with a question for the business owner."),
+  r3b: L("That score is still a model's judgment, not ground truth. I check the rubric against labelled examples, and anything I can verify exactly stays a code check.",
+    "That score is still a model's judgment, not ground truth. I check the rubric against labelled examples, and anything I can verify exactly stays a code check."),
   r4: L('Two of mine are code based, in preview. No judge model, just Python. They are the exact checks from my release gate. Excerpts must be quoted word for word, and an interface document cannot invent an endpoint or a status code.',
     "Two of mine are code-based, in preview. No judge model, just Python. They're the exact checks from my release gate: excerpts must be quoted word for word, and an interface document can't invent an endpoint or a status code."),
-  r5: L('The hourly rule runs them next to the built in evaluators. Each rubric comes back with a pass or fail and a score. And for every dimension, a score and a written reason, which the built in evaluators don\'t give you.',
-    "The hourly rule runs them next to the built-in evaluators. Each rubric comes back with a pass or fail and a score. And for every dimension, a score and a written reason, which the built-in evaluators don't give you."),
+  r5: L("The hourly rule runs them next to the built in evaluators. Each rubric comes back with a pass or fail and a score. And for every dimension, a score and a written reason. That is more detail than the built in evaluators I was using here.",
+    "The hourly rule runs them next to the built-in evaluators. Each rubric comes back with a pass or fail and a score. And for every dimension, a score and a written reason. That's more detail than the built-in evaluators I was using here."),
   i8: L('Every result is attached to its trace, too. Open one, and there is the host, the router and the skill\'s steps, with the evaluation results beside them.',
     "Every result is attached to its trace, too. Open one, and there's the host, the router and the skill's steps, with the evaluation results beside them."),
-  i9: L('And that closes the loop. A low score points at a real trace. That trace becomes a new golden case, and the fix goes back through my gate before it is redeployed.',
-    "And that closes the loop. A low score points at a real trace. That trace becomes a new golden case, and the fix goes back through my gate before it's redeployed."),
+  i9: L("And that closes the loop. A low score points at a real trace. I review it. If it is a real failure or an important edge case, it becomes a new labelled golden case, and the fix goes back through my gate before it is redeployed.",
+    "And that closes the loop. A low score points at a real trace. I review it. If it's a real failure or an important edge case, it becomes a new labelled golden case, and the fix goes back through my gate before it's redeployed."),
   // Aside: the decision model, tested (evals/decision_pilot, 2026-11-22)
-  d1: L('Before the takeaways, a quick aside. Decision models are the hot topic right now. Microsoft\'s Decision one point one just went generally available in Foundry. It does one job. It picks from the options you allow, and tells you how sure it is. And the claims are bold: much faster and much cheaper than a general model, for routing, classifying and checking.',
-    "Before the takeaways, a quick aside. Decision models are the hot topic right now. Microsoft's Decision-1.1 just went generally available in Foundry. It does one job: it picks from the options you allow, and tells you how sure it is. And the claims are bold: much faster and much cheaper than a general model, for routing, classifying and checking."),
-  d2: L('It\'s already deployed in my project, next to the agents\' model. And it has its own playground. You give it the evidence, and the decisions you want made. It gives you back probabilities. No text at all.',
-    "It's already deployed in my project, next to the agents' model. And it has its own playground. You give it the evidence, and the decisions you want made. It gives you back probabilities. No text at all."),
+  d1: L("Before the takeaways, one related aside. Breaking the agents into skills showed me something else. Not every step inside a skill needs a generative model. Some only need a bounded decision. Decision models are getting a lot of attention, and Microsoft's Decision one point one just went generally available in Foundry. It makes bounded decisions instead of writing text: yes or no, which allowed option, or where something sits on a scale. And it returns probabilities I can use as an uncertainty signal. The claims are bold: much faster and much cheaper than a general model, for routing, classifying and checking.",
+    "Before the takeaways, one related aside. Breaking the agents into skills showed me something else. Not every step inside a skill needs a generative model. Some only need a bounded decision. Decision models are getting a lot of attention, and Microsoft's Decision-1.1 just went generally available in Foundry. It makes bounded decisions instead of writing text: yes or no, which allowed option, or where something sits on a scale. And it returns probabilities I can use as an uncertainty signal. The claims are bold: much faster and much cheaper than a general model, for routing, classifying and checking."),
+  d2: L("It's already deployed in my project, next to the agents' model. And it has its own playground. You give it the evidence, and the decisions you want made. It gives you back structured probabilities. No generated answer, and no written reasons.",
+    "It's already deployed in my project, next to the agents' model. And it has its own playground. You give it the evidence, and the decisions you want made. It gives you back structured probabilities. No generated answer, and no written reasons."),
   d3: L('Here\'s a real case from my link judge. The requirement: email the applicant when the status changes. The candidate: an email template branding refresh. Same word, different behaviour. Does it implement the requirement?',
     "Here's a real case from my link judge. The requirement: email the applicant when the status changes. The candidate: an email template branding refresh. Same word, different behaviour. Does it implement the requirement?"),
   d4: L('A low probability. Correctly, a no. Now swap in the story that really does email the applicant, and run it again.'),
   d4b: L('Close to certain. A couple of output tokens, back in seconds. No essay, no reasoning. Just a number you can act on.'),
   d5: L('So where exactly did I try it? Inside two real agent flows. In the backlog agent, the requirements traceability skill has one step that asks a model: does this work item implement this requirement? In the evidence job, the CAE evidence skill has one step that sorts each artifact into direct, supporting, or not evidence. I swapped only that step\'s model. Everything around it stayed the same: the inputs, the code checks after it, and the human approval.',
     "So where exactly did I try it? Inside two real agent flows. In the backlog agent, the requirements traceability skill has one step that asks a model: does this work item implement this requirement? In the evidence job, the CAE evidence skill has one step that sorts each artifact into direct, supporting, or not evidence. I swapped only that step's model. Everything around it stayed the same: the inputs, the code checks after it, and the human approval."),
-  d5b: L('And there\'s a third contender. G P T six Luna is in my project too, and I\'d heard it\'s cheaper and faster than G P T five mini. So, three models: today\'s, Luna, and Decision one point one.',
-    "And there's a third contender. gpt-6-luna is in my project too, and I'd heard it's cheaper and faster than gpt-5-mini. So, three models: today's, Luna, and Decision-1.1."),
-  d5c: L('The first surprise came before a single result. Luna refused my agents\' settings. Every agent asks for temperature zero, so the same input gives the same answer. Luna only accepts one. Swap it in blind, and every call fails. To test it at all, I ran it at one, three times.',
-    "The first surprise came before a single result. Luna refused my agents' settings. Every agent asks for temperature 0, so the same input gives the same answer. Luna only accepts 1. Swap it in blind, and every call fails. To test it at all, I ran it at 1, three times."),
-  d6: L('Then the race, in real time. The median per requirement. Decision one point one is done in about two seconds. Luna in under seven. G P T five mini takes twelve. And the output tokens: under a hundred, against nine thousand, against almost twenty thousand.',
-    'Then the race, in real time: the median per requirement. Decision-1.1 is done in about 2 seconds. Luna in under 7. gpt-5-mini takes 12. And the output tokens: under a hundred, against 9,000, against almost 20,000.'),
+  d5b: L("And there's a third contender. G P T six Luna is in my project too, and I'd heard it's cheaper and faster than G P T five mini. Luna is a general chat model, not a decision model. So, three models on the same two steps: today's, Luna, and Decision one point one.",
+    "And there's a third contender. gpt-6-luna is in my project too, and I'd heard it's cheaper and faster than gpt-5-mini. Luna is a general chat model, not a decision model. So, three models on the same two steps: today's, Luna, and Decision-1.1."),
+  d5c: L("The first surprise came before a single result. Luna refused my agents' settings. Every agent asks for temperature zero, to keep answers as consistent as possible. Luna only accepts one. Swap it in blind, and every call fails. To test it fairly, I ran it at one, three times.",
+    "The first surprise came before a single result. Luna refused my agents' settings. Every agent asks for temperature 0, to keep answers as consistent as possible. Luna only accepts 1. Swap it in blind, and every call fails. To test it fairly, I ran it at 1, three times."),
+  d6: L("Then the race, in real time. The median per requirement. Decision one point one is done in about two seconds. Luna in under seven. G P T five mini takes twelve. And the output volume: under a hundred output tokens, against nine thousand, against almost twenty thousand.",
+    "Then the race, in real time: the median per requirement. Decision-1.1 is done in about 2 seconds. Luna in under 7. gpt-5-mini takes 12. And the output volume: under a hundred output tokens, against 9,000, against almost 20,000."),
+  d6b: L("A word on scale. This tests my workload, not models in general. Forty eight link pairs and sixty evidence pairs, all synthetic, labelled with my AI coding assistant, not by a subject matter expert. Accuracy is the share that matched those labels. Luna's ranges are across its three runs.",
+    "A word on scale. This tests my workload, not models in general: 48 link pairs and 60 evidence pairs, all synthetic, labelled with my AI coding assistant, not by a subject-matter expert. Accuracy is the share that matched those labels. Luna's ranges are across its three runs."),
   d7: L('Now accuracy. On links, Luna was the best, ninety six to ninety eight percent, with no traps. Decision one point one tied G P T five mini at ninety four, but missed three partial matches. On security evidence, G P T five mini won at ninety three. Luna got ninety to ninety two. And Decision one point one twice called something direct evidence when it wasn\'t.',
     "Now accuracy. On links, Luna was the best, 96 to 98%, with no traps. Decision-1.1 tied gpt-5-mini at 94%, but missed three partial matches. On security evidence, gpt-5-mini won at 93%. Luna got 90 to 92%. And Decision-1.1 twice called something direct evidence when it wasn't."),
-  d8: L('Two twists. Decision one point one flagged six of its seven mistakes as unsure. Both chat models were confident even when they were wrong. And combining them, Decision one point one first, and only its unsure answers to Luna, averaged ninety three percent. A tie with today\'s model, with one chat call instead of three.',
-    "Two twists. Decision-1.1 flagged 6 of its 7 mistakes as unsure. Both chat models were confident even when they were wrong. And combining them, Decision-1.1 first, and only its unsure answers to Luna, averaged 93%. A tie with today's model, with one chat call instead of three."),
+  d8: L("Two twists. On evidence, six of Decision one point one's seven mistakes fell below the zero point eight threshold I set before the run. Both chat models were confident even when they were wrong. And combining them, Decision one point one first, and only its unsure answers to Luna, averaged ninety three percent on evidence. A tie with today's model, with one chat call instead of three.",
+    "Two twists. On evidence, six of Decision-1.1's seven mistakes fell below the 0.8 threshold I set before the run. Both chat models were confident even when they were wrong. And combining them, Decision-1.1 first, and only its unsure answers to Luna, averaged 93% on evidence. A tie with today's model, with one chat call instead of three."),
   d9: L('So what changed in production? Nothing, yet. A cheaper model that rejects my settings. A faster one that isn\'t more accurate on its own. And a combination that only ties. The hype is real, and so are the benchmarks. But on my agents and my data, the answers were different. Always test. Don\'t assume.',
     "So what changed in production? Nothing, yet. A cheaper model that rejects my settings. A faster one that isn't more accurate on its own. And a combination that only ties. The hype is real, and so are the benchmarks. But on my agents and my data, the answers were different. Always test. Don't assume."),
-  k1: L('So, what would I do differently? Decide the deployment shape separately from the use case list. Group by trust boundary, not by feature.',
-    'So, what would I do differently? Decide the deployment shape separately from the use case list. Group by trust boundary, not by feature.'),
+  d10: L("That's the end of the aside. One test won't change my production models. But it taught the same lesson that took me from twenty three agents to nine: use the right abstraction for the job.",
+    "That's the end of the aside. One test won't change my production models. But it taught the same lesson that took me from 23 agents to 9: use the right abstraction for the job."),
+  k1: L("So, back to the main story. What did I learn from rebuilding this? The biggest lesson was not that twenty three agents became nine. It is that the use case list should not dictate the deployment architecture. I still have twenty three traceable capabilities. But the deployment boundaries now follow identity, callers, permissions, state, protocol and how each one runs.",
+    "So, back to the main story. What did I learn from rebuilding this? The biggest lesson wasn't that 23 agents became 9. It's that the use case list shouldn't dictate the deployment architecture. I still have 23 traceable capabilities. But the deployment boundaries now follow identity, callers, permissions, state, protocol and how each one runs."),
   k2: L('Keep every use case traceable, as a skill with its own tests. Put the wording the business owns in Foundry skills, and score live traffic against that same wording. Keep the rules your code checks in code. And add Foundry\'s monitoring to your own release gate. Don\'t replace it.',
     "Keep every use case traceable, as a skill with its own tests. Put the wording the business owns in Foundry skills, and score live traffic against that same wording. Keep the rules your code checks in code. And add Foundry's monitoring to your own release gate. Don't replace it."),
-  end: L('Twenty three use cases. Nine agents. One loop.', '23 use cases. 9 agents. One loop.'),
+  k3: L("A use case is not necessarily an agent. A behaviour is not necessarily a deployment. A business instruction is not necessarily code. And a decision is not necessarily a generative task. Use the right abstraction at each layer.",
+    "A use case isn't necessarily an agent. A behaviour isn't necessarily a deployment. A business instruction isn't necessarily code. And a decision isn't necessarily a generative task. Use the right abstraction at each layer."),
+  end: L("Twenty three use cases. Twenty three skills. Nine hosts. One evaluation loop.",
+    "23 use cases. 23 skills. 9 hosts. One evaluation loop."),
 };
 
 // ------------------------------------------------------------------ diagram helpers (SVG for code-deck diagram slides)
@@ -201,36 +220,29 @@ function dBefore() {
 }
 
 const D_SPLIT = [
-  B('who', 'ac', 20, 20, 640, 400, 'Agent = a WHO', ['Entra identity: calls the model, ADO, SharePoint', 'RBAC: what it may touch, who may call it', 'endpoint + protocol: one URL, chat or jobs', 'state store: where paused runs wait', 'deployment + versions: one container'], { lh: 44 }),
+  B('who', 'ac', 20, 20, 640, 400, 'Hosted agent = the WHO', ['Entra identity: calls the model, ADO, SharePoint', 'RBAC: what it may touch, who may call it', 'endpoint: protocols set per deployment', 'state: its sessions and paused work', 'deployment + versions: one container'], { lh: 44 }),
   A('mount', 'M662 220 H836', 'a host mounts skills', 670, 204),
-  B('what', 'md', 840, 20, 640, 400, 'Skill = a WHAT · e.g. brd (01)', ['graph: parse → extract → check', '  → render → ask for approval', 'prompts · checks · reviewer group', 'golden tests + evals', 'no identity of its own:', '  runs as the host it is on'], { lh: 44 }),
-  B('none', 'bx', 20, 450, 1460, 70, 'An agent\'s settings never say what it does: only who is acting, and what it may touch', [], { ty: 44 }),
+  B('what', 'md', 840, 20, 640, 400, 'Skill = the WHAT · e.g. brd (01)', ['graph: parse → extract → check', '  → render → ask for approval', 'prompts · checks · reviewer group', 'golden tests + evals', 'no identity of its own:', '  runs as the host it is on'], { lh: 44 }),
+  B('none', 'bx', 20, 450, 1460, 70, 'My rule of thumb, not a Foundry definition: the host\'s settings say who acts and what it may touch', [], { ty: 44 }),
 ].join('');
 
 const chips = (k, x, y, names, cls) => names.map((n, i) => `<g data-k="${k}"><rect class="${cls}" x="${x + i * 128}" y="${y}" width="118" height="40" rx="10"/>${T(x + i * 128 + 59, y + 27, 's', n, 'middle')}</g>`).join('');
-const D_PERSONA = [
-  B('persona', 'md', 20, 20, 700, 300, 'Persona · Claude Code, GitHub Copilot', ['instructions + tools + model', 'acts with YOUR identity', 'defined in a markdown file', 'uses skills (SKILL.md) for the work'], { lh: 42 }),
-  B('platform', 'ac', 780, 20, 700, 300, 'Deployed agent · Microsoft Foundry', ['a running service', 'its OWN Entra identity + RBAC', 'endpoint · state store · versions', 'mounts skills for the work'], { lh: 42 }),
-  B('match', 'py', 20, 350, 1460, 90, 'The 9 look like personas', ['design author · backlog assistant · delivery planner · security analyst · architect · knowledge (+3 job runners)']),
-  B('diff', 'wa', 20, 460, 1460, 70, 'In Foundry the "who" is a security principal: the count is a security and operations decision', [], { ty: 44 }),
-].join('');
-
 const D_ANALOGY = [
   B('app', 'bx', 20, 20, 620, 250, 'One web app', ['one address · one managed identity', 'one configuration', '', 'many routes:']),
   chips('app', 40, 200, ['/orders', '/invoices', '/reports'], 'bx'),
   A('same', 'M642 145 H776', 'same shape', 662, 128),
-  B('host', 'ac', 780, 20, 700, 250, 'One hosted agent: design-author', ['one endpoint · one Entra identity', 'one state store', '', 'many skills:']),
+  B('host', 'ac', 780, 20, 700, 250, 'One hosted agent: design-author', ['one endpoint · one Entra identity', 'one state boundary', '', 'many skills:']),
   chips('host', 800, 200, ['brd', 'fdd', 'tdd', 'icd', 'schema_map'], 'md'),
   G('flow', `<rect x="20" y="300" width="1460" height="120" rx="14" class="py"/>${T(44, 340, 't', 'One request')}`
     + T(44, 378, 'm', '{"skill": "brd", ...} → route → run_brd (the old agent\'s graph, unchanged) → reply')
     + T(44, 406, 'm', 'the model is called as contoso-design-author: the host\'s identity, not the skill\'s')),
-  B('before', 'wa', 20, 450, 1460, 70, 'Before: 5 agents · 5 identities · identical access. More to manage, no extra protection.', [], { ty: 44 }),
+  B('before', 'wa', 20, 450, 1460, 70, 'Before: 5 agents · 5 identities · same access, data and callers. No real isolation, just more to run.', [], { ty: 44 }),
 ].join('');
 
 const D_FVS = [
-  B('fs', 'pl', 20, 20, 700, 430, 'Foundry skill', ['a SKILL.md: header + Markdown', 'stored in the Foundry project', 'immutable versions, rollback', 'changes what the MODEL is TOLD', 'agent framework: the model', '  decides when to load it', '', '≈ a reusable prompt'], { lh: 40 }),
-  B('mine', 'md', 780, 20, 700, 430, 'My skill', ['a Python package', 'LangGraph graph + prompts', 'checks + golden tests', 'decides the STEPS it TAKES', 'mostly plain Python; the model', '  only at specific steps', '', '≈ a small program'], { lh: 40 }),
-  G('meet', `<rect x="20" y="470" width="1460" height="60" rx="30" fill="rgba(255,176,143,.12)" stroke="#ffb08f"/>${T(750, 508, 's', 'They meet in the wording the business owns', 'middle')}`),
+  B('fs', 'pl', 20, 20, 700, 430, 'Foundry skill', ['a versioned bundle: SKILL.md +', '  scripts, references, resources', 'stored in the Foundry project', 'immutable versions, rollback', 'agent framework: the model', '  decides when to load it', '', 'here: governed business instructions'], { lh: 40 }),
+  B('mine', 'md', 780, 20, 700, 430, 'My skill', ['a Python package', 'LangGraph graph + prompts', 'checks + golden tests', 'decides the STEPS it TAKES', 'mostly plain Python; the model', '  only at specific steps', '', 'here: the executable workflow'], { lh: 40 }),
+  G('meet', `<rect x="20" y="470" width="1460" height="60" rx="30" fill="rgba(255,176,143,.12)" stroke="#ffb08f"/>${T(750, 508, 's', 'Three layers: hosted agent · Python skill · Foundry skill', 'middle')}`),
 ].join('');
 
 const D_MOVE = [
@@ -292,13 +304,13 @@ const D_HOST = [
   B('run', 'py', 810, 40, 380, 330, 'run_<skill>', ['run_brd', 'run_fdd', 'run_tdd', 'run_icd', 'run_schema_map', 'original graph, unchanged', 'stateful subgraph'], { lh: 36 }),
   A('ask', 'M752 420 H806'),
   B('ask', 'hu', 810, 390, 380, 90, 'clarify', ['"which skill?" + the list']),
-  B('hitl', 'hu', 1215, 40, 285, 230, 'Approval', ['interrupt() in a skill', 'pauses the host', 'resumes on the', 'decision']),
+  B('hitl', 'hu', 1215, 40, 285, 230, 'Approval', ['interrupt() pauses', 'that conversation\'s run', 'other sessions', 'carry on']),
   B('scope', 'bx', 1215, 290, 285, 190, 'Per skill', ['phase', 'audit · approvals', 'carry the skill']),
 ].join('');
 
 const D_SHARE = [
-  B('key', 'wa', 20, 20, 710, 300, 'Key by agent + skill, not agent', ['session ids · run ids', 'settings (e.g. may this skill write?)', 'audit records · traces', '', 'otherwise two skills on one host', '  mix their work together'], { lh: 36 }),
-  B('calls', 'pl', 770, 20, 710, 300, 'In return: calls become in-process', ['status report → schedule variance', 'gate pack → architecture review', '', 'no network hop', 'no extra endpoint or role'], { lh: 36 }),
+  B('key', 'wa', 20, 20, 710, 300, 'Keep every dimension, add the skill', ['conversation · run · skill', 'skill phase: read-only still can\'t write', 'audit records · traces', '', 'otherwise two skills (or two users)', '  mix their work on one host'], { lh: 36 }),
+  B('calls', 'pl', 770, 20, 710, 300, 'In return: my host calls siblings in process', ['status report → schedule variance', 'gate pack → architecture review', '', 'no network hop', 'no extra endpoint or role'], { lh: 36 }),
 ].join('');
 
 const D_CUTOVER = [
@@ -309,7 +321,8 @@ const D_CUTOVER = [
   B('rt', 'wa', 780, 60, 340, 250, '3 · Red team the hosts', ['240 attacks, skill named', 'direct + inside documents', '0 succeeded']),
   A('ret', 'M1122 185 H1156'),
   B('ret', 'ac', 1160, 60, 320, 250, '4 · Retire', ['23 agents deleted', 'role assignments', '  47 → 10']),
-  G('roll', T(750, 370, 's', 'Rollback until step 4: the old agents kept running, and their deploy config is kept', 'middle')),
+  G('held', `<rect x="450" y="326" width="600" height="44" rx="22" fill="rgba(139,233,168,.14)" stroke="#8be9a8"/>${T(750, 355, 's', 'Behaviour held · security held', 'middle')}`),
+  G('roll', T(750, 396, 's', 'Rollback until step 4: the old agents kept running, and their deploy config is kept', 'middle')),
 ].join('');
 
 const D_LOOP2 = [
@@ -317,10 +330,10 @@ const D_LOOP2 = [
   '<path d="M760 14 V330" stroke="rgba(255,255,255,.3)" stroke-dasharray="6 6" fill="none"/>',
   B('pre', 'py', 20, 46, 710, 136, 'Golden cases, exact checks', ['excerpts · precision/recall · computed numbers · thresholds + baseline']),
   B('pre', 'py', 20, 194, 710, 136, 'Red team, local', ['direct + attacks hidden inside documents · through the host']),
-  B('post', 'pl', 780, 46, 700, 88, 'Hourly trace evaluation', ['built-in judges: task adherence · intent resolution · safety']),
+  B('post', 'pl', 780, 46, 700, 88, 'Hourly trace evaluation (my schedule)', ['built-in judges: task adherence · intent resolution · safety']),
   B('custom', 'md', 780, 144, 700, 88, 'Custom evaluators', ['2 rubrics = the Foundry skill standards · 2 code checks from my gate']),
   B('post', 'pl', 780, 242, 700, 88, 'Monitor · Traces', ['scores beside runs, tokens, cost · results on every trace']),
-  `<g data-k="loop"><path class="lp" d="M1482 188 H1494 V372 H6 V188 H16" marker-end="url(#MARKER)"/>${T(750, 400, 's', 'a low score → a new golden case → through the gate → redeploy', 'middle')}</g>`,
+  `<g data-k="loop"><path class="lp" d="M1482 188 H1494 V372 H6 V188 H16" marker-end="url(#MARKER)"/>${T(750, 400, 's', 'a low score → human review → a labelled golden case → through the gate → redeploy', 'middle')}</g>`,
 ].join('');
 
 // Same standard, told and scored: the Foundry skill feeds the prompt, the rubric restates it for the judge.
@@ -335,9 +348,41 @@ const D_RUBRIC = [
 
 const D_TAKES2 = [
   B('a1', 'md', 20, 30, 700, 170, 'Deployment shape ≠ use-case list', ['decide it separately, on purpose']),
-  B('a2', 'ac', 780, 30, 700, 170, 'Group by trust boundary', ['identity · permissions · state · protocol']),
+  B('a2', 'ac', 780, 30, 700, 170, 'Group by trust + operational boundary', ['caller · identity · permissions · state · protocol']),
   B('a3', 'py', 20, 230, 700, 170, 'Keep use cases traceable', ['one skill per use case, its own tests', 'business wording → Foundry skills + rubrics', 'checked rules → code'], { lh: 30 }),
   B('a4', 'pl', 780, 230, 700, 170, 'Add, don\'t replace', ['your release gate + Foundry\'s monitoring', 'your own standards as its evaluators'], { lh: 30 }),
+].join('');
+
+
+// Two security boundaries, and the risk consolidation creates (answered by the cut-over).
+const D_BOUND = [
+  B('callers', 'bx', 20, 60, 300, 230, 'Callers', ['people in chat', 'timers · webhooks', 'other agents']),
+  A('callers', 'M322 175 H446', '', 0, 0),
+  G('callers', `<rect x="336" y="100" width="100" height="44" rx="10" class="hu"/>${T(386, 128, 's', 'gate 1', 'middle')}`),
+  B('host', 'ac', 450, 20, 600, 310, 'contoso-design-author', ['one hosted agent · five skills', '', 'Gate 1 · endpoint authorization', '  who may CALL the host', '  (a Foundry role on the project)', 'Gate 2 · the host\'s Entra identity', '  what the host can REACH'], { lh: 34 }),
+  A('down', 'M1052 175 H1176', '', 0, 0),
+  G('down', `<rect x="1066" y="100" width="100" height="44" rx="10" class="hu"/>${T(1116, 128, 's', 'gate 2', 'middle')}`),
+  B('down', 'pl', 1180, 60, 300, 230, 'Downstream', ['the model', 'Azure DevOps', 'SharePoint · Cosmos']),
+  B('rule', 'py', 20, 350, 1460, 70, 'Skills share a host only when both gates make sense for every skill on it', [], { ty: 44 }),
+  B('risk', 'wa', 20, 440, 1460, 80, 'Cleaner diagram, bigger shared blast radius. Did behaviour and security hold?', [], { ty: 50 }),
+].join('');
+
+// The second duplication problem, and the three layers that answer it.
+const D_LAYERS = [
+  B('dup', 'wa', 20, 20, 1460, 90, 'A second duplication problem', ['one business standard, copied into the prompts of several Python skills · its own owner, its own release cadence']),
+  B('l1', 'ac', 20, 140, 470, 250, 'Hosted agent', ['deployment · identity', 'endpoint · runtime', 'operational boundary', '', 'changes: rarely'], { lh: 32 }),
+  B('l2', 'md', 515, 140, 470, 250, 'Python skill', ['executable workflow', 'LangGraph graph · tools', 'checks + golden tests', '', 'changes: with a code release'], { lh: 32 }),
+  B('l3', 'py', 1010, 140, 470, 250, 'Foundry skill', ['governed instructions', 'business standards', 'versioned, pinned', '', 'changes: when its owner publishes'], { lh: 32 }),
+  B('port', 'pl', 20, 420, 1460, 90, 'Portable: the open Agent Skills convention (SKILL.md)', ['works in compatible coding agents too · a coding subagent is not a skill: the portable part is the skill']),
+].join('');
+
+// The abstraction lesson.
+const D_ABSTRACT = [
+  B('a1', 'md', 20, 20, 720, 110, 'A use case ≠ an agent', [], { ty: 66 }),
+  B('a2', 'ac', 760, 20, 720, 110, 'A behaviour ≠ a deployment', [], { ty: 66 }),
+  B('a3', 'py', 20, 150, 720, 110, 'A business instruction ≠ code', [], { ty: 66 }),
+  B('a4', 'pl', 760, 150, 720, 110, 'A decision ≠ a generative task', [], { ty: 66 }),
+  G('fin', `<rect x="300" y="300" width="900" height="80" rx="40" fill="rgba(255,176,143,.16)" stroke="#ffb08f" stroke-width="2"/>${T(750, 350, 't', 'Use the right abstraction at each layer', 'middle')}`),
 ].join('');
 
 // ------------------------------------------------------------------ aside: Decision-1.1, tested (real result files)
@@ -398,13 +443,13 @@ function asideData() {
       ['wrongly rated "direct"', { g5: String(eg5[0]['over-claims to direct']), lu: String(Math.max(...acc(elu, 'over-claims to direct'))), dc: String(edc[0]['over-claims to direct']) },
         { g5: eg5[0]['over-claims to direct'], lu: Math.max(...acc(elu, 'over-claims to direct')), dc: edc[0]['over-claims to direct'] }, 'lo'],
     ],
-    flag: [['own errors flagged as unsure', { g5: `${gf}/${gt}`, lu: `${lf}/${lt}`, dc: `${df}/${dt}` }, { g5: gf / gt, lu: lf / lt, dc: df / dt }, 'hi', 'confidence below 0.8']],
+    flag: [['evidence · own errors flagged as unsure', { g5: `${gf}/${gt}`, lu: `${lf}/${lt}`, dc: `${df}/${dt}` }, { g5: gf / gt, lu: lf / lt, dc: df / dt }, 'hi', 'confidence below 0.8, fixed before the run']],
     combo: {
       title: 'Combined: Decision-1.1 first, only its unsure answers to gpt-6-luna',
       sub: `evidence classifier · ${hyb.length} runs: ${hyb.map((h) => pct(h['accuracy (3-class)'])).join(', ')} · ties today's model with 1 chat call instead of 3`,
       value: `${pct(mean(acc(hyb, 'accuracy (3-class)')))} avg`,
     },
-    foot: `Synthetic, hand-labelled cases · gpt-6-luna: ${lu.length} runs at temperature 1, ranges shown, 👑 on its mean · real result files in out/decision_pilot`,
+    foot: `My workload, not a general benchmark · ${g5[0].pairs} link + ${eg5[0].pairs} evidence pairs, synthetic, AI-labelled (not an SME) · accuracy = share matching the labels · gpt-6-luna: ${lu.length} runs at temperature 1, ranges shown, 👑 on its mean`,
     errors: errors.slice(0, 8),
     errSummary: `${failed.scores['gpt-6-luna'].failed_calls} of ${failed.scores['gpt-6-luna'].failed_calls} calls failed · HTTP 400 · 0 answers`,
     verdicts: [
@@ -483,18 +528,19 @@ function slides() {
   return [
     { type: 'image', id: 's-before', kicker: 'Last time · built for real', title: '23 hosted agents, <em>one per use case</em>', file: path.join(FILM, 'foundry-inputs', 'agents-23-before.png') },
     dg('d-before', 'What the code said', 'Twenty-three agents, <em>four patterns</em>', '0 0 1500 670', dBefore()),
-    dg('d-split', 'Agents and skills', 'An agent is a <em>who</em>. A skill is a <em>what</em>.', '0 0 1500 540', D_SPLIT),
+    dg('d-split', 'Agents and skills · my rule of thumb', 'The host is the <em>who</em>. A skill is the <em>what</em>.', '0 0 1500 540', D_SPLIT),
     dg('d-analogy', 'Agents and skills', 'Like one web app <em>with many routes</em>', '0 0 1500 540', D_ANALOGY),
-    dg('d-after', 'Agents and skills', '23 agents → <em>9 hosts</em>, grouped by trust boundary', '0 0 1500 650', dAfter()),
-    dg('d-persona', 'Agents and skills', 'Two meanings of <em>agent</em>', '0 0 1500 550', D_PERSONA),
+    dg('d-after', 'Agents and skills', '23 agents → <em>9 hosts</em>, grouped by trust and operational boundary', '0 0 1500 650', dAfter()),
+    dg('d-bound', 'Agents and skills', 'Two gates, <em>one shared host</em>', '0 0 1500 540', D_BOUND),
     dg('d-hostgraph', 'agents/design-author · get_graph()', 'A whole host: <em>route, then one skill</em>', '0 0 1500 540', D_HOSTGRAPH),
     dg('d-host', 'Inside a host', 'Cheap routing first, <em>ask when unsure</em>', '0 0 1500 500', D_HOST),
     { type: 'term', id: 's-routing', kicker: 'Live · deployed host', title: 'The router, <em>in Foundry</em>', label: `responses · ${HOST}`, note: 'real replies, captured 2026-11-21', lines: routingLines() },
     dg('d-share', 'Inside a host', 'What changes when <em>skills share an agent</em>', '0 0 1500 340', D_SHARE),
-    dg('d-cutover', 'Cutting over', 'Prove it, <em>then</em> retire', '0 0 1500 400', D_CUTOVER),
+    dg('d-cutover', 'Cutting over', 'Prove it, <em>then</em> retire', '0 0 1500 410', D_CUTOVER),
     { type: 'term', id: 's-compare', kicker: 'Cut-over check · live', title: 'Old agent vs new host, <em>same case</em>', label: 'PowerShell · ircc-sdlc-agents', note: 'status and mean score per run', lines: compareLines() },
     { type: 'term', id: 's-delete', kicker: 'Retirement · 2026-11-21', title: 'Only then: <em>delete the 23</em>', label: 'PowerShell · foundry-test-deploy/contoso', note: 'delete-old-agents.log', lines: deleteLines() },
     dg('d-fvs', 'Foundry skills', 'Same word, <em>different thing</em>', '0 0 1500 550', D_FVS),
+    dg('d-layers', 'Foundry skills', 'Three layers, <em>three cadences</em>', '0 0 1500 530', D_LAYERS),
     dg('d-move', 'Foundry skills', 'What moved, and <em>what stayed in code</em>', '0 0 1500 530', D_MOVE),
     dg('d-load', 'Foundry skills', "The model doesn't choose. <em>The graph does.</em>", '0 0 1500 510', D_LOAD),
     { type: 'term', id: 's-fproof', kicker: 'Live · 2026-11-22', title: 'Published, deployed, <em>proven in the traces</em>', label: 'PowerShell · ircc-sdlc-agents', note: 'publish tool · azd ai skill list · App Insights', lines: proofLines() },
@@ -503,36 +549,42 @@ function slides() {
     ...FXK.asideSlides(asideData()),
     ...FXK.learnSlides({ hostImg: learnImg('hosted-agent-architecture.png'), lifeImg: learnImg('lifecycle.png') }),
     ...FXK.extraSlides(),
-    dg('d-takes2', 'What I\'d do differently', 'Your framework decides behaviour. <em>The deployment shape is a choice.</em>', '0 0 1500 420', D_TAKES2),
+    dg('d-abstract', 'What I learned', 'Pick the <em>right abstraction</em>', '0 0 1500 400', D_ABSTRACT),
+    dg('d-takes2', 'What I learned', 'The use case list <em>shouldn\'t dictate the deployment</em>', '0 0 1500 420', D_TAKES2),
   ];
 }
 
 // ------------------------------------------------------------------ cards
 const LOGO = E.LOGO;
 const TITLE = `<div class="logo rise">${LOGO}</div><h1 class="rise" style="animation-delay:.2s;font-size:66px">From <em>23 agents</em> to 9</h1><p class="rise" style="animation-delay:.45s">Agents, skills, Foundry skills, and the loop that keeps them honest · LangGraph on Microsoft Foundry</p>`;
-const END = `<div class="logo rise">${LOGO}</div><h1 class="rise" style="animation-delay:.2s;font-size:60px">23 use cases.<br><em>9 agents.</em> One loop.</h1><p class="rise" style="animation-delay:.45s">Synthetic data · fictional organization · a proof of concept</p>`;
+const END = `<div class="logo rise">${LOGO}</div><h1 class="rise" style="animation-delay:.2s;font-size:58px">23 use cases. 23 skills.<br><em>9 hosts.</em> One evaluation loop.</h1><p class="rise" style="animation-delay:.45s">Synthetic data · fictional organization · a proof of concept</p>`;
+const ASIDE_END = `<h1 class="rise" style="font-size:60px">End of the <em>aside</em>.</h1><p class="rise" style="animation-delay:.35s">Use the right abstraction for the job · back to the main story</p>`;
 const chap = (t) => `<span>${t}</span>`;
 
 // ------------------------------------------------------------------ storyboard (same lines and diagrams as the film)
 const SCENES = [
   ['Cold open', 'Title card, then the 23-agent portal list from the last video (image).', ['t1', 't2'], 's-before'],
   ['What the code said', 'Diagram: 23 use cases, catalogue strip lights first, then each pattern group.', ['b1', 'b2', 'b3', 'b4'], 'd-before'],
-  ['Agents and skills', 'Microsoft Learn diagram (Hosted agents in Foundry Agent Service), callouts light its own identity, endpoint, state and versions; then the agent/skill diagram: settings never say what it does; skill = what, brd as the example.', ['s1', 's1b', 's2'], 'd-split'],
+  ['Agents and skills', 'Microsoft Learn diagram (Hosted agents in Foundry Agent Service), callouts light its own identity, endpoint, state and versions; then the who/what diagram, labelled as my rule of thumb; skill = what, brd as the example.', ['s1', 's1b', 's2'], 'd-split'],
   ['Agents and skills', 'Diagram: one web app with many routes ↔ one hosted agent with many skills; one real request flow; "before: 5 agents, 5 identities".', ['s3', 's3b'], 'd-analogy'],
-  ['Agents and skills', 'Diagram: the 9 hosts, chat row then jobs row, Cosmos tags, skills on two hosts. Then the rule of thumb.', ['s4', 's5', 's6', 's7'], 'd-after'],
-  ['Agents and skills', 'Diagram: two meanings of "agent": persona (Claude Code, GitHub Copilot; acts with your identity) vs deployed Foundry agent (its own identity); the 9 look like personas; in Foundry the count is a security decision.', ['p1', 'p2', 'p3'], 'd-persona'],
+  ['Agents and skills', 'Diagram: the 9 hosts, chat row then jobs row, Cosmos tags, skills on two hosts.', ['s4'], 'd-after'],
+  ['Agents and skills', 'Diagram: two gates. Caller → gate 1 (endpoint authorization: who may call) → host → gate 2 (its Entra identity: what it can reach) → downstream.', ['s4b'], 'd-bound'],
+  ['Agents and skills', 'Back to the 9 hosts: Cosmos tags, then skills on two hosts. Then the rule of thumb.', ['s5', 's6', 's7'], 'd-after'],
+  ['Agents and skills', 'The two-gates diagram again: "bigger shared blast radius" lights, the question the cut-over answers.', ['s8'], 'd-bound'],
   ['Inside a host', 'Graph slide (real get_graph() of contoso-design-author), then the routing diagram.', ['h1', 'h2', 'h3'], 'd-host'],
   ['Inside a host', 'Diagram: the routing flow with run and approval lit (each skill graph runs unchanged as a stateful subgraph).', ['h4'], 'd-host'],
   ['Inside a host', 'Terminal: real replies from the deployed host (plain request → brd; vague → the list of skills).', ['h5'], 's-routing'],
   ['Inside a host', 'Animated: the old hosted agent (crossed out) → a skill (name, use case, was agent, graph) → mounted on contoso-design-author beside its four sibling skills.', ['h6'], null],
-  ['Shared agents', 'Diagram: what changes when skills share an agent: key by agent + skill; in return, calls between skills become in-process.', ['x1', 'x2'], 'd-share'],
+  ['Shared agents', 'Diagram: what changes when skills share an agent: keep conversation, run and skill dimensions; skill phase; in return, my host calls sibling skills in process.', ['x1', 'x2'], 'd-share'],
   ['Cutting over', 'Diagram: deploy beside → compare → red team → retire. Portal: Agents list with 9 hosted agents.', ['c1', 'c2'], 'd-cutover'],
   ['Cutting over', 'Terminal: old vs new comparison (22/22).', ['c3'], 's-compare'],
-  ['Cutting over', 'Diagram: red team step lit (240 attacks, 0 succeeded).', ['c4'], 'd-cutover'],
+  ['Cutting over', 'Diagram: red team step lit (240 attacks, 0 succeeded), then "Behaviour held · security held".', ['c4'], 'd-cutover'],
   ['Cutting over', 'Terminal: retirement log (azd ai agent delete), 47 → 10 role assignments.', ['c5'], 's-delete'],
-  ['Foundry skills', 'Diagram: Foundry skill vs my skill, side by side.', ['f1', 'f2'], 'd-fvs'],
+  ['Foundry skills', 'Diagram: the second duplication problem (one standard copied into several skills\' prompts).', ['f1'], 'd-layers'],
+  ['Foundry skills', 'Diagram: Foundry skill (a versioned bundle) vs my skill (the executable workflow), side by side.', ['f1b', 'f2'], 'd-fvs'],
+  ['Foundry skills', 'Diagram: three layers and their cadences; then the portability note (open Agent Skills convention, SKILL.md).', ['f2b', 'f2c'], 'd-layers'],
   ['Foundry skills', 'Diagram: three kinds of prompt text; standards → 3 Foundry skills with owners; checked rules and mechanics stay in code.', ['f3', 'f4', 'f5'], 'd-move'],
-  ['Foundry skills', 'Animated: one prompt, two owners. The Foundry skill (portal, pinned version) fills slot 1, the checked rules from code fill slot 2, "checked rules win", into the model.', ['f6'], null],
+  ['Foundry skills', 'Animated: one prompt, two owners. The Foundry skill (portal, pinned version) fills slot 1, the checked rules from code fill slot 2, "follow the checked rules on conflict", into the model, output re-checked in code.', ['f6'], null],
   ['Foundry skills', 'Portal: Tools → Skills (preview): the three standards at v1; open contoso-requirements-standard and read its body in the portal.', ['f7'], null],
   ['Foundry skills', 'Diagram: Agent Framework load_skill (model decides) vs our graph (step decides); governance row.', ['f8'], 'd-load'],
   ['Foundry skills', 'Diagram: the governance row lit: pinned version, checked text, bundled fallback, every load audited.', ['f9'], 'd-load'],
@@ -540,20 +592,21 @@ const SCENES = [
   ['Continuous improvement', 'Microsoft Learn diagram (Enterprise GenAIOps lifecycle): pre-production and continuous evaluation lit. Then diagram: two halves (my gate | Foundry built-ins). Portal: Agents → contoso-design-author → Evaluation tab (recurring runs), then Monitor tab (evaluation scores card).', ['i1', 'i2', 'i3', 'i4', 'i5'], 'd-loop2'],
   ['Continuous improvement', 'Diagram: one standard, told and scored. The Foundry skill feeds the prompt; the rubric evaluators restate it for the judge; the checked rules become code-based evaluators.', ['r1'], 'd-rubric'],
   ['Continuous improvement', 'Portal: Evaluations → Evaluator catalog. The five Contoso evaluators (Custom · Rubric / Code · Preview) above the Microsoft built-ins.', ['r2'], null],
-  ['Continuous improvement', 'Portal: open Contoso requirements quality. Rubric-based, score range 1–5, Dimensions (8) with weight bars: source_scope_kept 10, atomic_requirements 8, quality_flags_with_questions 8.', ['r3'], null],
+  ['Continuous improvement', 'Portal: open Contoso requirements quality. Rubric-based, score range 1–5, Dimensions (8) with weight bars: source_scope_kept 10, atomic_requirements 8, quality_flags_with_questions 8. Then the caveat: a model\'s judgment, not ground truth.', ['r3', 'r3b'], null],
   ['Continuous improvement', 'Portal: back to the catalog, open Contoso verbatim excerpts (Code-based), then its Code tab: the Python grade() function.', ['r4'], null],
   ['Continuous improvement', 'Portal: Evaluations → the hourly continuous-contoso-design-author run: columns for the built-ins, requirements_quality and decision_support_writing (Rubric), verbatim_excerpts and unsupported_identifiers. Open View details on a rubric: per-dimension score and reason.', ['r5'], null],
   ['Continuous improvement', 'Portal: agent Traces tab → open a scored trace: invoke_agent contoso-design-author, the router and skill steps, then its Evaluations tab.', ['i8'], null],
-  ['Continuous improvement', 'Diagram: the loop lit (a low score → a new golden case → through the gate → redeploy).', ['i9'], 'd-loop2'],
-  ['Aside · the hype check', 'Animated: glowing orb, "Decision models" headline; Microsoft\'s three claims fly in (quoted, attributed); a stamp lands: "Does it help my agents?"', ['d1'], null],
+  ['Continuous improvement', 'Diagram: the loop lit (a low score → human review → a labelled golden case → through the gate → redeploy).', ['i9'], 'd-loop2'],
+  ['Aside · the hype check', 'Opens on "not every step needs a generative model". Animated: glowing orb, "Decision models" headline; Microsoft\'s three claims fly in (quoted, attributed); a stamp lands: "Does it help my agents?"', ['d1'], null],
   ['Aside · the hype check', 'Portal: Models → Deployments (Decision-1.1 beside the GPT deployments) → Decision-1.1 Playground.', ['d2'], null],
   ['Aside · the hype check', 'Portal, live: State = requirement P-FR-003 + "Email template branding refresh"; Decisions JSON = implements / fully; Run → low probability. Swap in "Notify applicant by email when status changes"; Run → close to certain. Zoom on the response panel.', ['d3', 'd4', 'd4b'], null],
   ['Aside · where it was tried', 'Animated flow chart: two real agent flows. contoso-backlog → requirements traceability (load_requirements → deterministic_links → suggest_links → verify_candidates → detect_exceptions → approve) and contoso-evidence-job → CAE evidence (discover → prefilter → classify_candidates → build_index_and_gaps → self_check → approve). The swapped step pulses; its model slot cycles gpt-5-mini / gpt-6-luna / Decision-1.1; a pulse travels each flow.', ['d5', 'd5b'], null],
   ['Aside · first surprise', 'Animated terminal: the real first gpt-6-luna run, every call HTTP 400 (temperature 0 not supported), the window shakes; then the agents\' temperature setting.', ['d5c'], null],
-  ['Aside · the race', 'Animated race in real time: three lanes fill at each model\'s median seconds per requirement (Decision-1.1 ≈2 s, gpt-6-luna ≈7 s, gpt-5-mini ≈12 s) with a running clock and finish flags; then output-token counters count up.', ['d6'], null],
-  ['Aside · the results', 'Animated scoreboard: three models × link judge and evidence rows flip in, crowns on the winners; then "errors flagged as unsure"; then the combined result banner (Decision-1.1 → gpt-6-luna, 93% avg, ties today).', ['d7', 'd8'], null],
-  ['Aside · the verdict', 'Animated: one verdict card per model; "Always test. Don\'t assume." blurs in with sparkles.', ['d9'], null],
-  ['What I\'d do differently', 'Diagram: four takeaways (business wording → Foundry skills + rubrics, checked rules → code; your standards as Foundry\'s evaluators). End card.', ['k1', 'k2', 'end'], 'd-takes2'],
+  ['Aside · the race', 'Animated race in real time: three lanes fill at each model\'s median seconds per requirement (Decision-1.1 ≈2 s, gpt-6-luna ≈7 s, gpt-5-mini ≈12 s) with a running clock and finish flags; then output-token counters count up.', ['d6', 'd6b'], null],
+  ['Aside · the results', 'Animated scoreboard: three models × link judge and evidence rows flip in, crowns on the winners; footer: 48 link + 60 evidence pairs, synthetic, AI-labelled; then "evidence · errors flagged as unsure" (0.8 fixed before the run); then the combined result banner (evidence: Decision-1.1 → gpt-6-luna, 93% avg, ties today).', ['d7', 'd8'], null],
+  ['Aside · the verdict', 'Animated: one verdict card per model; "Always test. Don\'t assume." blurs in with sparkles. Then the "End of the aside" card.', ['d9', 'd10'], null],
+  ['What I learned', 'Diagram: four takeaways (deployment shape ≠ use-case list; group by trust + operational boundary; business wording → Foundry skills + rubrics, checked rules → code; add Foundry\'s monitoring to your gate).', ['k1', 'k2'], 'd-takes2'],
+  ['What I learned', 'Diagram: the abstraction list, then "Use the right abstraction at each layer". End card: 23 use cases. 23 skills. 9 hosts. One evaluation loop.', ['k3', 'end'], 'd-abstract'],
 ];
 function writeStoryboard(lengths) {
   const all = Object.fromEntries(slides().map((s) => [s.id, s]));
@@ -591,7 +644,7 @@ ${dgcss}
 </style></head><body><main>
 <h1>From <em>23 agents</em> to 9</h1>
 <p class="sub">Storyboard · follow-on to "Microsoft's agent platform, built for real" · narration ${Math.floor(total / 60)} min ${Math.round(total % 60)} s · internal technical audience · generated by film/make_e2e5.js --storyboard</p>
-<div class="facts"><span>23 use cases → 23 skills</span><span>23 hosted agents → 9 (6 chat · 3 jobs)</span><span>old vs new: 22/22 same or better</span><span>red team through hosts: 0/240</span><span>role assignments 47 → 10</span><span>3 standards → Foundry skills, live at v1</span><span>2 rubric + 2 code-based evaluators, hourly on live traces</span><span>aside: Decision-1.1 and gpt-6-luna vs gpt-5-mini on 2 agent steps · nothing shipped</span></div>
+<div class="facts"><span>23 use cases → 23 skills</span><span>23 hosted agents → 9 hosts (6 chat · 3 jobs)</span><span>old vs new: 22/22 same or better</span><span>red team through hosts: 0/240</span><span>role assignments 47 → 10</span><span>3 standards → Foundry skills, live at v1</span><span>2 rubric + 2 code-based evaluators, hourly on live traces</span><span>aside: Decision-1.1 and gpt-6-luna vs gpt-5-mini on 2 agent steps · nothing shipped</span></div>
 ${rows}
 </main></body></html>`;
   const out = path.join(INFO, 'videos', `${NAME}-storyboard.html`);
@@ -706,15 +759,18 @@ async function runFilm(d, cap, pages) {
   await d.wait(Math.max(1.5, d.voiceLeft() - 4.2)); await part('d-after', ['chat', 'count']);
   await d.wait(Math.max(1.2, d.voiceLeft() - 2.0)); await part('d-after', ['jobs', 'count']);
   await d.waitVoice();
-  await part('d-after', ['cosmos']); await d.say('s5'); await d.waitVoice();
+  // two gates: who may call the host, and what the host can reach
+  await show('d-bound'); await part('d-bound', ['callers', 'host'], 0.2);
+  await d.say('s4b');
+  await d.wait(Math.max(1.5, d.voiceLeft() * 0.45)); await part('d-bound', ['host', 'down']);
+  await d.wait(Math.max(1.0, d.voiceLeft() - 3.0)); await part('d-bound', ['callers', 'host', 'down', 'rule']);
+  await d.waitVoice(0.3);
+  await show('d-after'); await part('d-after', ['cosmos'], 0.2); await d.say('s5'); await d.waitVoice();
   await part('d-after', ['twice']); await d.say('s6'); await d.waitVoice(); await part('d-after', 'all', 0.3);
   await d.say('s7'); await d.waitVoice(0.4);
-  await show('d-persona'); await part('d-persona', ['persona'], 0.2);
-  await d.say('p1');
-  await d.wait(Math.max(1.5, d.voiceLeft() - 6.0)); await part('d-persona', ['persona', 'platform']);
-  await d.waitVoice();
-  await part('d-persona', ['persona', 'match']); await d.say('p2'); await d.waitVoice();
-  await part('d-persona', ['platform', 'diff']); await d.say('p3'); await d.waitVoice(); await part('d-persona', 'all', 0.3);
+  // the risk consolidation creates; the cut-over answers it
+  await show('d-bound'); await part('d-bound', ['risk'], 0.2);
+  await d.say('s8'); await d.waitVoice(0.5);
 
   // ---------------- 4. Inside a host
   await setLabel(chap('Inside a host'));
@@ -763,7 +819,9 @@ async function runFilm(d, cap, pages) {
   await term('s-compare', compareLines().length);
   await d.waitVoice();
   await show('d-cutover'); await part('d-cutover', ['rt'], 0.2);
-  await d.say('c4'); await d.waitVoice();
+  await d.say('c4');
+  await d.wait(Math.max(1.5, d.voiceLeft() - 2.2)); await part('d-cutover', ['rt', 'held']);
+  await d.waitVoice();
   await part('d-cutover', ['ret', 'roll']);
   await show('s-delete'); await dk('term', 's-delete', 0);
   await d.say('c5');
@@ -772,10 +830,19 @@ async function runFilm(d, cap, pages) {
 
   // ---------------- 7. Foundry skills: where the two kinds of skill meet
   await setLabel(chap('Foundry skills'));
+  await show('d-layers'); await part('d-layers', ['dup'], 0.2);
+  await d.say('f1'); await d.waitVoice(0.3);
   await show('d-fvs'); await part('d-fvs', ['fs'], 0.2);
-  await d.say('f1'); await d.waitVoice();
+  await d.say('f1b'); await d.waitVoice();
   await part('d-fvs', ['fs', 'mine']); await d.say('f2'); await d.waitVoice();
-  await part('d-fvs', ['meet']);
+  await part('d-fvs', ['meet'], 0.4);
+  await show('d-layers'); await part('d-layers', ['l1', 'l2', 'l3'], 0.2);
+  await d.say('f2b');
+  await d.wait(Math.max(1.2, d.voiceLeft() * 0.3)); await part('d-layers', ['l1']);
+  await d.wait(Math.max(1.0, d.voiceLeft() * 0.35)); await part('d-layers', ['l2']);
+  await d.wait(Math.max(1.0, d.voiceLeft() * 0.5)); await part('d-layers', ['l3']);
+  await d.waitVoice(); await part('d-layers', ['l1', 'l2', 'l3']);
+  await part('d-layers', ['port']); await d.say('f2c'); await d.waitVoice(); await part('d-layers', 'all', 0.3);
   await show('d-move'); await part('d-move', 'all', 0.2);
   await d.say('f3'); await d.waitVoice();
   await part('d-move', ['std', 'skills']); await d.say('f4'); await d.waitVoice();
@@ -880,6 +947,7 @@ async function runFilm(d, cap, pages) {
   } catch (e) { console.log('dims zoom', e.message); }
   await hoverAll(['source_scope_kept', 'atomic_requirements', 'quality_flags_with_questions'], Math.max(900, (d.voiceLeft() - 2) * 330), true);
   await d.waitVoice(); await d.unzoom(700);
+  await d.say('r3b'); await hoverAll(['Rubric-based'], 800, true); await d.waitVoice(0.4);
   // the code-based evaluator and its Python
   await portal.goBack().catch(() => {});
   await ready('Contoso verbatim excerpts', 1200);
@@ -1016,8 +1084,9 @@ async function runFilm(d, cap, pages) {
   await d.say('d6'); await d.wait(1.4); await fx('x-race', 1);
   await d.wait(12.6); await fx('x-race', 2); d.log('whoosh', { soft: true });
   await d.waitVoice(0.8);
-  // the scoreboard
+  // the scoreboard, after saying what the numbers are (and aren't)
   await show('x-score'); await fx('x-score', 0);
+  await d.say('d6b'); await d.waitVoice(0.3);
   await d.say('d7');
   await d.wait(0.8); await fx('x-score', 1); d.log('whoosh', { soft: true });
   await d.wait(Math.max(2, d.voiceLeft() * 0.48)); await fx('x-score', 2); d.log('whoosh', { soft: true });
@@ -1030,17 +1099,25 @@ async function runFilm(d, cap, pages) {
   await d.say('d9');
   await d.wait(0.8); await fx('x-verdict', 1);
   await d.wait(Math.max(1.5, d.voiceLeft() - 3.6)); await fx('x-verdict', 2); d.log('whoosh');
-  await d.waitVoice(1.8);
+  await d.waitVoice(1.2);
+  // close the aside, then back to the main story
+  await cardOn(ASIDE_END, 0.3);
+  await d.say('d10'); await d.waitVoice(0.8);
 
   // ---------------- 9. What I'd do differently
-  await setLabel(chap('What I\'d do differently'));
-  await show('d-takes2'); await part('d-takes2', ['a1', 'a2'], 0.2);
+  await setLabel(chap('What I learned'));
+  await show('d-takes2'); await d.uncard(700); await part('d-takes2', ['a1', 'a2'], 0.2);
   await d.say('k1');
   await d.wait(Math.max(1.5, d.voiceLeft() * 0.5)); await part('d-takes2', ['a2']);
   await d.waitVoice();
   await part('d-takes2', ['a3']); await d.say('k2');
   await d.wait(Math.max(1.5, d.voiceLeft() * 0.45)); await part('d-takes2', ['a4']);
   await d.waitVoice(); await part('d-takes2', 'all', 0.6);
+  await show('d-abstract'); await part('d-abstract', ['a1'], 0.2);
+  await d.say('k3');
+  for (const k of ['a2', 'a3', 'a4']) { await d.wait(Math.max(1.0, (d.voiceLeft() - 3.0) / 4)); await part('d-abstract', ['a1', 'a2', 'a3', 'a4'].slice(0, ['a1', 'a2', 'a3', 'a4'].indexOf(k) + 1)); }
+  await d.wait(Math.max(0.8, d.voiceLeft() - 2.6)); await part('d-abstract', 'all');
+  await d.waitVoice(0.6);
   await setLabel(null);
   await cardOn(END, 0.3);
   await d.say('end'); await d.waitVoice(1.6);

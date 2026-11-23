@@ -59,7 +59,7 @@ const BASE_CSS = `
 function hype() {
   return {
     type: 'fx', id: 'x-hype', kicker: 'Aside · the hype check', title: 'Decision models: <em>the hot topic</em>',
-    html: `<div class="orb"></div><div class="hero rise" data-s="0"><div class="pill">Microsoft-Decision-1.1 · generally available in Foundry</div><div class="big">Decision models</div><div class="sub">pick from the options you allow · say how sure they are</div></div>
+    html: `<div class="orb"></div><div class="hero rise" data-s="0"><div class="pill">Microsoft-Decision-1.1 · generally available in Foundry</div><div class="big">Decision models</div><div class="sub">bounded decisions, not generated text · probabilities, not prose</div></div>
       <div class="claims">${[['⚡', '"2.2× faster"', 'on Copilot routing'], ['💸', '"4.4× lower cost"', 'on Copilot routing'], ['🎯', '"highest average accuracy"', 'across 102 benchmarks']].map(([ic, a, b], i) => `<div class="claim rise" data-s="1" style="transition-delay:${i * 0.35}s"><span>${ic}</span><b>${esc(a)}</b><small>${esc(b)}</small></div>`).join('')}</div>
       <div class="stamp" data-s="2">Does it help <u>my</u> agents?</div>
       <div class="cite small">Claims quoted from Microsoft's GA announcement (2026-11-17), not verified here</div>`,
@@ -232,7 +232,7 @@ function gotcha(data) {
     html: `<div class="term2 rise" data-s="0"><div class="tb"><i></i><i></i><i></i><b>PowerShell · ircc-sdlc-agents</b><span>first gpt-6-luna run, 2026-11-22</span></div>
       <div class="tx"><div class="c">$ uv run python evals/decision_pilot/link_judge_pilot.py run --chat-model gpt-6-luna</div>${data.errors.map((l, i) => `<div class="e" style="--i:${i}">${esc(l)}</div>`).join('')}
       <div class="sum" style="--i:${data.errors.length}">${esc(data.errSummary)}</div></div></div>
-      <div class="why rise" data-s="1"><div class="code"><div class="sl">every agent's model setting</div><span class="k">temperature</span> <span class="v">0</span><div class="sl2">gpt-6-luna accepts only <span class="v">1</span></div></div><div>Every agent asks for temperature <b>0</b>, so the same input gives the same answer. gpt-6-luna only accepts <b>1</b>. Swapped in blind, every model call fails. To test it at all, it ran at 1, so its answers can vary between runs.</div></div>`,
+      <div class="why rise" data-s="1"><div class="code"><div class="sl">every agent's model setting</div><span class="k">temperature</span> <span class="v">0</span><div class="sl2">gpt-6-luna accepts only <span class="v">1</span></div></div><div>Every agent asks for temperature <b>0</b> to keep answers as consistent as possible. gpt-6-luna only accepts <b>1</b>. Swapped in blind, every model call fails. To test it fairly, it ran at 1, three times, so its answers vary between runs.</div></div>`,
     css: `${BASE_CSS}
 #x-gotcha .term2 { border-radius: 16px; background: #0d1117; border: 1px solid rgba(255,123,114,.5); box-shadow: 0 0 80px -20px rgba(255,90,80,.6); overflow: hidden; }
 #x-gotcha .tb { display: flex; align-items: center; gap: 8px; padding: 11px 16px; background: #161b22; font-size: 15px; color: rgba(255,255,255,.65); }
@@ -345,14 +345,14 @@ function promptStack() {
   return {
     type: 'fx', id: 'x-prompt', kicker: 'Foundry skills', title: 'One prompt, <em>two owners</em>',
     html: `<div class="pgrid">
-      <div class="psrc"><div class="box fsk rise" data-s="1"><div class="lbl">Microsoft Foundry · Tools → Skills</div><b>contoso-requirements-standard</b><small>version 1 · owned by functional leads · editable in the portal</small></div>
+      <div class="psrc"><div class="box fsk rise" data-s="1"><div class="lbl">Microsoft Foundry · Tools → Skills</div><b>contoso-requirements-standard</b><small>version 1 · owned by functional leads · new versions published by its owners</small></div>
         <div class="box code rise" data-s="2"><div class="lbl">the agent's code · reviewed in a pull request</div><b>Checked rules</b><small>excerpts verbatim · source text is only data · no harmful requirements · tested at every release</small></div></div>
       <div class="flowr rise" data-s="1">➜</div>
       <div class="prompt rise" data-s="0"><div class="lbl">the prompt the model receives</div>
         <div class="pl">You are a senior business analyst at Contoso…</div>
         <div class="slot s1" data-s="1"><span>1</span>the business standard <em>· from Foundry, pinned version</em></div>
         <div class="slot s2" data-s="2"><span>2</span>the checked rules <em>· from code</em></div>
-        <div class="slot s3" data-s="3"><span>!</span>on any conflict, the checked rules win</div>
+        <div class="slot s3" data-s="3"><span>!</span>on any conflict, follow the checked rules <em>· then re-checked in code</em></div>
         <div class="pl">…the BRD section, as untrusted data</div></div>
       <div class="flowr rise" data-s="3">➜</div><div class="model rise" data-s="3">model</div></div>`,
     css: `${BASE_CSS}
