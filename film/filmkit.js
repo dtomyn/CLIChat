@@ -8,7 +8,7 @@ const { execFileSync } = require('child_process');
 
 const RATE = 48000;
 
-function createKit({ name, lines, vo, work, out, view = { width: 1600, height: 900 }, dsf = 1.2, filming = true, musicGain = 0.9 }) {
+function createKit({ name, lines, vo, work, out, view = { width: 1600, height: 900 }, dsf = 1.2, filming = true, musicGain = 0.9, squeeze = null }) {
   const FILM = __dirname;
   const engine = process.env.FILM_VOICE === 'windows' ? 'windows' : 'kokoro';
   const voiceSig = engine === 'kokoro' ? `kokoro:${process.env.KOKORO_VOICE || 'af_heart'}:${process.env.KOKORO_SPEED || '1.0'}` : 'Microsoft Mark';
@@ -191,6 +191,23 @@ $s.Dispose()`;
     console.log('trimmed dead air:', cuts.map(([, n]) => `${n.toFixed(1)}s`).join(', '));
     return [frames.map(([f, t]) => [f, shift(t)]), events.map((e) => ({ ...e, t: shift(e.t) }))];
   }
+  // Opt-in (createKit({ squeeze })): silence between two narration lines longer than `gap` seconds (a portal page
+  // loading, a long hover) is cut to `after` seconds past the last line plus `before` seconds ahead of the next one.
+  // Frames and sound effects inside a cut are dropped; everything after it moves up.
+  function squeezeSilence(frames, events, { gap = 2.5, after = 0.9, before = 1.1 } = {}) {
+    const voices = events.filter((e) => e.kind === 'voice').map((e) => [e.t, e.t + wavInfo(path.join(vo, `${e.id}.wav`)).seconds]).sort((a, b) => a[0] - b[0]);
+    const cuts = [];
+    let end = -Infinity;
+    for (let i = 0; i + 1 < voices.length; i++) {
+      end = Math.max(end, voices[i][1]); const next = voices[i + 1][0];
+      if (next - end > gap) cuts.push([end + after, next - end - after - before]);
+    }
+    if (!cuts.length) return [frames, events];
+    const inCut = (t) => cuts.some(([at, n]) => t >= at && t < at + n);
+    const shift = (t) => t - cuts.filter(([at, n]) => t >= at + n).reduce((s, [, n]) => s + n, 0);
+    console.log(`squeezed silence: ${cuts.length} cuts, ${cuts.reduce((s, [, n]) => s + n, 0).toFixed(1)}s`);
+    return [frames.filter(([, t]) => !inCut(t)).map(([f, t]) => [f, shift(t)]), events.filter((e) => e.kind === 'voice' || !inCut(e.t)).map((e) => ({ ...e, t: shift(e.t) }))];
+  }
   // A headed window can be larger than the emulated viewport; the screencast then carries blank margin right and
   // below the page. Frames that are not 16:9 are cropped back to the page area (top-left, viewport size).
   const CROP = `crop=w='if(eq(iw*9,ih*16),iw,min(iw,${view.width}))':h='if(eq(iw*9,ih*16),ih,min(ih,${view.height}))':x=0:y=0`;
@@ -200,6 +217,7 @@ $s.Dispose()`;
     let frames = [...capFrames].sort((a, b) => a[1] - b[1]);
     fs.writeFileSync(path.join(work, 'events.json'), JSON.stringify({ events: rawEvents, frame_list: frames }, null, 1));
     let events; [frames, events] = trimDeadAir(frames, rawEvents);
+    if (squeeze) [frames, events] = squeezeSilence(frames, events, squeeze);
     const start = frames[0][1]; const end = Math.max(frames[frames.length - 1][1], ...events.map((e) => e.t)) + 0.5; const seconds = end - start;
     console.log(`frames ${frames.length} over ${seconds.toFixed(1)}s (${(frames.length / seconds).toFixed(1)} fps captured)`);
     if (stills) {

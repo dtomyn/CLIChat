@@ -388,4 +388,4 @@ function learnSlides({ hostImg, lifeImg }) {
   ];
 }
 
-module.exports = { THEME_CSS, THEME_JS, asideSlides: (data) => [hype(), where(), gotcha(data), race(data), score(data), verdict(data)], learnSlides, extraSlides: () => [skillCard(), promptStack()] };
+module.exports = { THEME_CSS, THEME_JS, asideSlides: (data) => [hype(), where(), race(data), score(data), verdict(data)], learnSlides, extraSlides: () => [skillCard(), promptStack()] };

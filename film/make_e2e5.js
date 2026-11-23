@@ -107,10 +107,6 @@ const LINES = {
   h5: L('Here is that router, live in Foundry. A plain request with a document goes to requirements refinement. A vague one gets the list of skills back.'),
   h6: L("Registering an existing graph as a skill is about ten lines. A name, its use case number, the agent it used to be, and its graph. The real work was proving it could safely share the host.",
     "Registering an existing graph as a skill is about ten lines: a name, its use case number, the agent it used to be, and its graph. The real work was proving it could safely share the host."),
-  x1: L("One thing changes when skills share an agent. The deployment boundary no longer keeps their work apart. So state, settings and traces carry every dimension that matters: the conversation, its run, and now the skill. The running skill also sets its own phase, so a read only skill still cannot write, even on a host where another skill can. Otherwise two skills, or two users, could mix their work on one host.",
-    "One thing changes when skills share an agent. The deployment boundary no longer keeps their work apart. So state, settings and traces carry every dimension that matters: the conversation, its run, and now the skill. The running skill also sets its own phase, so a read-only skill still can't write, even on a host where another skill can. Otherwise two skills, or two users, could mix their work on one host."),
-  x2: L("In return, my host calls sibling skills directly, in process. The status report now calls schedule variance without the network hop, endpoint or extra role the old deployment needed.",
-    "In return, my host calls sibling skills directly, in process. The status report now calls schedule variance without the network hop, endpoint or extra role the old deployment needed."),
   c1: L('Then the cut over. The nine hosts went up next to the old twenty three, in nine minutes.', 'Then the cut-over. The 9 hosts went up next to the old 23, in nine minutes.'),
   c2: L('In Foundry, nine hosted agents, and each description lists its skills.', 'In Foundry, 9 hosted agents, and each description lists its skills.'),
   c3: L('Before deleting anything, the same test case went to each old agent and to its new host. Twenty two of twenty two scored the same, or better. The one error came from a content filter, and the old agent failed it too.',
@@ -143,30 +139,26 @@ const LINES = {
   i9: L("And that closes the loop. A low score points at a real trace. I review it. If it is a real failure or an important edge case, it becomes a new labelled golden case, and the fix goes back through my gate before it is redeployed.",
     "And that closes the loop. A low score points at a real trace. I review it. If it's a real failure or an important edge case, it becomes a new labelled golden case, and the fix goes back through my gate before it's redeployed."),
   // Aside: the decision model, tested (evals/decision_pilot, 2026-11-22)
-  d1: L("Before the takeaways, one related aside. Breaking the agents into skills showed me something else. Not every step inside a skill needs a generative model. Some only need a bounded decision. Decision models are getting a lot of attention, and Microsoft's Decision one point one just went generally available in Foundry. It makes bounded decisions instead of writing text: yes or no, which allowed option, or where something sits on a scale. And it returns probabilities I can use as an uncertainty signal. The claims are bold: much faster and much cheaper than a general model, for routing, classifying and checking.",
-    "Before the takeaways, one related aside. Breaking the agents into skills showed me something else. Not every step inside a skill needs a generative model. Some only need a bounded decision. Decision models are getting a lot of attention, and Microsoft's Decision-1.1 just went generally available in Foundry. It makes bounded decisions instead of writing text: yes or no, which allowed option, or where something sits on a scale. And it returns probabilities I can use as an uncertainty signal. The claims are bold: much faster and much cheaper than a general model, for routing, classifying and checking."),
+  d1: L("Before the takeaways, one related aside. Breaking agents into skills showed me that not every step needs a generative model. Some only need a bounded decision. Microsoft's Decision one point one just went generally available in Foundry. It returns probabilities, not text, and it claims to be much faster and cheaper for routing, classifying and checking.",
+    "Before the takeaways, one related aside. Breaking agents into skills showed me that not every step needs a generative model. Some only need a bounded decision. Microsoft's Decision-1.1 just went generally available in Foundry. It returns probabilities, not text, and it claims to be much faster and cheaper for routing, classifying and checking."),
   d2: L("It's already deployed in my project, next to the agents' model. And it has its own playground. You give it the evidence, and the decisions you want made. It gives you back structured probabilities. No generated answer, and no written reasons.",
     "It's already deployed in my project, next to the agents' model. And it has its own playground. You give it the evidence, and the decisions you want made. It gives you back structured probabilities. No generated answer, and no written reasons."),
   d3: L('Here\'s a real case from my link judge. The requirement: email the applicant when the status changes. The candidate: an email template branding refresh. Same word, different behaviour. Does it implement the requirement?',
     "Here's a real case from my link judge. The requirement: email the applicant when the status changes. The candidate: an email template branding refresh. Same word, different behaviour. Does it implement the requirement?"),
   d4: L('A low probability. Correctly, a no. Now swap in the story that really does email the applicant, and run it again.'),
   d4b: L('Close to certain. A couple of output tokens, back in seconds. No essay, no reasoning. Just a number you can act on.'),
-  d5: L('So where exactly did I try it? Inside two real agent flows. In the backlog agent, the requirements traceability skill has one step that asks a model: does this work item implement this requirement? In the evidence job, the CAE evidence skill has one step that sorts each artifact into direct, supporting, or not evidence. I swapped only that step\'s model. Everything around it stayed the same: the inputs, the code checks after it, and the human approval.',
-    "So where exactly did I try it? Inside two real agent flows. In the backlog agent, the requirements traceability skill has one step that asks a model: does this work item implement this requirement? In the evidence job, the CAE evidence skill has one step that sorts each artifact into direct, supporting, or not evidence. I swapped only that step's model. Everything around it stayed the same: the inputs, the code checks after it, and the human approval."),
-  d5b: L("And there's a third contender. G P T six Luna is in my project too, and I'd heard it's cheaper and faster than G P T five mini. Luna is a general chat model, not a decision model. So, three models on the same two steps: today's, Luna, and Decision one point one.",
-    "And there's a third contender. gpt-6-luna is in my project too, and I'd heard it's cheaper and faster than gpt-5-mini. Luna is a general chat model, not a decision model. So, three models on the same two steps: today's, Luna, and Decision-1.1."),
-  d5c: L("The first surprise came before a single result. Luna refused my agents' settings. Every agent asks for temperature zero, to keep answers as consistent as possible. Luna only accepts one. Swap it in blind, and every call fails. To test it fairly, I ran it at one, three times.",
-    "The first surprise came before a single result. Luna refused my agents' settings. Every agent asks for temperature 0, to keep answers as consistent as possible. Luna only accepts 1. Swap it in blind, and every call fails. To test it fairly, I ran it at 1, three times."),
+  d5: L("I tried it inside two real agent flows. In requirements traceability, one step asks: does this work item implement this requirement? In CAE evidence, one step sorts each artifact into direct, supporting, or not evidence. I swapped only that step's model. The inputs, the code checks and the human approval stayed the same.",
+    "I tried it inside two real agent flows. In requirements traceability, one step asks: does this work item implement this requirement? In CAE evidence, one step sorts each artifact into direct, supporting, or not evidence. I swapped only that step's model. The inputs, the code checks and the human approval stayed the same."),
+  d5b: L("And a third contender: G P T six Luna, a general chat model I'd heard was cheaper and faster than G P T five mini.",
+    "And a third contender: gpt-6-luna, a general chat model I'd heard was cheaper and faster than gpt-5-mini."),
   d6: L("Then the race, in real time. The median per requirement. Decision one point one is done in about two seconds. Luna in under seven. G P T five mini takes twelve. And the output volume: under a hundred output tokens, against nine thousand, against almost twenty thousand.",
     "Then the race, in real time: the median per requirement. Decision-1.1 is done in about 2 seconds. Luna in under 7. gpt-5-mini takes 12. And the output volume: under a hundred output tokens, against 9,000, against almost 20,000."),
-  d6b: L("A word on scale. This tests my workload, not models in general. Forty eight link pairs and sixty evidence pairs, all synthetic, labelled with my AI coding assistant, not by a subject matter expert. Accuracy is the share that matched those labels. Luna's ranges are across its three runs.",
-    "A word on scale. This tests my workload, not models in general: 48 link pairs and 60 evidence pairs, all synthetic, labelled with my AI coding assistant, not by a subject-matter expert. Accuracy is the share that matched those labels. Luna's ranges are across its three runs."),
-  d7: L('Now accuracy. On links, Luna was the best, ninety six to ninety eight percent, with no traps. Decision one point one tied G P T five mini at ninety four, but missed three partial matches. On security evidence, G P T five mini won at ninety three. Luna got ninety to ninety two. And Decision one point one twice called something direct evidence when it wasn\'t.',
-    "Now accuracy. On links, Luna was the best, 96 to 98%, with no traps. Decision-1.1 tied gpt-5-mini at 94%, but missed three partial matches. On security evidence, gpt-5-mini won at 93%. Luna got 90 to 92%. And Decision-1.1 twice called something direct evidence when it wasn't."),
-  d8: L("Two twists. On evidence, six of Decision one point one's seven mistakes fell below the zero point eight threshold I set before the run. Both chat models were confident even when they were wrong. And combining them, Decision one point one first, and only its unsure answers to Luna, averaged ninety three percent on evidence. A tie with today's model, with one chat call instead of three.",
-    "Two twists. On evidence, six of Decision-1.1's seven mistakes fell below the 0.8 threshold I set before the run. Both chat models were confident even when they were wrong. And combining them, Decision-1.1 first, and only its unsure answers to Luna, averaged 93% on evidence. A tie with today's model, with one chat call instead of three."),
-  d9: L('So what changed in production? Nothing, yet. A cheaper model that rejects my settings. A faster one that isn\'t more accurate on its own. And a combination that only ties. The hype is real, and so are the benchmarks. But on my agents and my data, the answers were different. Always test. Don\'t assume.',
-    "So what changed in production? Nothing, yet. A cheaper model that rejects my settings. A faster one that isn't more accurate on its own. And a combination that only ties. The hype is real, and so are the benchmarks. But on my agents and my data, the answers were different. Always test. Don't assume."),
+  d7: L("The scores come from my own test set: forty eight link pairs and sixty evidence pairs, synthetic, labelled with my AI assistant. On links, Luna was best. Decision one point one tied today's model, but missed partial matches. On evidence, today's model won, and Decision one point one twice over-claimed direct evidence.",
+    "The scores come from my own test set: 48 link pairs and 60 evidence pairs, synthetic, labelled with my AI assistant. On links, Luna was best. Decision-1.1 tied today's model, but missed partial matches. On evidence, today's model won, and Decision-1.1 twice over-claimed direct evidence."),
+  d8: L("One twist. On evidence, Decision one point one's low probabilities caught six of its seven mistakes. The chat models were confident even when wrong. Decision one point one first, with only its unsure cases sent to Luna, tied today's model with one chat call instead of three.",
+    "One twist. On evidence, Decision-1.1's low probabilities caught six of its seven mistakes. The chat models were confident even when wrong. Decision-1.1 first, with only its unsure cases sent to Luna, tied today's model with one chat call instead of three."),
+  d9: L("So what changed in production? Nothing, yet. Faster isn't more accurate on its own, and the best combination only ties. The hype is real, but on my agents and my data, the answers were different. Always test. Don't assume.",
+    "So what changed in production? Nothing, yet. Faster isn't more accurate on its own, and the best combination only ties. The hype is real, but on my agents and my data, the answers were different. Always test. Don't assume."),
   d10: L("That's the end of the aside. One test won't change my production models. But it taught the same lesson that took me from twenty three agents to nine: use the right abstraction for the job.",
     "That's the end of the aside. One test won't change my production models. But it taught the same lesson that took me from 23 agents to 9: use the right abstraction for the job."),
   k1: L("So, back to the main story. What did I learn from rebuilding this? The biggest lesson was not that twenty three agents became nine. It is that the use case list should not dictate the deployment architecture. I still have twenty three traceable capabilities. But the deployment boundaries now follow identity, callers, permissions, state, protocol and how each one runs.",
@@ -308,10 +300,6 @@ const D_HOST = [
   B('scope', 'bx', 1215, 290, 285, 190, 'Per skill', ['phase', 'audit · approvals', 'carry the skill']),
 ].join('');
 
-const D_SHARE = [
-  B('key', 'wa', 20, 20, 710, 300, 'Keep every dimension, add the skill', ['conversation · run · skill', 'skill phase: read-only still can\'t write', 'audit records · traces', '', 'otherwise two skills (or two users)', '  mix their work on one host'], { lh: 36 }),
-  B('calls', 'pl', 770, 20, 710, 300, 'In return: my host calls siblings in process', ['status report → schedule variance', 'gate pack → architecture review', '', 'no network hop', 'no extra endpoint or role'], { lh: 36 }),
-].join('');
 
 const D_CUTOVER = [
   B('dep', 'pl', 20, 60, 340, 250, '1 · Deploy beside', ['9 hosts next to the 23', 'azd deploy: 9 minutes', 'Foundry User per host']),
@@ -454,7 +442,7 @@ function asideData() {
     errSummary: `${failed.scores['gpt-6-luna'].failed_calls} of ${failed.scores['gpt-6-luna'].failed_calls} calls failed · HTTP 400 · 0 answers`,
     verdicts: [
       ['g5', ['today\'s model: stays', `best alone on evidence: ${pct(eg5[0]['accuracy (3-class)'])}`, 'slowest, most tokens', 'confident even when wrong']],
-      ['lu', [`best on links: ${pctRange(acc(lu, 'accuracy (yes/no)'))}, no traps`, `~${(p50(g5) / p50(lu)).toFixed(1)}× faster than gpt-5-mini`, 'rejects temperature 0', 'its confidence isn\'t a probability']],
+      ['lu', [`best on links: ${pctRange(acc(lu, 'accuracy (yes/no)'))}, no traps`, `~${(p50(g5) / p50(lu)).toFixed(1)}× faster than gpt-5-mini`, `evidence: ${pctRange(acc(elu, 'accuracy (3-class)'))}`, 'its confidence isn\'t a probability']],
       ['dc', [`~${Math.round(p50(g5) / p50(dc))}× faster, ~${Math.round(tok(g5) / tok(dc))}× fewer tokens`, 'identical answers run to run', `knows when it's unsure: ${df} of ${dt} errors`, 'not more accurate on its own']],
     ],
   };
@@ -535,7 +523,6 @@ function slides() {
     dg('d-hostgraph', 'agents/design-author · get_graph()', 'A whole host: <em>route, then one skill</em>', '0 0 1500 540', D_HOSTGRAPH),
     dg('d-host', 'Inside a host', 'Cheap routing first, <em>ask when unsure</em>', '0 0 1500 500', D_HOST),
     { type: 'term', id: 's-routing', kicker: 'Live · deployed host', title: 'The router, <em>in Foundry</em>', label: `responses · ${HOST}`, note: 'real replies, captured 2026-11-21', lines: routingLines() },
-    dg('d-share', 'Inside a host', 'What changes when <em>skills share an agent</em>', '0 0 1500 340', D_SHARE),
     dg('d-cutover', 'Cutting over', 'Prove it, <em>then</em> retire', '0 0 1500 410', D_CUTOVER),
     { type: 'term', id: 's-compare', kicker: 'Cut-over check · live', title: 'Old agent vs new host, <em>same case</em>', label: 'PowerShell · ircc-sdlc-agents', note: 'status and mean score per run', lines: compareLines() },
     { type: 'term', id: 's-delete', kicker: 'Retirement · 2026-11-21', title: 'Only then: <em>delete the 23</em>', label: 'PowerShell · foundry-test-deploy/contoso', note: 'delete-old-agents.log', lines: deleteLines() },
@@ -575,7 +562,6 @@ const SCENES = [
   ['Inside a host', 'Diagram: the routing flow with run and approval lit (each skill graph runs unchanged as a stateful subgraph).', ['h4'], 'd-host'],
   ['Inside a host', 'Terminal: real replies from the deployed host (plain request → brd; vague → the list of skills).', ['h5'], 's-routing'],
   ['Inside a host', 'Animated: the old hosted agent (crossed out) → a skill (name, use case, was agent, graph) → mounted on contoso-design-author beside its four sibling skills.', ['h6'], null],
-  ['Shared agents', 'Diagram: what changes when skills share an agent: keep conversation, run and skill dimensions; skill phase; in return, my host calls sibling skills in process.', ['x1', 'x2'], 'd-share'],
   ['Cutting over', 'Diagram: deploy beside → compare → red team → retire. Portal: Agents list with 9 hosted agents.', ['c1', 'c2'], 'd-cutover'],
   ['Cutting over', 'Terminal: old vs new comparison (22/22).', ['c3'], 's-compare'],
   ['Cutting over', 'Diagram: red team step lit (240 attacks, 0 succeeded), then "Behaviour held · security held".', ['c4'], 'd-cutover'],
@@ -601,8 +587,7 @@ const SCENES = [
   ['Aside · the hype check', 'Portal: Models → Deployments (Decision-1.1 beside the GPT deployments) → Decision-1.1 Playground.', ['d2'], null],
   ['Aside · the hype check', 'Portal, live: State = requirement P-FR-003 + "Email template branding refresh"; Decisions JSON = implements / fully; Run → low probability. Swap in "Notify applicant by email when status changes"; Run → close to certain. Zoom on the response panel.', ['d3', 'd4', 'd4b'], null],
   ['Aside · where it was tried', 'Animated flow chart: two real agent flows. contoso-backlog → requirements traceability (load_requirements → deterministic_links → suggest_links → verify_candidates → detect_exceptions → approve) and contoso-evidence-job → CAE evidence (discover → prefilter → classify_candidates → build_index_and_gaps → self_check → approve). The swapped step pulses; its model slot cycles gpt-5-mini / gpt-6-luna / Decision-1.1; a pulse travels each flow.', ['d5', 'd5b'], null],
-  ['Aside · first surprise', 'Animated terminal: the real first gpt-6-luna run, every call HTTP 400 (temperature 0 not supported), the window shakes; then the agents\' temperature setting.', ['d5c'], null],
-  ['Aside · the race', 'Animated race in real time: three lanes fill at each model\'s median seconds per requirement (Decision-1.1 ≈2 s, gpt-6-luna ≈7 s, gpt-5-mini ≈12 s) with a running clock and finish flags; then output-token counters count up.', ['d6', 'd6b'], null],
+  ['Aside · the race', 'Animated race in real time: three lanes fill at each model\'s median seconds per requirement (Decision-1.1 ≈2 s, gpt-6-luna ≈7 s, gpt-5-mini ≈12 s) with a running clock and finish flags; then output-token counters count up.', ['d6'], null],
   ['Aside · the results', 'Animated scoreboard: three models × link judge and evidence rows flip in, crowns on the winners; footer: 48 link + 60 evidence pairs, synthetic, AI-labelled; then "evidence · errors flagged as unsure" (0.8 fixed before the run); then the combined result banner (evidence: Decision-1.1 → gpt-6-luna, 93% avg, ties today).', ['d7', 'd8'], null],
   ['Aside · the verdict', 'Animated: one verdict card per model; "Always test. Don\'t assume." blurs in with sparkles. Then the "End of the aside" card.', ['d9', 'd10'], null],
   ['What I learned', 'Diagram: four takeaways (deployment shape ≠ use-case list; group by trust + operational boundary; business wording → Foundry skills + rubrics, checked rules → code; add Foundry\'s monitoring to your gate).', ['k1', 'k2'], 'd-takes2'],
@@ -796,12 +781,6 @@ async function runFilm(d, cap, pages) {
   await d.wait(Math.max(1.5, d.voiceLeft() * 0.45)); await dk('fx', 'x-skill', 2); d.log('whoosh', { soft: true });
   await d.waitVoice(0.8);
 
-  // ---------------- 5. What changes when skills share an agent
-  await setLabel(chap('Skills sharing an agent'));
-  await d.js(() => window.Film.hideCursor(true));
-  await show('d-share'); await part('d-share', ['key'], 0.2);
-  await d.say('x1'); await d.waitVoice();
-  await part('d-share', ['calls']); await d.say('x2'); await d.waitVoice(); await part('d-share', 'all', 0.3);
 
   // ---------------- 6. Cutting over
   await setLabel(chap('Cutting over'));
@@ -1074,11 +1053,6 @@ async function runFilm(d, cap, pages) {
   await d.wait(Math.max(1.5, d.voiceLeft() - 6)); await fx('x-where', 3);
   await d.waitVoice(0.3);
   await d.say('d5b'); await d.waitVoice(0.4);
-  // the first surprise: luna rejects temperature 0
-  await show('x-gotcha'); await fx('x-gotcha', 0); d.log('key');
-  await d.say('d5c');
-  await d.wait(Math.max(2, d.voiceLeft() * 0.5)); await fx('x-gotcha', 1);
-  await d.waitVoice(0.5);
   // the race, real time
   await show('x-race'); await d.wait(0.4);
   await d.say('d6'); await d.wait(1.4); await fx('x-race', 1);
@@ -1086,7 +1060,6 @@ async function runFilm(d, cap, pages) {
   await d.waitVoice(0.8);
   // the scoreboard, after saying what the numbers are (and aren't)
   await show('x-score'); await fx('x-score', 0);
-  await d.say('d6b'); await d.waitVoice(0.3);
   await d.say('d7');
   await d.wait(0.8); await fx('x-score', 1); d.log('whoosh', { soft: true });
   await d.wait(Math.max(2, d.voiceLeft() * 0.48)); await fx('x-score', 2); d.log('whoosh', { soft: true });
@@ -1128,7 +1101,7 @@ async function main() {
   fs.mkdirSync(WORK, { recursive: true });
   const deckFile = () => buildDeck({ slides: slides(), hljsDir: path.join(ROOT, 'node_modules', '@highlightjs', 'cdn-assets'), out: path.join(WORK, 'deck.html'), css: FXK.THEME_CSS, js: FXK.THEME_JS });
   if (args.has('--deck')) { console.log('wrote', deckFile()); return; }
-  const kit = createKit({ name: NAME, lines: LINES, vo: path.join(FILM, 'vo-e2e5'), work: WORK, out: path.join(FILM, 'out'), musicGain: 0.4 });
+  const kit = createKit({ name: NAME, lines: LINES, vo: path.join(FILM, 'vo-e2e5'), work: WORK, out: path.join(FILM, 'out'), musicGain: 0.4, squeeze: { gap: 2.5, after: 0.9, before: 1.1 } });
   const lengths = kit.makeVoice();
   if (args.has('--voice')) { let total = 0; for (const [k, v] of Object.entries(lengths)) { total += v; console.log(k.padEnd(6), `${v.toFixed(1)}s`); } console.log(`total narration ${total.toFixed(0)}s`); return; }
   if (args.has('--storyboard')) { console.log('wrote', writeStoryboard(lengths)); return; }
